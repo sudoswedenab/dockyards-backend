@@ -8,8 +8,14 @@ import (
 
 func RegisterRoutes(r *gin.Engine) {
 
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Hello Server",
+		})
+	})
+
 	///http://localhost:9000/api
-	routes := r.Group("/")
+	routes := r.Group("/1")
 	routes.GET("/api", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Hello World, Im Alive",
@@ -18,16 +24,25 @@ func RegisterRoutes(r *gin.Engine) {
 
 	///http://localhost:9000/v1/login//
 	apione := r.Group("/v1")
+
 	apione.GET("/login", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Login information",
 		})
 		handlers.Login()
 	})
+
 	apione.GET("/signup", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Sign-Up information",
 		})
 		handlers.Signup()
+	})
+
+	apione.GET("/Auth", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Auth information",
+		})
+		handlers.AUTH()
 	})
 }
