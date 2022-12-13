@@ -1,6 +1,10 @@
 package routes
 
-import "github.com/gin-gonic/gin"
+import (
+	"Backend/api/v1/handlers"
+
+	"github.com/gin-gonic/gin"
+)
 
 func RegisterRoutes(r *gin.Engine) {
 
@@ -16,7 +20,14 @@ func RegisterRoutes(r *gin.Engine) {
 	apione := r.Group("/v1")
 	apione.GET("/login", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"message": "Hello World, Im Alive",
+			"message": "Login information",
 		})
+		handlers.Login()
+	})
+	apione.GET("/signup", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Sign-Up information",
+		})
+		handlers.Signup()
 	})
 }
