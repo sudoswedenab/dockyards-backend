@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  DB:
+    image: postgres:alpine
+    build: .
+    environment:
+      - POSTGRES_USER=${DBPOSTGRES_USER}
+      - POSTGRES_PASSWORD=${DBPOSTGRES_PASSWORD}
+      - POSTGRES_DB=${DBPOSTGRES_NAME}
+
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
