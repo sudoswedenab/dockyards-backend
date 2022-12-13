@@ -15,14 +15,14 @@ func RegisterRoutes(r *gin.Engine) {
 	})
 
 	///http://localhost:9000/api
-	routes := r.Group("/1")
+	routes := r.Group("/")
 	routes.GET("/api", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"message": "Hello World, Im Alive",
+			"message": "Hello World, Slash APi",
 		})
 	})
 
-	///http://localhost:9000/v1/login//
+	///http://localhost:9000/v1/login/
 	apione := r.Group("/v1")
 
 	apione.GET("/login", func(c *gin.Context) {
