@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Backend/api/v1/routes"
 	"Backend/internal"
 
 	"github.com/gin-gonic/gin"
@@ -14,11 +15,7 @@ func main() {
 
 	r := gin.Default()
 
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Hello World, Im Alive",
-		})
-	})
+	routes.RegisterRoutes(r)
 
 	r.Run()
 }
