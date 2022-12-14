@@ -10,13 +10,14 @@ import (
 )
 
 func Signup(c *gin.Context) {
-	println("Signup hit")
+	println("Sign hit")
 
 	//Get the email/pass req body
 
 	var body struct {
-		email    string
-		password string
+		Email    string
+		Password string
+		Name     string
 	}
 
 	if c.Bind(&body) != nil {
@@ -28,7 +29,7 @@ func Signup(c *gin.Context) {
 	}
 
 	//Hash the password
-	hash, err := bcrypt.GenerateFromPassword([]byte(body.password), 10)
+	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -37,7 +38,10 @@ func Signup(c *gin.Context) {
 		return
 	}
 	//Create the user
-	user := models.User{Email: body.email, Password: string(hash)}
+	user := models.User{
+		Name:     body.Name,
+		Email:    body.Email,
+		Password: string(hash)}
 	result := internal.DB.Create(&user)
 
 	if result.Error != nil {
