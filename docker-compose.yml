@@ -3,6 +3,7 @@ services:
   DB:
     image: postgres:alpine
     build: .
+
     environment:
       - POSTGRES_USER=${DBPOSTGRES_USER}
       - POSTGRES_PASSWORD=${DBPOSTGRES_PASSWORD}

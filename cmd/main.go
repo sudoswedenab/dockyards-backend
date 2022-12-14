@@ -9,8 +9,8 @@ import (
 
 func init() {
 	internal.LoadEnvVariables()
-	// internal.ConnectToDB()
-	// internal.SyncDataBase()
+	internal.ConnectToDB()
+	internal.SyncDataBase()
 }
 
 func main() {
