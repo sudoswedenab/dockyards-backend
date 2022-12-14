@@ -15,11 +15,12 @@ func Signup(c *gin.Context) {
 	//Get the email/pass req body
 
 	var body struct {
-		Email    string
+		email    string
 		password string
 	}
 
 	if c.Bind(&body) != nil {
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
 		})
@@ -36,7 +37,7 @@ func Signup(c *gin.Context) {
 		return
 	}
 	//Create the user
-	user := models.User{Email: body.Email, Password: string(hash)}
+	user := models.User{Email: body.email, Password: string(hash)}
 	result := internal.DB.Create(&user)
 
 	if result.Error != nil {
