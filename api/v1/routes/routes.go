@@ -32,12 +32,12 @@ func RegisterRoutes(r *gin.Engine) {
 		handlers.Signup(c)
 	})
 
-	// apione.GET("/login", func(c *gin.Context) {
-	// 	c.JSON(200, gin.H{
-	// 		"message": "Login information",
-	// 	})
-	// 	handlers.Login(c)
-	// })
+	apione.POST("/login", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Login information",
+		})
+		handlers.Login(c)
+	})
 
 	apione.GET("/Auth", func(c *gin.Context) {
 		c.JSON(200, gin.H{
