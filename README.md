@@ -9,6 +9,7 @@ This README would normally document whatever steps are necessary to get your app
 * [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
 ### Starting commands
+go get -d ./...
 docker-compose up -d 
 go run cmd/main.go
 
