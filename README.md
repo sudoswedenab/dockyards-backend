@@ -8,8 +8,18 @@ This README would normally document whatever steps are necessary to get your app
 * Version
 * [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
-### How do I get set up? ###
+### Starting commands
+docker-compose up -d 
+go run cmd/main.go
 
+```
+{
+    "name":"Adam",
+    "email":"adam3@test.com",
+    "password":"12345"
+}
+```
+### How do I get set up? ###
 * Summary of set up
 * Configuration
 * Dependencies
