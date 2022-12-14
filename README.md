@@ -8,7 +8,7 @@ This README would normally document whatever steps are necessary to get your app
 * Version
 * [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
-### Starting commands
+### Starting commands ###
 go get -d ./...
 docker-compose up -d 
 go run cmd/main.go
@@ -20,6 +20,10 @@ go run cmd/main.go
     "password":"12345"
 }
 ```
+
+### For dotenv file ###
+ask admin for permission. 
+
 ### How do I get set up? ###
 * Summary of set up
 * Configuration
