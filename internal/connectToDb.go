@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"Backend/api/v1/models"
 	"os"
 
 	"gorm.io/driver/postgres"
@@ -18,5 +17,5 @@ func ConnectToDB() {
 	if err != nil {
 		panic("failed to connect to DataB")
 	}
-	DB.AutoMigrate(&models.User{})
+
 }

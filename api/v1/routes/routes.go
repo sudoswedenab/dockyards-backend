@@ -25,18 +25,18 @@ func RegisterRoutes(r *gin.Engine) {
 	///http://localhost:9000/v1/login/
 	apione := r.Group("/v1")
 
+	// apione.POST("/signup", func(c *gin.Context) {
+	// 	c.JSON(200, gin.H{
+	// 		"message": "Sign-Up information",
+	// 	})
+	// 	handlers.Signup(c)
+	// })
+
 	apione.GET("/login", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Login information",
 		})
 		handlers.Login()
-	})
-
-	apione.GET("/signup", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Sign-Up information",
-		})
-		handlers.Signup()
 	})
 
 	apione.GET("/Auth", func(c *gin.Context) {
