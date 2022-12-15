@@ -2,6 +2,7 @@ package routes
 
 import (
 	"Backend/api/v1/handlers"
+	"Backend/api/v1/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,16 +34,11 @@ func RegisterRoutes(r *gin.Engine) {
 	})
 
 	apione.POST("/login", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Login information",
-		})
 		handlers.Login(c)
 	})
 
-	apione.GET("/Auth", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Auth information",
-		})
-		handlers.AUTH()
+	apione.GET("/auth", func(c *gin.Context) {
+		middleware.RequireAuth(c)
+		handlers.Validate(c)
 	})
 }
