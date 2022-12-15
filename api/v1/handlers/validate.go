@@ -18,12 +18,9 @@ func Validate(c *gin.Context) {
 	println("AUTH hit")
 
 	c.JSON(http.StatusOK, gin.H{
-		"hey": "user logged in",
-	})
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   gin.H{"user": r},
+		"UserStatus": "user logged in",
+		"status":     "success",
+		"data":       gin.H{"user": r},
 	})
 }
 
