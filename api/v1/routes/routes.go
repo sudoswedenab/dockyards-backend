@@ -27,9 +27,6 @@ func RegisterRoutes(r *gin.Engine) {
 	apione := r.Group("/v1")
 
 	apione.POST("/signup", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Sign-Up information",
-		})
 		handlers.Signup(c)
 	})
 

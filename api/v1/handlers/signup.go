@@ -52,5 +52,8 @@ func Signup(c *gin.Context) {
 	}
 
 	//respond
-	c.JSON(http.StatusOK, gin.H{})
+
+	c.JSON(http.StatusCreated, gin.H{
+		"status": "You have now created ure account",
+	})
 }
