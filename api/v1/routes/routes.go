@@ -40,6 +40,7 @@ func RegisterRoutes(r *gin.Engine) {
 		handlers.Validate(c)
 	})
 
+	//http://localhost:9000/admin/getuser/1 exmpl
 	admin := r.Group("/admin")
 
 	admin.GET("/getusers", func(c *gin.Context) {
