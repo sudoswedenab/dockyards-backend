@@ -40,23 +40,26 @@ func RegisterRoutes(r *gin.Engine) {
 		handlers.Validate(c)
 	})
 
-	apione.GET("/getusers", func(c *gin.Context) {
+	admin := r.Group("/admin")
+
+	admin.GET("/getusers", func(c *gin.Context) {
 		middleware.RequireAuth(c)
 		crud.FindAllUsers(c)
 	})
 
-	apione.GET("/getuser/:id", func(c *gin.Context) {
+	admin.GET("/getuser/:id", func(c *gin.Context) {
 		middleware.RequireAuth(c)
 		crud.FindUserById(c)
 	})
 
-	apione.PUT("/updateuser/:id", func(c *gin.Context) {
+	admin.PUT("/updateuser/:id", func(c *gin.Context) {
 		middleware.RequireAuth(c)
 		crud.UpdateUser(c)
 	})
 
-	apione.DELETE("/deleteuser/:id", func(c *gin.Context) {
+	admin.DELETE("/deleteuser/:id", func(c *gin.Context) {
 		middleware.RequireAuth(c)
 		crud.DeleteUser(c)
 	})
+
 }
