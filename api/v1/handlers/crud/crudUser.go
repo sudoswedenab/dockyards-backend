@@ -35,7 +35,31 @@ func FindUserById(c *gin.Context) {
 
 // Update User
 func UpdateUser(c *gin.Context) {
+	//Get id of url
+	id := c.Param("id")
+	//Get the data off req body
+	var User struct {
+		Idn      int
+		Name     string
+		Email    string
+		Password string
+	}
 
+	c.Bind(&User)
+	//find the post were updating
+	var user models.User
+	internal.DB.First(&user, id)
+	//update it
+	internal.DB.Model(&user).Updates(models.User{
+		Idn:      User.Idn,
+		Name:     User.Name,
+		Email:    User.Email,
+		Password: User.Password,
+	})
+	// Respond with it
+	c.JSON(200, gin.H{
+		"user": user,
+	})
 }
 
 // Delete User

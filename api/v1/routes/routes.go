@@ -49,4 +49,9 @@ func RegisterRoutes(r *gin.Engine) {
 		middleware.RequireAuth(c)
 		crud.FindUserById(c)
 	})
+
+	apione.PUT("/updateuser/:id", func(c *gin.Context) {
+
+		crud.UpdateUser(c)
+	})
 }
