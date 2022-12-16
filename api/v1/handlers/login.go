@@ -45,7 +45,7 @@ func Login(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid password",
+			"error": "Invalid email or password",
 		})
 		return
 	}
