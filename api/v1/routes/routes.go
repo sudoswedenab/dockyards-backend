@@ -2,6 +2,7 @@ package routes
 
 import (
 	"Backend/api/v1/handlers"
+	"Backend/api/v1/handlers/crud"
 	"Backend/api/v1/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -37,5 +38,15 @@ func RegisterRoutes(r *gin.Engine) {
 	apione.GET("/auth", func(c *gin.Context) {
 		middleware.RequireAuth(c)
 		handlers.Validate(c)
+	})
+
+	apione.GET("/getusers", func(c *gin.Context) {
+		middleware.RequireAuth(c)
+		crud.FindAllUsers(c)
+	})
+
+	apione.GET("/getuser/:id", func(c *gin.Context) {
+		middleware.RequireAuth(c)
+		crud.FindUserById(c)
 	})
 }
