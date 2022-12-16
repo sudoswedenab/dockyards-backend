@@ -51,7 +51,12 @@ func RegisterRoutes(r *gin.Engine) {
 	})
 
 	apione.PUT("/updateuser/:id", func(c *gin.Context) {
-
+		middleware.RequireAuth(c)
 		crud.UpdateUser(c)
+	})
+
+	apione.DELETE("/deleteuser/:id", func(c *gin.Context) {
+		middleware.RequireAuth(c)
+		crud.DeleteUser(c)
 	})
 }

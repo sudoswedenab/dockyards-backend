@@ -64,5 +64,11 @@ func UpdateUser(c *gin.Context) {
 
 // Delete User
 func DeleteUser(c *gin.Context) {
+	//Get the id off the url
+	id := c.Param("id")
+	//delete the post
+	internal.DB.Delete(&models.User{}, id)
+	//respond
+	c.Status(200)
 
 }
