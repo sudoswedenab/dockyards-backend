@@ -63,4 +63,9 @@ func RegisterRoutes(r *gin.Engine) {
 		crud.DeleteUser(c)
 	})
 
+	admin.POST("/logout", func(c *gin.Context) {
+		middleware.RequireAuth(c)
+		crud.Logout(c)
+	})
+
 }

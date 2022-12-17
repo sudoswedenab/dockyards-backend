@@ -72,3 +72,7 @@ func DeleteUser(c *gin.Context) {
 	c.Status(200)
 
 }
+
+func Logout(c *gin.Context) {
+	c.SetCookie("Authorization", "", -1, "", "", false, true)
+}
