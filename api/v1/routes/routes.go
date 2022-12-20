@@ -2,6 +2,7 @@ package routes
 
 import (
 	"Backend/api/v1/handlers"
+	jwt "Backend/api/v1/handlers/Jwt"
 	"Backend/api/v1/handlers/crud"
 	"Backend/api/v1/middleware"
 
@@ -40,6 +41,9 @@ func RegisterRoutes(r *gin.Engine) {
 		handlers.Validate(c)
 	})
 
+	apione.GET("/refresh", func(c *gin.Context) {
+		jwt.RefreshTokenEndpoint(c)
+	})
 	//http://localhost:9000/admin/getuser/1 exmpl
 	admin := r.Group("/admin")
 

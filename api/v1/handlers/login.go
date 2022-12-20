@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	jwt "Backend/api/v1/handlers/Jwt"
 	"Backend/api/v1/models"
 	"Backend/internal"
 	"net/http"
@@ -46,5 +47,5 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-
+	jwt.GenerateToken(c)
 }
