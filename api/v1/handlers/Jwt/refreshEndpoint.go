@@ -44,7 +44,9 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 				return err
 
 			}
-			c.JSON(http.StatusOK, newTokenPair)
+			c.JSON(http.StatusOK, gin.H{
+				"new": newTokenPair,
+			})
 		}
 	}
 	return err

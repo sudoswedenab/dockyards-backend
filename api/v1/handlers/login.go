@@ -88,14 +88,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"token":         tokenString,
-	// 	"refresh_token": rt,
-	// 	"Welcomme user": user.Name,
-	// })
+	c.JSON(http.StatusOK, gin.H{
+		"token":         tokenString,
+		"refresh_token": rt,
+		"Welcomme user": user.Name,
+	})
 
-	// Send it back as a Cookie
-	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
-	c.SetCookie("refresh_token", rt, 3600*24*30, "", "", false, true)
+	// // Send it back as a Cookie
+	// c.SetSameSite(http.SameSiteLaxMode)
+	// c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+	// c.SetCookie("refresh_token", rt, 3600*24*30, "", "", false, true)
 }
