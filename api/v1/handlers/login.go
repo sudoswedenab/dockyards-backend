@@ -4,11 +4,8 @@ import (
 	"Backend/api/v1/models"
 	"Backend/internal"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -49,33 +46,5 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-	//Generate a jwt token
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
-	})
-
-	// Sign and get the complete encoded token as a string using the secret
-	tokenString, err := token.SignedString([]byte(os.Getenv("SECERET")))
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "failed to create Token",
-		})
-		return
-	}
-	// Send it back as a Cookie
-	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
-
-	c.JSON(http.StatusOK, gin.H{})
 
 }
-
-//"token": tokenString
-// 	//send it back as a token string example
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"token": tokenString,
-// 	})
-// }
