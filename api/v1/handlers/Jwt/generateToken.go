@@ -1,76 +1,81 @@
 package jwt
 
-import (
-	"Backend/api/v1/models"
-	"net/http"
-	"os"
-	"time"
+// package jwt
 
-	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
-)
+// import (
+// 	"Backend/api/v1/models"
+// 	"net/http"
+// 	"os"
+// 	"time"
 
-func GenerateToken(c *gin.Context) {
+// 	"github.com/gin-gonic/gin"
+// 	"github.com/golang-jwt/jwt"
+// )
 
-	//Look up requested User
-	var user models.User
+// func GenerateToken(c *gin.Context) {
 
-	//Generate a jwt token
-	token := jwt.New(jwt.SigningMethodHS256)
+// 	//Look up requested User
+// 	var user models.User
 
-	claims := token.Claims.(jwt.MapClaims)
-	claims["sub"] = user.ID
-	claims["name"] = user.Name
-	claims["admin"] = false
-	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
+// 	//Generate a jwt token
+// 	token := jwt.New(jwt.SigningMethodHS256)
 
-	// token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-	// 	"sub": user.ID,
-	// 	"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
-	// })
+// 	claims := token.Claims.(jwt.MapClaims)
+// 	claims["sub"] = user.ID
+// 	claims["name"] = user.Name
+// 	claims["admin"] = false
+// 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
-	// Sign and get the complete encoded token as a string using the secret
-	tokenString, err := token.SignedString([]byte(os.Getenv("SECERET")))
+// 	// token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+// 	// 	"sub": user.ID,
+// 	// 	"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
+// 	// })
 
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "failed to create Token",
-		})
-		return
-	}
+// 	// Sign and get the complete encoded token as a string using the secret
+// 	tokenString, err := token.SignedString([]byte(os.Getenv("SECERET")))
 
-	refreshToken := jwt.New(jwt.SigningMethodHS256)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "failed to create Token",
+// 		})
+// 		return
+// 	}
 
-	rtClaims := refreshToken.Claims.(jwt.MapClaims)
-	rtClaims["sub"] = user.ID
-	rtClaims["exp"] = time.Now().Add(time.Hour * 24).Unix()
+// 	refreshToken := jwt.New(jwt.SigningMethodHS256)
 
-	rt, rerr := refreshToken.SignedString([]byte("secret"))
+// 	rtClaims := refreshToken.Claims.(jwt.MapClaims)
+// 	rtClaims["sub"] = user.ID
+// 	rtClaims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
-	if rerr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "failed to create Token",
-		})
-		return
-	}
+// 	rt, rerr := refreshToken.SignedString([]byte("secret"))
 
-	c.JSON(http.StatusOK, gin.H{
-		"token":         tokenString,
-		"refresh_token": rt,
-		"Welcomme user": user.Name,
-	})
+// 	if rerr != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "failed to create Token",
+// 		})
+// 		return
+// 	}
 
-	// user := c.Get("user").(*jwt.Token),
-	// 	claims == user.Claims.(jwt.MapClaims),
-	// 	name == claims["name"].(string),
-	// 	"Welcome" + name + "!",
-	// // Send it back as a Cookie
-	// c.SetSameSite(http.SameSiteLaxMode)
-	// c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"token":         tokenString,
+// 		"refresh_token": rt,
+// 		"Welcomme user": user.Name,
+// 	})
 
-	//"token": tokenString
-	// 	//send it back as a token string example
-	// 	c.JSON(http.StatusOK, gin.H{
-	// 		"token": tokenString,
-	// 	})
-}
+// 	// Send it back as a Cookie
+// 	c.SetSameSite(http.SameSiteLaxMode)
+// 	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+// 	c.SetCookie("refresh_token", rt, 3600*24*30, "", "", false, true)
+
+// 	//"token": tokenString
+// 	// 	//send it back as a token string example
+// 	// 	c.JSON(http.StatusOK, gin.H{
+// 	// 		"token": tokenString,
+// 	// 	})
+// }
+
+// c.JSON(http.StatusOK, gin.H{
+// 		"token":         tokenString,
+// 		"refresh_token": rt,
+// 		"Welcomme user": user.Name,
+// 	})

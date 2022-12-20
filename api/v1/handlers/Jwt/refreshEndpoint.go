@@ -25,7 +25,6 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 	// which key to use, but the parsed token (head and claims) is provided
 	// to the callback, providing flexibility.
 	token, err := jwt.Parse(tokenReq.RefreshToken, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}

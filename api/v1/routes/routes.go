@@ -41,9 +41,10 @@ func RegisterRoutes(r *gin.Engine) {
 		handlers.Validate(c)
 	})
 
-	apione.GET("/refresh", func(c *gin.Context) {
+	apione.POST("/refresh", func(c *gin.Context) {
 		jwt.RefreshTokenEndpoint(c)
 	})
+
 	//http://localhost:9000/admin/getuser/1 exmpl
 	admin := r.Group("/admin")
 
