@@ -19,7 +19,7 @@ import (
 func RefreshTokenEndpoint(c *gin.Context) error {
 
 	//Get the cookie
-	refreshToken, err := c.Cookie("refreshtoken")
+	refreshToken, err := c.Cookie("refresh_token")
 	fmt.Println("im here")
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -66,7 +66,8 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 				return err
 
 			}
-
+			c.SetCookie("access_token", newTokenPair["access_token"], 3600*24*30, "", "", false, true)
+			c.SetCookie("refresh_token", newTokenPair["refresh_token"], 3600*24*30, "", "", false, true)
 			// fmt.Println(newTokenPair)
 			c.JSON(http.StatusOK, gin.H{
 				"new": newTokenPair,

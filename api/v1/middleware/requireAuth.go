@@ -16,7 +16,7 @@ func RequireAuth(c *gin.Context) {
 	fmt.Println("in middleware")
 
 	//Get the cookie
-	tokenString, err := c.Cookie("Authorization")
+	tokenString, err := c.Cookie("access_token")
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
