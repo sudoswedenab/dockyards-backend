@@ -53,7 +53,7 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 		First := internal.DB.First(&user, claims["sub"])
 
 		// fmt.FPrintln(*First)
-		fmt.Printf("%s\n", First.Error)
+		// fmt.Printf("%s\n", First.Error)
 		// fmt.Println(&user)
 
 		// fmt.Println(int(claims["sub"].(float64)))
