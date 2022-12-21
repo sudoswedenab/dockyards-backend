@@ -33,7 +33,7 @@ func GenerateTokenPair() (map[string]string, error) {
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
 	rtClaims := refreshToken.Claims.(jwt.MapClaims)
 	rtClaims["sub"] = user.ID
-	rtClaims["exp"] = time.Now().Add(time.Hour * 24).Unix()
+	rtClaims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 
 	rt, err := refreshToken.SignedString([]byte(os.Getenv("RefSECERET")))
 	if err != nil {

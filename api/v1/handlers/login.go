@@ -77,7 +77,7 @@ func Login(c *gin.Context) {
 
 	rtClaims := refreshToken.Claims.(jwt.MapClaims)
 	rtClaims["sub"] = user.ID
-	rtClaims["exp"] = time.Now().Add(time.Hour * 24).Unix()
+	rtClaims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 
 	rt, rerr := refreshToken.SignedString([]byte(os.Getenv("RefSECERET")))
 
