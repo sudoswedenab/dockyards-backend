@@ -58,11 +58,6 @@ func Login(c *gin.Context) {
 	claims["admin"] = false
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
-	// token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-	// 	"sub": user.ID,
-	// 	"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
-	// })
-
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECERET")))
 
@@ -92,9 +87,5 @@ func Login(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("access_token", tokenString, 900, "", "", false, true)
 	c.SetCookie("refresh_token", rt, 3600*1, "", "", false, true)
-	c.JSON(http.StatusOK, gin.H{
-		"token":         tokenString,
-		"refresh_token": rt,
-		"Welcomme user": user.Name,
-	})
+
 }

@@ -23,8 +23,3 @@ func Response(c *gin.Context) userResponse {
 		UpdatedAt: user.(models.User).UpdatedAt,
 	}
 }
-
-// 		"Name":      user.(models.User).Name,
-// 		"Email":     user.(models.User).Email,
-// 		"CreatedAt": user.(models.User).CreatedAt,
-// 		"UpdatedAt": user.(models.User).UpdatedAt,

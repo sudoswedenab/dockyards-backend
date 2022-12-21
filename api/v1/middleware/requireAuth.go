@@ -22,7 +22,6 @@ func RequireAuth(c *gin.Context) {
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 
-	//Decode/validate cookie
 	// Parse takes the token string and a function for looking up the key.
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
