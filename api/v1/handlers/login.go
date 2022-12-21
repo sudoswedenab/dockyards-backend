@@ -79,7 +79,7 @@ func Login(c *gin.Context) {
 	rtClaims["sub"] = user.ID
 	rtClaims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
-	rt, rerr := refreshToken.SignedString([]byte("secret"))
+	rt, rerr := refreshToken.SignedString([]byte(os.Getenv("RefSECERET")))
 
 	if rerr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -91,7 +91,7 @@ func Login(c *gin.Context) {
 	// Send it back as a Cookie
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
-	c.SetCookie("refresh_token", rt, 3600*24*30, "", "", false, true)
+	c.SetCookie("refreshtoken", rt, 3600*24*30, "", "", false, true)
 	c.JSON(http.StatusOK, gin.H{
 		"token":         tokenString,
 		"refresh_token": rt,

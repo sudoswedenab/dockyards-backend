@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"Backend/api/v1/models"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -24,7 +25,7 @@ func GenerateTokenPair() (map[string]string, error) {
 
 	// Generate encoded token and send it as response.
 	// The signing string should be secret (a generated UUID works too)
-	t, err := token.SignedString([]byte("secret"))
+	t, err := token.SignedString([]byte(os.Getenv("SECERET")))
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +35,7 @@ func GenerateTokenPair() (map[string]string, error) {
 	rtClaims["sub"] = user.ID
 	rtClaims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
-	rt, err := refreshToken.SignedString([]byte("secret"))
+	rt, err := refreshToken.SignedString([]byte(os.Getenv("RefSECERET")))
 	if err != nil {
 		return nil, err
 	}
