@@ -20,7 +20,7 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 
 	//Get the cookie
 	refreshToken, err := c.Cookie("refreshtoken")
-
+	fmt.Println("im here")
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
@@ -38,24 +38,36 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return []byte(os.Getenv("RefSECERET")), nil
 	})
+	// fmt.Println(token)
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		// Get the user record from database or
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
+		// fmt.Println(token)
 
 		//Find the user with token sub
 		var user models.User
-		internal.DB.First(&user, claims["sub"])
+
+		First := internal.DB.First(&user, claims["sub"])
+
+		// fmt.FPrintln(*First)
+		fmt.Printf("%s\n", First.Error)
+		// fmt.Println(&user)
+
+		// fmt.Println(int(claims["sub"].(float64)))
+
 		// run through your business logic to verify if the user can log in
-		if int(claims["sub"].(float64)) == 1 {
+		if First.Error == nil {
 
 			newTokenPair, err := GenerateTokenPair()
 			if err != nil {
 				return err
 
 			}
+
+			// fmt.Println(newTokenPair)
 			c.JSON(http.StatusOK, gin.H{
 				"new": newTokenPair,
 			})
