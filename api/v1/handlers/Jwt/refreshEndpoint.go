@@ -66,8 +66,8 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 				return err
 
 			}
-			c.SetCookie("access_token", newTokenPair["access_token"], 3600*24*30, "", "", false, true)
-			c.SetCookie("refresh_token", newTokenPair["refresh_token"], 3600*24*30, "", "", false, true)
+			c.SetCookie("access_token", newTokenPair["access_token"], 900, "", "", false, true)
+			c.SetCookie("refresh_token", newTokenPair["refresh_token"], 3600*1, "", "", false, true)
 			// fmt.Println(newTokenPair)
 			c.JSON(http.StatusOK, gin.H{
 				"new": newTokenPair,

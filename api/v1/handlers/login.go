@@ -90,8 +90,8 @@ func Login(c *gin.Context) {
 
 	// Send it back as a Cookie
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("access_token", tokenString, 3600*24*30, "", "", false, true)
-	c.SetCookie("refresh_token", rt, 3600*24*30, "", "", false, true)
+	c.SetCookie("access_token", tokenString, 900, "", "", false, true)
+	c.SetCookie("refresh_token", rt, 3600*1, "", "", false, true)
 	c.JSON(http.StatusOK, gin.H{
 		"token":         tokenString,
 		"refresh_token": rt,

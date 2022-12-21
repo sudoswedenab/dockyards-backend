@@ -36,17 +36,22 @@ func RegisterRoutes(r *gin.Engine) {
 		handlers.Login(c)
 	})
 
-	apione.GET("/auth", func(c *gin.Context) {
-		middleware.RequireAuth(c)
-		handlers.Validate(c)
+	apione.POST("/logout", func(c *gin.Context) {
+		crud.Logout(c)
 	})
 
 	apione.POST("/refresh", func(c *gin.Context) {
 		jwt.RefreshTokenEndpoint(c)
 	})
 
+	//						Wall of secure routes
 	//http://localhost:9000/admin/getuser/1 exmpl
 	admin := r.Group("/admin")
+
+	admin.GET("/auth", func(c *gin.Context) {
+		middleware.RequireAuth(c)
+		handlers.Validate(c)
+	})
 
 	admin.GET("/getusers", func(c *gin.Context) {
 		middleware.RequireAuth(c)
@@ -66,11 +71,6 @@ func RegisterRoutes(r *gin.Engine) {
 	admin.DELETE("/deleteuser/:id", func(c *gin.Context) {
 		middleware.RequireAuth(c)
 		crud.DeleteUser(c)
-	})
-
-	admin.POST("/logout", func(c *gin.Context) {
-		middleware.RequireAuth(c)
-		crud.Logout(c)
 	})
 
 }
