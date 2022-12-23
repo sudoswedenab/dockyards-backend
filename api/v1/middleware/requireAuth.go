@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"Backend/api/v1/models"
+	"Backend/api/v1/model"
 	"Backend/internal"
 	"fmt"
 	"net/http"
@@ -38,7 +38,7 @@ func RequireAuth(c *gin.Context) {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 		//Find the user with token sub
-		var user models.User
+		var user model.User
 		internal.DB.First(&user, claims["sub"])
 
 		if user.ID == 0 {

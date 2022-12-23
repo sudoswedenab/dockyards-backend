@@ -13,6 +13,9 @@ This README would normally document whatever steps are necessary to get your app
 * docker-compose up -d 
 * go run cmd/main.go
 
+Swagger docs generation
+* swag init -g cmd/main.go
+
 ```
 {
     "name":"Adam",
@@ -31,6 +34,10 @@ ask admin for permission.
 * Database configuration
 * How to run tests
 * Deployment instructions
+
+### Copied Code ###
+
+Some code was copied from https://github.com/dgrijalva/jwt-go/blob/master/hmac_example_test.go which is under MIT license.
 
 ### Contribution guidelines ###
 

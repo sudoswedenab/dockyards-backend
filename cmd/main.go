@@ -2,11 +2,13 @@ package main
 
 import (
 	"Backend/api/v1/routes"
+	_ "Backend/docs"
 	"Backend/internal"
-	"time"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"time"
 )
 
 func init() {
@@ -15,8 +17,21 @@ func init() {
 	internal.SyncDataBase()
 }
 
-func main() {
+//	@title			Les Ranches API
+//	@version		1.0
+//	@description	This server.
+//	@termsOfService	http://swagger.io/terms/
 
+//	@contact.name	API Support
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	support@swagger.io
+
+//	@license.name	Proprietary
+//	@license.url	Copyright©
+
+// @host		localhost:9000
+// @BasePath	/
+func main() {
 	r := gin.Default()
 
 	routes.RegisterRoutes(r)
@@ -32,6 +47,8 @@ func main() {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.Run()
 }

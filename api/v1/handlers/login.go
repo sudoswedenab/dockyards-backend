@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"Backend/api/v1/models"
+	"Backend/api/v1/model"
 	"Backend/internal"
 	"net/http"
 	"os"
@@ -12,6 +12,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Login godoc
+//
+//	@Summary		Login
+//	@Description	login to service
+//	@Tags			Login
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		int	true	"Account ID"
+//	@Success		200	{object}	model.User
+//	@Router			/login [post]
 func Login(c *gin.Context) {
 	println("Login hit")
 
@@ -29,7 +39,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	//Look up requested User
-	var user models.User
+	var user model.User
 
 	internal.DB.First(&user, "email = ?", body.Email)
 
@@ -87,5 +97,4 @@ func Login(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("access_token", tokenString, 900, "", "", false, true)
 	c.SetCookie("refresh_token", rt, 3600*1, "", "", false, true)
-
 }

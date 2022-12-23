@@ -1,7 +1,7 @@
 package jwt
 
 import (
-	"Backend/api/v1/models"
+	"Backend/api/v1/model"
 	"Backend/internal"
 	"fmt"
 	"net/http"
@@ -38,7 +38,7 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 		}
 
 		//Find the user with token sub
-		var user models.User
+		var user model.User
 
 		First := internal.DB.First(&user, claims["sub"])
 
@@ -48,11 +48,9 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 			newTokenPair, err := GenerateTokenPair()
 			if err != nil {
 				return err
-
 			}
 			c.SetCookie("access_token", newTokenPair["access_token"], 900, "", "", false, true)
 			c.SetCookie("refresh_token", newTokenPair["refresh_token"], 3600*1, "", "", false, true)
-
 		}
 	}
 	return err

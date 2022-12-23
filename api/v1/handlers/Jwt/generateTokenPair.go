@@ -1,7 +1,7 @@
 package jwt
 
 import (
-	"Backend/api/v1/models"
+	"Backend/api/v1/model"
 	"os"
 	"time"
 
@@ -13,7 +13,7 @@ func GenerateTokenPair() (map[string]string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	//Look up requested User
-	var user models.User
+	var user model.User
 	// Set claims
 	claims := token.Claims.(jwt.MapClaims)
 	claims["sub"] = user.ID

@@ -1,7 +1,7 @@
 package internal
 
-import "Backend/api/v1/models"
+import "Backend/api/v1/model"
 
 func SyncDataBase() {
-	DB.AutoMigrate(&models.User{})
+	DB.AutoMigrate(&model.User{})
 }

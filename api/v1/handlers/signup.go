@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"Backend/api/v1/models"
+	"Backend/api/v1/model"
 	"Backend/internal"
 	"net/http"
 
@@ -9,6 +9,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Signup godoc
+//
+//	@Summary		Signup
+//	@Description	signup to api
+//	@Tags			Signup
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		int	true	"Account ID"
+//	@Success		200	{object}	model.User
+//	@Router			/signup [post]
 func Signup(c *gin.Context) {
 	println("Sign hit")
 
@@ -38,7 +48,7 @@ func Signup(c *gin.Context) {
 		return
 	}
 	//Create the user
-	user := models.User{
+	user := model.User{
 		Name:     body.Name,
 		Email:    body.Email,
 		Password: string(hash)}

@@ -1,7 +1,7 @@
-package handlers
+package user
 
 import (
-	"Backend/api/v1/models"
+	"Backend/api/v1/model"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,9 +17,9 @@ type userResponse struct {
 func Response(c *gin.Context) userResponse {
 	user, _ := c.Get("user")
 	return userResponse{
-		Name:      user.(models.User).Name,
-		Email:     user.(models.User).Email,
-		CreatedAt: user.(models.User).CreatedAt,
-		UpdatedAt: user.(models.User).UpdatedAt,
+		Name:      user.(model.User).Name,
+		Email:     user.(model.User).Email,
+		CreatedAt: user.(model.User).CreatedAt,
+		UpdatedAt: user.(model.User).UpdatedAt,
 	}
 }
