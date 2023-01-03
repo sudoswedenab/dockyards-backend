@@ -1,12 +1,12 @@
-# README #
+# Themis #
 
 This README would normally document whatever steps are necessary to get your application up and running.
 
-### What is this repository for? ###
+### What is this repository (Themis) for? ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+Creating, reading and managing rancher clusters. Here is an auth/sys overview.
+
+![Overview of System](themis.png)
 
 ### Starting commands ###
 * go mod download

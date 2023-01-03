@@ -1,7 +1,9 @@
 package handlers
 
+// Unnecessary/unused code?
 import (
 	"Backend/api/v1/handlers/user"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,18 +11,17 @@ import (
 
 // Validate godoc
 //
-//	@Summary		Validate user
-//	@Description	validate a user
+//	@Summary		Validate a user
 //	@Tags			Validate
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		int	true	"Account ID"
+//	@Accept			application/json
+//	@Produce		application/json
+//	@Param			request	body	model.User	true "User model"
 //	@Success		200	{object}	model.User
-//	@Router			/auth [get]
+//	@Router			/admin/auth [get]
 func Validate(c *gin.Context) {
 	r := user.Response(c)
 
-	println("AUTH hit")
+	fmt.Println("AUTH hit")
 
 	c.JSON(http.StatusOK, gin.H{
 		"UserStatus": "user logged in",

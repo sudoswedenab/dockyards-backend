@@ -10,11 +10,10 @@ import (
 
 // FindAllUsers godoc
 //
-//	@Summary		FindAllUsers find all users
-//	@Description	gets all users
+//	@Summary		Lists all users
 //	@Tags			FindAllUsers
-//	@Accept       	json
-//	@Produce		json
+//	@Accept       	application/json
+//	@Produce		application/json
 //	@Success		200	{array}	model.User
 //	@Router			/admin/getusers [get]
 func FindAllUsers(c *gin.Context) {
@@ -29,14 +28,13 @@ func FindAllUsers(c *gin.Context) {
 
 // FindUserById godoc
 //
-//	@Summary		FindUserById finds user
-//	@Description	gets specified user
+//	@Summary		Find a user
 //	@Tags			FindUserById
-//	@Accept       	json
-//	@Produce		json
+//	@Accept       	application/json
+//	@Produce		application/json
 //	@Param			id	path		int	true	"User ID"
 //	@Success		200	{object}	model.User
-//	@Router			/getuser/{id} [get]
+//	@Router			/admin/getuser/{id} [get]
 func FindUserById(c *gin.Context) {
 	//Get Id off url
 	id := c.Param("id")
@@ -51,14 +49,14 @@ func FindUserById(c *gin.Context) {
 
 // UpdateUser godoc
 //
-//	@Summary		UpdateUser update user
-//	@Description	updates specified user
+//	@Summary		Update a user
 //	@Tags			UpdateUser
-//	@Accept       	json
-//	@Produce		json
+//	@Accept       	application/json
+//	@Produce		application/json
 //	@Param			id	path		int	true	"User ID"
+//	@Param			request	body	model.User	true "User model"
 //	@Success		200	{object}	model.User
-//	@Router			/updateuser/{id} [put]
+//	@Router			/admin/updateuser/{id} [put]
 func UpdateUser(c *gin.Context) {
 	//Get id of url
 	id := c.Param("id")
@@ -92,14 +90,13 @@ func UpdateUser(c *gin.Context) {
 
 // DeleteUser godoc
 //
-//	@Summary		DeleteUser delete user
-//	@Description	deletes specified user
+//	@Summary		Delete a user
 //	@Tags			DeleteUser
-//	@Accept       	json
-//	@Produce		json
-//	@Param			id	path		int	true	"User ID"
-//	@Success		200	{code}		200
-//	@Router			/deleteuser/{id} [delete]
+//	@Accept       	application/json
+//	@Produce		text/plain
+//	@Param			id	path	int	true	"User ID"
+//	@Success		200
+//	@Router			/admin/deleteuser/{id} [delete]
 func DeleteUser(c *gin.Context) {
 	//Get the id off the url
 	id := c.Param("id")
@@ -107,9 +104,4 @@ func DeleteUser(c *gin.Context) {
 	internal.DB.Delete(&model.User{}, id)
 	//respond
 	c.Status(200)
-}
-
-func Logout(c *gin.Context) {
-	c.SetCookie("access_token", "", -1, "", "", false, true)
-	c.SetCookie("refresh_token", "", -1, "", "", false, true)
 }

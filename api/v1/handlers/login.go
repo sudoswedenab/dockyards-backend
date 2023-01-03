@@ -3,6 +3,7 @@ package handlers
 import (
 	"Backend/api/v1/model"
 	"Backend/internal"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -14,16 +15,15 @@ import (
 
 // Login godoc
 //
-//	@Summary		Login
-//	@Description	login to service
+//	@Summary		Login to app
 //	@Tags			Login
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		int	true	"Account ID"
-//	@Success		200	{object}	model.User
+//	@Accept			application/json
+//	@Produce		text/plain
+//	@Param			id		path	int	true	"Account ID"
+//	@Success		200
 //	@Router			/login [post]
 func Login(c *gin.Context) {
-	println("Login hit")
+	fmt.Println("Login hit")
 
 	// Get email and pass off req body
 	var body struct {
@@ -97,4 +97,5 @@ func Login(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("access_token", tokenString, 900, "", "", false, true)
 	c.SetCookie("refresh_token", rt, 3600*1, "", "", false, true)
+	c.String(http.StatusOK, fmt.Sprintf("Success."))
 }

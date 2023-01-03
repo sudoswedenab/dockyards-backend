@@ -17,7 +17,7 @@ func init() {
 	internal.SyncDataBase()
 }
 
-//	@title			Les Ranches API
+//	@title			Themis API
 //	@version		1.0
 //	@description	This server.
 //	@termsOfService	http://swagger.io/terms/
@@ -30,7 +30,7 @@ func init() {
 //	@license.url	Copyright©
 
 // @host		localhost:9000
-// @BasePath	/
+// @BasePath	/v1/
 func main() {
 	r := gin.Default()
 

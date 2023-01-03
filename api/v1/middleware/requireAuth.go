@@ -13,13 +13,13 @@ import (
 )
 
 func RequireAuth(c *gin.Context) {
-	fmt.Println("in middleware")
+	fmt.Println("Hit middleware")
 
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
-
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	// Parse takes the token string and a function for looking up the key.
@@ -36,6 +36,7 @@ func RequireAuth(c *gin.Context) {
 		//Check the exp
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
 			c.AbortWithStatus(http.StatusUnauthorized)
+			return
 		}
 		//Find the user with token sub
 		var user model.User
@@ -43,6 +44,7 @@ func RequireAuth(c *gin.Context) {
 
 		if user.ID == 0 {
 			c.AbortWithStatus(http.StatusUnauthorized)
+			return
 		}
 		//Attach to req
 		c.Set("user", user)
@@ -51,5 +53,4 @@ func RequireAuth(c *gin.Context) {
 	} else {
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
-
 }

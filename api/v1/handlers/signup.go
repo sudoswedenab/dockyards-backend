@@ -3,6 +3,7 @@ package handlers
 import (
 	"Backend/api/v1/model"
 	"Backend/internal"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,27 +12,18 @@ import (
 
 // Signup godoc
 //
-//	@Summary		Signup
-//	@Description	signup to api
+//	@Summary		Signup to app
 //	@Tags			Signup
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		int	true	"Account ID"
-//	@Success		200	{object}	model.User
+//	@Accept			application/json
+//	@Produce		text/plain
+//	@Param			request	body	model.Signup	true "Signup model"
+//	@Success		201
 //	@Router			/signup [post]
 func Signup(c *gin.Context) {
-	println("Sign hit")
-
-	//Get the email/pass req body
-
-	var body struct {
-		Email    string
-		Password string
-		Name     string
-	}
+	fmt.Println("Signup hit")
+	var body model.Signup
 
 	if c.Bind(&body) != nil {
-
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
 		})
