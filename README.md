@@ -13,8 +13,13 @@ Creating, reading and managing rancher clusters. Here is an auth/sys overview.
 * docker-compose up -d 
 * go run cmd/main.go
 
-Swagger docs generation
+### Swagger docs generation ###
 * swag init -g cmd/main.go
+
+Link to swagger:
+* http://localhost:9000/swagger/index.html 
+
+
 
 ```
 {
