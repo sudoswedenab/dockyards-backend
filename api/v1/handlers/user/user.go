@@ -4,8 +4,10 @@ import (
 	"Backend/api/v1/model"
 	"Backend/internal"
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // FindAllUsers godoc
@@ -72,6 +74,14 @@ func UpdateUser(c *gin.Context) {
 	if err != nil {
 		fmt.Printf("Error: %s", err)
 	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(User.Password), 10)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "failed to hash password",
+		})
+		return
+	}
 	//find the post were updating
 	var user model.User
 	internal.DB.First(&user, id)
@@ -80,7 +90,7 @@ func UpdateUser(c *gin.Context) {
 		Idn:      User.Idn,
 		Name:     User.Name,
 		Email:    User.Email,
-		Password: User.Password,
+		Password: string(hash),
 	})
 	// Respond with it
 	c.JSON(200, gin.H{
