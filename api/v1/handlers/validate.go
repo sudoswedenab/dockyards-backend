@@ -12,7 +12,7 @@ import (
 // Validate godoc
 //
 //	@Summary		Validate a user
-//	@Tags			Validate
+//	@Tags				Login
 //	@Accept			application/json
 //	@Produce		application/json
 //	@Param			request	body	model.User	true "User model"

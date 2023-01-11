@@ -2,14 +2,15 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 // Logout godoc
 //
 //	@Summary		Logout from app
-//	@Tags			Logout
+//	@Tags				Login
 //	@Produce		text/plain
 //	@Success		200
 //	@Router			/logout [post]

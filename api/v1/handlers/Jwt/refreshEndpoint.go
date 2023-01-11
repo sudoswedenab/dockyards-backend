@@ -14,8 +14,8 @@ import (
 
 // Validate godoc
 //
-//	@Summary		Refresh
-//	@Tags			Refresh Token
+//	@Summary		Refresh Token
+//	@Tags				Login
 //	@Accept			application/json
 //	@Produce		application/json
 //	@Success		200

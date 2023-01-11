@@ -12,9 +12,9 @@ import (
 
 // FindAllUsers godoc
 //
-//	@Summary		Lists all users
-//	@Tags			FindAllUsers
-//	@Accept       	application/json
+//	@Summary		Lists all users "Find all users"
+//	@Tags				Crud
+//	@Accept     application/json
 //	@Produce		application/json
 //	@Success		200	{array}	model.User
 //	@Router			/admin/getusers [get]
@@ -30,9 +30,9 @@ func FindAllUsers(c *gin.Context) {
 
 // FindUserById godoc
 //
-//	@Summary		Find a user
-//	@Tags			FindUserById
-//	@Accept       	application/json
+//	@Summary		Find a user "FindUserById"
+//	@Tags				Crud
+//	@Accept     application/json
 //	@Produce		application/json
 //	@Param			id	path		int	true	"User ID"
 //	@Success		200	{object}	model.User
@@ -51,8 +51,8 @@ func FindUserById(c *gin.Context) {
 
 // UpdateUser godoc
 //
-//	@Summary		Update a user
-//	@Tags			UpdateUser
+//	@Summary		Update a user "UpdateUser"
+//	@Tags				Crud
 //	@Accept       	application/json
 //	@Produce		application/json
 //	@Param			id	path		int	true	"User ID"
@@ -100,8 +100,8 @@ func UpdateUser(c *gin.Context) {
 
 // DeleteUser godoc
 //
-//	@Summary		Delete a user
-//	@Tags			DeleteUser
+//	@Summary		Delete a user "DeleteUserByID"
+//	@Tags				Crud
 //	@Accept       	application/json
 //	@Produce		text/plain
 //	@Param			id	path	int	true	"User ID"

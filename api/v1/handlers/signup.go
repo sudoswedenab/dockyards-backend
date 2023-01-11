@@ -13,7 +13,7 @@ import (
 // Signup godoc
 //
 //	@Summary		Signup to app
-//	@Tags			Signup
+//	@Tags				Login
 //	@Accept			application/json
 //	@Produce		text/plain
 //	@Param			request	body	model.Signup	true "Signup model"
