@@ -11,15 +11,7 @@ import (
 )
 
 func RegisterRoutes(r *gin.Engine) {
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Hello Server",
-		})
-	})
-
-	// Remove?
-	a := r.Group("/")
-	a.GET("/api", func(c *gin.Context) {
+	r.GET("/api", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Hello World, Slash API",
 		})
@@ -44,6 +36,10 @@ func RegisterRoutes(r *gin.Engine) {
 			c.String(http.StatusInternalServerError, fmt.Sprintf("Error: %s", err))
 		}
 		c.String(http.StatusOK, fmt.Sprintf("Success."))
+	})
+
+	v1.POST("/create-user", func(c *gin.Context) {
+		handlers.RancherCreateUser(c)
 	})
 
 	// Admin Routes
