@@ -12,6 +12,14 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+// Validate godoc
+//
+//	@Summary		Refresh
+//	@Tags			Refresh
+//	@Accept			application/json
+//	@Produce		application/json
+//	@Success		200
+//	@Router			/refresh [post]
 func RefreshTokenEndpoint(c *gin.Context) error {
 
 	//Get the cookie
