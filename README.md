@@ -14,6 +14,9 @@ Creating, reading and managing rancher clusters. Here is an auth/sys overview.
 * go install github.com/joho/godotenv/cmd/godotenv@latest
 * go install github.com/swaggo/swag/cmd/swag@latest
 
+### To find paths ### 
+echo $PATH
+go env | grep GOPATH
 
 ### PATH zshr file ###
 "# If you come from bash you might have to change your $PATH.
