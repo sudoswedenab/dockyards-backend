@@ -10,7 +10,6 @@ Creating, reading and managing rancher clusters. Here is an auth/sys overview.
 
 ### Starting commands ###
 * brew install go
-* go install github.com/joho/godotenv/cmd/godotenv@latest
 * go install github.com/swaggo/swag/cmd/swag@latest
 
 ### To find paths ### 
@@ -27,6 +26,7 @@ export PATH=$HOME/bin:/usr/local/bin:/Users/"URE NAME"/go/bin:$PATH "
 
 ### Step 5 ### 
 * setup .env file(import from one of admins)
+* go install github.com/joho/godotenv/cmd/godotenv@latest
 * docker-compose up -d 
 * go run cmd/main.go
 
