@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Backend/api/v1/model"
 	"bytes"
 	b64 "encoding/base64"
 	"encoding/json"
@@ -10,23 +11,16 @@ import (
 	"os"
 )
 
-type RancherUser struct {
-	Enabled            bool   `json:"enabled"`
-	MustChangePassword bool   `json:"mustChangePassword"`
-	Name               string `json:"name"`
-	Password           string `json:"password"`
-	Username           string `json:"username"`
-}
-
 // RancherCreateUser godoc
 //
 //	@Summary		Create rancher user
-//	@Tags			Rancher
+//	@Tags			RancherUser
 //	@Produce		text/plain
+//	@Param			request	body	model.RancherUser	true "RancherUser model"
 //	@Success		200
 //	@Router			/create-user [post]
 func RancherCreateUser(c *gin.Context) {
-	user := RancherUser{}
+	user := model.RancherUser{}
 	if c.Bind(&user) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
@@ -51,9 +45,15 @@ func RancherCreateUser(c *gin.Context) {
 	req.Header.Set(
 		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
 	)
-	resp, _ := client.Do(req)
+	// Response from the external request
+	resp, extErr := client.Do(req)
+	if extErr != nil {
+		c.String(http.StatusInternalServerError, fmt.Sprintf("There was an external error: %s", extErr.Error()))
+		return
+	}
 
 	if resp.Status == "201" {
-		fmt.Println("be happy.")
+		c.String(http.StatusCreated, fmt.Sprintf("User has been created:\n%s", reqBody))
+		return
 	}
 }
