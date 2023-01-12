@@ -10,7 +10,6 @@ Creating, reading and managing rancher clusters. Here is an auth/sys overview.
 
 ### Starting commands ###
 * brew install go
-* brew install swagger-codegen
 * go install github.com/joho/godotenv/cmd/godotenv@latest
 * go install github.com/swaggo/swag/cmd/swag@latest
 
