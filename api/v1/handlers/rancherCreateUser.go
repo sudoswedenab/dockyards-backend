@@ -48,7 +48,7 @@ func RancherCreateUser(c *gin.Context) {
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
-		c.String(http.StatusInternalServerError, fmt.Sprintf("There was an external error: %s", extErr.Error()))
+		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
 		return
 	}
 
