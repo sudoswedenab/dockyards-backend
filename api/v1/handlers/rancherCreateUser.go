@@ -31,7 +31,7 @@ func RancherCreateUser(c *gin.Context) {
 	reqBody, err := json.Marshal(user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to marshal Body",
+			"error": "Not valid JSON! Failed to marshal Body",
 		})
 		return
 	}
