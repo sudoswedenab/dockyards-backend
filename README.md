@@ -24,7 +24,9 @@ export PATH=$HOME/bin:/usr/local/bin:/Users/"URE NAME"/go/bin:$PATH "
 ### Then these commands ### 
 * go mod download
 * swag init -g cmd/main.go  
-* setup .env file
+
+### Step 5 ### 
+* setup .env file(import from one of admins)
 * docker-compose up -d 
 * go run cmd/main.go
 
