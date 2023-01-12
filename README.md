@@ -9,9 +9,24 @@ Creating, reading and managing rancher clusters. Here is an auth/sys overview.
 ![Overview of System](themis.png)
 
 ### Starting commands ###
+* brew install go
+* brew install swagger-codegen
+* go install github.com/joho/godotenv/cmd/godotenv@latest
+* go install github.com/swaggo/swag/cmd/swag@latest
+
+
+### PATH zshr file ###
+"# If you come from bash you might have to change your $PATH.
+export PATH=$HOME/bin:/usr/local/bin:/Users/"URE NAME"/go/bin:$PATH "
+
+### Then these commands ### 
 * go mod download
+* swag init -g cmd/main.go  
+* setup .env file
 * docker-compose up -d 
 * go run cmd/main.go
+
+
 
 ### Swagger docs generation ###
 * swag init -g cmd/main.go
