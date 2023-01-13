@@ -7,9 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"net/http"
 	"os"
 )
+
+type RancherUserResponse struct {
+	Id string `json:"id"`
+}
 
 // RancherCreateUser godoc
 //
@@ -17,7 +22,7 @@ import (
 //	@Tags			RancherUser
 //	@Produce		text/plain
 //	@Param			request	body	model.RancherUser	true "RancherUser model"
-//	@Success		200
+//	@Success		201
 //	@Router			/create-user [post]
 func RancherCreateUser(c *gin.Context) {
 	user := model.RancherUser{}
@@ -51,6 +56,14 @@ func RancherCreateUser(c *gin.Context) {
 		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
 		return
 	}
+	data, _ := ioutil.ReadAll(resp.Body)
+	respErr := resp.Body.Close()
+	if respErr != nil {
+		return
+	}
+	var rancherUserResponse RancherUserResponse
+	json.Unmarshal(data, &rancherUserResponse)
+	fmt.Println(rancherUserResponse)
 
 	if resp.Status == "201" {
 		c.String(http.StatusCreated, fmt.Sprintf("User has been created:\n%s", reqBody))
