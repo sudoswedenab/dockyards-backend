@@ -6,8 +6,9 @@ import (
 	"Backend/api/v1/handlers/user"
 	"Backend/api/v1/middleware"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RegisterRoutes(r *gin.Engine) {
@@ -35,12 +36,12 @@ func RegisterRoutes(r *gin.Engine) {
 		if err != nil {
 			c.String(http.StatusInternalServerError, fmt.Sprintf("Error: %s", err))
 		}
-		c.String(http.StatusOK, fmt.Sprintf("Success."))
+		c.String(http.StatusOK, "Success.")
 	})
 
-	v1.POST("/create-user", func(c *gin.Context) {
-		handlers.RancherCreateUser(c)
-	})
+	// v1.POST("/create-user", func(c *gin.Context) {
+	// 	handlers.RancherCreateUser(c)
+	// })
 
 	// Admin Routes
 	v1Admin := v1.Group("/admin", func(c *gin.Context) {

@@ -39,11 +39,22 @@ func Signup(c *gin.Context) {
 		})
 		return
 	}
+
+	RancherID := RancherCreateUser(c, model.RancherUser{
+		Enabled:            true,
+		MustChangePassword: false,
+		Name:               body.Name,
+		Password:           body.Password,
+		Username:           body.Email,
+	})
+
+	// fmt.Println(Kalle)
 	//Create the user
 	user := model.User{
-		Name:     body.Name,
-		Email:    body.Email,
-		Password: string(hash)}
+		Name:      body.Name,
+		Email:     body.Email,
+		RancherID: RancherID,
+		Password:  string(hash)}
 	result := internal.DB.Create(&user)
 
 	if result.Error != nil {
@@ -54,7 +65,6 @@ func Signup(c *gin.Context) {
 	}
 
 	//respond
-
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "You have now created ure account",
 	})
