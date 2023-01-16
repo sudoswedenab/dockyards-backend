@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Backend/api/v1/handlers/rancher"
 	"Backend/api/v1/model"
 	"Backend/internal"
 	"fmt"
@@ -40,7 +41,7 @@ func Signup(c *gin.Context) {
 		return
 	}
 
-	RancherID := RancherCreateUser(c, model.RancherUser{
+	RancherID := rancher.RancherCreateUser(c, model.RancherUser{
 		Enabled:            true,
 		MustChangePassword: false,
 		Name:               body.Name,
