@@ -1,4 +1,4 @@
-package handlers
+package middleware
 
 // Unnecessary/unused code?
 import (
