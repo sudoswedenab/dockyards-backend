@@ -15,7 +15,9 @@ import (
 )
 
 type RancherResponseToken struct {
-	Id string `json:"id"`
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	UserId string `json:"userId"`
 }
 
 func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) string {
