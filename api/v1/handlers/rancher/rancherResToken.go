@@ -14,6 +14,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// FindAllUsers godoc
+//
+//	@Summary		Lists all users "Find all users"
+//	@Tags				RancherUser
+//	@Accept     application/json
+//	@Produce		application/json
+//	@Success		200
+//	@Router			/ranchertoken [get]
 type RancherResponseToken struct {
 	Id     string `json:"id"`
 	Name   string `json:"name"`
