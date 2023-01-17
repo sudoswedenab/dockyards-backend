@@ -14,21 +14,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// FindAllUsers godoc
-//
-// @Summary		Lists all users "Find all users"
-// @Tags				ranch
-// @Accept     application/json
-// @Produce		application/json
-// @Param			request	body	model.RRtoken	true "RRtoken model"
-// @Success		200
-// @Router			/ranchertoken [get]
 type RancherResponseToken struct {
 	Id     string `json:"id"`
 	Name   string `json:"name"`
 	UserId string `json:"userId"`
 }
 
+// Create Rancher Token godoc
+//
+// @Summary		Create a Rancher Token
+// @Tags				RancherUser
+// @Accept     application/json
+// @Produce		application/json
+// @Param			request	body	model.RRtoken	true "RRtoken model"
+// @Success		200
+// @Router			/ranchertoken [get]
 func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) string {
 	reqBody, err := json.Marshal(rancherToken)
 	if err != nil {
