@@ -16,12 +16,13 @@ import (
 
 // FindAllUsers godoc
 //
-//	@Summary		Lists all users "Find all users"
-//	@Tags				RancherUser
-//	@Accept     application/json
-//	@Produce		application/json
-//	@Success		200
-//	@Router			/ranchertoken [get]
+// @Summary		Lists all users "Find all users"
+// @Tags				ranch
+// @Accept     application/json
+// @Produce		application/json
+// @Param			request	body	model.RRtoken	true "RRtoken model"
+// @Success		200
+// @Router			/ranchertoken [get]
 type RancherResponseToken struct {
 	Id     string `json:"id"`
 	Name   string `json:"name"`
