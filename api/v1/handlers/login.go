@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Backend/api/v1/handlers/rancher"
 	"Backend/api/v1/model"
 	"Backend/internal"
 	"fmt"
@@ -49,6 +50,13 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
+	RancherBearerToken, RancherUserID := rancher.CreateRancherToken(c, model.RRtoken{Name: user.Name, UserId: user.RancherID})
+
+	if RancherUserID != user.RancherID {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid email",
+		})
+	}
 
 	//Compare sent in pass with saved user pass hash
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
@@ -59,10 +67,12 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
+
 	//Generate a jwt token
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	claims := token.Claims.(jwt.MapClaims)
+
 	claims["sub"] = user.ID
 	claims["name"] = user.Name
 	claims["admin"] = false

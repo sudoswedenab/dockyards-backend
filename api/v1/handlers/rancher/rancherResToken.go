@@ -29,13 +29,13 @@ type RancherResponseToken struct {
 // @Produce		application/json
 // @Success		200
 // @Router			/ranchertoken [get]
-func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) string {
+func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) (string, string) {
 	reqBody, err := json.Marshal(rancherToken)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Not valid JSON! Failed to marshal Body",
 		})
-		return ""
+		return "", ""
 	}
 
 	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
@@ -53,12 +53,12 @@ func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) string {
 	resp, extErr := client.Do(req)
 	if extErr != nil {
 		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
-		return ""
+		return "", ""
 	}
 	data, _ := ioutil.ReadAll(resp.Body)
 	respErr := resp.Body.Close()
 	if respErr != nil {
-		return ""
+		return "", ""
 	}
 	var valuetok RancherResponseToken
 	json.Unmarshal(data, &valuetok)
@@ -72,5 +72,5 @@ func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) string {
 		"TokenID":     valuetok.Id,
 		"Bearertoken": valuetok.Bearertoken,
 	})
-	return valuetok.Id
+	return valuetok.Bearertoken, valuetok.Id
 }
