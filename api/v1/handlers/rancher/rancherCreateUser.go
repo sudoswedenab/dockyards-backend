@@ -18,14 +18,6 @@ type RancherUserResponse struct {
 	Id string `json:"id"`
 }
 
-// RancherCreateUser godoc
-//
-//	@Summary		Create rancher user
-//	@Tags			RancherUser
-//	@Produce		text/plain
-//	@Param			request	body	model.RancherUser	true "RancherUser model"
-//	@Success		201
-//	@Router			/create-user [post]
 func RancherCreateUser(c *gin.Context, user model.RancherUser) string {
 
 	// if c.Bind(&user) != nil {
