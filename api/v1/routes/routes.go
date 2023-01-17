@@ -26,6 +26,10 @@ func RegisterRoutes(r *gin.Engine) {
 		rancher.CreateRancherToken(c, model.RRtoken{})
 	})
 
+	v1.POST("/createrancher-user", func(c *gin.Context) {
+		rancher.RancherCreateUser(c, model.RancherUser{})
+	})
+
 	v1.POST("/signup", func(c *gin.Context) {
 		handlers.Signup(c)
 	})
@@ -44,10 +48,6 @@ func RegisterRoutes(r *gin.Engine) {
 			c.String(http.StatusInternalServerError, fmt.Sprintf("Error: %s", err))
 		}
 		c.String(http.StatusOK, "Success.")
-	})
-
-	v1.POST("/createrancher-user", func(c *gin.Context) {
-		rancher.RancherCreateUser(c, model.RancherUser{})
 	})
 
 	// Admin Routes
