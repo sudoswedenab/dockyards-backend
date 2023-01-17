@@ -15,9 +15,10 @@ import (
 )
 
 type RancherResponseToken struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	UserId string `json:"userId"`
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	UserId      string `json:"userId"`
+	Bearertoken string `json:"token"`
 }
 
 // CreateRancherToken godoc
@@ -26,7 +27,6 @@ type RancherResponseToken struct {
 // @Tags		RancherUser
 // @Accept     	application/json
 // @Produce		application/json
-// @Param		request	body	model.RRtoken	true "RRtoken model"
 // @Success		200
 // @Router		/ranchertoken [get]
 func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) string {
@@ -56,7 +56,6 @@ func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) string {
 		return ""
 	}
 	data, _ := ioutil.ReadAll(resp.Body)
-
 	respErr := resp.Body.Close()
 	if respErr != nil {
 		return ""
@@ -67,10 +66,11 @@ func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) string {
 	fmt.Println(valuetok)
 	fmt.Printf("%T\n", valuetok.Id)
 	c.JSON(http.StatusOK, gin.H{
-		"UserStatus": "user logged in",
-		"UserToken":  "Created a token",
-		"token":      valuetok,
-		"TokenID":    valuetok.Id,
+		"UserStatus":  "user logged in",
+		"UserToken":   "Created a token",
+		"token":       valuetok,
+		"TokenID":     valuetok.Id,
+		"Bearertoken": valuetok.Bearertoken,
 	})
 	return valuetok.Id
 }
