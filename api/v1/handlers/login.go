@@ -57,7 +57,8 @@ func Login(c *gin.Context) {
 			"error": "Invalid email",
 		})
 	}
-
+	fmt.Println("DBUSER", user.RancherID)
+	fmt.Println(RancherUserID)
 	//Compare sent in pass with saved user pass hash
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 
@@ -74,6 +75,7 @@ func Login(c *gin.Context) {
 	claims := token.Claims.(jwt.MapClaims)
 
 	claims["sub"] = user.ID
+	claims["aud"] = RancherBearerToken
 	claims["name"] = user.Name
 	claims["admin"] = false
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
