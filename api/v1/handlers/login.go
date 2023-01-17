@@ -50,7 +50,7 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-	RancherBearerToken, RancherUserID := rancher.CreateRancherToken(c, model.RRtoken{Name: user.Name, UserId: user.RancherID})
+	RancherBearerToken, RancherUserID := rancher.CreateRancherToken(c, model.RRtoken{Name: user.Name, UserId: user.RancherID, Ttl: 90000})
 
 	if RancherUserID != user.RancherID {
 		c.JSON(http.StatusBadRequest, gin.H{
