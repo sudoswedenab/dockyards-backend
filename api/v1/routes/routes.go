@@ -46,9 +46,9 @@ func RegisterRoutes(r *gin.Engine) {
 		c.String(http.StatusOK, "Success.")
 	})
 
-	// v1.POST("/create-user", func(c *gin.Context) {
-	// 	handlers.RancherCreateUser(c)
-	// })
+	v1.POST("/createrancher-user", func(c *gin.Context) {
+		rancher.RancherCreateUser(c, model.RancherUser{})
+	})
 
 	// Admin Routes
 	v1Admin := v1.Group("/admin", func(c *gin.Context) {
