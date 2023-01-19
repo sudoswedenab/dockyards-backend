@@ -8,7 +8,11 @@ import (
 
 func RancherCheck(user model.User) (string, error) {
 
-	NewRanchPWd := ChangeRancherPWD(user)
+	NewRanchPWd, err := ChangeRancherPWD(user)
+	if err != nil {
+		return "", err
+	}
+
 	RancherBearerToken, RancherUserID := CreateRancherToken(model.RRtoken{Name: user.Name, Password: NewRanchPWd})
 	fmt.Println(RancherBearerToken)
 
