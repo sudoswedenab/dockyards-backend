@@ -44,18 +44,6 @@ func Login(c *gin.Context) {
 	var user model.User
 
 	internal.DB.First(&user, "email = ?", body.Email)
-	NewRanchPWd := rancher.ChangeRancherPWD(c, user)
-	RancherBearerToken, RancherUserID := rancher.CreateRancherToken(c, model.RRtoken{Name: user.Name, Password: NewRanchPWd})
-
-	fmt.Println(RancherBearerToken)
-
-	if RancherUserID != user.RancherID {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid email",
-		})
-	}
-	fmt.Println("DBUSER", user.RancherID)
-	fmt.Println(RancherUserID)
 
 	if user.ID == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -112,5 +100,19 @@ func Login(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("access_token", tokenString, 900, "", "", false, true)
 	c.SetCookie("refresh_token", rt, 3600*1, "", "", false, true)
-	c.String(http.StatusOK, fmt.Sprintf("Success."))
+
+	NewRanchPWd := rancher.ChangeRancherPWD(user)
+
+	RancherBearerToken, RancherUserID := rancher.CreateRancherToken(c, model.RRtoken{Name: user.Name, Password: NewRanchPWd})
+
+	fmt.Println(RancherBearerToken)
+
+	if RancherUserID != user.RancherID {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid email",
+		})
+	}
+	fmt.Println("DBUSER", user.RancherID)
+	fmt.Println(RancherUserID)
+	c.String(http.StatusOK, "Success.\n")
 }
