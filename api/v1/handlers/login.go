@@ -53,7 +53,8 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c = rancher.RancherCheck(c, user)
+	bearertoken := rancher.RancherCheck(user)
+	fmt.Println(bearertoken)
 	//Compare sent in pass with saved user pass hash
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 
@@ -68,6 +69,7 @@ func Login(c *gin.Context) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	fmt.Println("TOKENSTRING", token)
 	claims := token.Claims.(jwt.MapClaims)
+	claims["aud"] = bearertoken
 	claims["sub"] = user.ID
 	claims["name"] = user.Name
 	claims["admin"] = false

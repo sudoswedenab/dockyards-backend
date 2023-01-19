@@ -10,8 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-
-	"github.com/gin-gonic/gin"
 )
 
 type RancherResponseToken struct {
@@ -29,12 +27,12 @@ type RancherResponseToken struct {
 // @Produce		application/json
 // @Success		200
 // @Router			/ranchertoken [get]
-func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) (string, string) {
+func CreateRancherToken(rancherToken model.RRtoken) (string, string) {
 	reqBody, err := json.Marshal(rancherToken)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Not valid JSON! Failed to marshal Body",
-		})
+		// c.JSON(http.StatusBadRequest, gin.H{
+		// 	"error": "Not valid JSON! Failed to marshal Body",
+		// })
 		return "", ""
 	}
 
@@ -52,7 +50,7 @@ func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) (string, str
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
-		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
+		// c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
 		return "", ""
 	}
 	data, _ := ioutil.ReadAll(resp.Body)
@@ -65,12 +63,12 @@ func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) (string, str
 
 	fmt.Println(valuetok)
 	fmt.Printf("%T\n", valuetok.Id)
-	c.JSON(http.StatusOK, gin.H{
-		"UserStatus":  "user logged in",
-		"UserToken":   "Created a token",
-		"token":       valuetok,
-		"TokenID":     valuetok.Id,
-		"Bearertoken": valuetok.Bearertoken,
-	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"UserStatus":  "user logged in",
+	// 	"UserToken":   "Created a token",
+	// 	"token":       valuetok,
+	// 	"TokenID":     valuetok.Id,
+	// 	"Bearertoken": valuetok.Bearertoken,
+	// })
 	return valuetok.Bearertoken, valuetok.UserId
 }

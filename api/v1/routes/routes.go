@@ -23,7 +23,7 @@ func RegisterRoutes(r *gin.Engine) {
 	v1 := r.Group("/v1")
 
 	v1.GET("/ranchertoken", func(c *gin.Context) {
-		rancher.CreateRancherToken(c, model.RRtoken{})
+		rancher.CreateRancherToken(model.RRtoken{})
 	})
 
 	v1.POST("/createrancher-user", func(c *gin.Context) {
