@@ -41,11 +41,14 @@ func Signup(c *gin.Context) {
 		return
 	}
 
+	RandomPwd := rancher.String(34)
+	fmt.Println(RandomPwd)
+
 	RancherID := rancher.RancherCreateUser(c, model.RancherUser{
 		Enabled:            true,
 		MustChangePassword: false,
 		Name:               body.Name,
-		Password:           body.Password,
+		Password:           RandomPwd,
 		Username:           body.Email,
 	})
 

@@ -39,18 +39,15 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
+
 	//Look up requested User
 	var user model.User
 
 	internal.DB.First(&user, "email = ?", body.Email)
+	NewRanchPWd := rancher.ChangeRancherPWD(c, user)
+	RancherBearerToken, RancherUserID := rancher.CreateRancherToken(c, model.RRtoken{Name: user.Name, Password: NewRanchPWd})
 
-	if user.ID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid email or password",
-		})
-		return
-	}
-	RancherBearerToken, RancherUserID := rancher.CreateRancherToken(c, model.RRtoken{Name: user.Name, UserId: user.RancherID, Ttl: 90000})
+	fmt.Println(RancherBearerToken)
 
 	if RancherUserID != user.RancherID {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -59,6 +56,14 @@ func Login(c *gin.Context) {
 	}
 	fmt.Println("DBUSER", user.RancherID)
 	fmt.Println(RancherUserID)
+
+	if user.ID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid email or password",
+		})
+		return
+	}
+
 	//Compare sent in pass with saved user pass hash
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 
@@ -68,14 +73,12 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-
+	// claims["aud"] = RancherBearerToken
 	//Generate a jwt token
 	token := jwt.New(jwt.SigningMethodHS256)
-
+	fmt.Println("TOKENSTRING", token)
 	claims := token.Claims.(jwt.MapClaims)
-
 	claims["sub"] = user.ID
-	claims["aud"] = RancherBearerToken
 	claims["name"] = user.Name
 	claims["admin"] = false
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()

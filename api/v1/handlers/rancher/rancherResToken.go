@@ -45,7 +45,7 @@ func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) (string, str
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("POST", rancherURL+"/v3/tokens", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", rancherURL+"/v3-public/localProviders/local?action=login", bytes.NewBuffer(reqBody))
 	req.Header.Set(
 		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
 	)
@@ -72,5 +72,5 @@ func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) (string, str
 		"TokenID":     valuetok.Id,
 		"Bearertoken": valuetok.Bearertoken,
 	})
-	return valuetok.Bearertoken, valuetok.Id
+	return valuetok.Bearertoken, valuetok.UserId
 }
