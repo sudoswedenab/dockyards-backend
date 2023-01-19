@@ -24,6 +24,7 @@ import (
 //	@Success		200
 //	@Router			/login [post]
 func Login(c *gin.Context) {
+
 	fmt.Println("Login hit")
 
 	// Get email and pass off req body
@@ -52,6 +53,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	c = rancher.RancherCheck(c, user)
 	//Compare sent in pass with saved user pass hash
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 
@@ -101,16 +103,5 @@ func Login(c *gin.Context) {
 	c.SetCookie("access_token", tokenString, 900, "", "", false, true)
 	c.SetCookie("refresh_token", rt, 3600*1, "", "", false, true)
 
-	NewRanchPWd := rancher.ChangeRancherPWD(c, user)
-	RancherBearerToken, RancherUserID := rancher.CreateRancherToken(c, model.RRtoken{Name: user.Name, Password: NewRanchPWd})
-	fmt.Println(RancherBearerToken)
-
-	if RancherUserID != user.RancherID {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid email",
-		})
-	}
-	fmt.Println("DBUSER", user.RancherID)
-	fmt.Println(RancherUserID)
 	c.String(http.StatusOK, "Success.\n")
 }
