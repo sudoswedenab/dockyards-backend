@@ -48,6 +48,6 @@ func ChangeRancherPWD(c *gin.Context, user model.User) string {
 	if respErr != nil {
 		return ""
 	}
-
+	// time.Sleep(10 * time.Second)
 	return RandomPwd.NewPassword
 }
