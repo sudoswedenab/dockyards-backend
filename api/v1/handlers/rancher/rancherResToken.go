@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -27,13 +28,11 @@ type RancherResponseToken struct {
 // @Produce		application/json
 // @Success		200
 // @Router			/ranchertoken [get]
-func CreateRancherToken(rancherToken model.RRtoken) (string, string) {
+func CreateRancherToken(rancherToken model.RRtoken) (string, string, error) {
 	reqBody, err := json.Marshal(rancherToken)
 	if err != nil {
-		// c.JSON(http.StatusBadRequest, gin.H{
-		// 	"error": "Not valid JSON! Failed to marshal Body",
-		// })
-		return "", ""
+		err := errors.New("not valid json,failed to marshal body")
+		return "", "", err
 	}
 
 	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
@@ -50,25 +49,20 @@ func CreateRancherToken(rancherToken model.RRtoken) (string, string) {
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
-		// c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
-		return "", ""
+		errormsg := fmt.Sprintf("There was an external error: %s", extErr.Error())
+		err := errors.New(errormsg)
+		return "", "", err
 	}
 	data, _ := ioutil.ReadAll(resp.Body)
 	respErr := resp.Body.Close()
 	if respErr != nil {
-		return "", ""
+		return "", "", respErr
 	}
 	var valuetok RancherResponseToken
 	json.Unmarshal(data, &valuetok)
 
 	fmt.Println(valuetok)
 	fmt.Printf("%T\n", valuetok.Id)
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"UserStatus":  "user logged in",
-	// 	"UserToken":   "Created a token",
-	// 	"token":       valuetok,
-	// 	"TokenID":     valuetok.Id,
-	// 	"Bearertoken": valuetok.Bearertoken,
-	// })
-	return valuetok.Bearertoken, valuetok.UserId
+
+	return valuetok.Bearertoken, valuetok.UserId, nil
 }
