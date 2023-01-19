@@ -9,20 +9,18 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-
-	"github.com/gin-gonic/gin"
 )
 
-func ChangeRancherPWD(c *gin.Context, user model.User) string {
+func ChangeRancherPWD(user model.User) string {
 
 	RandomPwd := model.NewPassword{NewPassword: String(34)}
 	fmt.Println(RandomPwd)
 
 	reqBody, err := json.Marshal(RandomPwd)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Not valid JSON! Failed to marshal Body",
-		})
+		// c.JSON(http.StatusBadRequest, gin.H{
+		// 	"error": "Not valid JSON! Failed to marshal Body",
+		// })
 		return ""
 	}
 
@@ -40,7 +38,7 @@ func ChangeRancherPWD(c *gin.Context, user model.User) string {
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
-		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
+		// c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
 		return ""
 	}
 
