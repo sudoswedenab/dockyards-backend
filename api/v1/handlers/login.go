@@ -55,8 +55,9 @@ func Login(c *gin.Context) {
 
 	bearertoken, err := rancher.RancherCheck(user)
 	if err != nil {
+		// fmt.Printf("%T\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"Error": err,
+			"error": err.Error(),
 		})
 	}
 

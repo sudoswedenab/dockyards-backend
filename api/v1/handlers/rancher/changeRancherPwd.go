@@ -21,11 +21,6 @@ func ChangeRancherPWD(user model.User) (string, error) {
 	if err != nil {
 		err := errors.New("not valid json,failed to marshal body")
 		return "", err
-
-		// c.JSON(http.StatusBadRequest, gin.H{
-		// 	"error": "Not valid JSON! Failed to marshal Body",
-		// })
-
 	}
 
 	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
@@ -42,8 +37,10 @@ func ChangeRancherPWD(user model.User) (string, error) {
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
+		fmt.Println("foobar")
 		errormsg := fmt.Sprintf("There was an external error: %s", extErr.Error())
 		err := errors.New(errormsg)
+		fmt.Println(err)
 		return "", err
 		// c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
 
