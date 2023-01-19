@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func RancherCheck(user model.User) (string, error) {
+func RancherLogin(user model.User) (string, error) {
 
 	NewRanchPWd, err := ChangeRancherPWD(user)
 	if err != nil {

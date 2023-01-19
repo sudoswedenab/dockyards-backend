@@ -52,8 +52,8 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-
-	bearertoken, err := rancher.RancherCheck(user)
+	//Checking agianst Racnher if user exist in rancher
+	bearertoken, err := rancher.RancherLogin(user)
 	if err != nil {
 		// fmt.Printf("%T\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{
