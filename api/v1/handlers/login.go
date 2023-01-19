@@ -101,7 +101,7 @@ func Login(c *gin.Context) {
 	c.SetCookie("access_token", tokenString, 900, "", "", false, true)
 	c.SetCookie("refresh_token", rt, 3600*1, "", "", false, true)
 
-	NewRanchPWd := rancher.ChangeRancherPWD(user)
+	NewRanchPWd := rancher.ChangeRancherPWD(c, user)
 
 	RancherBearerToken, RancherUserID := rancher.CreateRancherToken(c, model.RRtoken{Name: user.Name, Password: NewRanchPWd})
 
