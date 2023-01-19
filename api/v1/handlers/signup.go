@@ -14,7 +14,7 @@ import (
 // Signup godoc
 //
 //	@Summary		Signup to app
-//	@Tags				Login
+//	@Tags			Login
 //	@Accept			application/json
 //	@Produce		text/plain
 //	@Param			request	body	model.Signup	true "Signup model"
@@ -31,7 +31,7 @@ func Signup(c *gin.Context) {
 		return
 	}
 
-	//Hash the password
+	// Hash the password
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 
 	if err != nil {
@@ -49,7 +49,6 @@ func Signup(c *gin.Context) {
 		Username:           body.Email,
 	})
 
-	// fmt.Println(Kalle)
 	//Create the user
 	user := model.User{
 		Name:      body.Name,
@@ -67,6 +66,6 @@ func Signup(c *gin.Context) {
 
 	//respond
 	c.JSON(http.StatusCreated, gin.H{
-		"status": "You have now created ure account",
+		"status": "You have now created your account",
 	})
 }

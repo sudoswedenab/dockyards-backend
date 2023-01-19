@@ -20,15 +20,15 @@ type RancherResponseToken struct {
 	UserId string `json:"userId"`
 }
 
-// Create Rancher Token godoc
+// CreateRancherToken godoc
 //
 // @Summary		Create a Rancher Token
-// @Tags				RancherUser
-// @Accept     application/json
+// @Tags		RancherUser
+// @Accept     	application/json
 // @Produce		application/json
-// @Param			request	body	model.RRtoken	true "RRtoken model"
+// @Param		request	body	model.RRtoken	true "RRtoken model"
 // @Success		200
-// @Router			/ranchertoken [get]
+// @Router		/ranchertoken [get]
 func CreateRancherToken(c *gin.Context, rancherToken model.RRtoken) string {
 	reqBody, err := json.Marshal(rancherToken)
 	if err != nil {
