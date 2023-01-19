@@ -53,10 +53,16 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	bearertoken := rancher.RancherCheck(user)
+	bearertoken, err := rancher.RancherCheck(user)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"Error": err,
+		})
+	}
+
 	fmt.Println(bearertoken)
 	//Compare sent in pass with saved user pass hash
-	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -105,5 +111,7 @@ func Login(c *gin.Context) {
 	c.SetCookie("access_token", tokenString, 900, "", "", false, true)
 	c.SetCookie("refresh_token", rt, 3600*1, "", "", false, true)
 
-	c.String(http.StatusOK, "Success.\n")
+	c.JSON(http.StatusOK, gin.H{
+		"Login": "Success",
+	})
 }
