@@ -6,22 +6,26 @@ import (
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 )
 
-func ChangeRancherPWD(user model.User) string {
+func ChangeRancherPWD(user model.User) (string, error) {
 
 	RandomPwd := model.NewPassword{NewPassword: String(34)}
 	fmt.Println(RandomPwd)
 
 	reqBody, err := json.Marshal(RandomPwd)
 	if err != nil {
+		err := errors.New("not valid json,failed to marshal body")
+		return "", err
+
 		// c.JSON(http.StatusBadRequest, gin.H{
 		// 	"error": "Not valid JSON! Failed to marshal Body",
 		// })
-		return ""
+
 	}
 
 	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
@@ -38,14 +42,17 @@ func ChangeRancherPWD(user model.User) string {
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
+		errormsg := fmt.Sprintf("There was an external error: %s", extErr.Error())
+		err := errors.New(errormsg)
+		return "", err
 		// c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
-		return ""
+
 	}
 
 	respErr := resp.Body.Close()
 	if respErr != nil {
-		return ""
+		return "", respErr
 	}
 	// time.Sleep(10 * time.Second)
-	return RandomPwd.NewPassword
+	return RandomPwd.NewPassword, nil
 }
