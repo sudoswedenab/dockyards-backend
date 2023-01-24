@@ -18,10 +18,7 @@ func GenerateTokenPair(user model.User) (map[string]string, error) {
 	//Checking agianst Racnher if user exist in rancher
 	bearertoken, err := rancher.RancherLogin(user)
 	if err != nil {
-		// fmt.Printf("%T\n", err)
-		// c.JSON(http.StatusBadRequest, gin.H{
-		// 	"error": err.Error(),
-		// })
+		return nil, err
 	}
 
 	// Set claims
