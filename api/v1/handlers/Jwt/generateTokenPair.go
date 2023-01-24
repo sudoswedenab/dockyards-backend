@@ -1,21 +1,32 @@
 package jwt
 
 import (
+	"Backend/api/v1/handlers/rancher"
 	"Backend/api/v1/model"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 )
 
-func GenerateTokenPair() (map[string]string, error) {
+func GenerateTokenPair(user model.User) (map[string]string, error) {
 	// Create token
 	token := jwt.New(jwt.SigningMethodHS256)
 
-	//Look up requested User
-	var user model.User
+	fmt.Println("lalalal", user)
+	//Checking agianst Racnher if user exist in rancher
+	bearertoken, err := rancher.RancherLogin(user)
+	if err != nil {
+		// fmt.Printf("%T\n", err)
+		// c.JSON(http.StatusBadRequest, gin.H{
+		// 	"error": err.Error(),
+		// })
+	}
+
 	// Set claims
 	claims := token.Claims.(jwt.MapClaims)
+	claims["aud"] = bearertoken
 	claims["sub"] = user.ID
 	claims["name"] = user.Name
 	claims["admin"] = false

@@ -53,7 +53,7 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 		// run through your business logic to verify if the user can log in
 		if First.Error == nil {
 
-			newTokenPair, err := GenerateTokenPair()
+			newTokenPair, err := GenerateTokenPair(user)
 			if err != nil {
 				return err
 			}
