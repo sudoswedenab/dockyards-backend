@@ -13,13 +13,19 @@ func RancherLogin(user model.User) (string, error) {
 		fmt.Println("new ranch pwd err check")
 		return "", err
 	}
-
-	RancherBearerToken, RancherUserID, err := CreateRancherToken(model.RRtoken{Name: user.Name, Password: NewRanchPWd})
+	// fmt.Println("AVSTÄMD", user.Name)
+	RancherBearerToken, RancherUserID, err := CreateRancherToken(model.RRtoken{Name: user.Email, Password: NewRanchPWd})
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(RancherBearerToken)
+	// fmt.Println("AV", user.Email)
+	// fmt.Println("UserRancherNY", user)
 
+	// fmt.Println(RancherBearerToken)
+
+	// fmt.Println("Lola")
+	// fmt.Println("Lola1", user.RancherID)
+	// fmt.Println("Lola2", RancherUserID)
 	if RancherUserID != user.RancherID {
 
 		// c.JSON(http.StatusBadRequest, gin.H{
