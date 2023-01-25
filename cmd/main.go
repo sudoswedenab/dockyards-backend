@@ -4,6 +4,9 @@ import (
 	"Backend/api/v1/routes"
 	_ "Backend/docs"
 	"Backend/internal"
+	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -34,18 +37,25 @@ func init() {
 // @BasePath	/v1/
 func main() {
 	r := gin.Default()
+	useCors, err := strconv.ParseBool(os.Getenv("FLAG_USE_CORS"))
+	if err != nil {
+		fmt.Printf("error parsing: %s", err)
+		return
+	}
 
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
-		AllowMethods:     []string{"POST", "PUT", "GET", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		AllowOriginFunc: func(origin string) bool {
-			return origin == "http://localhost:3000"
-		},
-		MaxAge: 12 * time.Hour,
-	}))
+	if useCors {
+		r.Use(cors.New(cors.Config{
+			AllowOrigins:     []string{"http://localhost:3000"},
+			AllowMethods:     []string{"POST", "PUT", "GET", "DELETE"},
+			AllowHeaders:     []string{"Origin", "Content-Type"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowCredentials: true,
+			AllowOriginFunc: func(origin string) bool {
+				return origin == "http://localhost:3000"
+			},
+			MaxAge: 12 * time.Hour,
+		}))
+	}
 
 	routes.RegisterRoutes(r)
 
