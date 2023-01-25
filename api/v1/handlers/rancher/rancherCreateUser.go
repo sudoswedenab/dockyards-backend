@@ -19,14 +19,7 @@ type RancherUserResponse struct {
 }
 
 func RancherCreateUser(c *gin.Context, user model.RancherUser) string {
-
-	// if c.Bind(&user) != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{
-	// 		"error": "Failed to read Body",
-	// 	})
-	// 	return ""
-	// }
-
+	
 	reqBody, err := json.Marshal(user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
