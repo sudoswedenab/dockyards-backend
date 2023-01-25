@@ -14,7 +14,7 @@ import (
 
 func init() {
 	internal.LoadEnvVariables()
-	internal.ConnectToDB()
+	internal.WaitUntil(internal.ConnectToDB)
 	internal.SyncDataBase()
 }
 

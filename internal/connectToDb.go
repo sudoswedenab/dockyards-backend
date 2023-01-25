@@ -1,21 +1,26 @@
 package internal
 
 import (
-	"os"
-
+	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"os"
+	"sync"
+	"time"
 )
 
 var DB *gorm.DB
 
-func ConnectToDB() {
-	var err error
+func ConnectToDB(wg *sync.WaitGroup) {
+	defer wg.Done()
+	fmt.Println("trying to connect")
 	dsn := os.Getenv("DB")
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	DB = db
 	if err != nil {
-		panic("failed to connect to DataB")
+		fmt.Println("Failed to connect to database, trying again..")
+		time.Sleep(time.Second * 3)
+		ConnectToDB(wg)
 	}
-
+	return
 }
