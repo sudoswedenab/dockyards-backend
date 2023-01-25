@@ -30,14 +30,11 @@ export PATH=$HOME/bin:/usr/local/bin:/Users/"URE NAME"/go/bin:$PATH "
 * docker-compose up -d 
 * go run cmd/main.go
 
-
-
 ### Swagger docs generation ###
 * swag init -g cmd/main.go
 
 Link to swagger:
 * http://localhost:9000/swagger/index.html 
-
 
 
 ```
@@ -51,14 +48,13 @@ Link to swagger:
 ### For dotenv file ###
 ask admin for permission. 
 
-### How do I get set up? ###
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+### How to build with Docker ###
+Project is using standard golang container from docker hub, check: https://hub.docker.com/_/golang 
 
+```
+$ docker build -t themis .
+$ docker run -it --rm themis
+```
 ### Copied Code ###
 
 Some code was copied from https://github.com/dgrijalva/jwt-go/blob/master/hmac_example_test.go which is under MIT license.
