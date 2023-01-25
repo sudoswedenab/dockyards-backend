@@ -1,6 +1,5 @@
 package middleware
 
-// Unnecessary/unused code?
 import (
 	"Backend/api/v1/handlers/user"
 	"fmt"
