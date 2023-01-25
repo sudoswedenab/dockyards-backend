@@ -17,7 +17,7 @@ import (
 // Login godoc
 //
 //	@Summary		Login to app
-//	@Tags				Login
+//	@Tags			Login
 //	@Accept			application/json
 //	@Produce		text/plain
 //	@Param			id		path	int	true	"Account ID"
