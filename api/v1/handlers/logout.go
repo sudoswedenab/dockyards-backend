@@ -10,7 +10,7 @@ import (
 // Logout godoc
 //
 //	@Summary		Logout from app
-//	@Tags				Login
+//	@Tags			Login
 //	@Produce		text/plain
 //	@Success		200
 //	@Router			/logout [post]
