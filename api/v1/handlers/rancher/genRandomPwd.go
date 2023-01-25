@@ -23,8 +23,3 @@ func String(length int) string {
 	fmt.Println("String random hit")
 	return StringWithCharset(length, charset)
 }
-
-// func PRINT(c *gin.Context) {
-
-// 	// fmt.Println(String(34))
-// }
