@@ -20,14 +20,6 @@ type RancherResponseToken struct {
 	Bearertoken string `json:"token"`
 }
 
-// CreateRancherToken godoc
-//
-// @Summary		Create a Rancher Token
-// @Tags		RancherUser
-// @Accept     	application/json
-// @Produce		application/json
-// @Success		200
-// @Router			/ranchertoken [get]
 func CreateRancherToken(rancherToken model.RRtoken) (string, string, error) {
 	reqBody, err := json.Marshal(rancherToken)
 	if err != nil {
