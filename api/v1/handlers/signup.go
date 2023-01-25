@@ -19,6 +19,7 @@ import (
 //	@Produce		text/plain
 //	@Param			request	body	model.Signup	true "Signup model"
 //	@Success		201
+//	@Failure		400
 //	@Router			/signup [post]
 func Signup(c *gin.Context) {
 	fmt.Println("Signup hit")
