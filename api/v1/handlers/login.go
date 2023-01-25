@@ -22,6 +22,7 @@ import (
 //	@Produce		text/plain
 //	@Param			id		path	int	true	"Account ID"
 //	@Success		200
+//	@Failure		400
 //	@Router			/login [post]
 func Login(c *gin.Context) {
 
