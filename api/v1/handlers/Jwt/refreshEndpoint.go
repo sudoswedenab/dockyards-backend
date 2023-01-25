@@ -12,13 +12,14 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-// Validate godoc
+// RefreshTokenEndpoint godoc
 //
 //	@Summary		Refresh Token
-//	@Tags				Login
+//	@Tags			Login
 //	@Accept			application/json
 //	@Produce		application/json
 //	@Success		200
+//	@Failure		401
 //	@Router			/refresh [post]
 func RefreshTokenEndpoint(c *gin.Context) error {
 
