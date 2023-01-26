@@ -3,10 +3,8 @@ package routes
 import (
 	"Backend/api/v1/handlers"
 	jwt "Backend/api/v1/handlers/Jwt"
-	"Backend/api/v1/handlers/rancher"
 	"Backend/api/v1/handlers/user"
 	"Backend/api/v1/middleware"
-	"Backend/api/v1/model"
 	"fmt"
 	"net/http"
 
@@ -21,14 +19,6 @@ func RegisterRoutes(r *gin.Engine) {
 	})
 
 	v1 := r.Group("/v1")
-
-	v1.GET("/ranchertoken", func(c *gin.Context) {
-		rancher.CreateRancherToken(model.RRtoken{})
-	})
-
-	v1.POST("/createrancher-user", func(c *gin.Context) {
-		rancher.RancherCreateUser(c, model.RancherUser{})
-	})
 
 	v1.POST("/signup", func(c *gin.Context) {
 		handlers.Signup(c)
