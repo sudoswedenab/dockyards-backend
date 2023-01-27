@@ -42,7 +42,7 @@ func RegisterRoutes(r *gin.Engine) {
 		c.String(http.StatusOK, "Success.")
 	})
 
-	v1.GET("/cluster", func(c *gin.Context) {
+	v1.POST("/cluster", func(c *gin.Context) {
 		cluster.CreateCluster(c, model.Cluster{})
 	})
 
