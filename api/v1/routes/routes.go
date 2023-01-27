@@ -3,8 +3,10 @@ package routes
 import (
 	"Backend/api/v1/handlers"
 	jwt "Backend/api/v1/handlers/Jwt"
+	"Backend/api/v1/handlers/cluster"
 	"Backend/api/v1/handlers/user"
 	"Backend/api/v1/middleware"
+	"Backend/api/v1/model"
 	"fmt"
 	"net/http"
 
@@ -40,8 +42,8 @@ func RegisterRoutes(r *gin.Engine) {
 		c.String(http.StatusOK, "Success.")
 	})
 
-	v1.POST("/", func(c *gin.Context) {
-		Cluster.CreateCluster(c)
+	v1.GET("/cluster", func(c *gin.Context) {
+		cluster.CreateCluster(c, model.Cluster{})
 	})
 
 	// Admin Routes
