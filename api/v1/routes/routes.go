@@ -40,6 +40,10 @@ func RegisterRoutes(r *gin.Engine) {
 		c.String(http.StatusOK, "Success.")
 	})
 
+	v1.POST("/", func(c *gin.Context) {
+		Cluster.CreateCluster(c)
+	})
+
 	// Admin Routes
 	v1Admin := v1.Group("/admin", func(c *gin.Context) {
 		// Handles errors
