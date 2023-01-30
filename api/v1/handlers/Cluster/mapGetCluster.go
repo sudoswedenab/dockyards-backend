@@ -15,13 +15,13 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type RancherResponses struct {
+type RancherResponse struct {
 	Id     string `json:"id"`
 	Name   string `json:"name"`
 	UserId string `json:"userId"`
 }
 
-func CreateClusters(c *gin.Context, cluster model.Cluster) string {
+func MapGetClusters(c *gin.Context, cluster model.Cluster) string {
 	// reqBody, err := json.Marshal(cluster)
 	// if err != nil {
 	// 	c.JSON(http.StatusBadRequest, gin.H{
@@ -73,7 +73,7 @@ func CreateClusters(c *gin.Context, cluster model.Cluster) string {
 	}
 
 	fmt.Println("EASY FIND", string(data))
-	var valuetok RancherResponses
+	var valuetok RancherResponse
 	json.Unmarshal(data, &valuetok)
 
 	fmt.Println(valuetok)

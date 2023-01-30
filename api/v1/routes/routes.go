@@ -42,8 +42,12 @@ func RegisterRoutes(r *gin.Engine) {
 		c.String(http.StatusOK, "Success.")
 	})
 
-	v1.GET("/cluster", func(c *gin.Context) {
-		cluster.CreateCluster(c, model.Cluster{})
+	v1.GET("/mapcluster", func(c *gin.Context) {
+		cluster.MapGetClusters(c, model.Cluster{})
+	})
+
+	v1.GET("/createcluster", func(c *gin.Context) {
+		cluster.CreateClusters(c, model.Cluster{})
 	})
 
 	// Admin Routes
