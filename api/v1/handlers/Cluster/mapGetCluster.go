@@ -15,7 +15,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type RancherResponse struct {
+type ClusterResponse struct {
 	Id     string `json:"id"`
 	Name   string `json:"name"`
 	UserId string `json:"userId"`
@@ -46,8 +46,8 @@ func MapGetClusters(c *gin.Context, cluster model.Cluster) string {
 		return []byte(os.Getenv("SECERET")), nil
 	})
 	claims := token.Claims.(jwt.MapClaims)
-
-	bearerToken := claims["aud"]
+	fmt.Println(claims)
+	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
 	rancherURL := os.Getenv("CATTLE_URL")
 
 	//Do external request
@@ -57,7 +57,7 @@ func MapGetClusters(c *gin.Context, cluster model.Cluster) string {
 	client := &http.Client{Transport: tr}
 	req, _ := http.NewRequest("GET", rancherURL+"/v3/clusters", nil)
 	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken.(string))),
+		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
 	)
 	// Response from the external request
 	resp, extErr := client.Do(req)
@@ -73,7 +73,7 @@ func MapGetClusters(c *gin.Context, cluster model.Cluster) string {
 	}
 
 	fmt.Println("EASY FIND", string(data))
-	var valuetok RancherResponse
+	var valuetok ClusterResponse
 	json.Unmarshal(data, &valuetok)
 
 	fmt.Println(valuetok)

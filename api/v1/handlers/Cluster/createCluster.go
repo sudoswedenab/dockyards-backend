@@ -46,7 +46,7 @@ func CreateClusters(c *gin.Context, cluster model.Cluster) string {
 		return []byte(os.Getenv("SECERET")), nil
 	})
 	claims := token.Claims.(jwt.MapClaims)
-
+	fmt.Println(claims)
 	bearerToken := claims["aud"]
 	rancherURL := os.Getenv("CATTLE_URL")
 
