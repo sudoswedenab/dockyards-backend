@@ -61,7 +61,10 @@ func MapGetClusters(c *gin.Context) string {
 
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
-	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
+
+	bearerToken := claims["aud"]
+
+	// bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
 	rancherURL := os.Getenv("CATTLE_URL")
 
 	//Do external request
@@ -71,7 +74,7 @@ func MapGetClusters(c *gin.Context) string {
 	client := &http.Client{Transport: tr}
 	req, _ := http.NewRequest("GET", rancherURL+"/v3/clusters", nil)
 	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
+		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken.(string))),
 	)
 	// Response from the external request
 	resp, extErr := client.Do(req)
