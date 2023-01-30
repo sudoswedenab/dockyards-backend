@@ -20,8 +20,10 @@ type ClusterResponse struct {
 
 type Data struct {
 	Name       string       `json:"name"`
-	Conditions []Conditions `json:"conditions"`
+	CreatorId  string       `json:"creatorId"`
 	Created    string       `json:"created"`
+	NodeCount  string       `json:"nodeCount"`
+	Conditions []Conditions `json:"conditions"`
 }
 
 type Conditions struct {
@@ -30,13 +32,7 @@ type Conditions struct {
 }
 
 func MapGetClusters(c *gin.Context) string {
-	// reqBody, err := json.Marshal(cluster)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{
-	// 		"error": "Not valid JSON! Failed to marshal Body",
-	// 	})
-	// 	return ""
-	// }
+
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
 	if err != nil {
@@ -50,7 +46,8 @@ func MapGetClusters(c *gin.Context) string {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return nil, nil
+		return []byte(os.Getenv("SECERET")), nil
+
 	})
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
