@@ -22,6 +22,7 @@ type Data struct {
 	Name       string       `json:"name"`
 	CreatorId  string       `json:"creatorId"`
 	Created    string       `json:"created"`
+	State      string       `json:"state"`
 	NodeCount  string       `json:"nodeCount"`
 	Conditions []Conditions `json:"conditions"`
 }
