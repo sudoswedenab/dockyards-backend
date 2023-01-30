@@ -19,12 +19,14 @@ type ClusterResponse struct {
 }
 
 type Data struct {
-	Name       string       `json:"name"`
-	CreatorId  string       `json:"creatorId"`
-	Created    string       `json:"created"`
-	State      string       `json:"state"`
-	NodeCount  int          `json:"nodeCount"`
-	Conditions []Conditions `json:"conditions"`
+	Name                 string       `json:"name"`
+	CreatorId            string       `json:"creatorId"`
+	Created              string       `json:"created"`
+	State                string       `json:"state"`
+	NodeCount            int          `json:"nodeCount"`
+	Transitioning        string       `json:"transitioning"`
+	TransitioningMessage string       `json:"transitioningMessage"`
+	Conditions           []Conditions `json:"conditions"`
 }
 
 type Conditions struct {
