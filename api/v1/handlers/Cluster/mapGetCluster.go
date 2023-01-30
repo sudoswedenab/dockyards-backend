@@ -16,9 +16,11 @@ import (
 )
 
 type ClusterResponse struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	UserId string `json:"userId"`
+	Data []Data
+}
+
+type Data struct {
+	Name string `json:"name"`
 }
 
 func MapGetClusters(c *gin.Context, cluster model.Cluster) string {
@@ -77,12 +79,10 @@ func MapGetClusters(c *gin.Context, cluster model.Cluster) string {
 	json.Unmarshal(data, &valuetok)
 
 	fmt.Println(valuetok)
-	fmt.Printf("%T\n", valuetok.Id)
-	c.JSON(http.StatusOK, gin.H{
 
-		"VALUE OK": valuetok,
-		"TokenID":  valuetok.Id,
+	c.JSON(http.StatusOK, gin.H{
+		"Clusters": valuetok.Data,
 	})
-	return valuetok.Id
+	return string("")
 
 }
