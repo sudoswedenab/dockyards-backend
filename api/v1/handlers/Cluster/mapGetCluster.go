@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"Backend/api/v1/model"
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
@@ -20,10 +19,17 @@ type ClusterResponse struct {
 }
 
 type Data struct {
-	Name string `json:"name"`
+	Name       string       `json:"name"`
+	Conditions []Conditions `json:"conditions"`
+	Created    string       `json:"created"`
 }
 
-func MapGetClusters(c *gin.Context, cluster model.Cluster) string {
+type Conditions struct {
+	Status string `json:"status"`
+	Type   string `json:"type"`
+}
+
+func MapGetClusters(c *gin.Context) string {
 	// reqBody, err := json.Marshal(cluster)
 	// if err != nil {
 	// 	c.JSON(http.StatusBadRequest, gin.H{
@@ -41,12 +47,18 @@ func MapGetClusters(c *gin.Context, cluster model.Cluster) string {
 	// Parse takes the token string and a function for looking up the key.
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
-		return []byte(os.Getenv("SECERET")), nil
+		return nil, nil
 	})
+	if err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return ""
+	}
+
+	fmt.Println("lalal", token)
+
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
@@ -81,7 +93,7 @@ func MapGetClusters(c *gin.Context, cluster model.Cluster) string {
 	fmt.Println(valuetok)
 
 	c.JSON(http.StatusOK, gin.H{
-		"Clusters": valuetok.Data,
+		"clusters": valuetok.Data,
 	})
 	return string("")
 

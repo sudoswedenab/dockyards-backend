@@ -39,12 +39,15 @@ func CreateClusters(c *gin.Context, cluster model.Cluster) string {
 	// Parse takes the token string and a function for looking up the key.
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
-		return []byte(os.Getenv("SECERET")), nil
+		return nil, nil
 	})
+	if err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return ""
+	}
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 	bearerToken := claims["aud"]
