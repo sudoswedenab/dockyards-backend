@@ -23,7 +23,7 @@ type Data struct {
 	CreatorId  string       `json:"creatorId"`
 	Created    string       `json:"created"`
 	State      string       `json:"state"`
-	NodeCount  string       `json:"nodeCount"`
+	NodeCount  int          `json:"nodeCount"`
 	Conditions []Conditions `json:"conditions"`
 }
 
