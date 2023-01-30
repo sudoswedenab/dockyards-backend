@@ -2,16 +2,17 @@ package cluster
 
 import (
 	"Backend/api/v1/model"
-	"bytes"
 	"crypto/tls"
-	b64 "encoding/base64"
 	"encoding/json"
-	"fmt"
+	b64 "encoding/json"
 	"io/ioutil"
+
+	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 )
 
 type RancherResponse struct {
@@ -21,24 +22,42 @@ type RancherResponse struct {
 }
 
 func CreateCluster(c *gin.Context, cluster model.Cluster) string {
-	reqBody, err := json.Marshal(cluster)
+	// reqBody, err := json.Marshal(cluster)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"error": "Not valid JSON! Failed to marshal Body",
+	// 	})
+	// 	return ""
+	// }
+	//Get the cookie
+	tokenString, err := c.Cookie("access_token")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Not valid JSON! Failed to marshal Body",
-		})
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return ""
 	}
 
-	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
+	// Parse takes the token string and a function for looking up the key.
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
+		return []byte(os.Getenv("SECERET")), nil
+	})
+	claims := token.Claims.(jwt.MapClaims)
+
+	bearerToken := claims["aud"]
 	rancherURL := os.Getenv("CATTLE_URL")
-	// Do external request
+
+	//Do external request
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("GET", rancherURL+"/v3/clusters", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("GET", rancherURL+"/v3/clusters", nil)
 	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
+		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken.(string))),
 	)
 	// Response from the external request
 	resp, extErr := client.Do(req)
@@ -64,4 +83,5 @@ func CreateCluster(c *gin.Context, cluster model.Cluster) string {
 		"TokenID":    valuetok.Id,
 	})
 	return valuetok.Id
+
 }
