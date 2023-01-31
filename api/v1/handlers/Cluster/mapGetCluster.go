@@ -66,11 +66,12 @@ func MapGetClusters(c *gin.Context) string {
 
 	// bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
 	rancherURL := os.Getenv("CATTLE_URL")
-	
-	proxy, _ := url.Parse("http://ProxyIP:ProxyPort"), 
-	http.DefaultTransport := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxy)}}
+
+	// proxy, _ := url.Parse("http://localhost:9999")
+
 	//Do external request
 	tr := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
