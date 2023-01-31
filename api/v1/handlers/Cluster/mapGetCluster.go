@@ -5,7 +5,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"io/ioutil"
-
+	"net/url"
 	"fmt"
 	"net/http"
 	"os"
@@ -68,10 +68,11 @@ func MapGetClusters(c *gin.Context) string {
 	rancherURL := os.Getenv("CATTLE_URL")
 
 	// proxy, _ := url.Parse("http://localhost:9999")
-
+	proxyAddr := flag.String("proxy", "localhost:9999", "SOCKS5 proxy address to use")
+	dialer, err := proxy.SOCKS5("tcp", *proxyAddr, &auth, nil)
 	//Do external request
 	tr := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+		Dial: dialer.Dial,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
