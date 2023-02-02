@@ -45,6 +45,9 @@ func RegisterRoutes(r *gin.Engine) {
 	v1.GET("/mapcluster", func(c *gin.Context) {
 		cluster.MapGetClusters(c)
 	})
+	v1.GET("/mapsupercluster", func(c *gin.Context) {
+		cluster.MapSuperClusters(c)
+	})
 
 	v1.GET("/createcluster", func(c *gin.Context) {
 		cluster.CreateClusters(c, model.Cluster{})
@@ -75,4 +78,5 @@ func RegisterRoutes(r *gin.Engine) {
 	v1Admin.DELETE("/deleteuser/:id", func(c *gin.Context) {
 		user.DeleteUser(c)
 	})
+
 }
