@@ -4,15 +4,14 @@ import (
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
-	
-	"fmt"
 	"io/ioutil"
+
+	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"golang.org/x/net/proxy"
 )
 
 type ClusterResponse struct {
@@ -68,14 +67,10 @@ func MapGetClusters(c *gin.Context) string {
 	// bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
 	rancherURL := os.Getenv("CATTLE_URL")
 
-	// proxy, _ := url.Parse("http://localhost:9999")
-	dialer, err := proxy.SOCKS5("tcp", "localhost:9999", nil, nil)
 	//Do external request
 	tr := &http.Transport{
-		Dial:            dialer.Dial,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-
 	client := &http.Client{Transport: tr}
 	req, _ := http.NewRequest("GET", rancherURL+"/v3/clusters", nil)
 	req.Header.Set(
