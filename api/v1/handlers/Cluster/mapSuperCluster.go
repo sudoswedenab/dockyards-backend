@@ -74,15 +74,15 @@ func MapSuperClusters(c *gin.Context) string {
 		return ""
 	}
 
-	fmt.Println("EASY FIND", string(data))
-	var valuetok model.ClusterRespAll
+	// fmt.Println("EASY FIND", string(data))
+	var valuetok RC
 
 	json.Unmarshal(data, &valuetok)
 
-	fmt.Println(valuetok)
+	// fmt.Println(valuetok)
 
 	c.JSON(http.StatusOK, gin.H{
-		"clusters": valuetok.Datan,
+		"clusters": valuetok.Data,
 	})
 	return string("")
 

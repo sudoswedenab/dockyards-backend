@@ -1,7 +1,7 @@
 package model
 
 type ClusterRespAll struct {
-	Datan []Datan
+	Data []Datan
 }
 
 type Datan struct {
@@ -12,7 +12,7 @@ type Datan struct {
 	NodeCount            int             `json:"nodeCount"`
 	Transitioning        string          `json:"transitioning"`
 	TransitioningMessage string          `json:"transitioningMessage"`
-	ConditionsOne        []ConditionsOne `json:"conditions"`
+	Conditions           []ConditionsOne `json:"conditions"`
 }
 
 type ConditionsOne struct {
