@@ -2,6 +2,8 @@ package cluster
 
 import (
 	"Backend/api/v1/model"
+	"bytes"
+
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
@@ -18,7 +20,7 @@ type Clusterino struct {
 	model.ClusterRespAll
 }
 
-func CreatedCluster(c *gin.Context, req model.ClusterData) string {
+func CreatedCluster(c *gin.Context, cluster model.ClusterData) string {
 
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
@@ -42,13 +44,18 @@ func CreatedCluster(c *gin.Context, req model.ClusterData) string {
 	}
 
 	fmt.Println("lalal", token)
-
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 
-	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
+	reqBody, err := json.Marshal(cluster)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Not valid JSON! Failed to marshal Body",
+		})
+		return ""
+	}
 
-	// bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
+	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
 	rancherURL := os.Getenv("CATTLE_URL")
 
 	//Do external request
@@ -56,7 +63,7 @@ func CreatedCluster(c *gin.Context, req model.ClusterData) string {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("GET", rancherURL+"/v3/clusters", nil)
+	req, _ := http.NewRequest("POST", rancherURL+"/v3/clusters", bytes.NewBuffer(reqBody))
 	req.Header.Set(
 		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
 	)
@@ -83,6 +90,5 @@ func CreatedCluster(c *gin.Context, req model.ClusterData) string {
 	c.JSON(http.StatusOK, gin.H{
 		"clusters": valuetok.Data,
 	})
-	return string("")
-
+	return ""
 }

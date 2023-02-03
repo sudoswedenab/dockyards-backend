@@ -19,7 +19,7 @@ type RancherUserResponse struct {
 }
 
 func RancherCreateUser(c *gin.Context, user model.RancherUser) string {
-	
+
 	reqBody, err := json.Marshal(user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
