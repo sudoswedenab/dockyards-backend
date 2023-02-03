@@ -67,6 +67,11 @@ func CreatedCluster(c *gin.Context, cluster model.ClusterData) string {
 	req.Header.Set(
 		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
 	)
+	req.Header.Set("Content-Type","application/json")
+	req.Header.Set("Accept","application/json")
+	req.Header.Set("Origin","https://ss-di-rancher.sudobash.io")
+	req.Header.Set("Connection", "keep-alive" )
+	req.Header.Set("Referer","https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl', 'TE': 'trailers")
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
@@ -90,5 +95,5 @@ func CreatedCluster(c *gin.Context, cluster model.ClusterData) string {
 	c.JSON(http.StatusOK, gin.H{
 		"clusters": valuetok.Data,
 	})
-	return ""
+	return Clusterino.Data
 }

@@ -50,7 +50,7 @@ func RegisterRoutes(r *gin.Engine) {
 		cluster.MapGetClusters(c)
 	})
 
-	v1.GET("/createcluster", func(c *gin.Context) {
+	v1.POST("/createcluster", func(c *gin.Context) {
 		cluster.CreatedCluster(c, model.ClusterData{})
 	})
 
