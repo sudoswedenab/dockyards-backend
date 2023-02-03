@@ -18,7 +18,7 @@ type Clusterino struct {
 	model.ClusterRespAll
 }
 
-func CreatedCluster(c *gin.Context) string {
+func CreatedCluster(c *gin.Context, req model.ClusterData) string {
 
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
