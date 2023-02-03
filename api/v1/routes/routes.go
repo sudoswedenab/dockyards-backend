@@ -42,6 +42,10 @@ func RegisterRoutes(r *gin.Engine) {
 		c.String(http.StatusOK, "Success.")
 	})
 
+	v1.GET("/readcookie", func(c *gin.Context) {
+		handlers.ReadCookie(c)
+	})
+
 	v1.GET("/mapcluster", func(c *gin.Context) {
 		cluster.MapGetClusters(c)
 	})
