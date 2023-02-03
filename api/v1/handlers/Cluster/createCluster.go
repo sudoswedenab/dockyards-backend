@@ -5,9 +5,8 @@ import (
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
-	"io/ioutil"
-
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -15,20 +14,12 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type RancherResponses struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	UserId string `json:"userId"`
+type Clusterino struct {
+	model.ClusterRespAll
 }
 
-func CreateClusters(c *gin.Context, cluster model.Cluster) string {
-	// reqBody, err := json.Marshal(cluster)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{
-	// 		"error": "Not valid JSON! Failed to marshal Body",
-	// 	})
-	// 	return ""
-	// }
+func CreatedCluster(c *gin.Context) string {
+
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
 	if err != nil {
@@ -42,15 +33,22 @@ func CreateClusters(c *gin.Context, cluster model.Cluster) string {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return nil, nil
+		return []byte(os.Getenv("SECERET")), nil
+
 	})
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return ""
 	}
+
+	fmt.Println("lalal", token)
+
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
-	bearerToken := claims["aud"]
+
+	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
+
+	// bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
 	rancherURL := os.Getenv("CATTLE_URL")
 
 	//Do external request
@@ -60,7 +58,7 @@ func CreateClusters(c *gin.Context, cluster model.Cluster) string {
 	client := &http.Client{Transport: tr}
 	req, _ := http.NewRequest("GET", rancherURL+"/v3/clusters", nil)
 	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken.(string))),
+		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
 	)
 	// Response from the external request
 	resp, extErr := client.Do(req)
@@ -75,17 +73,16 @@ func CreateClusters(c *gin.Context, cluster model.Cluster) string {
 		return ""
 	}
 
-	fmt.Println("EASY FIND", string(data))
-	var valuetok RancherResponses
+	// fmt.Println("EASY FIND", string(data))
+	var valuetok Clusterino
+
 	json.Unmarshal(data, &valuetok)
 
-	fmt.Println(valuetok)
-	fmt.Printf("%T\n", valuetok.Id)
-	c.JSON(http.StatusOK, gin.H{
+	// fmt.Println(valuetok)
 
-		"VALUE OK": valuetok,
-		"TokenID":  valuetok.Id,
+	c.JSON(http.StatusOK, gin.H{
+		"clusters": valuetok.Data,
 	})
-	return valuetok.Id
+	return string("")
 
 }
