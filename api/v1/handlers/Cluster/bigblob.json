@@ -1,0 +1,237 @@
+{
+  "actions": {
+    "backupEtcd": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf?action=backupEtcd",
+    "enableMonitoring": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf?action=enableMonitoring",
+    "exportYaml": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf?action=exportYaml",
+    "generateKubeconfig": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf?action=generateKubeconfig",
+    "importYaml": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf?action=importYaml",
+    "restoreFromEtcdBackup": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf?action=restoreFromEtcdBackup",
+    "rotateCertificates": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf?action=rotateCertificates"
+  },
+  "agentImageOverride": "",
+  "annotations": {},
+  "answers": {
+    "clusterId": null,
+    "projectId": null,
+    "type": "/v3/schemas/answer",
+    "values": {}
+  },
+  "appliedEnableNetworkPolicy": false,
+  "baseType": "cluster",
+  "clusterSecrets": {
+    "type": "/v3/schemas/clusterSecrets"
+  },
+  "clusterTemplateId": "cattle-global-data:ct-wd9kg",
+  "clusterTemplateRevisionId": "cattle-global-data:ctr-7xnpl",
+  "conditions": [
+    {
+      "status": "True",
+      "type": "Pending"
+    },
+    {
+      "status": "Unknown",
+      "type": "Provisioned"
+    },
+    {
+      "status": "Unknown",
+      "type": "Waiting"
+    }
+  ],
+  "created": "2023-02-06T13:40:44Z",
+  "createdTS": 1675690844000,
+  "creatorId": "u-q2k5w",
+  "defaultClusterRoleForProjectMembers": null,
+  "defaultPodSecurityPolicyTemplateId": null,
+  "description": "",
+  "desiredAgentImage": "",
+  "desiredAuthImage": "",
+  "dockerRootDir": "/var/lib/docker",
+  "enableClusterAlerting": false,
+  "enableClusterMonitoring": false,
+  "enableNetworkPolicy": false,
+  "id": "c-78fdf",
+  "internal": false,
+  "istioEnabled": false,
+  "labels": {
+    "cattle.io/creator": "norman"
+  },
+  "links": {
+    "apiServices": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/apiservices",
+    "clusterAlertGroups": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/clusteralertgroups",
+    "clusterAlertRules": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/clusteralertrules",
+    "clusterAlerts": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/clusteralerts",
+    "clusterCatalogs": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/clustercatalogs",
+    "clusterMonitorGraphs": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/clustermonitorgraphs",
+    "clusterRegistrationTokens": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/clusterregistrationtokens",
+    "clusterRoleTemplateBindings": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/clusterroletemplatebindings",
+    "clusterScans": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/clusterscans",
+    "etcdBackups": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/etcdbackups",
+    "namespaces": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/namespaces",
+    "nodePools": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/nodepools",
+    "nodes": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/nodes",
+    "notifiers": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/notifiers",
+    "persistentVolumes": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/persistentvolumes",
+    "projects": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/projects",
+    "remove": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf",
+    "self": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf",
+    "shell": "wss://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf?shell=true",
+    "storageClasses": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/storageclasses",
+    "subscribe": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/subscribe",
+    "templates": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/templates",
+    "tokens": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf/tokens",
+    "update": "https://ss-di-rancher.sudobash.io/v3/clusters/c-78fdf"
+  },
+  "linuxWorkerCount": 0,
+  "localClusterAuthEndpoint": {
+    "enabled": true,
+    "type": "/v3/schemas/localClusterAuthEndpoint"
+  },
+  "name": "adamcluster",
+  "nodeCount": 0,
+  "nodeVersion": 0,
+  "questions": null,
+  "rancherKubernetesEngineConfig": {
+    "addonJobTimeout": 45,
+    "authentication": {
+      "strategy": "x509",
+      "type": "/v3/schemas/authnConfig"
+    },
+    "authorization": {
+      "type": "/v3/schemas/authzConfig"
+    },
+    "bastionHost": {
+      "ignoreProxyEnvVars": false,
+      "sshAgentAuth": false,
+      "type": "/v3/schemas/bastionHost"
+    },
+    "cloudProvider": {
+      "type": "/v3/schemas/cloudProvider"
+    },
+    "dns": {
+      "nodelocal": {
+        "type": "/v3/schemas/nodelocal"
+      },
+      "type": "/v3/schemas/dnsConfig"
+    },
+    "enableCriDockerd": true,
+    "ignoreDockerVersion": true,
+    "ingress": {
+      "defaultBackend": false,
+      "defaultIngressClass": true,
+      "httpPort": 0,
+      "httpsPort": 0,
+      "provider": "nginx",
+      "type": "/v3/schemas/ingressConfig"
+    },
+    "kubernetesVersion": "v1.24.4-rancher1-1",
+    "monitoring": {
+      "provider": "metrics-server",
+      "replicas": 1,
+      "type": "/v3/schemas/monitoringConfig"
+    },
+    "network": {
+      "mtu": 0,
+      "options": {
+        "flannel_backend_type": "vxlan"
+      },
+      "plugin": "canal",
+      "type": "/v3/schemas/networkConfig"
+    },
+    "restore": {
+      "restore": false,
+      "type": "/v3/schemas/restoreConfig"
+    },
+    "rotateEncryptionKey": false,
+    "services": {
+      "etcd": {
+        "backupConfig": {
+          "enabled": true,
+          "intervalHours": 12,
+          "retention": 6,
+          "s3BackupConfig": null,
+          "safeTimestamp": false,
+          "timeout": 300,
+          "type": "/v3/schemas/backupConfig"
+        },
+        "creation": "12h",
+        "extraArgs": {
+          "election-timeout": "5000",
+          "heartbeat-interval": "500"
+        },
+        "gid": 0,
+        "retention": "72h",
+        "snapshot": false,
+        "type": "/v3/schemas/etcdService",
+        "uid": 0
+      },
+      "kubeApi": {
+        "alwaysPullImages": false,
+        "podSecurityPolicy": false,
+        "secretsEncryptionConfig": {
+          "enabled": false,
+          "type": "/v3/schemas/secretsEncryptionConfig"
+        },
+        "serviceNodePortRange": "30000-32767",
+        "type": "/v3/schemas/kubeAPIService"
+      },
+      "kubeController": {
+        "type": "/v3/schemas/kubeControllerService"
+      },
+      "kubelet": {
+        "failSwapOn": false,
+        "generateServingCertificate": false,
+        "type": "/v3/schemas/kubeletService"
+      },
+      "kubeproxy": {
+        "type": "/v3/schemas/kubeproxyService"
+      },
+      "scheduler": {
+        "type": "/v3/schemas/schedulerService"
+      },
+      "type": "/v3/schemas/rkeConfigServices"
+    },
+    "sshAgentAuth": false,
+    "type": "/v3/schemas/rancherKubernetesEngineConfig",
+    "upgradeStrategy": {
+      "drain": false,
+      "maxUnavailableControlplane": "1",
+      "maxUnavailableWorker": "10%",
+      "nodeDrainInput": {
+        "deleteLocalData": false,
+        "force": false,
+        "gracePeriod": -1,
+        "ignoreDaemonSets": true,
+        "timeout": 120,
+        "type": "/v3/schemas/nodeDrainInput"
+      },
+      "type": "/v3/schemas/nodeUpgradeStrategy"
+    }
+  },
+  "scheduledClusterScan": {
+    "enabled": false,
+    "scanConfig": {
+      "cisScanConfig": {
+        "debugMaster": false,
+        "debugWorker": false,
+        "overrideBenchmarkVersion": "rke-cis-1.5",
+        "overrideSkip": null,
+        "profile": "permissive",
+        "type": "/v3/schemas/cisScanConfig"
+      },
+      "type": "/v3/schemas/clusterScanConfig"
+    },
+    "scheduleConfig": {
+      "cronSchedule": "0 0 * * *",
+      "retention": 24,
+      "type": "/v3/schemas/scheduledClusterScanConfig"
+    },
+    "type": "/v3/schemas/scheduledClusterScan"
+  },
+  "state": "provisioning",
+  "transitioning": "yes",
+  "transitioningMessage": "",
+  "type": "cluster",
+  "uuid": "5fa20be5-00b8-4f76-8111-d9ed815251ce",
+  "windowsPreferedCluster": false,
+  "windowsWorkerCount": 0
+}
