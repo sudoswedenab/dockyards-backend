@@ -43,7 +43,7 @@ func CreatedCluster(c *gin.Context, cluster model.ClusterData) string {
 		return ""
 	}
 
-	fmt.Println("lalal", token)
+	// fmt.Println("lalal", token)
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 
@@ -67,17 +67,20 @@ func CreatedCluster(c *gin.Context, cluster model.ClusterData) string {
 	req.Header.Set(
 		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
 	)
-	req.Header.Set("Content-Type","application/json")
-	req.Header.Set("Accept","application/json")
-	req.Header.Set("Origin","https://ss-di-rancher.sudobash.io")
-	req.Header.Set("Connection", "keep-alive" )
-	req.Header.Set("Referer","https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl', 'TE': 'trailers")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Origin", "https://ss-di-rancher.sudobash.io")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("Referer", "https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl")
+	req.Header.Set("TE", "trailers")
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
 		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
 		return ""
 	}
+
+	fmt.Println("Response HERE", resp)
 	data, _ := ioutil.ReadAll(resp.Body)
 
 	respErr := resp.Body.Close()
@@ -85,15 +88,16 @@ func CreatedCluster(c *gin.Context, cluster model.ClusterData) string {
 		return ""
 	}
 
+	fmt.Println("COPY THAT,ROGER ROGER", string(data))
 	// fmt.Println("EASY FIND", string(data))
 	var valuetok Clusterino
 
 	json.Unmarshal(data, &valuetok)
 
-	// fmt.Println(valuetok)
+	fmt.Println("JETLAGG", valuetok)
 
 	c.JSON(http.StatusOK, gin.H{
 		"clusters": valuetok.Data,
 	})
-	return Clusterino.Data
+	return string("")
 }
