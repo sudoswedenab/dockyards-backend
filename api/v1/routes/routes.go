@@ -6,7 +6,6 @@ import (
 	"Backend/api/v1/handlers/cluster"
 	"Backend/api/v1/handlers/user"
 	"Backend/api/v1/middleware"
-	"Backend/api/v1/model"
 	"fmt"
 	"net/http"
 
@@ -51,7 +50,7 @@ func RegisterRoutes(r *gin.Engine) {
 	})
 
 	v1.POST("/createcluster", func(c *gin.Context) {
-		cluster.CreatedCluster(c, model.ClusterData{})
+		cluster.CreatedCluster(c)
 	})
 
 	// Admin Routes
