@@ -17,16 +17,17 @@ import (
 )
 
 type Clusterino struct {
-	model.ClusterRespAll
+	Id string `json:"id"`
+	Name string `json:"name"`
 }
 
-func CreatedCluster(c *gin.Context) string {
+func CreatedCluster(c *gin.Context) (string,string,error)  {
 
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
-		return ""
+		return "","",err
 	}
 
 	// Parse takes the token string and a function for looking up the key.
@@ -40,7 +41,7 @@ func CreatedCluster(c *gin.Context) string {
 	})
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
-		return ""
+		return "","",err
 	}
 
 	// fmt.Println("lalal", token)
@@ -53,7 +54,7 @@ func CreatedCluster(c *gin.Context) string {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
 		})
-		return ""
+		return "","",err
 	}
 
 	// jsonData, err := io.ReadAll(c.Request.Body)
@@ -69,7 +70,7 @@ func CreatedCluster(c *gin.Context) string {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Not valid JSON! Failed to marshal Body",
 		})
-		return ""
+		return "","",err
 	}
 
 	fmt.Println("BODDY / BAYWATCH OLALALALA VI SKAPAR", string(reqBody))
@@ -109,7 +110,7 @@ func CreatedCluster(c *gin.Context) string {
 	resp, extErr := client.Do(req)
 	if extErr != nil {
 		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
-		return ""
+		return "","",err
 	}
 
 	fmt.Println("Response HERE", resp)
@@ -117,19 +118,20 @@ func CreatedCluster(c *gin.Context) string {
 
 	respErr := resp.Body.Close()
 	if respErr != nil {
-		return ""
+		return "","",err
 	}
 
 	fmt.Println("COPY THAT,ROGER ROGER", string(data))
 	// fmt.Println("EASY FIND", string(data))
-	var valuetok Clusterino
+	var responseBody Clusterino
 
-	json.Unmarshal(data, &valuetok)
+	json.Unmarshal(data, &responseBody)
 
-	fmt.Println("JETLAGG", valuetok)
+	fmt.Println("JETLAGG", responseBody)
 
 	c.JSON(http.StatusOK, gin.H{
-		"clusters": valuetok.Data,
+		"clusterID": responseBody.Id,
+		"clusterName": responseBody.Name,
 	})
-	return string("")
+	return responseBody.Id,responseBody.Name, err
 }
