@@ -64,15 +64,28 @@ func CreatedCluster(c *gin.Context, cluster model.ClusterData) string {
 	}
 	client := &http.Client{Transport: tr}
 	req, _ := http.NewRequest("POST", rancherURL+"/v3/clusters", bytes.NewBuffer(reqBody))
-	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
-	)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Origin", "https://ss-di-rancher.sudobash.io")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Referer", "https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl")
-	req.Header.Set("TE", "trailers")
+
+	// req.Header.Set(
+	// 	"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
+	// )
+	// req.Header.Set("Content-Type", "application/json")
+	// req.Header.Set("Accept", "application/json")
+	// req.Header.Set("Origin", "https://ss-di-rancher.sudobash.io")
+	// req.Header.Set("Connection", "keep-alive")
+	// req.Header.Set("Referer", "https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl")
+	// req.Header.Set("TE", "trailers")
+
+	req.Header = http.Header{
+		"Content-Type":  {"application/json"},
+		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken))},
+		"Accept":        {"application/json"},
+		"Origin":        {"https://ss-di-rancher.sudobash.io"},
+		"Connection":    {"keep-alive"},
+		// "Referer":       {"https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl"},
+		"TE": {"trailers"},
+	}
+
+	fmt.Println("HEADERN VI SKAPAR", req.Header)
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
