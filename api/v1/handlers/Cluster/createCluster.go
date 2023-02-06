@@ -20,7 +20,7 @@ type Clusterino struct {
 	model.ClusterRespAll
 }
 
-func CreatedCluster(c *gin.Context, cluster model.ClusterData) string {
+func CreatedCluster(c *gin.Context) string {
 
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
@@ -47,13 +47,32 @@ func CreatedCluster(c *gin.Context, cluster model.ClusterData) string {
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 
-	reqBody, err := json.Marshal(cluster)
+	var body model.NewClusterorius
+
+	if c.Bind(&body) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to read Body",
+		})
+		return ""
+	}
+
+	// jsonData, err := io.ReadAll(c.Request.Body)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"error": "Not valid JSON! Failed to READ Body",
+	// 	})
+	// 	return ""
+	// }
+
+	reqBody, err := json.Marshal(body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Not valid JSON! Failed to marshal Body",
 		})
 		return ""
 	}
+
+	fmt.Println("BODDY / BAYWATCH OLALALALA VI SKAPAR", string(reqBody))
 
 	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
 	rancherURL := os.Getenv("CATTLE_URL")
