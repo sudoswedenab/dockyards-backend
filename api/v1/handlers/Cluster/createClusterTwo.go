@@ -3,7 +3,6 @@ package cluster
 import (
 	"Backend/api/v1/model"
 	"bytes"
-
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
@@ -16,18 +15,18 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type Clusterino struct {
+type ClusterTwoos struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
-func CreatedCluster(c *gin.Context) (string, string, error) {
+func CreatedClusterTwo(c *gin.Context) string {
 
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
-		return "", "", err
+		return ""
 	}
 
 	// Parse takes the token string and a function for looking up the key.
@@ -41,20 +40,24 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 	})
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
-		return "", "", err
+		return ""
 	}
 
 	// fmt.Println("lalal", token)
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 
-	var body model.NewClusterorius
+	//GeT FROM CLUSTER ON INFO
+	ClusterOne := CreatedCluster(c)
+	fmt.Println(ClusterOne)
+
+	var body model.ClusterTwo
 
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
 		})
-		return "", "", err
+		return ""
 	}
 
 	// jsonData, err := io.ReadAll(c.Request.Body)
@@ -70,7 +73,7 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Not valid JSON! Failed to marshal Body",
 		})
-		return "", "", err
+		return ""
 	}
 
 	fmt.Println("BODDY / BAYWATCH OLALALALA VI SKAPAR", string(reqBody))
@@ -83,7 +86,7 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("POST", rancherURL+"/v3/clusters", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", rancherURL+"v3/nodepool", bytes.NewBuffer(reqBody))
 
 	// req.Header.Set(
 	// 	"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
@@ -110,7 +113,7 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 	resp, extErr := client.Do(req)
 	if extErr != nil {
 		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
-		return "", "", err
+		return ""
 	}
 
 	fmt.Println("Response HERE", resp)
@@ -118,12 +121,12 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 
 	respErr := resp.Body.Close()
 	if respErr != nil {
-		return "", "", err
+		return ""
 	}
 
 	fmt.Println("COPY THAT,ROGER ROGER", string(data))
 	// fmt.Println("EASY FIND", string(data))
-	var responseBody Clusterino
+	var responseBody ClusterTwoos
 
 	json.Unmarshal(data, &responseBody)
 
@@ -133,5 +136,5 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 		"clusterID":   responseBody.Id,
 		"clusterName": responseBody.Name,
 	})
-	return responseBody.Id, responseBody.Name, err
+	return ""
 }
