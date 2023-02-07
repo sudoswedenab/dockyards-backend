@@ -19,7 +19,7 @@ type ClusterTwo struct {
 	Quantity                int    `json:"quantity"`
 	Worker                  bool   `json:"worker"`
 	Type                    string `json:"nodePool"`
-	ClusterId               string `json:"ID"`
-	HostnamePrefix          string `json:"NAME" "+""-node-"`
+	ClusterId               string `json:"clusterId"`
+	HostnamePrefix          string `json:"hostnamePrefix"`
 	NodeTemplateId          string `json:"nodeTemplateId"`
 }
