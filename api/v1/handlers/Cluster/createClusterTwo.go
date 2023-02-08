@@ -15,7 +15,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type ClusterTwoos struct {
+type ClusterTwos struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 }
@@ -47,11 +47,11 @@ func CreatedClusterTwo(c *gin.Context) string {
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 
-	//GeT FROM CLUSTER ON INFO
+	//GeT FROM CLUSTER ONE INFO
 	ClusterOne := CreatedCluster(c)
 	fmt.Println(ClusterOne)
 
-	var body model.ClusterTwo
+	var body model.NodePool_body
 
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -97,7 +97,7 @@ func CreatedClusterTwo(c *gin.Context) string {
 	// req.Header.Set("Connection", "keep-alive")
 	// req.Header.Set("Referer", "https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl")
 	// req.Header.Set("TE", "trailers")
-
+	//Headern vi skapar
 	req.Header = http.Header{
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken))},
@@ -115,26 +115,31 @@ func CreatedClusterTwo(c *gin.Context) string {
 		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
 		return ""
 	}
-
+	// The Response from the header are we Captureing here
 	fmt.Println("Response HERE", resp)
 	data, _ := ioutil.ReadAll(resp.Body)
 
+	// Then closing the body and check for errors, if we get errors we print it here.
 	respErr := resp.Body.Close()
 	if respErr != nil {
 		return ""
 	}
 
+	//Printing out the data from api and convert it to a string of data instead of byte. In our console
 	fmt.Println("COPY THAT,ROGER ROGER", string(data))
 	// fmt.Println("EASY FIND", string(data))
-	var responseBody ClusterTwoos
 
+	//Binding the struct in the top of the code to a varibel.
+	var responseBody ClusterTwos
+	// Converting the data from ones and zeros and binding it to the struct Responsbody
 	json.Unmarshal(data, &responseBody)
 
 	fmt.Println("JETLAGG", responseBody)
-
+	//Printing it out in our body (the response from the function)
 	c.JSON(http.StatusOK, gin.H{
 		"clusterID":   responseBody.Id,
 		"clusterName": responseBody.Name,
 	})
+	//also printing it out as a string of data
 	return ""
 }
