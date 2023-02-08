@@ -88,16 +88,7 @@ func CreatedClusterTwo(c *gin.Context) string {
 	client := &http.Client{Transport: tr}
 	req, _ := http.NewRequest("POST", rancherURL+"v3/nodepool", bytes.NewBuffer(reqBody))
 
-	// req.Header.Set(
-	// 	"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
-	// )
-	// req.Header.Set("Content-Type", "application/json")
-	// req.Header.Set("Accept", "application/json")
-	// req.Header.Set("Origin", "https://ss-di-rancher.sudobash.io")
-	// req.Header.Set("Connection", "keep-alive")
-	// req.Header.Set("Referer", "https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl")
-	// req.Header.Set("TE", "trailers")
-	//Headern vi skapar
+	//Setting the header
 	req.Header = http.Header{
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken))},
