@@ -7,6 +7,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -48,10 +49,18 @@ func CreatedClusterTwo(c *gin.Context) string {
 	fmt.Println(claims)
 
 	//GeT FROM CLUSTER ONE INFO
-	ClusterOne := CreatedCluster(c)
-	fmt.Println(ClusterOne)
 
-	var body model.NodePool_body
+	// ClusterOne := CreatedCluster(c)(Name, Id, err)
+	Id, Name, err := CreatedCluster(c)
+	// fmt.Println(Id)
+	// fmt.PrintIn(Name)
+	fmt.Println(err)
+
+	body := model.NodePoolbody{
+		ControlPlane:   true,
+		ClusterId:      Id,
+		HostnamePrefix: Name + "-node-",
+	}
 
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

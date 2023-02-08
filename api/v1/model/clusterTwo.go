@@ -11,7 +11,7 @@ package model
 //  "hostnamePrefix": NAME + "-node-",
 //  "nodeTemplateId": "cattle-global-nt:nt-zd2tl"}
 
-type NodePool_body struct {
+type NodePoolbody struct {
 	ControlPlane            bool   `json:"controlPlane"`
 	DeleteNotReadyAfterSecs int    `json:"deleteNotReadyAfterSecs"`
 	DrainBeforeDelete       bool   `json:"drainBeforeDelete"`
