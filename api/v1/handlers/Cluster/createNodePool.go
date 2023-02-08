@@ -7,6 +7,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"io/ioutil"
 	"net/http"
@@ -21,7 +22,7 @@ type ClusterTwos struct {
 	Name string `json:"name"`
 }
 
-func CreatedNodePool(c *gin.Context) string {
+func CreatedNodePool(c *gin.Context, Name string, Id string, Err error) string {
 
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
@@ -49,25 +50,34 @@ func CreatedNodePool(c *gin.Context) string {
 	fmt.Println(claims)
 
 	//GeT FROM CLUSTER ONE INFO
-
+	time.Sleep(5 * time.Second)
 	// ClusterOne := CreatedCluster(c)(Name, Id, err)
-	Id, Name, err := CreatedCluster(c)
+	// Id, Name, err := CreatedCluster(c)
 	// fmt.Println(Id)
 	// fmt.PrintIn(Name)
-	fmt.Println(err)
 
 	body := model.NodePoolbody{
-		ControlPlane:   true,
-		ClusterId:      Id,
-		HostnamePrefix: Name + "-node-",
+		ControlPlane:            true,
+		DeleteNotReadyAfterSecs: 0,
+		DrainBeforeDelete:       false,
+		Etcd:                    true,
+		Quantity:                3,
+		Worker:                  true,
+		Type:                    "nodePool",
+		ClusterId:               Id,
+		HostnamePrefix:          Name + "-node-",
+		NodeTemplateId:          "cattle-global-nt:nt-zd2tl",
 	}
-
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to read Body",
-		})
-		return ""
-	}
+	// {"controlPlane": "true",
+	// "deleteNotReadyAfterSecs": 0,
+	// "drainBeforeDelete": "false",
+	// "etcd": "true",
+	// "quantity": 3,
+	// "worker": "true",
+	//  "type": "nodePool",
+	//  "clusterId": ID ,
+	//  "hostnamePrefix": NAME + "-node-",
+	//  "nodeTemplateId": "cattle-global-nt:nt-zd2tl"}
 
 	// jsonData, err := io.ReadAll(c.Request.Body)
 	// if err != nil {
@@ -87,7 +97,7 @@ func CreatedNodePool(c *gin.Context) string {
 
 	fmt.Println("BODDY / BAYWATCH OLALALALA VI SKAPAR", string(reqBody))
 
-	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
+	bearerToken := claims["aud"]
 	rancherURL := os.Getenv("CATTLE_URL")
 
 	//Do external request
@@ -95,12 +105,12 @@ func CreatedNodePool(c *gin.Context) string {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("POST", rancherURL+"v3/nodepool", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", rancherURL+"/v3/nodepool", bytes.NewBuffer(reqBody))
 
 	//Setting the header
 	req.Header = http.Header{
 		"Content-Type":  {"application/json"},
-		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken))},
+		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken.(string)))},
 		"Accept":        {"application/json"},
 		"Origin":        {"https://ss-di-rancher.sudobash.io"},
 		"Connection":    {"keep-alive"},
