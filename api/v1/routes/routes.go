@@ -50,11 +50,10 @@ func RegisterRoutes(r *gin.Engine) {
 	})
 
 	v1.POST("/createcluster", func(c *gin.Context) {
-		cluster.CreatedCluster(c)
+		name, id, err := cluster.CreatedCluster(c)
+		cluster.CreatedNodePool(c, name, id, err)
 	})
-	v1.POST("/createnodepool", func(c *gin.Context) {
-		cluster.CreatedNodePool(c)
-	})
+
 	// Admin Routes
 	v1Admin := v1.Group("/admin", func(c *gin.Context) {
 		// Handles errors

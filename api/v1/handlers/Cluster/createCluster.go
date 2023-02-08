@@ -75,7 +75,7 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 
 	fmt.Println("BODDY / BAYWATCH OLALALALA VI SKAPAR", string(reqBody))
 
-	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
+	bearerToken := claims["aud"]
 	rancherURL := os.Getenv("CATTLE_URL")
 
 	//Do external request
@@ -97,7 +97,7 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 
 	req.Header = http.Header{
 		"Content-Type":  {"application/json"},
-		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken))},
+		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken.(string)))},
 		"Accept":        {"application/json"},
 		"Origin":        {"https://ss-di-rancher.sudobash.io"},
 		"Connection":    {"keep-alive"},
@@ -129,9 +129,5 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 
 	fmt.Println("JETLAGG", responseBody)
 
-	c.JSON(http.StatusOK, gin.H{
-		"clusterID":   responseBody.Id,
-		"clusterName": responseBody.Name,
-	})
 	return responseBody.Id, responseBody.Name, err
 }
