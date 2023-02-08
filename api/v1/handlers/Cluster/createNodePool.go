@@ -21,7 +21,7 @@ type ClusterTwos struct {
 	Name string `json:"name"`
 }
 
-func CreatedClusterTwo(c *gin.Context) string {
+func CreatedNodePool(c *gin.Context) string {
 
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
