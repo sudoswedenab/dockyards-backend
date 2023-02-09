@@ -55,21 +55,20 @@ func CreatedNodePool(c *gin.Context, Name string, Id string, Err error) string {
 	// fmt.PrintIn(Name)
 	//GeT FROM CREATECLUSTER  INFO
 	body := model.NodePoolbody{
+		ClusterId:               Id,
 		ControlPlane:            true,
 		DeleteNotReadyAfterSecs: 0,
 		DrainBeforeDelete:       true,
 		Etcd:                    true,
+		HostnamePrefix:          Name + "-node-",
+		Name:                    "",
+		NamespaceId:             "",
+		NodeTaints:              make([]string, 0),
+		NodeTemplateId:          "cattle-global-nt:nt-zd2tl",
 		Quantity:                3,
 		Worker:                  true,
-		NamespaceId:             "",
-		Type:                    "nodePool",
-		ClusterId:               Id,
-		HostnamePrefix:          Name + "-node-",
-		NodeTemplateId:          "cattle-global-nt:nt-zd2tl",
-		Name:                    "",
-		NodeTaints:              make([]string, 0),
 	}
-
+	fmt.Println("vi sriver den har", body)
 	// clusterId": "c-tvrfj",
 	// "controlPlane": true,
 	// "deleteNotReadyAfterSecs": 0,
@@ -129,8 +128,8 @@ func CreatedNodePool(c *gin.Context, Name string, Id string, Err error) string {
 		"Accept":        {"application/json"},
 		"Origin":        {"https://ss-di-rancher.sudobash.io"},
 		"Connection":    {"keep-alive"},
-		// "Referer":       {"https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl"},
-		"TE": {"trailers"},
+		"Referer":       {"https://ss-di-rancher.sudobash.io/v3/clusters/c-gx8dx/nodepools"},
+		"TE":            {"trailers"},
 	}
 
 	fmt.Println("HEADERN VI SKAPAR", req.Header)
