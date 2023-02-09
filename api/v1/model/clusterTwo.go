@@ -12,19 +12,18 @@ package model
 //  "nodeTemplateId": "cattle-global-nt:nt-zd2tl"}
 
 type NodePoolbody struct {
+	ClusterId               string   `json:"clusterId"`
 	ControlPlane            bool     `json:"controlPlane"`
 	DeleteNotReadyAfterSecs int      `json:"deleteNotReadyAfterSecs"`
 	DrainBeforeDelete       bool     `json:"drainBeforeDelete"`
 	Etcd                    bool     `json:"etcd"`
+	HostnamePrefix          string   `json:"hostnamePrefix"`
+	Name                    string   `json:"name"`
+	NamespaceId             string   `json:"namespaceId"`
+	NodeTaints              []string `json:"nodeTaints"`
+	NodeTemplateId          string   `json:"nodeTemplateId"`
 	Quantity                int      `json:"quantity"`
 	Worker                  bool     `json:"worker"`
-	NamespaceId             string   `json:"namespaceId"`
-	Name                    string   `json:"name"`
-	Type                    string   `json:"nodePool"`
-	ClusterId               string   `json:"clusterId"`
-	HostnamePrefix          string   `json:"hostnamePrefix"`
-	NodeTemplateId          string   `json:"nodeTemplateId"`
-	NodeTaints              []string `json:"nodeTaints"`
 }
 
 // clusterId": "c-tvrfj",
