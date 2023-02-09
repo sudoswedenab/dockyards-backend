@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,5 +16,7 @@ import (
 func Logout(c *gin.Context) {
 	c.SetCookie("access_token", "", -1, "", "", false, true)
 	c.SetCookie("refresh_token", "", -1, "", "", false, true)
-	c.String(http.StatusOK, fmt.Sprintf("Logged out"))
+	c.JSON(http.StatusOK, gin.H{
+		"Status": "Logged Out",
+	})
 }
