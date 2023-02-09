@@ -57,15 +57,32 @@ func CreatedNodePool(c *gin.Context, Name string, Id string, Err error) string {
 	body := model.NodePoolbody{
 		ControlPlane:            true,
 		DeleteNotReadyAfterSecs: 0,
-		DrainBeforeDelete:       false,
+		DrainBeforeDelete:       true,
 		Etcd:                    true,
 		Quantity:                3,
 		Worker:                  true,
+		NamespaceId:             "",
 		Type:                    "nodePool",
 		ClusterId:               Id,
 		HostnamePrefix:          Name + "-node-",
 		NodeTemplateId:          "cattle-global-nt:nt-zd2tl",
+		Name:                    "",
+		NodeTaints:              make([]string, 0),
 	}
+
+	// clusterId": "c-tvrfj",
+	// "controlPlane": true,
+	// "deleteNotReadyAfterSecs": 0,
+	// "drainBeforeDelete": true,
+	// "etcd": true,
+	// "hostnamePrefix": "kappastwo-node-",
+	// "name": "",
+	// "namespaceId": "",
+	// "nodeTaints": [ ],
+	// "nodeTemplateId": "cattle-global-nt:nt-zd2tl",
+	// "quantity": 3,
+	// "worker": true
+
 	// {"controlPlane": "true",
 	// "deleteNotReadyAfterSecs": 0,
 	// "drainBeforeDelete": "false",
