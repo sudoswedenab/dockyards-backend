@@ -4,7 +4,6 @@ import (
 	"Backend/api/v1/handlers/rancher"
 	"Backend/api/v1/model"
 	"Backend/internal"
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -25,8 +24,6 @@ import (
 //	@Failure		400
 //	@Router			/login [post]
 func Login(c *gin.Context) {
-
-	fmt.Println("Login hit")
 
 	// Get email and pass off req body
 	var body struct {
