@@ -107,9 +107,6 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 		return ""
 	}
 
-	//Printing out the data from api and convert it to a string of data instead of byte. In our console
-	// fmt.Println("COPY THAT,ROGER ROGER", string(data))
-
 	//Binding the struct in the top of the code to a varibel.
 	var responseBody ClusterTwos
 	// Converting the data from ones and zeros and binding it to the struct Responsbody
