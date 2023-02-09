@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"Backend/api/v1/model"
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
@@ -14,25 +15,25 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type ClusterResponse struct {
-	Data []Data
-}
+// type ClusterResponse struct {
+// 	Data []Data
+// }
 
-type Data struct {
-	Name                 string       `json:"name"`
-	CreatorId            string       `json:"creatorId"`
-	Created              string       `json:"created"`
-	State                string       `json:"state"`
-	NodeCount            int          `json:"nodeCount"`
-	Transitioning        string       `json:"transitioning"`
-	TransitioningMessage string       `json:"transitioningMessage"`
-	Conditions           []Conditions `json:"conditions"`
-}
+// type Data struct {
+// 	Name                 string       `json:"name"`
+// 	CreatorId            string       `json:"creatorId"`
+// 	Created              string       `json:"created"`
+// 	State                string       `json:"state"`
+// 	NodeCount            int          `json:"nodeCount"`
+// 	Transitioning        string       `json:"transitioning"`
+// 	TransitioningMessage string       `json:"transitioningMessage"`
+// 	Conditions           []Conditions `json:"conditions"`
+// }
 
-type Conditions struct {
-	Status string `json:"status"`
-	Type   string `json:"type"`
-}
+// type Conditions struct {
+// 	Status string `json:"status"`
+// 	Type   string `json:"type"`
+// }
 
 func MapGetClusters(c *gin.Context) string {
 
@@ -85,7 +86,7 @@ func MapGetClusters(c *gin.Context) string {
 	}
 
 	// fmt.Println("EASY FIND", string(data))
-	var valuetok ClusterResponse
+	var valuetok model.ClusterResponse
 	json.Unmarshal(data, &valuetok)
 
 	// fmt.Println(valuetok)
