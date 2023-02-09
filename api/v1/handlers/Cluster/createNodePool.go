@@ -103,7 +103,7 @@ func CreatedNodePool(c *gin.Context, Name string, Id string, Err error) string {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("POST", rancherURL+"/v3/nodepool", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", rancherURL+"/v3/nodepools", bytes.NewBuffer(reqBody))
 
 	//Setting the header
 	req.Header = http.Header{
