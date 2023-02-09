@@ -15,7 +15,6 @@ import (
 func ChangeRancherPWD(user model.User) (string, error) {
 
 	RandomPwd := model.NewPassword{NewPassword: String(34)}
-	fmt.Println(RandomPwd)
 
 	reqBody, err := json.Marshal(RandomPwd)
 	if err != nil {
@@ -37,13 +36,10 @@ func ChangeRancherPWD(user model.User) (string, error) {
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
-		fmt.Println("foobar")
 		errormsg := fmt.Sprintf("There was an external error: %s", extErr.Error())
 		err := errors.New(errormsg)
 		fmt.Println(err)
 		return "", err
-		// c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
-
 	}
 
 	respErr := resp.Body.Close()

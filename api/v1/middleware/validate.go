@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"Backend/api/v1/handlers/user"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,8 +18,6 @@ import (
 //	@Router			/admin/auth [get]
 func Validate(c *gin.Context) {
 	r := user.Response(c)
-
-	fmt.Println("AUTH hit")
 
 	c.JSON(http.StatusOK, gin.H{
 		"UserStatus": "user logged in",

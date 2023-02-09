@@ -52,8 +52,6 @@ func CreateRancherToken(rancherToken model.RRtoken) (string, string, error) {
 	}
 	var valuetok RancherResponseToken
 	json.Unmarshal(data, &valuetok)
-
-	fmt.Println(valuetok)
 	fmt.Printf("%T\n", valuetok.Id)
 
 	return valuetok.Bearertoken, valuetok.UserId, nil

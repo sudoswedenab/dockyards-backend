@@ -44,7 +44,6 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 		return "", "", err
 	}
 
-	// fmt.Println("lalal", token)
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 
@@ -57,14 +56,6 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 		return "", "", err
 	}
 
-	// jsonData, err := io.ReadAll(c.Request.Body)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{
-	// 		"error": "Not valid JSON! Failed to READ Body",
-	// 	})
-	// 	return ""
-	// }
-
 	reqBody, err := json.Marshal(body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -72,8 +63,6 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 		})
 		return "", "", err
 	}
-
-	fmt.Println("BODDY / BAYWATCH OLALALALA VI SKAPAR", string(reqBody))
 
 	bearerToken := claims["aud"]
 	rancherURL := os.Getenv("CATTLE_URL")
@@ -85,16 +74,6 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 	client := &http.Client{Transport: tr}
 	req, _ := http.NewRequest("POST", rancherURL+"/v3/clusters", bytes.NewBuffer(reqBody))
 
-	// req.Header.Set(
-	// 	"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
-	// )
-	// req.Header.Set("Content-Type", "application/json")
-	// req.Header.Set("Accept", "application/json")
-	// req.Header.Set("Origin", "https://ss-di-rancher.sudobash.io")
-	// req.Header.Set("Connection", "keep-alive")
-	// req.Header.Set("Referer", "https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl")
-	// req.Header.Set("TE", "trailers")
-
 	req.Header = http.Header{
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken.(string)))},
@@ -105,7 +84,6 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 		"TE": {"trailers"},
 	}
 
-	fmt.Println("HEADERN VI SKAPAR", req.Header)
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
@@ -113,7 +91,6 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 		return "", "", err
 	}
 
-	fmt.Println("Response HERE", resp)
 	data, _ := ioutil.ReadAll(resp.Body)
 
 	respErr := resp.Body.Close()
@@ -122,9 +99,8 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 	}
 
 	fmt.Println("COPY THAT,ROGER ROGER", string(data))
-	// fmt.Println("EASY FIND", string(data))
-	var responseBody Clusterino
 
+	var responseBody Clusterino
 	json.Unmarshal(data, &responseBody)
 
 	fmt.Println("JETLAGG", responseBody)

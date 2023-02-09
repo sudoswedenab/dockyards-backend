@@ -1,7 +1,6 @@
 package rancher
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 )
@@ -20,6 +19,5 @@ func StringWithCharset(length int, charset string) string {
 	return string(b)
 }
 func String(length int) string {
-	fmt.Println("String random hit")
 	return StringWithCharset(length, charset)
 }

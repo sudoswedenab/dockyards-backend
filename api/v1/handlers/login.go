@@ -49,13 +49,10 @@ func Login(c *gin.Context) {
 	//Checking agianst Racnher if user exist in rancher
 	bearertoken, err := rancher.RancherLogin(user)
 	if err != nil {
-		// fmt.Printf("%T\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 	}
-
-	fmt.Println(bearertoken)
 	//Compare sent in pass with saved user pass hash
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 
@@ -68,7 +65,6 @@ func Login(c *gin.Context) {
 	// claims["aud"] = RancherBearerToken
 	//Generate a jwt token
 	token := jwt.New(jwt.SigningMethodHS256)
-	fmt.Println("TOKENSTRING", token)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["aud"] = bearertoken
 	claims["sub"] = user.ID

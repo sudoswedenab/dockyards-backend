@@ -3,14 +3,12 @@ package rancher
 import (
 	"Backend/api/v1/model"
 	"errors"
-	"fmt"
 )
 
 func RancherLogin(user model.User) (string, error) {
 
 	NewRanchPWd, err := ChangeRancherPWD(user)
 	if err != nil {
-		fmt.Println("new ranch pwd err check")
 		return "", err
 	}
 

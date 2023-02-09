@@ -42,14 +42,11 @@ func MapSuperClusters(c *gin.Context) string {
 		return ""
 	}
 
-	fmt.Println("lalal", token)
-
+	//FUL LÖSNING
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 
 	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
-
-	// bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
 	rancherURL := os.Getenv("CATTLE_URL")
 
 	//Do external request
@@ -74,12 +71,8 @@ func MapSuperClusters(c *gin.Context) string {
 		return ""
 	}
 
-	// fmt.Println("EASY FIND", string(data))
 	var valuetok RC
-
 	json.Unmarshal(data, &valuetok)
-
-	// fmt.Println(valuetok)
 
 	c.JSON(http.StatusOK, gin.H{
 		"clusters": valuetok.Data,
