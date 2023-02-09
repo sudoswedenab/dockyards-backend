@@ -45,17 +45,15 @@ func CreatedNodePool(c *gin.Context, Name string, Id string, Err error) string {
 		return ""
 	}
 
-	// fmt.Println("lalal", token)
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 
-	//GeT FROM CLUSTER ONE INFO
 	time.Sleep(5 * time.Second)
 	// ClusterOne := CreatedCluster(c)(Name, Id, err)
 	// Id, Name, err := CreatedCluster(c)
 	// fmt.Println(Id)
 	// fmt.PrintIn(Name)
-
+	//GeT FROM CREATECLUSTER  INFO
 	body := model.NodePoolbody{
 		ControlPlane:            true,
 		DeleteNotReadyAfterSecs: 0,

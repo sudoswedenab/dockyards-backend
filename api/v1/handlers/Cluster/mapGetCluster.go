@@ -57,14 +57,9 @@ func MapGetClusters(c *gin.Context) string {
 		return ""
 	}
 
-	fmt.Println("lalal", token)
-
 	claims := token.Claims.(jwt.MapClaims)
-	fmt.Println(claims)
 
 	bearerToken := claims["aud"]
-
-	// bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
 	rancherURL := os.Getenv("CATTLE_URL")
 
 	//Do external request

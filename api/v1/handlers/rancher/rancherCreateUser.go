@@ -53,8 +53,6 @@ func RancherCreateUser(c *gin.Context, user model.RancherUser) string {
 	}
 	var rancherUserResponse RancherUserResponse
 	json.Unmarshal(data, &rancherUserResponse)
-
-	fmt.Println(rancherUserResponse)
 	fmt.Printf("%T\n", rancherUserResponse.Id)
 
 	if resp.Status == "201" {

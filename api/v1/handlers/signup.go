@@ -4,7 +4,6 @@ import (
 	"Backend/api/v1/handlers/rancher"
 	"Backend/api/v1/model"
 	"Backend/internal"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +21,6 @@ import (
 //	@Failure		400
 //	@Router			/signup [post]
 func Signup(c *gin.Context) {
-	fmt.Println("Signup hit")
 	var body model.Signup
 
 	if c.Bind(&body) != nil {
@@ -43,7 +41,6 @@ func Signup(c *gin.Context) {
 	}
 
 	RandomPwd := rancher.String(34)
-	fmt.Println(RandomPwd)
 
 	RancherID := rancher.RancherCreateUser(c, model.RancherUser{
 		Enabled:            true,
