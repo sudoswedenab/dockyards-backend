@@ -15,26 +15,6 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-// type ClusterResponse struct {
-// 	Data []Data
-// }
-
-// type Data struct {
-// 	Name                 string       `json:"name"`
-// 	CreatorId            string       `json:"creatorId"`
-// 	Created              string       `json:"created"`
-// 	State                string       `json:"state"`
-// 	NodeCount            int          `json:"nodeCount"`
-// 	Transitioning        string       `json:"transitioning"`
-// 	TransitioningMessage string       `json:"transitioningMessage"`
-// 	Conditions           []Conditions `json:"conditions"`
-// }
-
-// type Conditions struct {
-// 	Status string `json:"status"`
-// 	Type   string `json:"type"`
-// }
-
 func MapGetClusters(c *gin.Context) string {
 	//Get the cookie
 	tokenString, err := c.Cookie("AccessToken")
