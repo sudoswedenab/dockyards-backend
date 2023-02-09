@@ -22,7 +22,7 @@ type ClusterTwos struct {
 	Name string `json:"name"`
 }
 
-func CreatedNodePool(c *gin.Context, Name string, Id string, Err error) string {
+func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 
 	//Get the cookie
 	tokenString, err := c.Cookie("access_token")
@@ -128,8 +128,8 @@ func CreatedNodePool(c *gin.Context, Name string, Id string, Err error) string {
 		"Accept":        {"application/json"},
 		"Origin":        {"https://ss-di-rancher.sudobash.io"},
 		"Connection":    {"keep-alive"},
-		"Referer":       {"https://ss-di-rancher.sudobash.io/v3/clusters/c-gx8dx/nodepools"},
-		"TE":            {"trailers"},
+		// "Referer":       {"https://ss-di-rancher.sudobash.io/v3/clusters/c-gx8dx/nodepools"},
+		"TE": {"trailers"},
 	}
 
 	fmt.Println("HEADERN VI SKAPAR", req.Header)
