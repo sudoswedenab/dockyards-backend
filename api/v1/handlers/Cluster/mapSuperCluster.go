@@ -15,9 +15,9 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type RC struct {
-	model.ClusterRespAll
-}
+// type RC struct {
+// 	model.ClusterRespAll
+// }
 
 func MapSuperClusters(c *gin.Context) string {
 
@@ -71,7 +71,7 @@ func MapSuperClusters(c *gin.Context) string {
 		return ""
 	}
 
-	var valuetok RC
+	var valuetok model.ClusterResponse
 	json.Unmarshal(data, &valuetok)
 
 	c.JSON(http.StatusOK, gin.H{

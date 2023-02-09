@@ -7,7 +7,6 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"io/ioutil"
 	"net/http"
@@ -48,11 +47,8 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 	claims := token.Claims.(jwt.MapClaims)
 	fmt.Println(claims)
 
-	time.Sleep(5 * time.Second)
-	// ClusterOne := CreatedCluster(c)(Name, Id, err)
-	// Id, Name, err := CreatedCluster(c)
-	// fmt.Println(Id)
-	// fmt.PrintIn(Name)
+	// time.Sleep(5 * time.Second)
+
 	//GeT FROM CREATECLUSTER  INFO
 	body := model.NodePoolbody{
 		ClusterId:               Id,
@@ -68,38 +64,6 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 		Quantity:                3,
 		Worker:                  true,
 	}
-	fmt.Println("vi sriver den har", body)
-	// clusterId": "c-tvrfj",
-	// "controlPlane": true,
-	// "deleteNotReadyAfterSecs": 0,
-	// "drainBeforeDelete": true,
-	// "etcd": true,
-	// "hostnamePrefix": "kappastwo-node-",
-	// "name": "",
-	// "namespaceId": "",
-	// "nodeTaints": [ ],
-	// "nodeTemplateId": "cattle-global-nt:nt-zd2tl",
-	// "quantity": 3,
-	// "worker": true
-
-	// {"controlPlane": "true",
-	// "deleteNotReadyAfterSecs": 0,
-	// "drainBeforeDelete": "false",
-	// "etcd": "true",
-	// "quantity": 3,
-	// "worker": "true",
-	//  "type": "nodePool",
-	//  "clusterId": ID ,
-	//  "hostnamePrefix": NAME + "-node-",
-	//  "nodeTemplateId": "cattle-global-nt:nt-zd2tl"}
-
-	// jsonData, err := io.ReadAll(c.Request.Body)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{
-	// 		"error": "Not valid JSON! Failed to READ Body",
-	// 	})
-	// 	return ""
-	// }
 
 	reqBody, err := json.Marshal(body)
 	if err != nil {
@@ -108,8 +72,6 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 		})
 		return ""
 	}
-
-	fmt.Println("BODDY / BAYWATCH OLALALALA VI SKAPAR", string(reqBody))
 
 	bearerToken := claims["aud"]
 	rancherURL := os.Getenv("CATTLE_URL")
@@ -128,11 +90,9 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 		"Accept":        {"application/json"},
 		"Origin":        {"https://ss-di-rancher.sudobash.io"},
 		"Connection":    {"keep-alive"},
-		// "Referer":       {"https://ss-di-rancher.sudobash.io/v3/clusters/c-gx8dx/nodepools"},
-		"TE": {"trailers"},
+		"TE":            {"trailers"},
 	}
 
-	fmt.Println("HEADERN VI SKAPAR", req.Header)
 	// Response from the external request
 	resp, extErr := client.Do(req)
 	if extErr != nil {
@@ -140,7 +100,7 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 		return ""
 	}
 	// The Response from the header are we Captureing here
-	fmt.Println("Response HERE", resp)
+
 	data, _ := ioutil.ReadAll(resp.Body)
 
 	// Then closing the body and check for errors, if we get errors we print it here.
@@ -150,15 +110,13 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 	}
 
 	//Printing out the data from api and convert it to a string of data instead of byte. In our console
-	fmt.Println("COPY THAT,ROGER ROGER", string(data))
-	// fmt.Println("EASY FIND", string(data))
+	// fmt.Println("COPY THAT,ROGER ROGER", string(data))
 
 	//Binding the struct in the top of the code to a varibel.
 	var responseBody ClusterTwos
 	// Converting the data from ones and zeros and binding it to the struct Responsbody
 	json.Unmarshal(data, &responseBody)
 
-	fmt.Println("JETLAGG", responseBody)
 	//Printing it out in our body (the response from the function)
 	c.JSON(http.StatusOK, gin.H{
 		"clusterID":   responseBody.Id,

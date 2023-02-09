@@ -16,7 +16,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type Clusterino struct {
+type NodePool struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 }
@@ -93,17 +93,21 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 
 	data, _ := ioutil.ReadAll(resp.Body)
 
+	fmt.Println(data)
+
 	respErr := resp.Body.Close()
 	if respErr != nil {
 		return "", "", err
 	}
 
-	fmt.Println("COPY THAT,ROGER ROGER", string(data))
-
-	var responseBody Clusterino
+	var responseBody NodePool
+	var ClientBody model.ClusterResponse
 	json.Unmarshal(data, &responseBody)
 
-	fmt.Println("JETLAGG", responseBody)
+	json.Unmarshal(data, &ClientBody)
 
+	c.JSON(http.StatusOK, gin.H{
+		"Cluster": ClientBody.Data,
+	})
 	return responseBody.Id, responseBody.Name, err
 }

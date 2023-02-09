@@ -1,6 +1,6 @@
 package model
 
-type ClusterRespAll struct {
+type ClusterResponse struct {
 	Data []Datan
 }
 
