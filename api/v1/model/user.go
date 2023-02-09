@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// User.go line 42
 // User example
 type User struct {
 	ID        uint `gorm:"primarykey"`

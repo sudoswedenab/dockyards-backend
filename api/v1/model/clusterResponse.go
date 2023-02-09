@@ -1,5 +1,7 @@
 package model
 
+//line 89 MapGetCluster
+//line 48 mapSuperCluster
 type ClusterResponse struct {
 	Data []Datan
 }
