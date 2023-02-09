@@ -44,7 +44,6 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 	}
 
 	claims := token.Claims.(jwt.MapClaims)
-	fmt.Println(claims)
 
 	// time.Sleep(5 * time.Second)
 
@@ -118,7 +117,7 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 
 	//Printing it out in our body (the response from the function)
 	c.JSON(http.StatusOK, gin.H{
-		"Cluster":     "Created Successfully",
+		"cluster":     "created successfully",
 		"clusterName": responseBody.Name,
 	})
 	//also printing it out as a string of data
