@@ -83,11 +83,11 @@ func MapGetClusters(c *gin.Context) string {
 		return ""
 	}
 
-	fmt.Println("EASY FIND", string(data))
+	// fmt.Println("EASY FIND", string(data))
 	var valuetok ClusterResponse
 	json.Unmarshal(data, &valuetok)
 
-	fmt.Println(valuetok)
+	// fmt.Println(valuetok)
 
 	c.JSON(http.StatusOK, gin.H{
 		"clusters": valuetok.Data,
