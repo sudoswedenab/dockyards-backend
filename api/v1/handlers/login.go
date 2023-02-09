@@ -20,17 +20,13 @@ import (
 //	@Tags			Login
 //	@Accept			application/json
 //	@Produce		text/plain
-//	@Param			email		path	int	true	"Email"
-//	@Param			password	path	int	true	"Password"
+//	@Param			request	body	model.Login	true "Login model"
 //	@Success		200
 //	@Failure		400
 //	@Router			/login [post]
 func Login(c *gin.Context) {
 	// Get email and pass off req body
-	var body struct {
-		Email    string
-		Password string
-	}
+	var body model.Login
 
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
