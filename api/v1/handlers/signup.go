@@ -22,7 +22,6 @@ import (
 //	@Failure		400
 //	@Router			/signup [post]
 func Signup(c *gin.Context) {
-	fmt.Println("Signup hit")
 	var body model.Signup
 
 	if c.Bind(&body) != nil {

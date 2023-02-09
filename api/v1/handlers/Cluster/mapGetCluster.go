@@ -35,9 +35,8 @@ type Conditions struct {
 }
 
 func MapGetClusters(c *gin.Context) string {
-
 	//Get the cookie
-	tokenString, err := c.Cookie("access_token")
+	tokenString, err := c.Cookie("AccessToken")
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return ""
