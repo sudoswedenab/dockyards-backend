@@ -101,13 +101,8 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 	}
 
 	var responseBody NodePool
-	var ClientBody model.ClusterResponse
+
 	json.Unmarshal(data, &responseBody)
 
-	json.Unmarshal(data, &ClientBody)
-
-	c.JSON(http.StatusOK, gin.H{
-		"Cluster": ClientBody.Data,
-	})
 	return responseBody.Id, responseBody.Name, err
 }
