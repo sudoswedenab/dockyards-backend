@@ -12,7 +12,6 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 )
 
 // type RC struct {
@@ -20,31 +19,6 @@ import (
 // }
 
 func MapSuperClusters(c *gin.Context) string {
-
-	//Get the cookie
-	tokenString, err := c.Cookie("access_token")
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return ""
-	}
-
-	// Parse takes the token string and a function for looking up the key.
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return []byte(os.Getenv("SECERET")), nil
-
-	})
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return ""
-	}
-
-	//FUL LÖSNING
-	claims := token.Claims.(jwt.MapClaims)
-	fmt.Println(claims)
 
 	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
 	rancherURL := os.Getenv("CATTLE_URL")

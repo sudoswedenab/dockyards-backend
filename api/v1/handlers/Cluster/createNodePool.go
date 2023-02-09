@@ -17,7 +17,6 @@ import (
 )
 
 type ClusterTwos struct {
-	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -119,7 +118,7 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 
 	//Printing it out in our body (the response from the function)
 	c.JSON(http.StatusOK, gin.H{
-		"clusterID":   responseBody.Id,
+		"Cluster":     "Created Successfully",
 		"clusterName": responseBody.Name,
 	})
 	//also printing it out as a string of data

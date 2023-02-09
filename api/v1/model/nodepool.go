@@ -11,6 +11,7 @@ package model
 //  "hostnamePrefix": NAME + "-node-",
 //  "nodeTemplateId": "cattle-global-nt:nt-zd2tl"}
 
+// Line 52 in createNodePool.go
 type NodePoolbody struct {
 	ClusterId               string   `json:"clusterId"`
 	ControlPlane            bool     `json:"controlPlane"`

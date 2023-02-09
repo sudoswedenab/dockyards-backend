@@ -1,5 +1,6 @@
 package model
 
+// rancherCreateUser.go line 21
 type RancherUser struct {
 	Enabled            bool   `json:"enabled"`
 	MustChangePassword bool   `json:"mustChangePassword,omitempty"`

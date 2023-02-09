@@ -1,4 +1,4 @@
-package model
+
 
 type NewClusterorius struct {
 	AgentEnvVars                        []AgentEnvVars `json:"agentEnvVars"`

@@ -45,9 +45,8 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 	}
 
 	claims := token.Claims.(jwt.MapClaims)
-	fmt.Println(claims)
 
-	var body model.NewClusterorius
+	var body model.ClusterData
 
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -92,8 +91,6 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 	}
 
 	data, _ := ioutil.ReadAll(resp.Body)
-
-	fmt.Println(data)
 
 	respErr := resp.Body.Close()
 	if respErr != nil {
