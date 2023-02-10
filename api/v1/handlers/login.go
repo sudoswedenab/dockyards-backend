@@ -4,8 +4,10 @@ import (
 	"Backend/api/v1/handlers/rancher"
 	"Backend/api/v1/model"
 	"Backend/internal"
+	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -95,10 +97,26 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
+	useServerCookie, err := strconv.ParseBool(os.Getenv("SET_SERVER_COOKIE"))
+	if err != nil {
+		fmt.Printf("error parsing: %s", err)
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"Login":        "Success",
-		"AccessToken":  tokenString,
-		"RefreshToken": rt,
-	})
+	if useServerCookie {
+		// Send it back as a Cookie
+		c.SetSameSite(http.SameSiteLaxMode)
+		c.SetCookie("AccessToken", tokenString, 900, "", "", false, true)
+		c.SetCookie("RefreshToken", rt, 3600*1, "", "", false, true)
+
+		c.JSON(http.StatusOK, gin.H{
+			"Login": "Success",
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"Login":        "Success",
+			"AccessToken":  tokenString,
+			"RefreshToken": rt,
+		})
+	}
 }
