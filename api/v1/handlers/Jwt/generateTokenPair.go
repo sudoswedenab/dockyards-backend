@@ -46,7 +46,7 @@ func GenerateTokenPair(user model.User) (map[string]string, error) {
 	}
 
 	return map[string]string{
-		"access_token":  t,
-		"refresh_token": rt,
+		"AccessToken":  t,
+		"RefreshToken": rt,
 	}, nil
 }

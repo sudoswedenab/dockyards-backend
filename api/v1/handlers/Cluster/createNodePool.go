@@ -23,7 +23,7 @@ type ClusterTwos struct {
 func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 
 	//Get the cookie
-	tokenString, err := c.Cookie("access_token")
+	tokenString, err := c.Cookie("AccessToken")
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return ""

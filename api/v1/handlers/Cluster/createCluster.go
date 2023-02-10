@@ -24,7 +24,7 @@ type NodePool struct {
 func CreatedCluster(c *gin.Context) (string, string, error) {
 
 	//Get the cookie
-	tokenString, err := c.Cookie("access_token")
+	tokenString, err := c.Cookie("AccessToken")
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return "", "", err

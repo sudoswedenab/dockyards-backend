@@ -58,8 +58,8 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 			if err != nil {
 				return err
 			}
-			c.SetCookie("access_token", newTokenPair["access_token"], 900, "", "", false, true)
-			c.SetCookie("refresh_token", newTokenPair["refresh_token"], 3600*1, "", "", false, true)
+			c.SetCookie("AccessToken", newTokenPair["AccessToken"], 900, "", "", false, true)
+			c.SetCookie("RefreshToken", newTokenPair["RefreshToken"], 3600*1, "", "", false, true)
 		}
 	}
 	return err
