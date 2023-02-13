@@ -24,7 +24,7 @@ import (
 func RefreshTokenEndpoint(c *gin.Context) error {
 
 	//Get the cookie
-	refreshToken, err := c.Cookie("refresh_token")
+	refreshToken, err := c.Cookie("RefreshToken")
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
