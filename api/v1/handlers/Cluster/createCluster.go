@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"Backend/api/v1/model"
+	"Backend/internal"
 	"bytes"
 
 	"crypto/tls"
@@ -23,8 +24,8 @@ type NodePool struct {
 
 func CreatedCluster(c *gin.Context) (string, string, error) {
 
-	//Get the cookie
-	tokenString, err := c.Cookie("AccessToken")
+	// Get the cookie
+	tokenString, err := c.Cookie(internal.AccessTokenName)
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return "", "", err

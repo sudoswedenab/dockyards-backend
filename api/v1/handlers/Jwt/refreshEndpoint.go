@@ -23,8 +23,8 @@ import (
 //	@Router			/refresh [post]
 func RefreshTokenEndpoint(c *gin.Context) error {
 
-	//Get the cookie
-	refreshToken, err := c.Cookie("RefreshToken")
+	// Get the cookie
+	refreshToken, err := c.Cookie(internal.RefreshTokenName)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -51,15 +51,17 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 
 		First := internal.DB.First(&user, claims["sub"])
 
-		// run through your business logic to verify if the user can log in
+		// replace with jwt response
 		if First.Error == nil {
-
 			newTokenPair, err := GenerateTokenPair(user)
 			if err != nil {
 				return err
 			}
-			c.SetCookie("AccessToken", newTokenPair["AccessToken"], 900, "", "", false, true)
-			c.SetCookie("RefreshToken", newTokenPair["RefreshToken"], 3600*1, "", "", false, true)
+			c.JSON(http.StatusOK, gin.H{
+				"Login":                   "Success",
+				internal.AccessTokenName:  newTokenPair[internal.AccessTokenName],
+				internal.RefreshTokenName: newTokenPair[internal.RefreshTokenName],
+			})
 		}
 	}
 	return err

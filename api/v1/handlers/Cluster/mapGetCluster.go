@@ -30,7 +30,6 @@ func MapGetClusters(c *gin.Context) string {
 		}
 
 		return []byte(os.Getenv("SECERET")), nil
-
 	})
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)

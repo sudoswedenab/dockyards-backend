@@ -63,10 +63,10 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-	// claims["aud"] = RancherBearerToken
+
 	//Generate a jwt token
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
+	accessToken := jwt.New(jwt.SigningMethodHS256)
+	claims := accessToken.Claims.(jwt.MapClaims)
 	claims["aud"] = bearertoken
 	claims["sub"] = user.ID
 	claims["name"] = user.Name
@@ -74,7 +74,7 @@ func Login(c *gin.Context) {
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
 	// Sign and get the complete encoded token as a string using the secret
-	tokenString, err := token.SignedString([]byte(os.Getenv("SECERET")))
+	at, err := accessToken.SignedString([]byte(os.Getenv("SECERET")))
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -97,26 +97,25 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-	useServerCookie, err := strconv.ParseBool(os.Getenv("SET_SERVER_COOKIE"))
+	setServerCookie, err := strconv.ParseBool(os.Getenv("SET_SERVER_COOKIE"))
 	if err != nil {
 		fmt.Printf("error parsing: %s", err)
 		return
 	}
 
-	if useServerCookie {
-		// Send it back as a Cookie
+	if setServerCookie {
+		// Send back a Cookie
 		c.SetSameSite(http.SameSiteLaxMode)
-		c.SetCookie("AccessToken", tokenString, 900, "", "", false, true)
+		c.SetCookie("AccessToken", at, 900, "", "", false, true)
 		c.SetCookie("RefreshToken", rt, 3600*1, "", "", false, true)
-
 		c.JSON(http.StatusOK, gin.H{
 			"Login": "Success",
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
-			"Login":        "Success",
-			"AccessToken":  tokenString,
-			"RefreshToken": rt,
+			"Login":                   "Success",
+			internal.AccessTokenName:  at,
+			internal.RefreshTokenName: rt,
 		})
 	}
 }

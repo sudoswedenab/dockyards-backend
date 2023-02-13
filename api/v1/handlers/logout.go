@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Backend/internal"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,8 +15,8 @@ import (
 //	@Success		200
 //	@Router			/logout [post]
 func Logout(c *gin.Context) {
-	c.SetCookie("AccessToken", "", -1, "", "", false, true)
-	c.SetCookie("RefreshToken", "", -1, "", "", false, true)
+	c.SetCookie(internal.AccessTokenName, "", -1, "", "", false, true)
+	c.SetCookie(internal.RefreshTokenName, "", -1, "", "", false, true)
 	c.JSON(http.StatusOK, gin.H{
 		"status": "logged out",
 	})

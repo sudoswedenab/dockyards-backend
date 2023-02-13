@@ -3,7 +3,7 @@ package jwt
 import (
 	"Backend/api/v1/handlers/rancher"
 	"Backend/api/v1/model"
-	"fmt"
+	"Backend/internal"
 	"os"
 	"time"
 
@@ -14,7 +14,6 @@ func GenerateTokenPair(user model.User) (map[string]string, error) {
 	// Create token
 	token := jwt.New(jwt.SigningMethodHS256)
 
-	fmt.Println("lalalal", user)
 	//Checking agianst Racnher if user exist in rancher
 	bearertoken, err := rancher.RancherLogin(user)
 	if err != nil {
@@ -46,7 +45,7 @@ func GenerateTokenPair(user model.User) (map[string]string, error) {
 	}
 
 	return map[string]string{
-		"AccessToken":  t,
-		"RefreshToken": rt,
+		internal.AccessTokenName:  t,
+		internal.RefreshTokenName: rt,
 	}, nil
 }
