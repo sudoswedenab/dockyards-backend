@@ -19,6 +19,7 @@ import (
 
 type ClusterTwos struct {
 	Name string `json:"name"`
+	Id   string `json:"id"`
 }
 
 func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
@@ -87,9 +88,10 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken.(string)))},
 		"Accept":        {"application/json"},
-		"Origin":        {"https://ss-di-rancher.sudobash.io"},
-		"Connection":    {"keep-alive"},
-		"TE":            {"trailers"},
+		// "Origin":        {"https://ss-di-rancher.sudobash.io"},
+		"Origin":     {"https://localhost"},
+		"Connection": {"keep-alive"},
+		"TE":         {"trailers"},
 	}
 
 	// Response from the external request
@@ -117,6 +119,7 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 	c.JSON(http.StatusOK, gin.H{
 		"cluster":     "created successfully",
 		"clusterName": responseBody.Name,
+		"clusterId":   responseBody.Id,
 	})
 	//also printing it out as a string of data
 	return ""

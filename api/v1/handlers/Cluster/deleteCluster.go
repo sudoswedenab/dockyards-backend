@@ -41,38 +41,45 @@ func DeleteCluster(c *gin.Context) string {
 
 	bearerToken := claims["aud"]
 	rancherURL := os.Getenv("CATTLE_URL")
-	clusterID := "c-tptnm"
-	//Do external request
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	clusterID := c.Param("id")
+
+	if clusterID == "local" {
+
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "not authorized to do that",
+		})
+	} else {
+
+		//Do external request
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := &http.Client{Transport: tr}
+		req, _ := http.NewRequest("DELETE", rancherURL+"/v3/clusters/"+clusterID, nil)
+		req.Header.Set(
+			"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken.(string))),
+		)
+		// Response from the external request
+		resp, extErr := client.Do(req)
+		if extErr != nil {
+			c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
+			return ""
+		}
+		data, _ := ioutil.ReadAll(resp.Body)
+
+		respErr := resp.Body.Close()
+		if respErr != nil {
+			return ""
+		}
+
+		var valuetok model.ClusterResponse
+		json.Unmarshal(data, &valuetok)
+
+		// fmt.Println(valuetok)
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "cluster deleted",
+		})
 	}
-	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("DELETE", rancherURL+"/v3/clusters/"+clusterID, nil)
-	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken.(string))),
-	)
-	// Response from the external request
-	resp, extErr := client.Do(req)
-	if extErr != nil {
-		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
-		return ""
-	}
-	data, _ := ioutil.ReadAll(resp.Body)
-
-	respErr := resp.Body.Close()
-	if respErr != nil {
-		return ""
-	}
-
-	// fmt.Println("EASY FIND", string(data))
-	var valuetok model.ClusterResponse
-	json.Unmarshal(data, &valuetok)
-
-	// fmt.Println(valuetok)
-
-	c.JSON(http.StatusOK, gin.H{
-		"clusters": valuetok.Data,
-	})
 	return string("")
-
 }

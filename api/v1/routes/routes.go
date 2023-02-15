@@ -53,7 +53,7 @@ func RegisterRoutes(r *gin.Engine) {
 		id, name, err := cluster.CreatedCluster(c)
 		cluster.CreatedNodePool(c, id, name, err)
 	})
-	v1.DELETE("/deletecluster", func(c *gin.Context) {
+	v1.DELETE("/deletecluster/:id", func(c *gin.Context) {
 		cluster.DeleteCluster(c)
 	})
 	// Admin Routes
