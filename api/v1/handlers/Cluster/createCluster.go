@@ -78,7 +78,7 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken.(string)))},
 		"Accept":        {"application/json"},
-		"Origin":        {"https://ss-di-rancher.sudobash.io"},
+		"Origin":        {"https://ss-di-rancher.mgmt.sudobash.io/"},
 		// "Origin":     {"https://localhost"},
 		"Connection": {"keep-alive"},
 		// "Referer":       {"https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl"},
