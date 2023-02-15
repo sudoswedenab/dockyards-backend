@@ -75,8 +75,6 @@ func DeleteCluster(c *gin.Context) string {
 		var valuetok model.ClusterResponse
 		json.Unmarshal(data, &valuetok)
 
-		// fmt.Println(valuetok)
-
 		c.JSON(http.StatusOK, gin.H{
 			"message": "cluster deleted",
 		})
