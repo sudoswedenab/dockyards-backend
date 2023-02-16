@@ -8,7 +8,6 @@ type ClusterResponse struct {
 
 type Datan struct {
 	Name                 string          `json:"name"`
-	Id                   string          `json:"id"`
 	CreatorId            string          `json:"creatorId"`
 	Created              string          `json:"created"`
 	State                string          `json:"state"`

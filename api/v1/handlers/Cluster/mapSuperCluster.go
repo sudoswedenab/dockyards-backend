@@ -45,7 +45,7 @@ func MapSuperClusters(c *gin.Context) string {
 		return ""
 	}
 
-	var valuetok model.ClusterResponse
+	var valuetok model.ReturnClusterResponse
 	json.Unmarshal(data, &valuetok)
 
 	c.JSON(http.StatusOK, gin.H{

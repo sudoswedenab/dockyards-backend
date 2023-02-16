@@ -64,7 +64,7 @@ func MapGetClusters(c *gin.Context) string {
 	}
 
 	// fmt.Println("EASY FIND", string(data))
-	var valuetok model.ClusterResponse
+	var valuetok model.ReturnClusterResponse
 	json.Unmarshal(data, &valuetok)
 
 	// fmt.Println(valuetok)

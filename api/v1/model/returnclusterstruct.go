@@ -2,12 +2,11 @@ package model
 
 type ReturnClusterResponse struct {
 	Data []Data
-	Id   string `json:"id"`
-	Name string `json:"name"`
 }
 
 type Data struct {
 	Name                 string         `json:"name"`
+	Id                   string         `json:"id"`
 	CreatorId            string         `json:"creatorId"`
 	Created              string         `json:"created"`
 	State                string         `json:"state"`

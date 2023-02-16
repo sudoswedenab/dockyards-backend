@@ -8,6 +8,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"io/ioutil"
 	"net/http"
@@ -47,7 +48,7 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 
 	claims := token.Claims.(jwt.MapClaims)
 
-	// time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	//GeT FROM CREATECLUSTER  INFO
 	body := model.NodePoolbody{
@@ -88,7 +89,7 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken.(string)))},
 		"Accept":        {"application/json"},
-		"Origin":        {"https://ss-di-rancher.mgmt.sudobash.io/"},
+		"Origin":        {"https://ss-di-rancher.mgmt.sudobash.io"},
 		// "Origin":     {"https://localhost"},
 		"Connection": {"keep-alive"},
 		"TE":         {"trailers"},
