@@ -60,7 +60,7 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 		Name:                    "",
 		NamespaceId:             "",
 		NodeTaints:              make([]string, 0),
-		NodeTemplateId:          "cattle-global-nt:nt-zd2tl",
+		NodeTemplateId:          "cattle-global-nt:nt-5hxd5",
 		Quantity:                3,
 		Worker:                  true,
 	}
