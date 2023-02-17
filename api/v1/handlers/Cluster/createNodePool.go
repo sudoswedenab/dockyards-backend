@@ -89,10 +89,9 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken.(string)))},
 		"Accept":        {"application/json"},
-		"Origin":        {"https://ss-di-rancher.mgmt.sudobash.io"},
-		// "Origin":     {"https://localhost"},
-		"Connection": {"keep-alive"},
-		"TE":         {"trailers"},
+		"Origin":        {os.Getenv("CATTLE_URL")},
+		"Connection":    {"keep-alive"},
+		"TE":            {"trailers"},
 	}
 
 	// Response from the external request
