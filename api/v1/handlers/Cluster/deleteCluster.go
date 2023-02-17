@@ -17,7 +17,7 @@ import (
 
 func DeleteCluster(c *gin.Context) string {
 	//Get the cookie
-	tokenString, err := c.Cookie("AccessToken")
+	tokenString, err := c.Cookie(internal.AccessTokenName)
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return ""

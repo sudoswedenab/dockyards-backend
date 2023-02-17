@@ -14,10 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// type RC struct {
-// 	model.ClusterRespAll
-// }
-
 func MapSuperClusters(c *gin.Context) string {
 
 	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
