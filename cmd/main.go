@@ -56,7 +56,14 @@ func main() {
 
 	routes.RegisterRoutes(r)
 
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	useSwagger, err := strconv.ParseBool(os.Getenv("FLAG_USE_SWAGGER"))
+	if err != nil {
+		fmt.Printf("error parsing: %s", err)
+		return
+	}
+	if useSwagger {
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
 	r.Run()
 }
