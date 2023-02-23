@@ -15,7 +15,7 @@ pipelines:
           name: Build and Test
           script:
             - IMAGE_NAME=$BITBUCKET_REPO_SLUG
-            - echo ${BITBUCKET_REPO_SLUG}
+            - curl http://icanhazip.com/
             - docker build . --file Dockerfile --tag ${IMAGE_NAME}
             - docker save ${IMAGE_NAME} --output "${IMAGE_NAME}.tar"
           services:
