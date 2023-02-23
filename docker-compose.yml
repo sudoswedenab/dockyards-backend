@@ -1,26 +1,36 @@
 version: '3.8'
+networks:
+  backend:
 services:
   DB:
-    image: postgres:alpine
+    image: postgres:alpine3.17
     build: .
-
+    networks:
+      - backend
     environment:
       - POSTGRES_USER=${DBPOSTGRES_USER}
       - POSTGRES_PASSWORD=${DBPOSTGRES_PASSWORD}
       - POSTGRES_DB=${DBPOSTGRES_NAME}
-
     volumes:
       - ./data/db:/var/lib/postgresql/data
     ports:
       - "5432:5432"
   Rancher:
     image: rancher/rancher:latest
-
+    networks:
+      - backend
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - "rancher-data:/var/lib/rancher"
     privileged: true
+
+  Backend:
+    image: backend:latest
+    networks:
+      - backend
+    ports:
+      - "9000:9000"
 volumes:
   rancher-data:
