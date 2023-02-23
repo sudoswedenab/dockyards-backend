@@ -12,11 +12,10 @@ pipelines:
   branches:
     master:
       - step:
-          env:
-            FLAG_USE_SWAGGER: false
           name: Build and Test
           script:
             - IMAGE_NAME=$BITBUCKET_REPO_SLUG
+            - echo ${BITBUCKET_REPO_SLUG}
             - docker build . --file Dockerfile --tag ${IMAGE_NAME}
             - docker save ${IMAGE_NAME} --output "${IMAGE_NAME}.tar"
           services:
@@ -33,7 +32,7 @@ pipelines:
             - IMAGE_NAME=$BITBUCKET_REPO_SLUG
             - docker load --input "${IMAGE_NAME}.tar"
             - VERSION="prod-0.1.${BITBUCKET_BUILD_NUMBER}"
-            - IMAGE=${DOCKERHUB_NAMESPACE}/${IMAGE_NAME}
+            - IMAGE=${HARBOR_URL}/${IMAGE_NAME}
             - docker tag "${IMAGE_NAME}" "${IMAGE}:${VERSION}"
             - docker push "${IMAGE}:${VERSION}"
           services:
