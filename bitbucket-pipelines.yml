@@ -12,6 +12,8 @@ pipelines:
   branches:
     master:
       - step:
+          env:
+            FLAG_USE_SWAGGER: false
           name: Build and Test
           script:
             - IMAGE_NAME=$BITBUCKET_REPO_SLUG
