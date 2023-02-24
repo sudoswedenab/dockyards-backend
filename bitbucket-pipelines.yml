@@ -12,10 +12,9 @@ pipelines:
   branches:
     master:
       - step:
-          name: Build and Test
+          name: Build Master
           script:
             - IMAGE_NAME=$BITBUCKET_REPO_SLUG
-            - curl http://icanhazip.com/
             - docker build . --file Dockerfile --tag ${IMAGE_NAME}
             - docker save ${IMAGE_NAME} --output "${IMAGE_NAME}.tar"
           services:
@@ -30,9 +29,10 @@ pipelines:
           script:
             - echo ${HARBOR_PASSWORD} | docker login --username "$HARBOR_USERNAME" --password-stdin "$HARBOR_URL"
             - IMAGE_NAME=$BITBUCKET_REPO_SLUG
+            - PROJECT_NAME=$HARBOR_PROJECT
             - docker load --input "${IMAGE_NAME}.tar"
-            - VERSION="prod-0.1.${BITBUCKET_BUILD_NUMBER}"
-            - IMAGE=${HARBOR_URL}/${IMAGE_NAME}/${IMAGE_NAME}
+            - VERSION=latest
+            - IMAGE=${HARBOR_URL}/${PROJECT_NAME}/${IMAGE_NAME}
             - docker tag "${IMAGE_NAME}" "${IMAGE}:${VERSION}"
             - docker push "${IMAGE}:${VERSION}"
           services:
