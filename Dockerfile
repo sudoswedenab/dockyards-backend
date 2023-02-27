@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
-# env values will be passed from CLI/runners
+# .env values will be passed from ConfigMap
 #COPY .env .
 RUN go build -v -o ./dist/app ./cmd/main.go
 
