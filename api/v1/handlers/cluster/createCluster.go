@@ -9,12 +9,10 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"io/ioutil"
+	"net/http"
 )
 
 type NodePool struct {
@@ -37,7 +35,7 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(os.Getenv("SECERET")), nil
+		return []byte(internal.Secret), nil
 
 	})
 	if err != nil {
@@ -65,7 +63,7 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 	}
 
 	bearerToken := claims["aud"]
-	rancherURL := os.Getenv("CATTLE_URL")
+	rancherURL := internal.CattleUrl
 
 	//Do external request
 	tr := &http.Transport{
@@ -78,7 +76,7 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken.(string)))},
 		"Accept":        {"application/json"},
-		"Origin":        {os.Getenv("CATTLE_URL")},
+		"Origin":        {internal.CattleUrl},
 		"Connection":    {"keep-alive"},
 		// "Referer":       {"https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl"},
 		"TE": {"trailers"},

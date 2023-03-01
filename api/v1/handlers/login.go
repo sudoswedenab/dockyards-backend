@@ -4,10 +4,7 @@ import (
 	"Backend/api/v1/handlers/rancher"
 	"Backend/api/v1/model"
 	"Backend/internal"
-	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -74,7 +71,7 @@ func Login(c *gin.Context) {
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
 	// Sign and get the complete encoded token as a string using the secret
-	at, err := accessToken.SignedString([]byte(os.Getenv("SECERET")))
+	at, err := accessToken.SignedString([]byte(internal.Secret))
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -89,7 +86,7 @@ func Login(c *gin.Context) {
 	rtClaims["sub"] = user.ID
 	rtClaims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 
-	rt, rerr := refreshToken.SignedString([]byte(os.Getenv("RefSECERET")))
+	rt, rerr := refreshToken.SignedString([]byte(internal.RefSecret))
 
 	if rerr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -97,17 +94,12 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-	setServerCookie, err := strconv.ParseBool(os.Getenv("SET_SERVER_COOKIE"))
-	if err != nil {
-		fmt.Printf("error parsing: %s", err)
-		return
-	}
 
-	if setServerCookie {
+	if internal.FlagServerCookie {
 		// Send back a Cookie
 		c.SetSameSite(http.SameSiteLaxMode)
-		c.SetCookie("AccessToken", at, 900, "", "", false, true)
-		c.SetCookie("RefreshToken", rt, 3600*1, "", "", false, true)
+		c.SetCookie(internal.AccessTokenName, at, 900, "", "", false, true)
+		c.SetCookie(internal.RefreshTokenName, rt, 3600*1, "", "", false, true)
 		c.JSON(http.StatusOK, gin.H{
 			"Login": "Success",
 		})

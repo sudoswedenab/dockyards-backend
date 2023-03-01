@@ -4,7 +4,6 @@ import (
 	"Backend/api/v1/handlers/rancher"
 	"Backend/api/v1/model"
 	"Backend/internal"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -29,7 +28,7 @@ func GenerateTokenPair(user model.User) (map[string]string, error) {
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte(os.Getenv("SECERET")))
+	t, err := token.SignedString([]byte(internal.Secret))
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +38,7 @@ func GenerateTokenPair(user model.User) (map[string]string, error) {
 	rtClaims["sub"] = user.ID
 	rtClaims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 
-	rt, err := refreshToken.SignedString([]byte(os.Getenv("RefSECERET")))
+	rt, err := refreshToken.SignedString([]byte(internal.RefSecret))
 	if err != nil {
 		return nil, err
 	}

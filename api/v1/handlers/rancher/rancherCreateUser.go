@@ -2,16 +2,15 @@ package rancher
 
 import (
 	"Backend/api/v1/model"
+	"Backend/internal"
 	"bytes"
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
-	"os"
-
-	"github.com/gin-gonic/gin"
 )
 
 type RancherUserResponse struct {
@@ -28,8 +27,8 @@ func RancherCreateUser(c *gin.Context, user model.RancherUser) string {
 		return ""
 	}
 
-	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
-	rancherURL := os.Getenv("CATTLE_URL")
+	bearerToken := internal.CattleBearerToken
+	rancherURL := internal.CattleUrl
 	// Do external request
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},

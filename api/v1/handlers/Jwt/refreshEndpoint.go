@@ -5,7 +5,6 @@ import (
 	"Backend/internal"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -37,7 +36,7 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 		}
 
 		// hmacSampleSecret is a []byte containing your incl secret key
-		return []byte(os.Getenv("RefSECERET")), nil
+		return []byte(internal.RefSecret), nil
 	})
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {

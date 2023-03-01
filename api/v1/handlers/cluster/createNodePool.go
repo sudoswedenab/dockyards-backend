@@ -10,12 +10,10 @@ import (
 	"fmt"
 	"time"
 
-	"io/ioutil"
-	"net/http"
-	"os"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"io/ioutil"
+	"net/http"
 )
 
 type ClusterTwos struct {
@@ -38,7 +36,7 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(os.Getenv("SECERET")), nil
+		return []byte(internal.Secret), nil
 
 	})
 	if err != nil {
@@ -75,7 +73,7 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 	}
 
 	bearerToken := claims["aud"]
-	rancherURL := os.Getenv("CATTLE_URL")
+	rancherURL := internal.CattleUrl
 
 	//Do external request
 	tr := &http.Transport{
@@ -89,7 +87,7 @@ func CreatedNodePool(c *gin.Context, Id string, Name string, Err error) string {
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken.(string)))},
 		"Accept":        {"application/json"},
-		"Origin":        {os.Getenv("CATTLE_URL")},
+		"Origin":        {internal.CattleUrl},
 		"Connection":    {"keep-alive"},
 		"TE":            {"trailers"},
 	}

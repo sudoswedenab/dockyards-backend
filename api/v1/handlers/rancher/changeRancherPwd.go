@@ -2,6 +2,7 @@ package rancher
 
 import (
 	"Backend/api/v1/model"
+	"Backend/internal"
 	"bytes"
 	"crypto/tls"
 	b64 "encoding/base64"
@@ -9,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 )
 
 func ChangeRancherPWD(user model.User) (string, error) {
@@ -22,8 +22,8 @@ func ChangeRancherPWD(user model.User) (string, error) {
 		return "", err
 	}
 
-	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
-	rancherURL := os.Getenv("CATTLE_URL")
+	bearerToken := internal.CattleBearerToken
+	rancherURL := internal.CattleUrl
 	// Do external request
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},

@@ -9,11 +9,9 @@ import (
 	"io/ioutil"
 
 	"fmt"
-	"net/http"
-	"os"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"net/http"
 )
 
 func MapGetClusters(c *gin.Context) string {
@@ -30,7 +28,7 @@ func MapGetClusters(c *gin.Context) string {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(os.Getenv("SECERET")), nil
+		return []byte(internal.Secret), nil
 	})
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -40,7 +38,7 @@ func MapGetClusters(c *gin.Context) string {
 	claims := token.Claims.(jwt.MapClaims)
 
 	bearerToken := claims["aud"]
-	rancherURL := os.Getenv("CATTLE_URL")
+	rancherURL := internal.CattleUrl
 
 	//Do external request
 	tr := &http.Transport{

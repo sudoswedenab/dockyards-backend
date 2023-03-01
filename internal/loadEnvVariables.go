@@ -1,23 +1,50 @@
 package internal
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
 var (
-	RefreshTokenName string
-	AccessTokenName  string
+	RefreshTokenName  string
+	AccessTokenName   string
+	Secret            string
+	RefSecret         string
+	DatabaseConf      string
+	CattleUrl         string
+	CattleBearerToken string
+	FlagUseCors       = false
+	FlagUseSwagger    = false
+	FlagServerCookie  = false
 )
 
 func LoadEnvVariables() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Cloud not load .env file")
 	}
 
+	FlagUseCors, err = strconv.ParseBool(os.Getenv("FLAG_USE_CORS"))
+	if err != nil {
+		fmt.Printf("error parsing: %s", err)
+	}
+	FlagUseSwagger, err = strconv.ParseBool(os.Getenv("FLAG_USE_SWAGGER"))
+	if err != nil {
+		fmt.Printf("error parsing: %s", err)
+	}
+	FlagServerCookie, err = strconv.ParseBool(os.Getenv("FLAG_SET_SERVER_COOKIE"))
+	if err != nil {
+		fmt.Printf("error parsing: %s", err)
+	}
 	AccessTokenName = os.Getenv("ACCESS_TOKEN_NAME")
 	RefreshTokenName = os.Getenv("REFRESH_TOKEN_NAME")
+	Secret = os.Getenv("SECRET")
+	RefSecret = os.Getenv("REF_SECRET")
+	DatabaseConf = os.Getenv("DB_CONF")
+	CattleUrl = os.Getenv("CATTLE_URL")
+	CattleBearerToken = os.Getenv("CATTLE_BEARER_TOKEN")
 }

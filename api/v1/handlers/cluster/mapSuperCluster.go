@@ -2,22 +2,21 @@ package cluster
 
 import (
 	"Backend/api/v1/model"
+	"Backend/internal"
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 
 	"fmt"
-	"net/http"
-	"os"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func MapSuperClusters(c *gin.Context) string {
 
-	bearerToken := os.Getenv("CATTLE_BEARER_TOKEN")
-	rancherURL := os.Getenv("CATTLE_URL")
+	bearerToken := internal.CattleBearerToken
+	rancherURL := internal.CattleUrl
 
 	//Do external request
 	tr := &http.Transport{

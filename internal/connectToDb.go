@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"os"
 	"sync"
 	"time"
 )
@@ -13,7 +12,7 @@ var DB *gorm.DB
 
 func ConnectToDB(wg *sync.WaitGroup) {
 	fmt.Println("Trying to connect..")
-	dsn := os.Getenv("DB")
+	dsn := DatabaseConf
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	DB = db
 	if err != nil {
