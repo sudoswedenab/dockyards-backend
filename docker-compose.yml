@@ -4,7 +4,7 @@ networks:
 services:
   DB:
     image: postgres:alpine3.17
-    build: .
+
     networks:
       - backend
     environment:
