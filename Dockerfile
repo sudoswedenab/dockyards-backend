@@ -8,7 +8,7 @@ RUN go mod download && go mod verify
 COPY . .
 # .env values will be passed from ConfigMap
 #COPY .env .
-RUN go build -v -o ./dist/app ./cmd/main.go
+RUN go build -v -o ./dist/app ./cmd/backend
 
 # Deploy-stage
 FROM debian:bullseye-slim
