@@ -1,17 +1,18 @@
 package cluster
 
 import (
-	"Backend/api/v1/model"
-	"Backend/internal"
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
-	"io/ioutil"
-
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
+	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/backend/internal"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"net/http"
 )
 
 func MapGetClusters(c *gin.Context) string {

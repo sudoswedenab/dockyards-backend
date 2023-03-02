@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"Backend/api/v1/handlers/rancher"
-	"Backend/api/v1/model"
-	"Backend/internal"
 	"net/http"
+
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/rancher"
+	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/backend/internal"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"

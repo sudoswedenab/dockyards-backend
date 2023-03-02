@@ -1,13 +1,14 @@
 package routes
 
 import (
-	"Backend/api/v1/handlers"
-	jwt "Backend/api/v1/handlers/Jwt"
-	"Backend/api/v1/handlers/cluster"
-	"Backend/api/v1/handlers/user"
-	"Backend/api/v1/middleware"
 	"fmt"
 	"net/http"
+
+	"bitbucket.org/sudosweden/backend/api/v1/handlers"
+	jwt "bitbucket.org/sudosweden/backend/api/v1/handlers/Jwt"
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
+	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 
 	"github.com/gin-gonic/gin"
 )

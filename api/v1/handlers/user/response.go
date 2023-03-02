@@ -1,8 +1,9 @@
 package user
 
 import (
-	"Backend/api/v1/model"
 	"time"
+
+	"bitbucket.org/sudosweden/backend/api/v1/model"
 
 	"github.com/gin-gonic/gin"
 )

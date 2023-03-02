@@ -1,8 +1,6 @@
 package rancher
 
 import (
-	"Backend/api/v1/model"
-	"Backend/internal"
 	"bytes"
 	"crypto/tls"
 	b64 "encoding/base64"
@@ -10,6 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/backend/internal"
 )
 
 func ChangeRancherPWD(user model.User) (string, error) {

@@ -1,16 +1,17 @@
 package cluster
 
 import (
-	"Backend/api/v1/model"
-	"Backend/internal"
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
-	"io/ioutil"
-
 	"fmt"
-	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"net/http"
+
+	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/backend/internal"
+
+	"github.com/gin-gonic/gin"
 )
 
 func MapSuperClusters(c *gin.Context) string {

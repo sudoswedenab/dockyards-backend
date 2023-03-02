@@ -1,10 +1,11 @@
 package jwt
 
 import (
-	"Backend/api/v1/handlers/rancher"
-	"Backend/api/v1/model"
-	"Backend/internal"
 	"time"
+
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/rancher"
+	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/backend/internal"
 
 	"github.com/golang-jwt/jwt"
 )

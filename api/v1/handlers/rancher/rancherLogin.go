@@ -1,8 +1,9 @@
 package rancher
 
 import (
-	"Backend/api/v1/model"
 	"errors"
+
+	"bitbucket.org/sudosweden/backend/api/v1/model"
 )
 
 func RancherLogin(user model.User) (string, error) {

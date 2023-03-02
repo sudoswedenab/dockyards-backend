@@ -1,10 +1,11 @@
 package main
 
 import (
-	"Backend/api/v1/routes"
-	_ "Backend/docs"
-	"Backend/internal"
 	"time"
+
+	"bitbucket.org/sudosweden/backend/api/v1/routes"
+	_ "bitbucket.org/sudosweden/backend/docs"
+	"bitbucket.org/sudosweden/backend/internal"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

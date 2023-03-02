@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"Backend/internal"
 	"net/http"
+
+	"bitbucket.org/sudosweden/backend/internal"
 
 	"github.com/gin-gonic/gin"
 )

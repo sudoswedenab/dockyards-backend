@@ -1,19 +1,20 @@
 package cluster
 
 import (
-	"Backend/api/v1/model"
-	"Backend/internal"
 	"bytes"
 	"crypto/tls"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
+
+	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/backend/internal"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"io/ioutil"
-	"net/http"
 )
 
 type ClusterTwos struct {

@@ -1,4 +1,4 @@
-module Backend
+module bitbucket.org/sudosweden/backend
 
 go 1.19
 

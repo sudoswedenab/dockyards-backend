@@ -1,8 +1,9 @@
 package middleware
 
 import (
-	"Backend/api/v1/handlers/user"
 	"net/http"
+
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
 
 	"github.com/gin-gonic/gin"
 )
