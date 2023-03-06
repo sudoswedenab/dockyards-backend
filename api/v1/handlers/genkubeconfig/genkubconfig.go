@@ -70,7 +70,7 @@ func GenKubeConfig(c *gin.Context) string {
 	fmt.Println(value)
 
 	c.YAML(http.StatusOK, gin.H{
-		"gen": value,
+		"Kubeconfig": value,
 	})
 	return string("")
 
