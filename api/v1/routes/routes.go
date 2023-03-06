@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/sudosweden/backend/api/v1/handlers"
 	jwt "bitbucket.org/sudosweden/backend/api/v1/handlers/Jwt"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/genkubeconfig"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 
@@ -61,6 +62,10 @@ func RegisterRoutes(r *gin.Engine) {
 	v1Admin := v1.Group("/admin", func(c *gin.Context) {
 		// Handles errors
 		middleware.RequireAuth(c)
+	})
+
+	v1Admin.POST("/kubeconf/:id", func(c *gin.Context) {
+		genkubeconfig.GenKubeConfig(c)
 	})
 
 	v1Admin.GET("/auth", func(c *gin.Context) {
