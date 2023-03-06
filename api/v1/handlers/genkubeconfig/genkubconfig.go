@@ -67,8 +67,6 @@ func GenKubeConfig(c *gin.Context) string {
 	var value model.KubeConf
 	json.Unmarshal(data, &value)
 
-	fmt.Println(value)
-
 	c.YAML(http.StatusOK, gin.H{
 		"Kubeconfig": value,
 	})
