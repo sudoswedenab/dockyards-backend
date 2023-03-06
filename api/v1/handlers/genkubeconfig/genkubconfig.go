@@ -63,7 +63,7 @@ func GenKubeConfig(c *gin.Context) string {
 	if respErr != nil {
 		return ""
 	}
-	// fmt.Println(string(data))
+
 	var value model.KubeConf
 	json.Unmarshal(data, &value)
 
