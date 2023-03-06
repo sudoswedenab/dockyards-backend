@@ -64,15 +64,13 @@ func GenKubeConfig(c *gin.Context) string {
 		return ""
 	}
 	// fmt.Println(string(data))
-	var value model.KubeConfig
+	var value model.KubeConf
 	json.Unmarshal(data, &value)
 
 	fmt.Println(value)
 
-	c.JSON(http.StatusOK, gin.H{
-		"Basetype": value.BaseType,
-		"Config":   value.Config,
-		"Type":     value.Type,
+	c.YAML(http.StatusOK, gin.H{
+		"gen": value,
 	})
 	return string("")
 
