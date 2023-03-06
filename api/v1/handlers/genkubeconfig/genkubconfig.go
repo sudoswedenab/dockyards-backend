@@ -63,15 +63,16 @@ func GenKubeConfig(c *gin.Context) string {
 	if respErr != nil {
 		return ""
 	}
-	fmt.Println(string(data))
-	// fmt.Println("EASY FIND", string(data))
-	var valuetok model.KubeConfig
-	json.Unmarshal(data, &valuetok)
+	// fmt.Println(string(data))
+	var value model.KubeConfig
+	json.Unmarshal(data, &value)
 
-	// fmt.Println(valuetok)
+	fmt.Println(value)
 
 	c.JSON(http.StatusOK, gin.H{
-		"KubeConf": valuetok.Data,
+		"Basetype": value.BaseType,
+		"Config":   value.Config,
+		"Type":     value.Type,
 	})
 	return string("")
 
