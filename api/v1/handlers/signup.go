@@ -43,13 +43,20 @@ func Signup(c *gin.Context) {
 
 	RandomPwd := rancher.String(34)
 
-	RancherID := rancher.RancherCreateUser(c, model.RancherUser{
+	RancherID, err := rancher.RancherCreateUser(model.RancherUser{
 		Enabled:            true,
 		MustChangePassword: false,
 		Name:               rancher.String(10),
 		Password:           RandomPwd,
 		Username:           body.Email,
 	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+		return
+	}
 
 	//Create the user
 	user := model.User{
