@@ -41,6 +41,10 @@ func RancherCreateUser(user model.RancherUser) (string, error) {
 	}
 	data, _ := ioutil.ReadAll(resp.Body)
 
+	if resp.StatusCode >= http.StatusBadRequest {
+		return "", fmt.Errorf("unexpected status code %d, data: %s", resp.StatusCode, data)
+	}
+
 	respErr := resp.Body.Close()
 	if respErr != nil {
 		return "", respErr
