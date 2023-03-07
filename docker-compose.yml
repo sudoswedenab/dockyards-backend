@@ -23,11 +23,5 @@ services:
     volumes:
       - "rancher-data:/var/lib/rancher"
     privileged: true
-  Backend:
-    image: backend:latest
-    networks:
-      - backend
-    ports:
-      - "9000:9000"
 volumes:
   rancher-data:
