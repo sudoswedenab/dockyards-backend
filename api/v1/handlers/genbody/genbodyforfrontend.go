@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GenBodyForCluster(c *gin.Context) {
+func GenBodyForCreateCluster(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"dockerRootDir":             "/var/lib/docker",
 		"type":                      "cluster",

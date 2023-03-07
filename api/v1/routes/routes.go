@@ -66,7 +66,7 @@ func RegisterRoutes(r *gin.Engine) {
 		middleware.RequireAuth(c)
 	})
 	v1Admin.GET("/genbodyforcluster", func(c *gin.Context) {
-		genbody.GenBodyForCluster(c)
+		genbody.GenBodyForCreateCluster(c)
 	})
 
 	v1Admin.POST("/kubeconf/:id", func(c *gin.Context) {
