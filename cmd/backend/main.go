@@ -23,6 +23,7 @@ import (
 
 func init() {
 	internal.LoadEnvVariables()
+	internal.CreateClusterRole()
 }
 
 //	@title			Themis API
