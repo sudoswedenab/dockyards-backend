@@ -38,7 +38,7 @@ func main() {
 
 	if internal.FlagUseCors {
 		r.Use(cors.New(cors.Config{
-			AllowOrigins:     []string{"http://localhost:3000", "http://dockyards-frontend"},
+			AllowOrigins:     []string{"http://localhost:3000", "http://dockyards-frontend", "https://demo.k8s.dockyards.io"},
 			AllowMethods:     []string{"POST", "PUT", "GET", "DELETE"},
 			AllowHeaders:     []string{"Origin", "Content-Type"},
 			ExposeHeaders:    []string{"Content-Length"},
