@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/handlers"
-	jwt "bitbucket.org/sudosweden/backend/api/v1/handlers/Jwt"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/genbody"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/genkubeconfig"
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/jwt"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 
