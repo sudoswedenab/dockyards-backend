@@ -11,7 +11,7 @@ func GenBodyForCluster(c *gin.Context) {
 		"dockerRootDir":             "/var/lib/docker",
 		"type":                      "cluster",
 		"name":                      "frontend",
-		"clusterTemplateRevisionId": "cattle-global-data:ctr-kz22s",
+		"clusterTemplateRevisionId": "cattle-global-data:ctr-8cf7d",
 		"clusterTemplateId":         "cattle-global-data:ct-mk2bd",
 	})
 }
