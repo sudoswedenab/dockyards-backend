@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"bitbucket.org/sudosweden/backend/api/v1/handlers/rancher"
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal"
+	"bitbucket.org/sudosweden/backend/internal/rancher"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"

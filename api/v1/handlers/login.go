@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/sudosweden/backend/api/v1/handlers/rancher"
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal"
+	"bitbucket.org/sudosweden/backend/internal/rancher"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
