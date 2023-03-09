@@ -1,17 +1,19 @@
 package rancher
 
 import (
-	"os"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal"
 )
 
 func TestRancherCreateUser(t *testing.T) {
 	tt := []struct {
-		name string
-		user model.RancherUser
+		name     string
+		user     model.RancherUser
+		handler  func(http.ResponseWriter, *http.Request)
+		expected string
 	}{
 		{
 			name: "test basic",
@@ -22,17 +24,28 @@ func TestRancherCreateUser(t *testing.T) {
 				MustChangePassword: false,
 				Enabled:            true,
 			},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte("{\"id\":\"abc123\"}"))
+			},
+			expected: "abc123",
 		},
 	}
 
-	internal.CattleBearerToken = os.Getenv("TEST_CATTLE_BEARER_TOKEN")
-	internal.CattleUrl = "https://localhost:8443"
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := RancherCreateUser(tc.user)
+			ts := httptest.NewServer(http.HandlerFunc(tc.handler))
+
+			r := Rancher{
+				Url: ts.URL,
+			}
+
+			actual, err := r.RancherCreateUser(tc.user)
 			if err != nil {
-				t.Fatalf("unxepected error creating rancher user: %s", err)
+				t.Errorf("expected error to be nil, got %s", err)
+			}
+
+			if actual != tc.expected {
+				t.Errorf("expected to get id %s, got %s", tc.expected, actual)
 			}
 		})
 	}
@@ -40,31 +53,38 @@ func TestRancherCreateUser(t *testing.T) {
 
 func TestRancherCreateUserErrors(t *testing.T) {
 	tt := []struct {
-		name string
-		user model.RancherUser
+		name    string
+		user    model.RancherUser
+		handler func(http.ResponseWriter, *http.Request)
 	}{
 		{
 			name: "test empty",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusBadRequest)
+			},
 		},
 		{
 			name: "test short password",
 			user: model.RancherUser{
 				Password: "hello",
 			},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusBadRequest)
+			},
 		},
 	}
 
-	internal.CattleBearerToken = os.Getenv("TEST_CATTLE_BEARER_TOKEN")
-	internal.CattleUrl = "https://localhost:8443"
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := RancherCreateUser(tc.user)
+			ts := httptest.NewServer(http.HandlerFunc(tc.handler))
+
+			r := Rancher{
+				Url: ts.URL,
+			}
+			_, err := r.RancherCreateUser(tc.user)
 			if err == nil {
 				t.Errorf("expected to get error, got nil")
 			}
-
-			t.Log("err:", err)
 		})
 	}
 }
