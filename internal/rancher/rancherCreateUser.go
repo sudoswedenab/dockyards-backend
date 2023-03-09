@@ -7,14 +7,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/backend/internal"
 )
 
 type RancherUserResponse struct {
 	Id string `json:"id"`
 }
+
+var roleId string
 
 func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 	reqBody, err := json.Marshal(user)
@@ -48,7 +52,20 @@ func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 	}
 	var rancherUserResponse RancherUserResponse
 	json.Unmarshal(data, &rancherUserResponse)
-	fmt.Printf("%T\n", rancherUserResponse.Id)
+	// fmt.Printf("%T\n", rancherUserResponse.Id)
+
+	roles, err := internal.GetRoles()
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	for _, value := range roles.Data {
+		if value.Name == "dockyard-role" {
+			roleId = value.Id
+		}
+	}
+
+	internal.BindRole(rancherUserResponse.Id, roleId)
 
 	if resp.Status == "201" {
 		return "", nil

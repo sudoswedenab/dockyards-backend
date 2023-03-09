@@ -6,63 +6,34 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 )
+
+type Rule struct {
+	ApiGroups []string `json:"apiGroups"`
+	Resources []string `json:"resources"`
+	Type      string   `json:"type"`
+	Verbs     []string `json:"verbs"`
+}
+
+type Role struct {
+	Description    string `json:"description"`
+	Name           string `json:"name"`
+	NewUserDefault bool   `json:"newUserDefault"`
+	Rules          []Rule `json:"rules"`
+}
 
 func CreateClusterRole() {
 
 	bearerToken := CattleBearerToken
 	rancherURL := CattleUrl
 
-	//Do external request
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	roles, err := GetRoles()
+	if err != nil {
+		log.Println(err.Error())
 	}
-	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("GET", rancherURL+"/v3/globalRoles", nil)
-	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
-	)
-	// Response from the external request
-	resp, extErr := client.Do(req)
-	if extErr != nil {
-		fmt.Printf("There was an external error: %s", extErr.Error())
-		return
-	}
-	data, _ := ioutil.ReadAll(resp.Body)
-
-	respErr := resp.Body.Close()
-	if respErr != nil {
-		return
-	}
-
-	type Data struct {
-		Name string `json:"name"`
-	}
-
-	type RoleResponse struct {
-		Data []Data `json:"data"`
-	}
-
-	type Rule struct {
-		ApiGroups []string `json:"apiGroups"`
-		Resources []string `json:"resources"`
-		Type      string   `json:"type"`
-		Verbs     []string `json:"verbs"`
-	}
-
-	type Role struct {
-		Description    string `json:"description"`
-		Name           string `json:"name"`
-		NewUserDefault bool   `json:"newUserDefault"`
-		Rules          []Rule `json:"rules"`
-	}
-
-	var roles RoleResponse
-	json.Unmarshal(data, &roles)
 
 	create := true
 	for _, value := range roles.Data {
