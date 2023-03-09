@@ -12,8 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-func RequireAuth(c *gin.Context) {
-
+func (h *Handler) RequireAuth(c *gin.Context) {
 	// Get the cookie
 	tokenString, err := c.Cookie(internal.AccessTokenName)
 	if err != nil {
@@ -39,7 +38,7 @@ func RequireAuth(c *gin.Context) {
 		}
 		//Find the user with token sub
 		var user model.User
-		internal.DB.First(&user, claims["sub"])
+		h.DB.First(&user, claims["sub"])
 
 		if user.ID == 0 {
 			c.AbortWithStatus(http.StatusUnauthorized)

@@ -7,11 +7,18 @@ import (
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/genkubeconfig"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
+	"bitbucket.org/sudosweden/backend/internal/rancher"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(r *gin.Engine) {
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherService) {
+	middlewareHandler := middleware.Handler{
+		DB:             db,
+		RancherService: rancherService,
+	}
+
 	r.GET("/api", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Hello World, Slash API",
@@ -43,7 +50,7 @@ func RegisterRoutes(r *gin.Engine) {
 	// Admin Routes
 	v1Admin := v1.Group("/admin", func(c *gin.Context) {
 		// Handles errors
-		middleware.RequireAuth(c)
+		middlewareHandler.RequireAuth(c)
 	})
 	v1Admin.GET("/genbodyforcluster", func(c *gin.Context) {
 		genbody.GenBodyForCreateCluster(c)
