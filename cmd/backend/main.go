@@ -5,9 +5,13 @@ import (
 	"sync"
 	"time"
 
+	"bitbucket.org/sudosweden/backend/api/v1/handlers"
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/jwt"
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/backend/api/v1/routes"
 	_ "bitbucket.org/sudosweden/backend/docs"
 	"bitbucket.org/sudosweden/backend/internal"
+	"bitbucket.org/sudosweden/backend/internal/rancher"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -57,6 +61,11 @@ func main() {
 	internal.WaitUntil(connectToDB)
 	internal.SyncDataBase(db)
 
+	rancherService := rancher.Rancher{
+		BearerToken: internal.CattleBearerToken,
+		Url:         internal.CattleUrl,
+	}
+
 	r := gin.Default()
 
 	if internal.FlagUseCors {
@@ -70,7 +79,10 @@ func main() {
 		}))
 	}
 
-	routes.RegisterRoutes(r)
+	routes.RegisterRoutes(r, db, &rancherService)
+	handlers.RegisterRoutes(r, db, &rancherService)
+	jwt.RegisterRoutes(r, db, &rancherService)
+	user.RegisterRoutes(r, db, &rancherService)
 
 	if internal.FlagUseSwagger {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
