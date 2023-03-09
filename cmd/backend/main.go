@@ -1,11 +1,15 @@
 package main
 
 import (
+	"fmt"
+	"sync"
 	"time"
 
 	"bitbucket.org/sudosweden/backend/api/v1/routes"
 	_ "bitbucket.org/sudosweden/backend/docs"
 	"bitbucket.org/sudosweden/backend/internal"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -15,8 +19,6 @@ import (
 
 func init() {
 	internal.LoadEnvVariables()
-	internal.WaitUntil(internal.ConnectToDB)
-	internal.SyncDataBase()
 }
 
 //	@title			Themis API
@@ -34,6 +36,27 @@ func init() {
 // @host		localhost:9000
 // @BasePath	/v1/
 func main() {
+	var db *gorm.DB
+	var connectToDB func(*sync.WaitGroup)
+	var err error
+
+	connectToDB = func(wg *sync.WaitGroup) {
+		fmt.Println("Trying to connect..")
+		dsn := internal.DatabaseConf
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			fmt.Println("Failed to connect to database, trying again..")
+			time.Sleep(time.Second * 3)
+			connectToDB(wg)
+		} else {
+			fmt.Println("Success!")
+			wg.Done()
+		}
+	}
+
+	internal.WaitUntil(connectToDB)
+	internal.SyncDataBase(db)
+
 	r := gin.Default()
 
 	if internal.FlagUseCors {
