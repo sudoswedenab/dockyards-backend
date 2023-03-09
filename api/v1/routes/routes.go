@@ -54,7 +54,7 @@ func RegisterRoutes(r *gin.Engine) {
 	})
 
 	v1Admin.GET("/auth", func(c *gin.Context) {
-		middleware.Validate(c)
+		handlers.Validate(c)
 	})
 
 	v1Admin.GET("/getusers", func(c *gin.Context) {
