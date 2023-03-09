@@ -4,12 +4,18 @@ import (
 	"fmt"
 	"net/http"
 
+	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal"
+	"bitbucket.org/sudosweden/backend/internal/rancher"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
+
+type handler struct {
+	db *gorm.DB
+}
 
 // FindAllUsers godoc
 //
@@ -19,10 +25,10 @@ import (
 //	@Produce		application/json
 //	@Success		200	{array}	model.User
 //	@Router			/admin/getusers [get]
-func FindAllUsers(c *gin.Context) {
+func (h *handler) FindAllUsers(c *gin.Context) {
 	var users []model.User
 
-	internal.DB.Find(&users)
+	h.db.Find(&users)
 
 	c.JSON(200, gin.H{
 		"user": users,
@@ -38,12 +44,12 @@ func FindAllUsers(c *gin.Context) {
 //	@Param			id	path		int	true	"User ID"
 //	@Success		200	{object}	model.User
 //	@Router			/admin/getuser/{id} [get]
-func FindUserById(c *gin.Context) {
+func (h *handler) FindUserById(c *gin.Context) {
 	//Get Id off url
 	id := c.Param("id")
 	//get the User
 	var userById model.User
-	internal.DB.First(&userById, id)
+	h.db.First(&userById, id)
 	//Respond
 	c.JSON(200, gin.H{
 		"user": userById,
@@ -60,7 +66,7 @@ func FindUserById(c *gin.Context) {
 //	@Param			request	body	model.User	true "User model"
 //	@Success		200	{object}	model.User
 //	@Router			/admin/updateuser/{id} [put]
-func UpdateUser(c *gin.Context) {
+func (h *handler) UpdateUser(c *gin.Context) {
 	//Get id of url
 	id := c.Param("id")
 	//Get the data off req body
@@ -85,9 +91,9 @@ func UpdateUser(c *gin.Context) {
 	}
 	//find the post were updating
 	var user model.User
-	internal.DB.First(&user, id)
+	h.db.First(&user, id)
 	//update it
-	internal.DB.Model(&user).Updates(model.User{
+	h.db.Model(&user).Updates(model.User{
 		Idn:      User.Idn,
 		Name:     User.Name,
 		Email:    User.Email,
@@ -108,11 +114,30 @@ func UpdateUser(c *gin.Context) {
 //	@Param			id	path	int	true	"User ID"
 //	@Success		200
 //	@Router			/admin/deleteuser/{id} [delete]
-func DeleteUser(c *gin.Context) {
+func (h *handler) DeleteUser(c *gin.Context) {
 	//Get the id off the url
 	id := c.Param("id")
 	//delete the post
-	internal.DB.Delete(&model.User{}, id)
+	h.db.Delete(&model.User{}, id)
 	//respond
 	c.Status(200)
+}
+
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherService) {
+	h := handler{
+		db: db,
+	}
+
+	middlewareHandler := middleware.Handler{
+		RancherService: rancherService,
+		DB:             db,
+	}
+
+	g := r.Group("/v1/admin")
+	g.Use(middlewareHandler.RequireAuth)
+
+	g.GET("/getusers", h.FindAllUsers)
+	g.GET("/getuser/:id", h.FindUserById)
+	g.PUT("/updateuser/:id", h.UpdateUser)
+	g.DELETE("/deleteuser/:id", h.DeleteUser)
 }

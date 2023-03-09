@@ -5,7 +5,6 @@ import (
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/genbody"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/genkubeconfig"
-	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/backend/internal/rancher"
 	"gorm.io/gorm"
@@ -64,21 +63,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherSe
 		handlers.Validate(c)
 	})
 
-	v1Admin.GET("/getusers", func(c *gin.Context) {
-		user.FindAllUsers(c)
-	})
-
-	v1Admin.GET("/getuser/:id", func(c *gin.Context) {
-		user.FindUserById(c)
-	})
-
-	v1Admin.PUT("/updateuser/:id", func(c *gin.Context) {
-		user.UpdateUser(c)
-	})
-
-	v1Admin.DELETE("/deleteuser/:id", func(c *gin.Context) {
-		user.DeleteUser(c)
-	})
 	v1Admin.GET("/mapsupercluster", func(c *gin.Context) {
 		cluster.MapSuperClusters(c)
 	})
