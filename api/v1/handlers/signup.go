@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal"
 	"bitbucket.org/sudosweden/backend/internal/rancher"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +20,7 @@ import (
 //	@Success		201
 //	@Failure		400
 //	@Router			/signup [post]
-func Signup(c *gin.Context) {
+func (h *handler) Signup(c *gin.Context) {
 	var body model.Signup
 
 	if c.Bind(&body) != nil {
@@ -43,7 +42,7 @@ func Signup(c *gin.Context) {
 
 	RandomPwd := rancher.String(34)
 
-	RancherID, err := rancher.RancherCreateUser(model.RancherUser{
+	RancherID, err := h.rancherService.RancherCreateUser(model.RancherUser{
 		Enabled:            true,
 		MustChangePassword: false,
 		Name:               rancher.String(10),
@@ -64,7 +63,7 @@ func Signup(c *gin.Context) {
 		Email:     body.Email,
 		RancherID: RancherID,
 		Password:  string(hash)}
-	result := internal.DB.Create(&user)
+	result := h.db.Create(&user)
 
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

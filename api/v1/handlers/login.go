@@ -6,7 +6,6 @@ import (
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal"
-	"bitbucket.org/sudosweden/backend/internal/rancher"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -23,7 +22,7 @@ import (
 //	@Success		200
 //	@Failure		400
 //	@Router			/login [post]
-func Login(c *gin.Context) {
+func (h *handler) Login(c *gin.Context) {
 	// Get email and pass off req body
 	var body model.Login
 
@@ -37,7 +36,7 @@ func Login(c *gin.Context) {
 	//Look up requested User
 	var user model.User
 
-	internal.DB.First(&user, "email = ?", body.Email)
+	h.db.First(&user, "email = ?", body.Email)
 
 	if user.ID == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -45,19 +44,20 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-	//Checking agianst Racnher if user exist in rancher
-	bearertoken, err := rancher.RancherLogin(user)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-	}
 	//Compare sent in pass with saved user pass hash
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Bad hash or encryption",
+		})
+		return
+	}
+	//Checking agianst Racnher if user exist in rancher
+	bearertoken, err := h.rancherService.RancherLogin(user)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
 		})
 		return
 	}

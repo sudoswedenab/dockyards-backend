@@ -24,14 +24,6 @@ func RegisterRoutes(r *gin.Engine) {
 
 	v1 := r.Group("/v1")
 
-	v1.POST("/signup", func(c *gin.Context) {
-		handlers.Signup(c)
-	})
-
-	v1.POST("/login", func(c *gin.Context) {
-		handlers.Login(c)
-	})
-
 	v1.POST("/logout", func(c *gin.Context) {
 		handlers.Logout(c)
 	})
