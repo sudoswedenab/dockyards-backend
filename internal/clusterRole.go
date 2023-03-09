@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 )
@@ -67,10 +68,10 @@ func CreateClusterRole() {
 	for _, value := range roles.Data {
 		if value.Name == "dockyard-role" {
 			fmt.Println(time.Now().Format(time.RFC822), " User role verified")
-			*&create = false
+			create = false
 		}
 	}
-	if create == true {
+	if create {
 		body := Role{
 			Description:    "",
 			Name:           "dockyard-role",
@@ -94,6 +95,24 @@ func CreateClusterRole() {
 					Type:      "/v3/schemas/policyRule",
 					Verbs:     []string{"update"},
 				},
+				{
+					ApiGroups: []string{"management.cattle.io"},
+					Resources: []string{"clusters"},
+					Type:      "/v3/schemas/policyRule",
+					Verbs:     []string{"create", "list"},
+				},
+				{
+					ApiGroups: []string{"provisioning.cattle.io"},
+					Resources: []string{"clusters"},
+					Type:      "/v3/schemas/policyRule",
+					Verbs:     []string{"create"},
+				},
+				{
+					ApiGroups: []string{"management.cattle.io"},
+					Resources: []string{"kontainerdrivers"},
+					Type:      "/v3/schemas/policyRule",
+					Verbs:     []string{"get", "list", "watch"},
+				},
 			},
 		}
 
@@ -104,7 +123,10 @@ func CreateClusterRole() {
 		}
 		client := &http.Client{Transport: tr}
 
-		req, _ := http.NewRequest("POST", rancherURL+"/v3/globalroles", bytes.NewBuffer(reqBody))
+		req, err := http.NewRequest("POST", rancherURL+"/v3/globalroles", bytes.NewBuffer(reqBody))
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		//Setting the header
 		req.Header = http.Header{
@@ -115,9 +137,9 @@ func CreateClusterRole() {
 			"Connection":    {"keep-alive"},
 			"TE":            {"trailers"},
 		}
-		_, err := client.Do(req)
+		_, err = client.Do(req)
 		if err != nil {
-
+			log.Fatal(err)
 		}
 	}
 }
