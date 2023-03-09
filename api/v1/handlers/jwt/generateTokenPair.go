@@ -5,17 +5,16 @@ import (
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal"
-	"bitbucket.org/sudosweden/backend/internal/rancher"
 
 	"github.com/golang-jwt/jwt"
 )
 
-func GenerateTokenPair(user model.User) (map[string]string, error) {
+func (h *handler) generateTokenPair(user model.User) (map[string]string, error) {
 	// Create token
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	//Checking agianst Racnher if user exist in rancher
-	bearertoken, err := rancher.RancherLogin(user)
+	bearertoken, err := h.rancherService.RancherLogin(user)
 	if err != nil {
 		return nil, err
 	}

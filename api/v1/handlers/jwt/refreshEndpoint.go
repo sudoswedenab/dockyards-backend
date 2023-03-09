@@ -21,8 +21,7 @@ import (
 //	@Success		200
 //	@Failure		401
 //	@Router			/refresh [post]
-func RefreshTokenEndpoint(c *gin.Context) error {
-
+func (h *handler) refreshTokenEndpoint(c *gin.Context) error {
 	// Get the cookie
 	refreshToken, err := c.Cookie(internal.RefreshTokenName)
 
@@ -49,11 +48,11 @@ func RefreshTokenEndpoint(c *gin.Context) error {
 		//Find the user with token sub
 		var user model.User
 
-		First := internal.DB.First(&user, claims["sub"])
+		First := h.db.First(&user, claims["sub"])
 
 		// replace with jwt response
 		if First.Error == nil {
-			newTokenPair, err := GenerateTokenPair(user)
+			newTokenPair, err := h.generateTokenPair(user)
 			if err != nil {
 				return err
 			}

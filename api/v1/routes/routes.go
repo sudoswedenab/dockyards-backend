@@ -1,14 +1,10 @@
 package routes
 
 import (
-	"fmt"
-	"net/http"
-
 	"bitbucket.org/sudosweden/backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/genbody"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/genkubeconfig"
-	"bitbucket.org/sudosweden/backend/api/v1/handlers/jwt"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 
@@ -26,14 +22,6 @@ func RegisterRoutes(r *gin.Engine) {
 
 	v1.POST("/logout", func(c *gin.Context) {
 		handlers.Logout(c)
-	})
-
-	v1.POST("/refresh", func(c *gin.Context) {
-		err := jwt.RefreshTokenEndpoint(c)
-		if err != nil {
-			c.String(http.StatusInternalServerError, fmt.Sprintf("Error: %s", err))
-		}
-		c.String(http.StatusOK, "Success.")
 	})
 
 	v1.GET("/readcookie", func(c *gin.Context) {
