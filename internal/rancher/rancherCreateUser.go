@@ -10,29 +10,26 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal"
 )
 
 type RancherUserResponse struct {
 	Id string `json:"id"`
 }
 
-func RancherCreateUser(user model.RancherUser) (string, error) {
+func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 	reqBody, err := json.Marshal(user)
 	if err != nil {
 		return "", err
 	}
 
-	bearerToken := internal.CattleBearerToken
-	rancherURL := internal.CattleUrl
 	// Do external request
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("POST", rancherURL+"/v3/users", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", r.Url+"/v3/users", bytes.NewBuffer(reqBody))
 	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
+		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(r.BearerToken)),
 	)
 	// Response from the external request
 	resp, extErr := client.Do(req)
