@@ -1,12 +1,11 @@
-package internal
+package rancher
 
 import (
 	"bytes"
 	"crypto/tls"
-	b64 "encoding/base64"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 )
@@ -25,14 +24,10 @@ type Role struct {
 	Rules          []Rule `json:"rules"`
 }
 
-func CreateClusterRole() {
-
-	bearerToken := CattleBearerToken
-	rancherURL := CattleUrl
-
-	roles, err := GetRoles()
+func (r *Rancher) CreateClusterRole() error {
+	roles, err := r.GetRoles()
 	if err != nil {
-		log.Println(err.Error())
+		return err
 	}
 
 	create := true
@@ -87,30 +82,34 @@ func CreateClusterRole() {
 			},
 		}
 
-		reqBody, _ := json.Marshal(body)
+		reqBody, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
 
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 		client := &http.Client{Transport: tr}
 
-		req, err := http.NewRequest("POST", rancherURL+"/v3/globalroles", bytes.NewBuffer(reqBody))
+		req, err := http.NewRequest("POST", r.Url+"/v3/globalroles", bytes.NewBuffer(reqBody))
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		//Setting the header
 		req.Header = http.Header{
 			"Content-Type":  {"application/json"},
-			"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken))},
+			"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte(r.BearerToken))},
 			"Accept":        {"application/json"},
-			"Origin":        {CattleUrl},
+			"Origin":        {r.Url},
 			"Connection":    {"keep-alive"},
 			"TE":            {"trailers"},
 		}
 		_, err = client.Do(req)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
+	return err
 }

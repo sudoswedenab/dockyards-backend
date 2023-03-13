@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -23,7 +24,6 @@ import (
 
 func init() {
 	internal.LoadEnvVariables()
-	internal.CreateClusterRole()
 }
 
 //	@title			Themis API
@@ -65,6 +65,11 @@ func main() {
 	rancherService := rancher.Rancher{
 		BearerToken: internal.CattleBearerToken,
 		Url:         internal.CattleUrl,
+	}
+
+	err = rancherService.CreateClusterRole()
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
 	r := gin.Default()

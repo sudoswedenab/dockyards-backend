@@ -1,12 +1,14 @@
-package internal
+package rancher
 
 import (
 	"crypto/tls"
-	b64 "encoding/base64"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
 )
+
+var roles RoleResponse
 
 type Data struct {
 	Name string `json:"name"`
@@ -17,34 +19,38 @@ type RoleResponse struct {
 	Data []Data `json:"data"`
 }
 
-func GetRoles() (RoleResponse, error) {
-
-	bearerToken := CattleBearerToken
-	rancherURL := CattleUrl
-
+func (r *Rancher) GetRoles() (RoleResponse, error) {
 	//Do external request
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("GET", rancherURL+"/v3/globalRoles", nil)
+	req, err := http.NewRequest("GET", r.Url+"/v3/globalRoles", nil)
+	if err != nil {
+		return RoleResponse{}, err
+	}
 	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
+		"Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(r.BearerToken)),
 	)
 	// Response from the external request
 	resp, err := client.Do(req)
 	if err != nil {
 		return RoleResponse{}, err
 	}
-	data, _ := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return RoleResponse{}, err
+	}
 
 	err = resp.Body.Close()
 	if err != nil {
 		return RoleResponse{}, err
 	}
 
-	var roles RoleResponse
-	json.Unmarshal(data, &roles)
+	err = json.Unmarshal(data, &roles)
+	if err != nil {
+		return RoleResponse{}, err
+	}
 
 	return roles, err
 }

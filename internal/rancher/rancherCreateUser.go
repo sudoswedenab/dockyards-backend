@@ -3,15 +3,13 @@ package rancher
 import (
 	"bytes"
 	"crypto/tls"
-	b64 "encoding/base64"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal"
 )
 
 type RancherUserResponse struct {
@@ -33,7 +31,7 @@ func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 	client := &http.Client{Transport: tr}
 	req, _ := http.NewRequest("POST", r.Url+"/v3/users", bytes.NewBuffer(reqBody))
 	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(r.BearerToken)),
+		"Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(r.BearerToken)),
 	)
 	// Response from the external request
 	resp, extErr := client.Do(req)
@@ -51,12 +49,14 @@ func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 		return "", respErr
 	}
 	var rancherUserResponse RancherUserResponse
-	json.Unmarshal(data, &rancherUserResponse)
-	// fmt.Printf("%T\n", rancherUserResponse.Id)
-
-	roles, err := internal.GetRoles()
+	err = json.Unmarshal(data, &rancherUserResponse)
 	if err != nil {
-		log.Println(err.Error())
+		return "", err
+	}
+
+	roles, err := r.GetRoles()
+	if err != nil {
+		return "", err
 	}
 
 	for _, value := range roles.Data {
@@ -65,10 +65,13 @@ func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 		}
 	}
 
-	internal.BindRole(rancherUserResponse.Id, roleId)
+	err = r.BindRole(rancherUserResponse.Id, roleId)
+	if err != nil {
+		return "", err
+	}
 
 	if resp.Status == "201" {
 		return "", nil
 	}
-	return rancherUserResponse.Id, nil
+	return rancherUserResponse.Id, err
 }
