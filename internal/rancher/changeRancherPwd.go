@@ -10,11 +10,9 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal"
 )
 
-func ChangeRancherPWD(user model.User) (string, error) {
-
+func (r *Rancher) changeRancherPWD(user model.User) (string, error) {
 	RandomPwd := model.NewPassword{NewPassword: String(34)}
 
 	reqBody, err := json.Marshal(RandomPwd)
@@ -23,16 +21,14 @@ func ChangeRancherPWD(user model.User) (string, error) {
 		return "", err
 	}
 
-	bearerToken := internal.CattleBearerToken
-	rancherURL := internal.CattleUrl
 	// Do external request
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("POST", rancherURL+"/v3/users/"+user.RancherID+"?action=setpassword", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", r.Url+"/v3/users/"+user.RancherID+"?action=setpassword", bytes.NewBuffer(reqBody))
 	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
+		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(r.BearerToken)),
 	)
 	// Response from the external request
 	resp, extErr := client.Do(req)
