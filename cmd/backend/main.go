@@ -19,6 +19,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"golang.org/x/exp/slog"
@@ -66,7 +67,9 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 // @BasePath	/v1/
 func main() {
 	var logLevel string
+	var useInmemDb bool
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
+	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -75,24 +78,35 @@ func main() {
 		os.Exit(1)
 	}
 
+	flag.Parse()
+
 	var db *gorm.DB
 	var connectToDB func(*sync.WaitGroup)
 
-	connectToDB = func(wg *sync.WaitGroup) {
-		logger.Info("Trying to connect..")
-		dsn := internal.DatabaseConf
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if useInmemDb {
+		db, err = gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 		if err != nil {
-			logger.Info("Failed to connect to database, trying again..")
-			time.Sleep(time.Second * 3)
-			connectToDB(wg)
-		} else {
-			logger.Info("Success!")
-			wg.Done()
+			logger.Error("error creating in-memory db", "err", err)
+			os.Exit(1)
 		}
+	} else {
+		connectToDB = func(wg *sync.WaitGroup) {
+			logger.Info("Trying to connect..")
+			dsn := internal.DatabaseConf
+			db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+			if err != nil {
+				logger.Info("Failed to connect to database, trying again..")
+				time.Sleep(time.Second * 3)
+				connectToDB(wg)
+			} else {
+				fmt.Println("Success!")
+				wg.Done()
+			}
+		}
+
+		internal.WaitUntil(connectToDB)
 	}
 
-	internal.WaitUntil(connectToDB)
 	err = internal.SyncDataBase(db)
 	if err != nil {
 		logger.Error("Failed to initialize database", "err", err)
