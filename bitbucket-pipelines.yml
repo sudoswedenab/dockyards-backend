@@ -35,7 +35,7 @@ pipelines:
       - IMAGE_NAME=$BITBUCKET_REPO_SLUG
       - PROJECT_NAME=$HARBOR_PROJECT
       - docker load --input "${IMAGE_NAME}.tar"
-      - VERSION=latest
+      - VERSION=$(git describe --always --tags --dirty)
       - IMAGE=${HARBOR_URL}/${PROJECT_NAME}/${IMAGE_NAME}
       - docker tag "${IMAGE_NAME}" "${IMAGE}:${VERSION}"
       - docker push "${IMAGE}:${VERSION}"
