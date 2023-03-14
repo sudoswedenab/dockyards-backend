@@ -25,13 +25,13 @@ type Role struct {
 }
 
 func (r *Rancher) CreateClusterRole() error {
-	roles, err := r.GetRoles()
+	init_roles, err := r.GetRoles()
 	if err != nil {
 		return err
 	}
 
 	create := true
-	for _, value := range roles.Data {
+	for _, value := range init_roles.Data {
 		if value.Name == "dockyard-role" {
 			fmt.Println(time.Now().Format(time.RFC822), " User role verified")
 			create = false
@@ -106,10 +106,14 @@ func (r *Rancher) CreateClusterRole() error {
 			"Connection":    {"keep-alive"},
 			"TE":            {"trailers"},
 		}
-		_, err = client.Do(req)
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		err = resp.Body.Close()
 		if err != nil {
 			return err
 		}
 	}
-	return err
+	return nil
 }

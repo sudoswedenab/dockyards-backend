@@ -6,10 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
-	"time"
 )
 
 type RoleBinding struct {
@@ -18,9 +15,22 @@ type RoleBinding struct {
 	UserId       string `json:"userId"`
 }
 
-func (r *Rancher) BindRole(userid string, roleid string) error {
+func (r *Rancher) BindRole(userid string, roles RoleResponse) error {
+	var roleId string
+	var roleName string
+
+	for _, value := range roles.Data {
+		if value.Name == "dockyard-role" {
+			roleId = value.Id
+			roleName = value.Name
+		}
+	}
+	if roleName != "dockyard-role" {
+		return errors.New("no role named 'dockyard-role' found")
+	}
+
 	body := RoleBinding{
-		GlobalRoleId: roleid,
+		GlobalRoleId: roleId,
 		Type:         "globalRoleBinding",
 		UserId:       userid,
 	}
@@ -46,15 +56,9 @@ func (r *Rancher) BindRole(userid string, roleid string) error {
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
+		if resp.StatusCode == http.StatusInternalServerError {
+			return errors.New("unexpected status code 500, data: test")
 		}
-		err = resp.Body.Close()
-		if err != nil {
-			return err
-		}
-		return errors.New(fmt.Sprintf(time.Now().Format(time.RFC822), " %d %s", resp.StatusCode, string(body)))
 	}
 
 	err = resp.Body.Close()
@@ -62,5 +66,5 @@ func (r *Rancher) BindRole(userid string, roleid string) error {
 		return err
 	}
 
-	return err
+	return nil
 }

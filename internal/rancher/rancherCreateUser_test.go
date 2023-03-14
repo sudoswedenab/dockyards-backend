@@ -25,7 +25,14 @@ func TestRancherCreateUser(t *testing.T) {
 				Enabled:            true,
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte("{\"id\":\"abc123\"}"))
+				switch r.URL.Path {
+				case "/v3/users":
+					w.Write([]byte(`{"id":"abc123"}`))
+				case "/v3/globalRoles":
+					w.Write([]byte(`{"data":[{"name":"dockyard-role","id":"role123"}]}`))
+				case "/v3/globalrolebindings":
+					w.WriteHeader(http.StatusCreated)
+				}
 			},
 			expected: "abc123",
 		},
@@ -53,15 +60,18 @@ func TestRancherCreateUser(t *testing.T) {
 
 func TestRancherCreateUserErrors(t *testing.T) {
 	tt := []struct {
-		name    string
-		user    model.RancherUser
-		handler func(http.ResponseWriter, *http.Request)
+		name     string
+		user     model.RancherUser
+		handler  func(http.ResponseWriter, *http.Request)
+		expected string
 	}{
 		{
 			name: "test empty",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("empty request"))
 			},
+			expected: "unexpected status code 400, data: empty request",
 		},
 		{
 			name: "test short password",
@@ -70,7 +80,42 @@ func TestRancherCreateUserErrors(t *testing.T) {
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("password too short"))
 			},
+			expected: "unexpected status code 400, data: password too short",
+		},
+		{
+			name: "test missing dockyard-role",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/v3/users":
+					w.WriteHeader(http.StatusCreated)
+					w.Write([]byte(`{"id":"user123"}`))
+				case "/v3/globalRoles":
+					w.Write([]byte(`{"data":[]}`))
+				default:
+					w.WriteHeader(http.StatusTeapot)
+				}
+			},
+			expected: "no role named 'dockyard-role' found",
+		},
+		{
+			name: "test role binding internal server error",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/v3/users":
+					w.WriteHeader(http.StatusCreated)
+					w.Write([]byte(`{"id":"user123"}`))
+				case "/v3/globalRoles":
+					w.Write([]byte(`{"data":[{"name":"dockyard-role","id":"role123"}]}`))
+				case "/v3/globalrolebindings":
+					w.WriteHeader(http.StatusInternalServerError)
+					w.Write([]byte("test"))
+				default:
+					w.WriteHeader(http.StatusTeapot)
+				}
+			},
+			expected: "unexpected status code 500, data: test",
 		},
 	}
 
@@ -83,7 +128,11 @@ func TestRancherCreateUserErrors(t *testing.T) {
 			}
 			_, err := r.RancherCreateUser(tc.user)
 			if err == nil {
-				t.Errorf("expected to get error, got nil")
+				t.Fatalf("expected to get error, got nil")
+			}
+
+			if err.Error() != tc.expected {
+				t.Errorf("expected to get string '%s', got '%s'", tc.expected, err.Error())
 			}
 		})
 	}

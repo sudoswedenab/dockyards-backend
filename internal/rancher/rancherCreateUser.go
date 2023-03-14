@@ -16,8 +16,6 @@ type RancherUserResponse struct {
 	Id string `json:"id"`
 }
 
-var roleId string
-
 func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 	reqBody, err := json.Marshal(user)
 	if err != nil {
@@ -54,18 +52,12 @@ func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 		return "", err
 	}
 
-	roles, err := r.GetRoles()
+	bind_roles, err := r.GetRoles()
 	if err != nil {
 		return "", err
 	}
 
-	for _, value := range roles.Data {
-		if value.Name == "dockyard-role" {
-			roleId = value.Id
-		}
-	}
-
-	err = r.BindRole(rancherUserResponse.Id, roleId)
+	err = r.BindRole(rancherUserResponse.Id, bind_roles)
 	if err != nil {
 		return "", err
 	}
@@ -73,5 +65,6 @@ func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 	if resp.Status == "201" {
 		return "", nil
 	}
-	return rancherUserResponse.Id, err
+
+	return rancherUserResponse.Id, nil
 }

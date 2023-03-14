@@ -4,11 +4,11 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 )
-
-var roles RoleResponse
 
 type Data struct {
 	Name string `json:"name"`
@@ -20,6 +20,8 @@ type RoleResponse struct {
 }
 
 func (r *Rancher) GetRoles() (RoleResponse, error) {
+	var roles RoleResponse
+
 	//Do external request
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -41,16 +43,16 @@ func (r *Rancher) GetRoles() (RoleResponse, error) {
 	if err != nil {
 		return RoleResponse{}, err
 	}
-
+	if resp.StatusCode != http.StatusOK {
+		return RoleResponse{}, errors.New(fmt.Sprintf("%s %s", resp.Status, string(data)))
+	}
 	err = resp.Body.Close()
 	if err != nil {
 		return RoleResponse{}, err
 	}
-
 	err = json.Unmarshal(data, &roles)
 	if err != nil {
 		return RoleResponse{}, err
 	}
-
-	return roles, err
+	return roles, nil
 }
