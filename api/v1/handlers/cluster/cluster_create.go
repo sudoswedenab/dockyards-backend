@@ -1,12 +1,7 @@
 package cluster
 
 import (
-	"bytes"
-	"crypto/tls"
-	b64 "encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
@@ -16,18 +11,12 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type NodePool struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-}
-
-func CreatedCluster(c *gin.Context) (string, string, error) {
-
+func (h *handler) CreateCluster(c *gin.Context) {
 	// Get the cookie
-	tokenString, err := c.Cookie(internal.AccessTokenName)
+	tokenString, err := c.Cookie(h.accessTokenName)
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
-		return "", "", err
+		return
 	}
 
 	// Parse takes the token string and a function for looking up the key.
@@ -36,70 +25,45 @@ func CreatedCluster(c *gin.Context) (string, string, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(internal.Secret), nil
+		return []byte(internal.Secret), nil //TODO
 
 	})
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
-		return "", "", err
+		return
 	}
 
 	claims := token.Claims.(jwt.MapClaims)
 
 	var body model.ClusterData
-
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
 		})
-		return "", "", err
+		return
 	}
 
-	reqBody, err := json.Marshal(body)
+	bearerToken := claims["aud"].(string)
+
+	nodePool, err := h.rancherService.RancherCreateCluster(body, bearerToken)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Not valid JSON! Failed to marshal Body",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to read Body",
 		})
-		return "", "", err
+		return
 	}
 
-	bearerToken := claims["aud"]
-	rancherURL := internal.CattleUrl
-
-	//Do external request
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("POST", rancherURL+"/v3/clusters", bytes.NewBuffer(reqBody))
-
-	req.Header = http.Header{
-		"Content-Type":  {"application/json"},
-		"Authorization": {"Basic " + b64.StdEncoding.EncodeToString([]byte(bearerToken.(string)))},
-		"Accept":        {"application/json"},
-		"Origin":        {internal.CattleUrl},
-		"Connection":    {"keep-alive"},
-		// "Referer":       {"https://ss-di-rancher.sudobash.io/g/clusters/add/launch/openstack?clusterTemplateRevision=cattle-global-data%3Actr-7xnpl"},
-		"TE": {"trailers"},
+	clusterTwos, err := h.rancherService.RancherCreateNodePool(bearerToken, nodePool.Id, nodePool.Name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to read Body",
+		})
+		return
 	}
 
-	// Response from the external request
-	resp, extErr := client.Do(req)
-	if extErr != nil {
-		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
-		return "", "", err
-	}
-
-	data, _ := ioutil.ReadAll(resp.Body)
-
-	respErr := resp.Body.Close()
-	if respErr != nil {
-		return "", "", err
-	}
-
-	var responseBody NodePool
-
-	json.Unmarshal(data, &responseBody)
-
-	return responseBody.Id, responseBody.Name, err
+	c.JSON(http.StatusOK, gin.H{
+		"cluster":     "created successfully",
+		"clusterName": clusterTwos.Name,
+		"clusterId":   clusterTwos.Id,
+	})
 }

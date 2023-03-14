@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
 	"fmt"
 	"log"
 	"sync"
@@ -91,6 +92,7 @@ func main() {
 	handlers.RegisterRoutes(r, db, rancherService)
 	jwt.RegisterRoutes(r, db, rancherService)
 	user.RegisterRoutes(r, db, rancherService)
+	cluster.RegisterRoutes(r, rancherService)
 
 	if internal.FlagUseSwagger {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

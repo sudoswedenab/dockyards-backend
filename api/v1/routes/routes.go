@@ -34,10 +34,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherSe
 		cluster.MapGetClusters(c)
 	})
 
-	v1.POST("/createcluster", func(c *gin.Context) {
-		id, name, err := cluster.CreatedCluster(c)
-		cluster.CreatedNodePool(c, id, name, err)
-	})
 	v1.DELETE("/deletecluster/:id", func(c *gin.Context) {
 		cluster.DeleteCluster(c)
 	})

@@ -60,13 +60,12 @@ func (r *Rancher) CreateClusterRole() error {
 				},
 			},
 		}
-		fmt.Printf("role '%s' prepared with %d rules\n", role.Name, len(role.Rules))
+		fmt.Printf("role '%s' prepared with %d rules\n", globalRole.Name, len(globalRole.Rules))
 
 		createdRole, err := r.ManagementClient.GlobalRole.Create(&globalRole)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("reqBody json: %s\n", string(reqBody))
 
 		fmt.Printf("role created: %#v\n", createdRole)
 
