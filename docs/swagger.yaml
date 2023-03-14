@@ -182,7 +182,7 @@ paths:
           description: OK
       summary: Logout from app
       tags:
-      - Login
+      - Logout
   /readcookie:
     get:
       consumes:

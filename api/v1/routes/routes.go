@@ -26,10 +26,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherSe
 
 	v1 := r.Group("/v1")
 
-	v1.POST("/logout", func(c *gin.Context) {
-		handlers.Logout(c)
-	})
-
 	v1.GET("/readcookie", func(c *gin.Context) {
 		handlers.ReadCookie(c)
 	})

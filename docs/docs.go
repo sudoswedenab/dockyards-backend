@@ -221,7 +221,7 @@ const docTemplate = `{
                     "text/plain"
                 ],
                 "tags": [
-                    "Login"
+                    "Logout"
                 ],
                 "summary": "Logout from app",
                 "responses": {
