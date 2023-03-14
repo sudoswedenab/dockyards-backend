@@ -7,12 +7,12 @@ import (
 )
 
 func (r *Rancher) RancherLogin(user model.User) (string, error) {
-	NewRanchPWd, err := ChangeRancherPWD(user)
+	NewRanchPWd, err := r.changeRancherPWD(user)
 	if err != nil {
 		return "", err
 	}
 
-	RancherBearerToken, RancherUserID, err := CreateRancherToken(model.RRtoken{Name: user.Email, Password: NewRanchPWd})
+	RancherBearerToken, RancherUserID, err := r.createRancherToken(model.RRtoken{Name: user.Email, Password: NewRanchPWd})
 	if err != nil {
 		return "", err
 	}

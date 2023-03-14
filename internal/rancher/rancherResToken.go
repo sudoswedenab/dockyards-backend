@@ -11,7 +11,6 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal"
 )
 
 type RancherResponseToken struct {
@@ -21,23 +20,21 @@ type RancherResponseToken struct {
 	Bearertoken string `json:"token"`
 }
 
-func CreateRancherToken(rancherToken model.RRtoken) (string, string, error) {
+func (r *Rancher) createRancherToken(rancherToken model.RRtoken) (string, string, error) {
 	reqBody, err := json.Marshal(rancherToken)
 	if err != nil {
 		err := errors.New("not valid json,failed to marshal body")
 		return "", "", err
 	}
 
-	bearerToken := internal.CattleBearerToken
-	rancherURL := internal.CattleUrl
 	// Do external request
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("POST", rancherURL+"/v3-public/localProviders/local?action=login", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", r.Url+"/v3-public/localProviders/local?action=login", bytes.NewBuffer(reqBody))
 	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
+		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(r.BearerToken)),
 	)
 	// Response from the external request
 	resp, extErr := client.Do(req)
