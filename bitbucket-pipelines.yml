@@ -11,6 +11,11 @@ image: atlassian/default-image:3
 pipelines:
   default:
   - step:
+      name: Test
+      image: docker.io/library/golang:1.20.2
+      script:
+      - go test ./... -v
+  - step:
       name: Build
       script:
       - IMAGE_NAME=$BITBUCKET_REPO_SLUG
