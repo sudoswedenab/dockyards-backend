@@ -67,6 +67,8 @@ func main() {
 		Url:         internal.CattleUrl,
 	}
 
+	fmt.Printf("using rancher url %s\n", rancherService.Url)
+
 	err = rancherService.CreateClusterRole()
 	if err != nil {
 		log.Fatal(err.Error())
