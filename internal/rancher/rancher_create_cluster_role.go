@@ -33,11 +33,13 @@ func (r *Rancher) CreateClusterRole() error {
 
 	create := true
 	for _, value := range init_roles.Data {
+		fmt.Printf("checking role '%s'\n", value.Name)
 		if value.Name == "dockyard-role" {
 			fmt.Println(time.Now().Format(time.RFC822), " User role verified")
 			create = false
 		}
 	}
+	fmt.Printf("role 'dockyard-role' needs to be created: %t\n", create)
 	if create {
 		body := Role{
 			Description:    "",
@@ -82,11 +84,13 @@ func (r *Rancher) CreateClusterRole() error {
 				},
 			},
 		}
+		fmt.Printf("role '%s' prepared with %d rules\n", body.Name, len(body.Rules))
 
 		reqBody, err := json.Marshal(body)
 		if err != nil {
 			return err
 		}
+		fmt.Printf("reqBody json: %s\n", string(reqBody))
 
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -97,6 +101,7 @@ func (r *Rancher) CreateClusterRole() error {
 		if err != nil {
 			return err
 		}
+		fmt.Printf("req: %#v\n", req)
 
 		//Setting the header
 		req.Header = http.Header{
