@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
@@ -51,6 +52,7 @@ func (h *handler) Signup(c *gin.Context) {
 	})
 
 	if err != nil {
+		fmt.Printf("unxepected error creating user in rancher: %s", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err,
 		})
