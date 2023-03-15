@@ -41,7 +41,7 @@ func (r *Rancher) CreateClusterRole() error {
 	}
 	fmt.Printf("role 'dockyard-role' needs to be created: %t\n", create)
 	if create {
-		body := Role{
+		role := Role{
 			Description:    "",
 			Name:           "dockyard-role",
 			NewUserDefault: true,
@@ -84,9 +84,9 @@ func (r *Rancher) CreateClusterRole() error {
 				},
 			},
 		}
-		fmt.Printf("role '%s' prepared with %d rules\n", body.Name, len(body.Rules))
+		fmt.Printf("role '%s' prepared with %d rules\n", role.Name, len(role.Rules))
 
-		reqBody, err := json.Marshal(body)
+		reqBody, err := json.Marshal(role)
 		if err != nil {
 			return err
 		}
