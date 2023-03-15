@@ -110,9 +110,6 @@ func (r *Rancher) CreateClusterRole() error {
 			"Content-Type":  {"application/json"},
 			"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte(r.BearerToken))},
 			"Accept":        {"application/json"},
-			"Origin":        {r.Url},
-			"Connection":    {"keep-alive"},
-			"TE":            {"trailers"},
 		}
 		resp, err := client.Do(req)
 		if err != nil {
