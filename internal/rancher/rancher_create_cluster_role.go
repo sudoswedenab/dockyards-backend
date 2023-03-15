@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -92,7 +93,7 @@ func (r *Rancher) CreateClusterRole() error {
 		}
 		client := &http.Client{Transport: tr}
 
-		req, err := http.NewRequest("POST", r.Url+"/v3/globalroles", bytes.NewBuffer(reqBody))
+		req, err := http.NewRequest(http.MethodPost, r.Url+"/v3/globalroles", bytes.NewBuffer(reqBody))
 		if err != nil {
 			return err
 		}
@@ -110,6 +111,16 @@ func (r *Rancher) CreateClusterRole() error {
 		if err != nil {
 			return err
 		}
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusCreated {
+			return fmt.Errorf("unxepected status code %d creating global role, data: %s", resp.StatusCode, body)
+		}
+
 		err = resp.Body.Close()
 		if err != nil {
 			return err
