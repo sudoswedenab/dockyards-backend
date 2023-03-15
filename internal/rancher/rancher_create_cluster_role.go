@@ -23,6 +23,7 @@ type Role struct {
 	Name           string `json:"name"`
 	NewUserDefault bool   `json:"newUserDefault"`
 	Rules          []Rule `json:"rules"`
+	Type           string `json:"type"`
 }
 
 func (r *Rancher) CreateClusterRole() error {
@@ -42,6 +43,7 @@ func (r *Rancher) CreateClusterRole() error {
 	fmt.Printf("role 'dockyard-role' needs to be created: %t\n", create)
 	if create {
 		role := Role{
+			Type:           "globalRole",
 			Description:    "",
 			Name:           "dockyard-role",
 			NewUserDefault: true,
