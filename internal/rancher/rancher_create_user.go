@@ -38,7 +38,8 @@ func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 	}
 	data, _ := ioutil.ReadAll(resp.Body)
 
-	if resp.StatusCode >= http.StatusBadRequest {
+	fmt.Printf("status code from create user: %d, data: %s\n", resp.StatusCode, data)
+	if resp.StatusCode != http.StatusCreated {
 		return "", fmt.Errorf("unexpected status code %d, data: %s", resp.StatusCode, data)
 	}
 

@@ -27,6 +27,7 @@ func TestRancherCreateUser(t *testing.T) {
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				switch r.URL.Path {
 				case "/v3/users":
+					w.WriteHeader(http.StatusCreated)
 					w.Write([]byte(`{"id":"abc123"}`))
 				case "/v3/globalRoles":
 					w.Write([]byte(`{"data":[{"name":"dockyard-role","id":"role123"}]}`))
