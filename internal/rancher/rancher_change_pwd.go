@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
@@ -39,9 +40,19 @@ func (r *Rancher) changeRancherPWD(user model.User) (string, error) {
 		return "", err
 	}
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
 	respErr := resp.Body.Close()
 	if respErr != nil {
 		return "", respErr
+	}
+
+	fmt.Printf("status code from set password action: %d, body: %s\n", resp.StatusCode, body)
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code %d when setting rancher password", resp.StatusCode)
 	}
 	// time.Sleep(10 * time.Second)
 	return RandomPwd.NewPassword, nil
