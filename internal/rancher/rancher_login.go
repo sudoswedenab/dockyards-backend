@@ -7,7 +7,12 @@ import (
 )
 
 func (r *Rancher) RancherLogin(user model.User) (string, error) {
-	NewRanchPWd, err := r.changeRancherPWD(user)
+	rancherUser, err := r.ManagementClient.User.ByID(user.RancherID)
+	if err != nil {
+		return "", err
+	}
+
+	NewRanchPWd, err := r.changeRancherPWD(*rancherUser)
 	if err != nil {
 		return "", err
 	}

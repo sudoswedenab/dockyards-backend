@@ -3,7 +3,7 @@ package rancher
 import (
 	"bytes"
 	"crypto/tls"
-	b64 "encoding/base64"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 )
 
-type RancherResponseToken struct {
+type rancherResponseToken struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
 	UserId      string `json:"userId"`
@@ -32,9 +32,9 @@ func (r *Rancher) createRancherToken(rancherToken model.RRtoken) (string, string
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("POST", r.Url+"/v3-public/localProviders/local?action=login", bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", r.url+"/v3-public/localProviders/local?action=login", bytes.NewBuffer(reqBody))
 	req.Header.Set(
-		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(r.BearerToken)),
+		"Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(r.bearerToken)),
 	)
 	// Response from the external request
 	resp, extErr := client.Do(req)
@@ -58,8 +58,7 @@ func (r *Rancher) createRancherToken(rancherToken model.RRtoken) (string, string
 	if respErr != nil {
 		return "", "", respErr
 	}
-
-	var valuetok RancherResponseToken
+	var valuetok rancherResponseToken
 	json.Unmarshal(data, &valuetok)
 
 	return valuetok.Bearertoken, valuetok.UserId, nil

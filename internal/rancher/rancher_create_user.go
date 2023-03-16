@@ -1,15 +1,8 @@
 package rancher
 
 import (
-	"bytes"
-	"crypto/tls"
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-
 	"bitbucket.org/sudosweden/backend/api/v1/model"
+	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
 type RancherUserResponse struct {
@@ -17,55 +10,18 @@ type RancherUserResponse struct {
 }
 
 func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
-	reqBody, err := json.Marshal(user)
+	newUser := managementv3.User{
+		Name: user.Name,
+	}
+	createdUser, err := r.ManagementClient.User.Create(&newUser)
 	if err != nil {
 		return "", err
 	}
 
-	// Do external request
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("POST", r.Url+"/v3/users", bytes.NewBuffer(reqBody))
-	req.Header.Set(
-		"Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(r.BearerToken)),
-	)
-	// Response from the external request
-	resp, extErr := client.Do(req)
-	if extErr != nil {
-		return "", extErr
-	}
-	data, _ := ioutil.ReadAll(resp.Body)
-
-	fmt.Printf("status code from create user: %d, data: %s\n", resp.StatusCode, data)
-	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("unexpected status code %d, data: %s", resp.StatusCode, data)
-	}
-
-	respErr := resp.Body.Close()
-	if respErr != nil {
-		return "", respErr
-	}
-	var rancherUserResponse RancherUserResponse
-	err = json.Unmarshal(data, &rancherUserResponse)
+	err = r.BindRole(createdUser.ID, "dockyard-role")
 	if err != nil {
 		return "", err
 	}
 
-	bind_roles, err := r.GetRoles()
-	if err != nil {
-		return "", err
-	}
-
-	err = r.BindRole(rancherUserResponse.Id, bind_roles)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.Status == "201" {
-		return "", nil
-	}
-
-	return rancherUserResponse.Id, nil
+	return createdUser.ID, nil
 }

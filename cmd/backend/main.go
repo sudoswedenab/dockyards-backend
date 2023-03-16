@@ -62,9 +62,9 @@ func main() {
 	internal.WaitUntil(connectToDB)
 	internal.SyncDataBase(db)
 
-	rancherService := rancher.Rancher{
-		BearerToken: internal.CattleBearerToken,
-		Url:         internal.CattleUrl,
+	rancherService, err := rancher.NewRancher(internal.CattleBearerToken, internal.CattleUrl)
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
 	fmt.Printf("using rancher url %s\n", rancherService.Url)
@@ -87,10 +87,10 @@ func main() {
 		}))
 	}
 
-	routes.RegisterRoutes(r, db, &rancherService)
-	handlers.RegisterRoutes(r, db, &rancherService)
-	jwt.RegisterRoutes(r, db, &rancherService)
-	user.RegisterRoutes(r, db, &rancherService)
+	routes.RegisterRoutes(r, db, rancherService)
+	handlers.RegisterRoutes(r, db, rancherService)
+	jwt.RegisterRoutes(r, db, rancherService)
+	user.RegisterRoutes(r, db, rancherService)
 
 	if internal.FlagUseSwagger {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

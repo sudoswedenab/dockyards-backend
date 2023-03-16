@@ -25,6 +25,7 @@ func TestRancherCreateUser(t *testing.T) {
 				Enabled:            true,
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {
+				t.Logf("r: %#v", r)
 				switch r.URL.Path {
 				case "/v3/users":
 					w.WriteHeader(http.StatusCreated)
@@ -33,6 +34,8 @@ func TestRancherCreateUser(t *testing.T) {
 					w.Write([]byte(`{"data":[{"name":"dockyard-role","id":"role123"}]}`))
 				case "/v3/globalrolebindings":
 					w.WriteHeader(http.StatusCreated)
+				case "/":
+					w.Header().Add("X-API-Schemas", r.Host)
 				}
 			},
 			expected: "abc123",
@@ -43,8 +46,9 @@ func TestRancherCreateUser(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ts := httptest.NewServer(http.HandlerFunc(tc.handler))
 
-			r := Rancher{
-				Url: ts.URL,
+			r, err := NewRancher("bearer-token", ts.URL)
+			if err != nil {
+				t.Fatalf("unexpected error creating new rancher: %s", err)
 			}
 
 			actual, err := r.RancherCreateUser(tc.user)
@@ -124,10 +128,12 @@ func TestRancherCreateUserErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ts := httptest.NewServer(http.HandlerFunc(tc.handler))
 
-			r := Rancher{
-				Url: ts.URL,
+			r, err := NewRancher("bearer-token", ts.URL)
+			if err != nil {
+				t.Fatalf("unexpected error creating new rancher: %s", err)
 			}
-			_, err := r.RancherCreateUser(tc.user)
+
+			_, err = r.RancherCreateUser(tc.user)
 			if err == nil {
 				t.Fatalf("expected to get error, got nil")
 			}
