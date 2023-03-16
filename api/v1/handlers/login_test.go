@@ -91,7 +91,7 @@ func TestLogin(t *testing.T) {
 					return "", errors.New("invalid email or password")
 				},
 			},
-			expected: http.StatusBadRequest,
+			expected: http.StatusInternalServerError,
 		},
 	}
 

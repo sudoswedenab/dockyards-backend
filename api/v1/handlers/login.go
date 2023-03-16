@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -56,7 +57,8 @@ func (h *handler) Login(c *gin.Context) {
 	//Checking agianst Racnher if user exist in rancher
 	bearertoken, err := h.rancherService.RancherLogin(user)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		fmt.Printf("unexpected error doing user login in rancher: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 		return
