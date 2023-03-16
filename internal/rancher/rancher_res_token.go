@@ -43,11 +43,22 @@ func (r *Rancher) createRancherToken(rancherToken model.RRtoken) (string, string
 		err := errors.New(errormsg)
 		return "", "", err
 	}
-	data, _ := ioutil.ReadAll(resp.Body)
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", "", err
+	}
+
+	fmt.Printf("response status code from login %d, body: %s\n", resp.StatusCode, data)
+	if resp.StatusCode != http.StatusCreated {
+		return "", "", fmt.Errorf("unexpected status code %d when doing user login", resp.StatusCode)
+	}
+
 	respErr := resp.Body.Close()
 	if respErr != nil {
 		return "", "", respErr
 	}
+
 	var valuetok RancherResponseToken
 	json.Unmarshal(data, &valuetok)
 
