@@ -24,8 +24,10 @@ var _ RancherService = &Rancher{}
 
 func NewRancher(bearerToken, url string) (RancherService, error) {
 	clientOpts := clientbase.ClientOpts{
-		URL: url,
+		URL:      url,
+		TokenKey: bearerToken,
 	}
+
 	managementClient, err := managementv3.NewClient(&clientOpts)
 	if err != nil {
 		return nil, err
