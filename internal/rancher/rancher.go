@@ -8,8 +8,8 @@ import (
 
 type RancherService interface {
 	RancherCreateUser(model.RancherUser) (string, error)
-	RancherCreateCluster(model.ClusterData, string) (NodePool, error)
-	RancherCreateNodePool(string, string, string) (ClusterTwos, error)
+	RancherCreateCluster(string, string, string, string) (managementv3.Cluster, error)
+	RancherCreateNodePool(string, string) (managementv3.NodePool, error)
 	RancherLogin(model.User) (string, error)
 	CreateClusterRole() error
 }
