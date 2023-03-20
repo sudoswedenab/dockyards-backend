@@ -49,7 +49,7 @@ func (r *Rancher) createRancherToken(rancherToken model.RRtoken) (string, string
 		return "", "", err
 	}
 
-	fmt.Printf("response status code from login %d, body: %s\n", resp.StatusCode, data)
+	r.Logger.Debug("response status code from login", "status-code", resp.StatusCode, "data", data)
 	if resp.StatusCode != http.StatusCreated {
 		return "", "", fmt.Errorf("unexpected status code %d when doing user login", resp.StatusCode)
 	}

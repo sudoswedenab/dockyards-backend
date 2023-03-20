@@ -1,30 +1,53 @@
 package main
 
 import (
-	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
+	"flag"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
 	"bitbucket.org/sudosweden/backend/api/v1/handlers"
+	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/jwt"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/backend/api/v1/routes"
 	_ "bitbucket.org/sudosweden/backend/docs"
 	"bitbucket.org/sudosweden/backend/internal"
 	"bitbucket.org/sudosweden/backend/internal/rancher"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"golang.org/x/exp/slog"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func init() {
 	internal.LoadEnvVariables()
+}
+
+func newLogger(logLevel string) (*slog.Logger, error) {
+	var level slog.Level
+	switch logLevel {
+	case "debug":
+		level = slog.LevelDebug
+	case "info":
+		level = slog.LevelInfo
+	case "warn":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	default:
+		return nil, fmt.Errorf("unknown log level %s", logLevel)
+	}
+	handlerOptions := slog.HandlerOptions{
+		Level: level,
+	}
+	return slog.New(handlerOptions.NewTextHandler(os.Stdout)), nil
 }
 
 //	@title			Themis API
@@ -42,20 +65,29 @@ func init() {
 // @host		localhost:9000
 // @BasePath	/v1/
 func main() {
+	var logLevel string
+	flag.StringVar(&logLevel, "log-level", "info", "log level")
+	flag.Parse()
+
+	logger, err := newLogger(logLevel)
+	if err != nil {
+		fmt.Printf("error preparing logger: %s", err)
+		os.Exit(1)
+	}
+
 	var db *gorm.DB
 	var connectToDB func(*sync.WaitGroup)
-	var err error
 
 	connectToDB = func(wg *sync.WaitGroup) {
-		fmt.Println("Trying to connect..")
+		logger.Info("Trying to connect..")
 		dsn := internal.DatabaseConf
 		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {
-			fmt.Println("Failed to connect to database, trying again..")
+			logger.Info("Failed to connect to database, trying again..")
 			time.Sleep(time.Second * 3)
 			connectToDB(wg)
 		} else {
-			fmt.Println("Success!")
+			logger.Info("Success!")
 			wg.Done()
 		}
 	}
@@ -63,12 +95,12 @@ func main() {
 	internal.WaitUntil(connectToDB)
 	internal.SyncDataBase(db)
 
-	rancherService, err := rancher.NewRancher(internal.CattleBearerToken, internal.CattleUrl)
+	rancherService, err := rancher.NewRancher(internal.CattleBearerToken, internal.CattleUrl, logger)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	fmt.Printf("using cattle url %s\n", internal.CattleUrl)
+	logger.Info("rancher info", "url", internal.CattleUrl)
 
 	err = rancherService.CreateClusterRole()
 	if err != nil {
@@ -89,7 +121,7 @@ func main() {
 	}
 
 	routes.RegisterRoutes(r, db, rancherService)
-	handlers.RegisterRoutes(r, db, rancherService)
+	handlers.RegisterRoutes(r, db, rancherService, logger)
 	jwt.RegisterRoutes(r, db, rancherService)
 	user.RegisterRoutes(r, db, rancherService)
 	cluster.RegisterRoutes(r, rancherService)

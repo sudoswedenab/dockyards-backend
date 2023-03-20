@@ -1,7 +1,6 @@
 package user
 
 import (
-	"fmt"
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
@@ -79,7 +78,10 @@ func (h *handler) UpdateUser(c *gin.Context) {
 
 	err := c.Bind(&User)
 	if err != nil {
-		fmt.Printf("Error: %s", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(User.Password), 10)

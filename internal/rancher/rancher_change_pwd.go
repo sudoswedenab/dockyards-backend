@@ -1,8 +1,6 @@
 package rancher
 
 import (
-	"fmt"
-
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
@@ -12,12 +10,10 @@ func (r *Rancher) changeRancherPWD(user managementv3.User) (string, error) {
 	}
 
 	changedUser, err := r.ManagementClient.User.ActionSetpassword(&user, &RandomPwd)
+	r.Logger.Debug("response from set password action", "changedUser", changedUser)
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
-
-	fmt.Printf("changed user: %#v\n", changedUser)
 
 	return RandomPwd.NewPassword, nil
 }

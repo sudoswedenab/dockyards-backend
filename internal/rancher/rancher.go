@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"github.com/rancher/norman/clientbase"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
+	"golang.org/x/exp/slog"
 )
 
 type RancherService interface {
@@ -18,11 +19,12 @@ type Rancher struct {
 	ManagementClient *managementv3.Client
 	url              string
 	bearerToken      string
+	Logger           *slog.Logger
 }
 
 var _ RancherService = &Rancher{}
 
-func NewRancher(bearerToken, url string) (RancherService, error) {
+func NewRancher(bearerToken, url string, logger *slog.Logger) (RancherService, error) {
 	clientOpts := clientbase.ClientOpts{
 		URL:      url,
 		TokenKey: bearerToken,
@@ -37,6 +39,7 @@ func NewRancher(bearerToken, url string) (RancherService, error) {
 		ManagementClient: managementClient,
 		bearerToken:      bearerToken,
 		url:              url,
+		Logger:           logger,
 	}
 
 	return &r, err
