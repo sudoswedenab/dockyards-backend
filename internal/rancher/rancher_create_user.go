@@ -11,7 +11,11 @@ type RancherUserResponse struct {
 
 func (r *Rancher) RancherCreateUser(user model.RancherUser) (string, error) {
 	newUser := managementv3.User{
-		Name: user.Name,
+		Enabled:            boolPtr(true),
+		Name:               user.Name,
+		Username:           user.Username,
+		Password:           user.Password,
+		MustChangePassword: false,
 	}
 	createdUser, err := r.ManagementClient.User.Create(&newUser)
 	if err != nil {

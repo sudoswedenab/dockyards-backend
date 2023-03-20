@@ -41,3 +41,7 @@ func NewRancher(bearerToken, url string) (RancherService, error) {
 
 	return &r, err
 }
+
+func boolPtr(b bool) *bool {
+	return &b
+}
