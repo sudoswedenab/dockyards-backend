@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +10,6 @@ import (
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal/rancher"
-	"bitbucket.org/sudosweden/backend/internal/rancher/mock"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"golang.org/x/crypto/bcrypt"
@@ -45,11 +43,6 @@ func TestLogin(t *testing.T) {
 				Email:    "test@dockyards.io",
 				Password: "password",
 			},
-			mockRancher: &mock.MockRancherHelper{
-				MockRancherLogin: func(u model.User) (string, error) {
-					return "bearer-token", nil
-				},
-			},
 			expected: http.StatusOK,
 		},
 		{
@@ -73,25 +66,6 @@ func TestLogin(t *testing.T) {
 				Password: "password",
 			},
 			expected: http.StatusBadRequest,
-		},
-		{
-			name: "test invalid rancher user",
-			users: []model.User{
-				{
-					Email:    "test@dockyards.io",
-					Password: string(hash),
-				},
-			},
-			login: model.Login{
-				Email:    "test@dockyards.io",
-				Password: "password",
-			},
-			mockRancher: &mock.MockRancherHelper{
-				MockRancherLogin: func(u model.User) (string, error) {
-					return "", errors.New("invalid email or password")
-				},
-			},
-			expected: http.StatusInternalServerError,
 		},
 	}
 

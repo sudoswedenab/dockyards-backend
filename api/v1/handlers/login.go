@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -54,20 +53,10 @@ func (h *handler) Login(c *gin.Context) {
 		})
 		return
 	}
-	//Checking agianst Racnher if user exist in rancher
-	bearertoken, err := h.rancherService.RancherLogin(user)
-	if err != nil {
-		fmt.Printf("unexpected error doing user login in rancher: %s\n", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
 
 	//Generate a jwt token
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 	claims := accessToken.Claims.(jwt.MapClaims)
-	claims["aud"] = bearertoken
 	claims["sub"] = user.ID
 	claims["name"] = user.Name
 	claims["admin"] = false
