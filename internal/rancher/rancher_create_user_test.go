@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"golang.org/x/exp/slog"
 )
 
 func TestRancherCreateUser(t *testing.T) {
@@ -37,7 +38,9 @@ func TestRancherCreateUser(t *testing.T) {
 		t.Skip("Internal test bearer token not set")
 	}
 
-	r, err := NewRancher(bearerToken, cattleUrl)
+	logger := slog.New(slog.HandlerOptions{Level: slog.LevelError + 1}.NewTextHandler(os.Stdout))
+
+	r, err := NewRancher(bearerToken, cattleUrl, logger)
 	if err != nil {
 		t.Fatalf("unexpected error creating new rancher: %s", err)
 	}
@@ -94,7 +97,9 @@ func TestRancherCreateUserErrors(t *testing.T) {
 		t.Skip("Internal test bearer token not set")
 	}
 
-	r, err := NewRancher(bearerToken, cattleUrl)
+	logger := slog.New(slog.HandlerOptions{Level: slog.LevelError + 1}.NewTextHandler(os.Stdout))
+
+	r, err := NewRancher(bearerToken, cattleUrl, logger)
 	if err != nil {
 		t.Fatalf("unexpected error creating new rancher: %s", err)
 	}
