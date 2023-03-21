@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal/rancher"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -41,16 +40,6 @@ func (h *handler) Signup(c *gin.Context) {
 		return
 	}
 
-	RandomPwd := rancher.String(34)
-
-	RancherID, err := h.rancherService.RancherCreateUser(model.RancherUser{
-		Enabled:            true,
-		MustChangePassword: false,
-		Name:               rancher.String(10),
-		Password:           RandomPwd,
-		Username:           body.Email,
-	})
-
 	if err != nil {
 		fmt.Printf("unxepected error creating user in rancher: %s", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -61,10 +50,10 @@ func (h *handler) Signup(c *gin.Context) {
 
 	//Create the user
 	user := model.User{
-		Name:      body.Name,
-		Email:     body.Email,
-		RancherID: RancherID,
-		Password:  string(hash)}
+		Name:     body.Name,
+		Email:    body.Email,
+		Password: string(hash),
+	}
 	result := h.db.Create(&user)
 
 	if result.Error != nil {

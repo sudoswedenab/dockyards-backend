@@ -3,14 +3,12 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal/rancher"
-	"bitbucket.org/sudosweden/backend/internal/rancher/mock"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -25,26 +23,12 @@ func TestSignup(t *testing.T) {
 	}{
 		{
 			name: "test success",
-			mockRancher: &mock.MockRancherHelper{
-				MockRancherCreateUser: func(user model.RancherUser) (string, error) {
-					return "", nil
-				},
-			},
 			signup: model.Signup{
 				Name:     "test",
 				Email:    "test@dockyards.io",
 				Password: "hello",
 			},
 			expected: http.StatusCreated,
-		},
-		{
-			name: "test failure",
-			mockRancher: &mock.MockRancherHelper{
-				MockRancherCreateUser: func(user model.RancherUser) (string, error) {
-					return "", errors.New("internal server error")
-				},
-			},
-			expected: http.StatusInternalServerError,
 		},
 	}
 
