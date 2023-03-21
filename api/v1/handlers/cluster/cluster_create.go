@@ -19,7 +19,7 @@ func (h *handler) CreateCluster(c *gin.Context) {
 	rancherCluster, err := h.rancherService.RancherCreateCluster(reqBody.DockerRootDir, reqBody.Name, reqBody.ClusterTemplateRevisionId, reqBody.ClusterTemplateId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to read Body",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -27,7 +27,7 @@ func (h *handler) CreateCluster(c *gin.Context) {
 	rancherNodePool, err := h.rancherService.RancherCreateNodePool(rancherCluster.ID, rancherCluster.Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to read Body",
+			"error": err.Error(),
 		})
 		return
 	}
