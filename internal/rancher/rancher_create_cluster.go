@@ -7,7 +7,7 @@ import (
 func (r *Rancher) RancherCreateCluster(dockerRootDir, name, ctrId, ctId string) (managementv3.Cluster, error) {
 
 	clusterTemplate := managementv3.ClusterTemplate{
-		Name: "",
+		Name: "testar",
 	}
 
 	createdClusterTemplate, err := r.ManagementClient.ClusterTemplate.Create(&clusterTemplate)
@@ -74,6 +74,7 @@ func (r *Rancher) RancherCreateCluster(dockerRootDir, name, ctrId, ctId string) 
 	}
 
 	clusterTemplateRevision := managementv3.ClusterTemplateRevision{
+		Name:              name,
 		ClusterTemplateID: createdClusterTemplate.ID,
 		ClusterConfig:     &clusterConfig,
 	}
