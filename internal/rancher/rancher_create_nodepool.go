@@ -15,7 +15,7 @@ func (r *Rancher) RancherCreateNodePool(id, name string) (managementv3.NodePool,
 		Name:                    "",
 		NamespaceId:             "",
 		NodeTaints:              []managementv3.Taint{},
-		NodeTemplateID:          "cattle-global-nt:nt-5hxd5",
+		NodeTemplateID:          "cattle-global-nt:nt-dzqhk",
 		Quantity:                3,
 		Worker:                  true,
 	}
