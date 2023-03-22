@@ -14,14 +14,7 @@ func (r *Rancher) RancherCreateCluster(dockerRootDir, name, ctrId, ctId string) 
 	if err != nil {
 		return managementv3.Cluster{}, err
 	}
-	
-	func boolPtr(b bool) *bool {
-	return &b
-}
 
-	func int64Ptr(b int64) *int64 {
-	return &b
-}
 	//STRUCT for Config Rancher
 	rancherKubernetesEngineConfig := managementv3.RancherKubernetesEngineConfig{
 		Version:         "v1.24.9-rancher1-1",
@@ -58,7 +51,7 @@ func (r *Rancher) RancherCreateCluster(dockerRootDir, name, ctrId, ctId string) 
 					"Election - timeout":   "5000",
 					"Heartbeat - interval": "500",
 				},
-				Retention: "72h",	
+				Retention: "72h",
 			},
 			KubeAPI: &managementv3.KubeAPIService{
 				ServiceNodePortRange: "30000 - 32767",
@@ -73,7 +66,6 @@ func (r *Rancher) RancherCreateCluster(dockerRootDir, name, ctrId, ctId string) 
 				IgnoreDaemonSets: boolPtr(true),
 				Timeout:          120,
 			},
-		
 		},
 	}
 

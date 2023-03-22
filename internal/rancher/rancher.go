@@ -48,3 +48,7 @@ func NewRancher(bearerToken, url string, logger *slog.Logger) (RancherService, e
 func boolPtr(b bool) *bool {
 	return &b
 }
+
+func int64Ptr(b int64) *int64 {
+	return &b
+}
