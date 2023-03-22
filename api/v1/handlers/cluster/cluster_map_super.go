@@ -14,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func MapSuperClusters(c *gin.Context) string {
+func MapSuperClusters(c *gin.Context) {
 
 	bearerToken := internal.CattleBearerToken
 	rancherURL := internal.CattleUrl
@@ -24,7 +24,7 @@ func MapSuperClusters(c *gin.Context) string {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, _ := http.NewRequest("GET", rancherURL+"/v3/clusters", nil)
+	req, _ := http.NewRequest("GET", rancherURL+"/clusters", nil)
 	req.Header.Set(
 		"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken)),
 	)
@@ -32,13 +32,13 @@ func MapSuperClusters(c *gin.Context) string {
 	resp, extErr := client.Do(req)
 	if extErr != nil {
 		c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
-		return ""
+		return
 	}
 	data, _ := ioutil.ReadAll(resp.Body)
 
 	respErr := resp.Body.Close()
 	if respErr != nil {
-		return ""
+		return
 	}
 
 	var valuetok model.ReturnClusterResponse
@@ -47,6 +47,6 @@ func MapSuperClusters(c *gin.Context) string {
 	c.JSON(http.StatusOK, gin.H{
 		"clusters": valuetok.Data,
 	})
-	return string("")
+	return
 
 }

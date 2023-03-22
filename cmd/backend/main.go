@@ -108,6 +108,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	i := gin.Default()
 
 	if internal.FlagUseCors {
 		r.Use(cors.New(cors.Config{
@@ -126,9 +127,12 @@ func main() {
 	user.RegisterRoutes(r, db, rancherService)
 	cluster.RegisterRoutes(r, rancherService)
 
+	routes.RegisterRoutesInternal(i)
+
 	if internal.FlagUseSwagger {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
+	go i.Run(":9001")
 	r.Run()
 }

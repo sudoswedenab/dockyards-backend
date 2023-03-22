@@ -12,6 +12,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func RegisterRoutesInternal(i *gin.Engine) {
+	i.GET("/mapsupercluster", cluster.MapSuperClusters)
+}
+
 func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherService) {
 	middlewareHandler := middleware.Handler{
 		DB:             db,
