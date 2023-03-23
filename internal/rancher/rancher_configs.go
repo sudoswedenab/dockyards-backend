@@ -9,13 +9,20 @@ import (
 
 func (r *Rancher) clusterOptionsToRKEConfig(clusterOptions model.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
 
-	if clusterOptions.Version != "v1.24.9-rancher1-1" {
+	version := "v1.24.9-rancher1-1"
+	ingressProvider := "nginx"
+
+	if clusterOptions.Version != "" && clusterOptions.Version != "v1.24.9-rancher1-1" {
 		return nil, errors.New("unsupported version")
+	}
+
+	if clusterOptions.IngressProvider != "" && clusterOptions.IngressProvider != "nginx" {
+		return nil, errors.New("unsupported ingress provider")
 	}
 
 	//STRUCT for Config Rancher
 	rancherKubernetesEngineConfig := managementv3.RancherKubernetesEngineConfig{
-		Version:         "v1.24.9-rancher1-1",
+		Version:         version,
 		AddonJobTimeout: 45,
 		Authentication: &managementv3.AuthnConfig{
 			Strategy: "x509",
@@ -23,7 +30,7 @@ func (r *Rancher) clusterOptionsToRKEConfig(clusterOptions model.ClusterOptions)
 		IgnoreDockerVersion: boolPtr(true),
 		Ingress: &managementv3.IngressConfig{
 			DefaultIngressClass: boolPtr(true),
-			Provider:            "nginx",
+			Provider:            ingressProvider,
 		},
 		Monitoring: &managementv3.MonitoringConfig{
 			Provider: "metrics-server",

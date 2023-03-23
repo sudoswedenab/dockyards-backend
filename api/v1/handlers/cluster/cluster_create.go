@@ -15,8 +15,11 @@ func (h *handler) CreateCluster(c *gin.Context) {
 		})
 		return
 	}
+	clusterOptions := model.ClusterOptions{
+		Name: reqBody.Name,
+	}
 
-	rancherCluster, err := h.rancherService.RancherCreateCluster(reqBody.DockerRootDir, reqBody.Name, reqBody.ClusterTemplateRevisionId, reqBody.ClusterTemplateId)
+	rancherCluster, err := h.rancherService.RancherCreateCluster(clusterOptions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
