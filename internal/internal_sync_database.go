@@ -6,5 +6,8 @@ import (
 )
 
 func SyncDataBase(db *gorm.DB) {
-	db.AutoMigrate(&model.User{})
+	err := db.AutoMigrate(&model.User{})
+	if err != nil {
+		return
+	}
 }
