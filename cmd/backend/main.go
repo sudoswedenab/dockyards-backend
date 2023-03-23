@@ -93,7 +93,11 @@ func main() {
 	}
 
 	internal.WaitUntil(connectToDB)
-	internal.SyncDataBase(db)
+	err = internal.SyncDataBase(db)
+	if err != nil {
+		logger.Error("Failed to initialize database")
+		log.Fatal(err.Error())
+	}
 
 	rancherService, err := rancher.NewRancher(internal.CattleBearerToken, internal.CattleUrl, logger)
 	if err != nil {
