@@ -1,21 +1,37 @@
 package rancher
 
 import (
+	"bitbucket.org/sudosweden/backend/api/v1/model"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) RancherCreateNodePool(id, name string) (managementv3.NodePool, error) {
+func (r *Rancher) RancherCreateNodePool(clusterOptions model.ClusterOptions, clusterID string) (managementv3.NodePool, error) {
+
+	customNodeTemplate, err := r.clusterOptionsToNodeTemplate(clusterOptions)
+	if err != nil {
+		return managementv3.NodePool{}, err
+	}
+
+	var createdNodeTemplate CustomNodeTemplate
+	err = r.ManagementClient.APIBaseClient.Create(managementv3.NodeTemplateType, &customNodeTemplate, &createdNodeTemplate)
+	if err != nil {
+		return managementv3.NodePool{}, err
+	}
+
+	// Create Nodetemplate
+	// + tester, använd samma typ av logik som finns i rancher configs
+	//Call create node template
 	nodePool := managementv3.NodePool{
-		ClusterID:               id,
+		ClusterID:               clusterID,
 		ControlPlane:            true,
 		DeleteNotReadyAfterSecs: 0,
 		DrainBeforeDelete:       true,
 		Etcd:                    true,
-		HostnamePrefix:          name + "-node-",
+		HostnamePrefix:          clusterOptions.Name + "-node-",
 		Name:                    "",
 		NamespaceId:             "",
 		NodeTaints:              []managementv3.Taint{},
-		NodeTemplateID:          "cattle-global-nt:nt-dzqhk",
+		NodeTemplateID:          createdNodeTemplate.ID,
 		Quantity:                3,
 		Worker:                  true,
 	}

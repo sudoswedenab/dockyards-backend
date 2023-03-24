@@ -27,7 +27,7 @@ func (h *handler) CreateCluster(c *gin.Context) {
 		return
 	}
 
-	rancherNodePool, err := h.rancherService.RancherCreateNodePool(rancherCluster.ID, rancherCluster.Name)
+	rancherNodePool, err := h.rancherService.RancherCreateNodePool(clusterOptions, rancherCluster.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

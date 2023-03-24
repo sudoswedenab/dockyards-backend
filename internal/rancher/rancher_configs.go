@@ -75,3 +75,25 @@ func (r *Rancher) clusterOptionsToRKEConfig(clusterOptions model.ClusterOptions)
 	}
 	return &rancherKubernetesEngineConfig, nil
 }
+
+func (r *Rancher) clusterOptionsToNodeTemplate(clusterOptions model.ClusterOptions) (*CustomNodeTemplate, error) {
+	customNodeTemplate := CustomNodeTemplate{
+		NodeTemplate: managementv3.NodeTemplate{
+			Name: clusterOptions.Name,
+		},
+		OpenstackConfig: &openstackConfig{
+			DomainID:    "06aa939bcd734f7aa85bef28e2412ec5",
+			AuthURL:     "https://v2.dashboard.sto1.safedc.net:5000/v3/",
+			FlavorName:  "l2.c2r4.100",
+			ImageID:     "e18e0951-d077-44f7-8842-c03cdc126023",
+			IPVersion:   "4",
+			KeypairName: "rancher",
+			NetID:       "21dfbb3d-a948-449b-b727-5fdda2026b45",
+			SecGroups:   "a65b6c10-e350-4f8f-b931-eb3a73522fa9",
+			SSHPort:     "22",
+			SSHUser:     "ubuntu",
+			// PrivateKeyFile: "",
+		},
+	}
+	return &customNodeTemplate, nil
+}
