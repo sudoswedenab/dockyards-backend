@@ -8,15 +8,12 @@ import (
 )
 
 func (h *handler) CreateCluster(c *gin.Context) {
-	var reqBody model.ClusterData
-	if c.Bind(&reqBody) != nil {
+	var clusterOptions model.ClusterOptions
+	if c.BindJSON(&clusterOptions) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
 		})
 		return
-	}
-	clusterOptions := model.ClusterOptions{
-		Name: reqBody.Name,
 	}
 
 	cluster, err := h.clusterService.CreateCluster(&clusterOptions)
