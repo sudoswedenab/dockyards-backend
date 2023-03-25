@@ -35,9 +35,20 @@ func (r *Rancher) prepareOpenstackEnvironment(clusterName string, nodePoolOption
 		return nil, err
 	}
 
-	ramSize := 4096
-	cpuCount := 2
-	diskSize := 100
+	ramSize := nodePoolOptions.RAMSize
+	if ramSize == 0 {
+		ramSize = 4096
+	}
+
+	cpuCount := nodePoolOptions.CPUCount
+	if cpuCount == 0 {
+		cpuCount = 2
+	}
+
+	diskSize := nodePoolOptions.DiskSize
+	if diskSize == 0 {
+		diskSize = 100
+	}
 
 	logger.Debug("flavor requirements", "ram", ramSize, "cpu", cpuCount, "disk", diskSize)
 

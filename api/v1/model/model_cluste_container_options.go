@@ -17,4 +17,7 @@ type NodePoolOptions struct {
 	ControlPlaneComponetsOnly bool   `json:"control_plane_componets_only"`
 	Quantity                  int    `json:"quantity"`
 	Name                      string `json:"name"`
+	CPUCount                  int    `json:"cpu_count"`
+	RAMSize                   int    `json:"ram_size"`
+	DiskSize                  int    `json:"disk_sice"`
 }
