@@ -24,12 +24,22 @@ func (h *handler) PostClusters(c *gin.Context) {
 		return
 	}
 
-	controlPlaneNodePoolOptions := model.NodePoolOptions{
-		Name:                       "control-plane",
-		Quantity:                   3,
-		ControlPlane:               true,
-		Etcd:                       true,
-		ControlPlaneComponentsOnly: true,
+	var controlPlaneNodePoolOptions model.NodePoolOptions
+	if clusterOptions.SingleNode {
+		controlPlaneNodePoolOptions = model.NodePoolOptions{
+			Name:         "single-node",
+			Quantity:     1,
+			ControlPlane: true,
+			Etcd:         true,
+		}
+	} else {
+		controlPlaneNodePoolOptions = model.NodePoolOptions{
+			Name:                       "control-plane",
+			Quantity:                   3,
+			ControlPlane:               true,
+			Etcd:                       true,
+			ControlPlaneComponentsOnly: true,
+		}
 	}
 
 	controlPlaneNodePool, err := h.clusterService.CreateNodePool(cluster, &controlPlaneNodePoolOptions)
@@ -39,17 +49,20 @@ func (h *handler) PostClusters(c *gin.Context) {
 		})
 		return
 	}
+
 	h.logger.Debug("created cluster control plane node pool", "name", controlPlaneNodePool.Name)
 
-	for _, nodePoolOptions := range clusterOptions.NodePoolOptions {
-		nodePool, err := h.clusterService.CreateNodePool(cluster, &nodePoolOptions)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-			return
+	if !clusterOptions.SingleNode {
+		for _, nodePoolOptions := range clusterOptions.NodePoolOptions {
+			nodePool, err := h.clusterService.CreateNodePool(cluster, &nodePoolOptions)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+				return
+			}
+			h.logger.Debug("created cluster node pool", "name", nodePool.Name)
 		}
-		h.logger.Debug("created cluster node pool", "name", nodePool.Name)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
