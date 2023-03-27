@@ -30,15 +30,16 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherSe
 
 	v1 := r.Group("/v1")
 
+	// Only used for checking server-side cookies
 	v1.GET("/readcookie", func(c *gin.Context) {
 		handlers.ReadCookie(c)
 	})
 
-	v1.GET("/mapcluster", func(c *gin.Context) {
+	v1.GET("/clusters", func(c *gin.Context) {
 		cluster.MapGetClusters(c)
 	})
 
-	v1.DELETE("/deletecluster/:id", func(c *gin.Context) {
+	v1.DELETE("/clusters/:id", func(c *gin.Context) {
 		cluster.DeleteCluster(c)
 	})
 	///
@@ -47,6 +48,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherSe
 		// Handles errors
 		middlewareHandler.RequireAuth(c)
 	})
+
 	v1Admin.GET("/genbodyforcluster", func(c *gin.Context) {
 		genbody.GenBodyForCreateCluster(c)
 	})
