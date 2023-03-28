@@ -35,10 +35,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherSe
 		handlers.ReadCookie(c)
 	})
 
-	v1.GET("/clusters", func(c *gin.Context) {
-		cluster.MapGetClusters(c)
-	})
-
 	v1.DELETE("/clusters/:id", func(c *gin.Context) {
 		cluster.DeleteCluster(c)
 	})

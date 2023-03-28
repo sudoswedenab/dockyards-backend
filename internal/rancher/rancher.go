@@ -3,6 +3,7 @@ package rancher
 import (
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"github.com/rancher/norman/clientbase"
+	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	"golang.org/x/exp/slog"
 )
@@ -12,6 +13,7 @@ type RancherService interface {
 	RancherCreateCluster(model.ClusterOptions) (managementv3.Cluster, error)
 	RancherCreateNodePool(model.ClusterOptions, string) (managementv3.NodePool, error)
 	RancherLogin(model.User) (string, error)
+	GetClusters(opts *types.ListOpts) (managementv3.ClusterCollection, error)
 	CreateClusterRole() error
 	GetSupportedVersions() []string
 }

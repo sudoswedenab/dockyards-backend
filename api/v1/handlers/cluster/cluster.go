@@ -20,4 +20,5 @@ func RegisterRoutes(r *gin.Engine, rancherService rancher.RancherService) {
 	}
 
 	r.POST("/v1/createcluster", h.CreateCluster)
+	r.GET("/v1/clusters", h.GetAllClusters)
 }
