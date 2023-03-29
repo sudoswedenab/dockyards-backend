@@ -1,83 +1,23 @@
 package cluster
 
 import (
-	"crypto/tls"
-	b64 "encoding/base64"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-
-	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal"
-
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
+	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
+	"net/http"
 )
 
-func DeleteCluster(c *gin.Context) string {
-	//Get the cookie
-	tokenString, err := c.Cookie(internal.AccessTokenName)
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return ""
-	}
-
-	// Parse takes the token string and a function for looking up the key.
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return []byte(internal.Secret), nil
-
-	})
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return ""
-	}
-
-	claims := token.Claims.(jwt.MapClaims)
-
-	bearerToken := claims["aud"]
-	rancherURL := internal.CattleUrl
+func (h *handler) DeleteCluster(c *gin.Context) {
 	clusterID := c.Param("id")
+	cluster := managementv3.Cluster{UUID: clusterID}
 
-	if clusterID == "local" {
-
-		c.JSON(http.StatusForbidden, gin.H{
-			"message": "not authorized to do that",
-		})
-	} else {
-
-		//Do external request
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		client := &http.Client{Transport: tr}
-		req, _ := http.NewRequest("DELETE", rancherURL+"/v3/clusters/"+clusterID, nil)
-		req.Header.Set(
-			"Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(bearerToken.(string))),
-		)
-		// Response from the external request
-		resp, extErr := client.Do(req)
-		if extErr != nil {
-			c.String(http.StatusBadGateway, fmt.Sprintf("There was an external error: %s", extErr.Error()))
-			return ""
-		}
-		data, _ := ioutil.ReadAll(resp.Body)
-
-		respErr := resp.Body.Close()
-		if respErr != nil {
-			return ""
-		}
-
-		var valuetok model.ClusterResponse
-		json.Unmarshal(data, &valuetok)
-
-		c.JSON(http.StatusOK, gin.H{
-			"message": "cluster deleted",
+	err := h.rancherService.DeleteCluster(cluster)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"Error": err.Error(),
 		})
 	}
-	return string("")
+
+	c.JSON(http.StatusOK, gin.H{
+		"Status": "Cluster Deleted",
+	})
 }
