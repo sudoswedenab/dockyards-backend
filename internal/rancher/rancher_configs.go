@@ -53,8 +53,8 @@ func (r *Rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 				},
 				Creation: "12h",
 				ExtraArgs: map[string]string{
-					"Election-timeout":   "5000",
-					"Heartbeat-interval": "500",
+					"election-timeout":   "5000",
+					"heartbeat-interval": "500",
 				},
 				Retention: "72h",
 			},
