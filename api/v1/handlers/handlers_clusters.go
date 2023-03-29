@@ -53,8 +53,18 @@ func (h *handler) PostClusters(c *gin.Context) {
 	h.logger.Debug("created cluster control plane node pool", "name", controlPlaneNodePool.Name)
 
 	if !clusterOptions.SingleNode {
-		for _, nodePoolOptions := range clusterOptions.NodePoolOptions {
-			nodePool, err := h.clusterService.CreateNodePool(cluster, &nodePoolOptions)
+		nodePoolOptions := clusterOptions.NodePoolOptions
+		if len(nodePoolOptions) == 0 {
+			nodePoolOptions = []model.NodePoolOptions{
+				{
+					Name:     "worker",
+					Quantity: 2,
+				},
+			}
+		}
+
+		for _, nodePoolOption := range nodePoolOptions {
+			nodePool, err := h.clusterService.CreateNodePool(cluster, &nodePoolOption)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),
