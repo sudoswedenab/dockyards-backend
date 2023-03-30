@@ -51,6 +51,21 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 	return slog.New(handlerOptions.NewTextHandler(os.Stdout)), nil
 }
 
+func buildDataSourceName() string {
+	conf := os.Getenv("DB_CONF")
+	if conf != "" {
+		return conf
+	}
+
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	name := os.Getenv("DB_NAME")
+
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", host, port, user, password, name)
+}
+
 //	@title			Themis API
 //	@version		1.0
 //	@description	This server.
@@ -92,9 +107,10 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
+		dsn := buildDataSourceName()
+		logger.Debug("database config", "dsn", dsn)
 		connectToDB = func(wg *sync.WaitGroup) {
 			logger.Info("Trying to connect..")
-			dsn := internal.DatabaseConf
 			db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 			if err != nil {
 				logger.Info("Failed to connect to database, trying again..")
