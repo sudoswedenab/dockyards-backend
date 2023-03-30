@@ -7,15 +7,13 @@ COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
 # .env values will be passed from ConfigMap
-#COPY .env .
-RUN go build -v -o ./dist/app ./cmd/backend
+ENV CGO_ENABLED=0
+RUN go build -v -o ./dist/backend ./cmd/backend
 
 # Deploy-stage
-FROM debian:bullseye-slim
+FROM gcr.io/distroless/static-debian11:nonroot
 
-WORKDIR /root/
-COPY --from=builder /usr/src/app/dist/ ./
+COPY --from=builder /usr/src/app/dist/backend /backend
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-#COPY --from=0 /usr/src/app/.env .env
 EXPOSE 9000
-CMD ["./app"]
+ENTRYPOINT ["/backend"]
