@@ -28,4 +28,5 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherSe
 	r.POST("/v1/signup", h.Signup)
 	r.POST("/v1/login", h.Login)
 	r.POST("/v1/logout", h.Logout)
+	r.GET("/cluster-options", h.ContainerOptions)
 }

@@ -13,6 +13,7 @@ type RancherService interface {
 	RancherCreateNodePool(model.ClusterOptions, string) (managementv3.NodePool, error)
 	RancherLogin(model.User) (string, error)
 	CreateClusterRole() error
+	GetSupportedVersions() []string
 }
 
 type Rancher struct {

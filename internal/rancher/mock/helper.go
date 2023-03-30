@@ -34,4 +34,8 @@ func (h *MockRancherHelper) CreateClusterRole() error {
 	return h.MockCreateClusterRole()
 }
 
+func (h *MockRancherHelper) GetSupportedVersions() []string {
+	return []string{}
+}
+
 var _ rancher.RancherService = &MockRancherHelper{}

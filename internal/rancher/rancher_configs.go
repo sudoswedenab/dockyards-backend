@@ -95,5 +95,12 @@ func (r *Rancher) clusterOptionsToNodeTemplate(clusterOptions model.ClusterOptio
 			// PrivateKeyFile: "",
 		},
 	}
+
 	return &customNodeTemplate, nil
+}
+
+func (r *Rancher) GetSupportedVersions() []string {
+
+	return []string{"v1.24.9-rancher1-1"}
+
 }
