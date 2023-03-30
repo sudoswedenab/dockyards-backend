@@ -25,10 +25,11 @@ type Rancher struct {
 
 var _ RancherService = &Rancher{}
 
-func NewRancher(bearerToken, url string, logger *slog.Logger) (RancherService, error) {
+func NewRancher(bearerToken, url string, logger *slog.Logger, trustInsecure bool) (RancherService, error) {
 	clientOpts := clientbase.ClientOpts{
 		URL:      url,
 		TokenKey: bearerToken,
+		Insecure: trustInsecure,
 	}
 
 	managementClient, err := managementv3.NewClient(&clientOpts)

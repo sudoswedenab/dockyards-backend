@@ -40,7 +40,7 @@ func TestRancherCreateUser(t *testing.T) {
 
 	logger := slog.New(slog.HandlerOptions{Level: slog.LevelError + 1}.NewTextHandler(os.Stdout))
 
-	r, err := NewRancher(bearerToken, cattleUrl, logger)
+	r, err := NewRancher(bearerToken, cattleUrl, logger, true)
 	if err != nil {
 		t.Fatalf("unexpected error creating new rancher: %s", err)
 	}
@@ -99,7 +99,7 @@ func TestRancherCreateUserErrors(t *testing.T) {
 
 	logger := slog.New(slog.HandlerOptions{Level: slog.LevelError + 1}.NewTextHandler(os.Stdout))
 
-	r, err := NewRancher(bearerToken, cattleUrl, logger)
+	r, err := NewRancher(bearerToken, cattleUrl, logger, true)
 	if err != nil {
 		t.Fatalf("unexpected error creating new rancher: %s", err)
 	}

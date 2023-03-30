@@ -68,8 +68,10 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 func main() {
 	var logLevel string
 	var useInmemDb bool
+	var trustInsecure bool
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
+	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -113,7 +115,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	rancherService, err := rancher.NewRancher(internal.CattleBearerToken, internal.CattleUrl, logger)
+	rancherService, err := rancher.NewRancher(internal.CattleBearerToken, internal.CattleUrl, logger, trustInsecure)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
