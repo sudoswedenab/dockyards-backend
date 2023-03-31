@@ -14,7 +14,7 @@ type RancherService interface {
 	RancherCreateNodePool(model.ClusterOptions, string) (managementv3.NodePool, error)
 	RancherLogin(model.User) (string, error)
 	GetClusters(opts *types.ListOpts) (managementv3.ClusterCollection, error)
-	DeleteCluster(container managementv3.Cluster) error
+	DeleteCluster(string) error
 	CreateClusterRole() error
 	GetSupportedVersions() []string
 }

@@ -8,8 +8,7 @@ import (
 
 func (h *handler) GetAllClusters(c *gin.Context) {
 	// If filter len is 0, list all
-	opts := &types.ListOpts{}
-	clusters, err := h.rancherService.GetClusters(opts)
+	clusters, err := h.rancherService.GetClusters(&types.ListOpts{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"Error": err.Error(),
