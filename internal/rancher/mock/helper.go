@@ -11,6 +11,8 @@ type MockRancherHelper struct {
 	MockRancherCreateCluster  func(model.ClusterOptions) (managementv3.Cluster, error)
 	MockRancherCreateNodePool func(model.ClusterOptions, string) (managementv3.NodePool, error)
 	MockRancherLogin          func(model.User) (string, error)
+	MockGetAllClusters        func() (managementv3.ClusterCollection, error)
+	MockDeleteCluster         func(string) error
 	MockCreateClusterRole     func() error
 }
 
@@ -28,6 +30,14 @@ func (h *MockRancherHelper) RancherCreateNodePool(c model.ClusterOptions, name s
 
 func (h *MockRancherHelper) RancherLogin(user model.User) (string, error) {
 	return h.MockRancherLogin(user)
+}
+
+func (h *MockRancherHelper) GetAllClusters() (managementv3.ClusterCollection, error) {
+	return h.MockGetAllClusters()
+}
+
+func (h *MockRancherHelper) DeleteCluster(clusterId string) error {
+	return h.MockDeleteCluster(clusterId)
 }
 
 func (h *MockRancherHelper) CreateClusterRole() error {

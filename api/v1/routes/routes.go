@@ -35,9 +35,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherSe
 		handlers.ReadCookie(c)
 	})
 
-	v1.DELETE("/clusters/:id", func(c *gin.Context) {
-		cluster.DeleteCluster(c)
-	})
 	///
 	// Admin Routes
 	v1Admin := v1.Group("/admin", func(c *gin.Context) {
