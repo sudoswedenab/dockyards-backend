@@ -19,7 +19,7 @@ func (h *handler) CreateCluster(c *gin.Context) {
 		Name: reqBody.Name,
 	}
 
-	rancherCluster, err := h.rancherService.RancherCreateCluster(clusterOptions)
+	cluster, err := h.clusterService.CreateCluster(&clusterOptions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -27,7 +27,7 @@ func (h *handler) CreateCluster(c *gin.Context) {
 		return
 	}
 
-	rancherNodePool, err := h.rancherService.RancherCreateNodePool(clusterOptions, rancherCluster.ID)
+	_, err = h.clusterService.CreateNodePool(&clusterOptions, cluster.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -37,7 +37,6 @@ func (h *handler) CreateCluster(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"cluster":     "created successfully",
-		"clusterName": rancherNodePool.Name,
-		"clusterId":   rancherNodePool.ClusterID,
+		"clusterName": cluster.Name,
 	})
 }

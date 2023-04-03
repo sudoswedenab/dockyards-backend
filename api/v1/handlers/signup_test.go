@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal/rancher"
+	"bitbucket.org/sudosweden/backend/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -17,7 +17,7 @@ import (
 func TestSignup(t *testing.T) {
 	tt := []struct {
 		name        string
-		mockRancher rancher.RancherService
+		mockCluster types.ClusterService
 		signup      model.Signup
 		expected    int
 	}{
@@ -41,7 +41,7 @@ func TestSignup(t *testing.T) {
 			db.AutoMigrate(&model.User{})
 
 			h := handler{
-				rancherService: tc.mockRancher,
+				clusterService: tc.mockCluster,
 				db:             db,
 			}
 

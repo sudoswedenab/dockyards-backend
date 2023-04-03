@@ -8,7 +8,7 @@ import (
 )
 
 func (h *handler) ContainerOptions(c *gin.Context) {
-	supportedVersions := h.rancherService.GetSupportedVersions()
+	supportedVersions := h.clusterService.GetSupportedVersions()
 	c.JSON(http.StatusOK, model.ContainerOptions{
 
 		Options: []model.Options{{Name: "",

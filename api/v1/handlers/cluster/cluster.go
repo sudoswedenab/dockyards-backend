@@ -2,19 +2,19 @@ package cluster
 
 import (
 	"bitbucket.org/sudosweden/backend/internal"
-	"bitbucket.org/sudosweden/backend/internal/rancher"
+	"bitbucket.org/sudosweden/backend/internal/types"
 	"github.com/gin-gonic/gin"
 )
 
 type handler struct {
-	rancherService   rancher.RancherService
+	clusterService   types.ClusterService
 	accessTokenName  string
 	refreshTokenName string
 }
 
-func RegisterRoutes(r *gin.Engine, rancherService rancher.RancherService) {
+func RegisterRoutes(r *gin.Engine, clusterService types.ClusterService) {
 	h := handler{
-		rancherService:   rancherService,
+		clusterService:   clusterService,
 		accessTokenName:  internal.AccessTokenName,
 		refreshTokenName: internal.RefreshTokenName,
 	}

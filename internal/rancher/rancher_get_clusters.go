@@ -1,15 +1,23 @@
 package rancher
 
 import (
+	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"github.com/rancher/norman/types"
-	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) GetAllClusters() (managementv3.ClusterCollection, error) {
-	clusters, err := r.ManagementClient.Cluster.ListAll(&types.ListOpts{})
+func (r *Rancher) GetAllClusters() (*[]model.Cluster, error) {
+	clusterCollection, err := r.ManagementClient.Cluster.ListAll(&types.ListOpts{})
 	if err != nil {
-		return managementv3.ClusterCollection{}, err
+		return nil, err
 	}
 
-	return *clusters, nil
+	clusters := []model.Cluster{}
+	for _, cluster := range clusterCollection.Data {
+		c := model.Cluster{
+			Name: cluster.Name,
+		}
+		clusters = append(clusters, c)
+	}
+
+	return &clusters, nil
 }

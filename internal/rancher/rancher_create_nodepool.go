@@ -5,23 +5,22 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) RancherCreateNodePool(clusterOptions model.ClusterOptions, clusterID string) (managementv3.NodePool, error) {
-
+func (r *Rancher) CreateNodePool(clusterOptions *model.ClusterOptions, clusterID string) (*model.NodePool, error) {
 	customNodeTemplate, err := r.clusterOptionsToNodeTemplate(clusterOptions)
 	if err != nil {
-		return managementv3.NodePool{}, err
+		return nil, err
 	}
 
 	var createdNodeTemplate CustomNodeTemplate
 	err = r.ManagementClient.APIBaseClient.Create(managementv3.NodeTemplateType, &customNodeTemplate, &createdNodeTemplate)
 	if err != nil {
-		return managementv3.NodePool{}, err
+		return nil, err
 	}
 
 	// Create Nodetemplate
 	// + tester, använd samma typ av logik som finns i rancher configs
 	//Call create node template
-	nodePool := managementv3.NodePool{
+	opts := managementv3.NodePool{
 		ClusterID:               clusterID,
 		ControlPlane:            true,
 		DeleteNotReadyAfterSecs: 0,
@@ -36,10 +35,14 @@ func (r *Rancher) RancherCreateNodePool(clusterOptions model.ClusterOptions, clu
 		Worker:                  true,
 	}
 
-	createdNodePool, err := r.ManagementClient.NodePool.Create(&nodePool)
+	createdNodePool, err := r.ManagementClient.NodePool.Create(&opts)
 	if err != nil {
-		return managementv3.NodePool{}, err
+		return nil, err
 	}
 
-	return *createdNodePool, nil
+	nodePool := model.NodePool{
+		Name: createdNodePool.Name,
+	}
+
+	return &nodePool, nil
 }

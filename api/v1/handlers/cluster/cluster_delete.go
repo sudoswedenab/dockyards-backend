@@ -1,14 +1,15 @@
 package cluster
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func (h *handler) DeleteCluster(c *gin.Context) {
 	clusterID := c.Param("id")
 
-	err := h.rancherService.DeleteCluster(clusterID)
+	err := h.clusterService.DeleteCluster(clusterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"Error": err.Error(),

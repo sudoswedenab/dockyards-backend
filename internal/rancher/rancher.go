@@ -1,22 +1,11 @@
 package rancher
 
 import (
-	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/backend/internal/types"
 	"github.com/rancher/norman/clientbase"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	"golang.org/x/exp/slog"
 )
-
-type RancherService interface {
-	RancherCreateUser(model.RancherUser) (string, error)
-	RancherCreateCluster(model.ClusterOptions) (managementv3.Cluster, error)
-	RancherCreateNodePool(model.ClusterOptions, string) (managementv3.NodePool, error)
-	RancherLogin(model.User) (string, error)
-	GetAllClusters() (managementv3.ClusterCollection, error)
-	DeleteCluster(string) error
-	CreateClusterRole() error
-	GetSupportedVersions() []string
-}
 
 type Rancher struct {
 	ManagementClient *managementv3.Client
@@ -25,9 +14,9 @@ type Rancher struct {
 	Logger           *slog.Logger
 }
 
-var _ RancherService = &Rancher{}
+var _ types.ClusterService = &Rancher{}
 
-func NewRancher(bearerToken, url string, logger *slog.Logger, trustInsecure bool) (RancherService, error) {
+func NewRancher(bearerToken, url string, logger *slog.Logger, trustInsecure bool) (types.ClusterService, error) {
 	clientOpts := clientbase.ClientOpts{
 		URL:      url,
 		TokenKey: bearerToken,

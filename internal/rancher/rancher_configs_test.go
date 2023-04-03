@@ -52,7 +52,7 @@ func TestClusterOptionsToRKEConfig(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			r := Rancher{}
-			_, err := r.clusterOptionsToRKEConfig(tc.clusterOptions)
+			_, err := r.clusterOptionsToRKEConfig(&tc.clusterOptions)
 			if err != tc.expected {
 				if err != nil && tc.expected != nil {
 					if err.Error() != tc.expected.Error() {

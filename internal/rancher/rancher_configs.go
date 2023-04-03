@@ -7,7 +7,7 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) clusterOptionsToRKEConfig(clusterOptions model.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
+func (r *Rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
 
 	version := "v1.24.9-rancher1-1"
 	ingressProvider := "nginx"
@@ -76,7 +76,7 @@ func (r *Rancher) clusterOptionsToRKEConfig(clusterOptions model.ClusterOptions)
 	return &rancherKubernetesEngineConfig, nil
 }
 
-func (r *Rancher) clusterOptionsToNodeTemplate(clusterOptions model.ClusterOptions) (*CustomNodeTemplate, error) {
+func (r *Rancher) clusterOptionsToNodeTemplate(clusterOptions *model.ClusterOptions) (*CustomNodeTemplate, error) {
 	customNodeTemplate := CustomNodeTemplate{
 		NodeTemplate: managementv3.NodeTemplate{
 			Name: clusterOptions.Name,

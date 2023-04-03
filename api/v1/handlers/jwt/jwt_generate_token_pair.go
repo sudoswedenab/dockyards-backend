@@ -13,15 +13,8 @@ func (h *handler) generateTokenPair(user model.User) (map[string]string, error) 
 	// Create token
 	token := jwt.New(jwt.SigningMethodHS256)
 
-	//Checking agianst Racnher if user exist in rancher
-	bearertoken, err := h.rancherService.RancherLogin(user)
-	if err != nil {
-		return nil, err
-	}
-
 	// Set claims
 	claims := token.Claims.(jwt.MapClaims)
-	claims["aud"] = bearertoken
 	claims["sub"] = user.ID
 	claims["name"] = user.Name
 	claims["admin"] = false

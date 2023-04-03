@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"bitbucket.org/sudosweden/backend/internal"
-	"bitbucket.org/sudosweden/backend/internal/rancher"
+	"bitbucket.org/sudosweden/backend/internal/types"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
@@ -10,16 +10,16 @@ import (
 
 type handler struct {
 	db               *gorm.DB
-	rancherService   rancher.RancherService
+	clusterService   types.ClusterService
 	accessTokenName  string
 	refreshTokenName string
 	logger           *slog.Logger
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherService, logger *slog.Logger) {
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger) {
 	h := handler{
 		db:               db,
-		rancherService:   rancherService,
+		clusterService:   clusterService,
 		accessTokenName:  internal.AccessTokenName,
 		refreshTokenName: internal.RefreshTokenName,
 		logger:           logger,

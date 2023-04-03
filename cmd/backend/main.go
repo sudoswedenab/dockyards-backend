@@ -139,7 +139,7 @@ func main() {
 	routes.RegisterRoutes(r, db, rancherService)
 	handlers.RegisterRoutes(r, db, rancherService, logger)
 	jwt.RegisterRoutes(r, db, rancherService)
-	user.RegisterRoutes(r, db, rancherService)
+	user.RegisterRoutes(r, db)
 	cluster.RegisterRoutes(r, rancherService)
 
 	routes.RegisterRoutesInternal(i)

@@ -5,7 +5,6 @@ import (
 
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal/rancher"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
@@ -125,14 +124,13 @@ func (h *handler) DeleteUser(c *gin.Context) {
 	c.Status(200)
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherService) {
+func RegisterRoutes(r *gin.Engine, db *gorm.DB) {
 	h := handler{
 		db: db,
 	}
 
 	middlewareHandler := middleware.Handler{
-		RancherService: rancherService,
-		DB:             db,
+		DB: db,
 	}
 
 	g := r.Group("/v1/admin")

@@ -6,7 +6,7 @@ import (
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/genbody"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/genkubeconfig"
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
-	"bitbucket.org/sudosweden/backend/internal/rancher"
+	"bitbucket.org/sudosweden/backend/internal/types"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
@@ -16,10 +16,9 @@ func RegisterRoutesInternal(i *gin.Engine) {
 	i.GET("/mapsupercluster", cluster.MapSuperClusters)
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, rancherService rancher.RancherService) {
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService) {
 	middlewareHandler := middleware.Handler{
-		DB:             db,
-		RancherService: rancherService,
+		DB: db,
 	}
 
 	r.GET("/api", func(c *gin.Context) {

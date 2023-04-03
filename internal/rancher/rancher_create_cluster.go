@@ -5,20 +5,19 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) RancherCreateCluster(clusterOptions model.ClusterOptions) (managementv3.Cluster, error) {
-
+func (r *Rancher) CreateCluster(clusterOptions *model.ClusterOptions) (*model.Cluster, error) {
 	clusterTemplate := managementv3.ClusterTemplate{
 		Name: "testar",
 	}
 
 	createdClusterTemplate, err := r.ManagementClient.ClusterTemplate.Create(&clusterTemplate)
 	if err != nil {
-		return managementv3.Cluster{}, err
+		return nil, err
 	}
 
 	rancherKubernetesEngineConfig, err := r.clusterOptionsToRKEConfig(clusterOptions)
 	if err != nil {
-		return managementv3.Cluster{}, err
+		return nil, err
 	}
 	clusterConfig := managementv3.ClusterSpecBase{
 		RancherKubernetesEngineConfig: rancherKubernetesEngineConfig,
@@ -32,19 +31,23 @@ func (r *Rancher) RancherCreateCluster(clusterOptions model.ClusterOptions) (man
 
 	createdClusterTemplateRevision, err := r.ManagementClient.ClusterTemplateRevision.Create(&clusterTemplateRevision)
 	if err != nil {
-		return managementv3.Cluster{}, err
+		return nil, err
 	}
 
-	cluster := managementv3.Cluster{
+	opts := managementv3.Cluster{
 		Name:                      clusterOptions.Name,
 		ClusterTemplateRevisionID: createdClusterTemplateRevision.ID,
 		ClusterTemplateID:         createdClusterTemplate.ID,
 	}
 
-	createdCluster, err := r.ManagementClient.Cluster.Create(&cluster)
+	createdCluster, err := r.ManagementClient.Cluster.Create(&opts)
 	if err != nil {
-		return managementv3.Cluster{}, err
+		return nil, err
 	}
 
-	return *createdCluster, nil
+	cluster := model.Cluster{
+		Name: createdCluster.Name,
+		ID:   createdCluster.ID,
+	}
+	return &cluster, nil
 }

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal/rancher"
+	"bitbucket.org/sudosweden/backend/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"golang.org/x/crypto/bcrypt"
@@ -28,7 +28,7 @@ func TestLogin(t *testing.T) {
 		name        string
 		users       []model.User
 		login       model.Login
-		mockRancher rancher.RancherService
+		mockCluster types.ClusterService
 		expected    int
 	}{
 		{
@@ -82,7 +82,7 @@ func TestLogin(t *testing.T) {
 			}
 
 			h := handler{
-				rancherService: tc.mockRancher,
+				clusterService: tc.mockCluster,
 				db:             db,
 			}
 
