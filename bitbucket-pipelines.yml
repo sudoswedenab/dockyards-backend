@@ -11,6 +11,17 @@ image: atlassian/default-image:3
 pipelines:
   default:
   - step:
+      name: Environment
+      image: docker.io/library/golang:1.20.2
+      script:
+      - git fetch --tags
+      - echo "export IMAGE_NAME=$BITBUCKET_REPO_SLUG" >> env.sh
+      - echo "export VERSION=$(git describe --always --tags --dirty)" >> env.sh
+      - echo "export IMAGE=075899289117.dkr.ecr.eu-north-1.amazonaws.com/dockyards-backend" >> env.sh
+      - cat env.sh
+      artifacts:
+      - env.sh
+  - step:
       name: Test
       image: docker.io/library/golang:1.20.2
       script:
@@ -18,7 +29,7 @@ pipelines:
   - step:
       name: Build
       script:
-      - IMAGE_NAME=$BITBUCKET_REPO_SLUG
+      - source env.sh
       - docker build . --file Dockerfile --tag ${IMAGE_NAME}
       - docker save ${IMAGE_NAME} --output "${IMAGE_NAME}.tar"
       services:
@@ -32,11 +43,9 @@ pipelines:
       deployment: Production
       image: docker.io/amazon/aws-cli:2.11.8
       script:
-      - source git_env.sh
+      - source env.sh
       - aws ecr get-login-password | docker login --username "AWS" --password-stdin "075899289117.dkr.ecr.eu-north-1.amazonaws.com"
-      - IMAGE_NAME=$BITBUCKET_REPO_SLUG
       - docker load --input "${IMAGE_NAME}.tar"
-      - IMAGE="075899289117.dkr.ecr.eu-north-1.amazonaws.com/dockyards-backend"
       - docker tag "${IMAGE_NAME}" "${IMAGE}:${VERSION}"
       - docker push "${IMAGE}:${VERSION}"
       services:
