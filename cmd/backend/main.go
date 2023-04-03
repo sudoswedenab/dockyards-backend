@@ -122,11 +122,6 @@ func main() {
 
 	logger.Info("rancher info", "url", internal.CattleUrl)
 
-	err = rancherService.CreateClusterRole()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
 	r := gin.Default()
 	i := gin.Default()
 
