@@ -14,7 +14,6 @@ var (
 	AccessTokenName    string
 	Secret             string
 	RefSecret          string
-	DatabaseConf       string
 	CattleUrl          string
 	CattleBearerToken  string
 	FlagUseCors        = false
@@ -47,7 +46,6 @@ func LoadEnvVariables() {
 	RefreshTokenName = os.Getenv("REFRESH_TOKEN_NAME")
 	Secret = os.Getenv("SECRET")
 	RefSecret = os.Getenv("REF_SECRET")
-	DatabaseConf = os.Getenv("DB_CONF")
 	CattleUrl = os.Getenv("CATTLE_URL")
 	CattleBearerToken = os.Getenv("CATTLE_BEARER_TOKEN")
 	OpenstackAuthURL = os.Getenv("OPENSTACK_AUTH_URL")
