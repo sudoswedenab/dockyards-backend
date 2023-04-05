@@ -10,16 +10,19 @@ import (
 )
 
 var (
-	RefreshTokenName  string
-	AccessTokenName   string
-	Secret            string
-	RefSecret         string
-	DatabaseConf      string
-	CattleUrl         string
-	CattleBearerToken string
-	FlagUseCors       = false
-	FlagUseSwagger    = false
-	FlagServerCookie  = false
+	RefreshTokenName   string
+	AccessTokenName    string
+	Secret             string
+	RefSecret          string
+	DatabaseConf       string
+	CattleUrl          string
+	CattleBearerToken  string
+	FlagUseCors        = false
+	FlagUseSwagger     = false
+	FlagServerCookie   = false
+	OpenstackAuthURL   string
+	OpenstackAppID     string
+	OpenstackAppSecret string
 )
 
 func LoadEnvVariables() {
@@ -47,4 +50,7 @@ func LoadEnvVariables() {
 	DatabaseConf = os.Getenv("DB_CONF")
 	CattleUrl = os.Getenv("CATTLE_URL")
 	CattleBearerToken = os.Getenv("CATTLE_BEARER_TOKEN")
+	OpenstackAuthURL = os.Getenv("OPENSTACK_AUTH_URL")
+	OpenstackAppID = os.Getenv("OPENSTACK_APP_ID")
+	OpenstackAppSecret = os.Getenv("OPENSTACK_APP_SECRET")
 }

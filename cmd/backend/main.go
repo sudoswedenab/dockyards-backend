@@ -115,12 +115,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	rancherService, err := rancher.NewRancher(internal.CattleBearerToken, internal.CattleUrl, logger, trustInsecure)
+	rancherService, err := rancher.NewRancher(
+		internal.CattleBearerToken,
+		internal.CattleUrl,
+		logger,
+		trustInsecure,
+		internal.OpenstackAuthURL,
+		internal.OpenstackAppID,
+		internal.OpenstackAppSecret,
+	)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
 	logger.Info("rancher info", "url", internal.CattleUrl)
+	logger.Info("openstack info", "url", internal.OpenstackAuthURL)
 
 	r := gin.Default()
 	i := gin.Default()

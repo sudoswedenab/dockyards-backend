@@ -2,6 +2,8 @@ package rancher
 
 import (
 	"bitbucket.org/sudosweden/backend/internal/types"
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/utils/openstack/clientconfig"
 	"github.com/rancher/norman/clientbase"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	"golang.org/x/exp/slog"
@@ -12,11 +14,13 @@ type Rancher struct {
 	url              string
 	bearerToken      string
 	Logger           *slog.Logger
+	providerClient   *gophercloud.ProviderClient
+	authInfo         *clientconfig.AuthInfo
 }
 
 var _ types.ClusterService = &Rancher{}
 
-func NewRancher(bearerToken, url string, logger *slog.Logger, trustInsecure bool) (types.ClusterService, error) {
+func NewRancher(bearerToken, url string, logger *slog.Logger, trustInsecure bool, authURL, appID, appSecret string) (types.ClusterService, error) {
 	clientOpts := clientbase.ClientOpts{
 		URL:      url,
 		TokenKey: bearerToken,
@@ -28,11 +32,30 @@ func NewRancher(bearerToken, url string, logger *slog.Logger, trustInsecure bool
 		return nil, err
 	}
 
+	authInfo := &clientconfig.AuthInfo{
+		AuthURL:                     authURL,
+		ApplicationCredentialID:     appID,
+		ApplicationCredentialSecret: appSecret,
+		AllowReauth:                 true,
+	}
+
+	openstackOpts := clientconfig.ClientOpts{
+		AuthType: clientconfig.AuthV3ApplicationCredential,
+		AuthInfo: authInfo,
+	}
+
+	providerClient, err := clientconfig.AuthenticatedClient(&openstackOpts)
+	if err != nil {
+		return nil, err
+	}
+
 	r := Rancher{
 		ManagementClient: managementClient,
 		bearerToken:      bearerToken,
 		url:              url,
 		Logger:           logger,
+		providerClient:   providerClient,
+		authInfo:         authInfo,
 	}
 
 	return &r, err

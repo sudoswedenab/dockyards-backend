@@ -8,6 +8,8 @@ require (
 	github.com/glebarez/sqlite v1.7.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/gophercloud/gophercloud v1.2.0
+	github.com/gophercloud/utils v0.0.0-20230324070755-05e9e7f5ea4d
 	github.com/joho/godotenv v1.4.0
 	github.com/rancher/norman v0.0.0-20221205184727-32ef2e185b99
 	github.com/rancher/rancher/pkg/client v0.0.0-20230315001606-cd1a71624a94
@@ -54,6 +56,7 @@ require (
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect

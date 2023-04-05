@@ -6,7 +6,15 @@ import (
 )
 
 func (r *Rancher) CreateNodePool(clusterOptions *model.ClusterOptions, clusterID string) (*model.NodePool, error) {
-	customNodeTemplate, err := r.clusterOptionsToNodeTemplate(clusterOptions)
+	nodePoolOptions := model.NodePoolOptions{
+		Name: clusterOptions.Name,
+	}
+	openstackConfig, err := r.prepareOpenstackEnvironment(clusterOptions.Name, nodePoolOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	customNodeTemplate, err := r.clusterOptionsToNodeTemplate(clusterOptions, openstackConfig)
 	if err != nil {
 		return nil, err
 	}
