@@ -24,7 +24,7 @@ func (h *handler) PostClusters(c *gin.Context) {
 		return
 	}
 
-	_, err = h.clusterService.CreateNodePool(&clusterOptions, cluster.ID)
+	_, err = h.clusterService.CreateNodePool(cluster)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

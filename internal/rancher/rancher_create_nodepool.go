@@ -5,18 +5,20 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) CreateNodePool(clusterOptions *model.ClusterOptions, clusterID string) (*model.NodePool, error) {
+func (r *Rancher) CreateNodePool(cluster *model.Cluster) (*model.NodePool, error) {
 	nodePoolOptions := model.NodePoolOptions{
-		Name: clusterOptions.Name,
+		Name: cluster.Name,
 	}
-	openstackConfig, err := r.prepareOpenstackEnvironment(clusterOptions.Name, nodePoolOptions)
+	openstackConfig, err := r.prepareOpenstackEnvironment(cluster.Name, nodePoolOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	customNodeTemplate, err := r.clusterOptionsToNodeTemplate(clusterOptions, openstackConfig)
-	if err != nil {
-		return nil, err
+	customNodeTemplate := CustomNodeTemplate{
+		NodeTemplate: managementv3.NodeTemplate{
+			Name: cluster.Name,
+		},
+		OpenstackConfig: openstackConfig,
 	}
 
 	var createdNodeTemplate CustomNodeTemplate
@@ -29,12 +31,12 @@ func (r *Rancher) CreateNodePool(clusterOptions *model.ClusterOptions, clusterID
 	// + tester, använd samma typ av logik som finns i rancher configs
 	//Call create node template
 	opts := managementv3.NodePool{
-		ClusterID:               clusterID,
+		ClusterID:               cluster.ID,
 		ControlPlane:            true,
 		DeleteNotReadyAfterSecs: 0,
 		DrainBeforeDelete:       true,
 		Etcd:                    true,
-		HostnamePrefix:          clusterOptions.Name + "-node-",
+		HostnamePrefix:          cluster.Name + "-node-",
 		Name:                    "",
 		NamespaceId:             "",
 		NodeTaints:              []managementv3.Taint{},
