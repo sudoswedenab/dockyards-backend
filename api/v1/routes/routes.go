@@ -47,8 +47,4 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	v1Admin.GET("/auth", func(c *gin.Context) {
 		handlers.Validate(c)
 	})
-
-	v1Admin.GET("/mapsupercluster", func(c *gin.Context) {
-		cluster.MapSuperClusters(c)
-	})
 }
