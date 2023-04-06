@@ -1,6 +1,8 @@
 package rancher
 
 import (
+	"time"
+
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"github.com/rancher/norman/types"
 )
@@ -13,8 +15,16 @@ func (r *Rancher) GetAllClusters() (*[]model.Cluster, error) {
 
 	clusters := []model.Cluster{}
 	for _, cluster := range clusterCollection.Data {
+		createdAt, err := time.Parse(time.RFC3339, cluster.Created)
+		if err != nil {
+			return nil, err
+		}
+
 		c := model.Cluster{
-			Name: cluster.Name,
+			Name:      cluster.Name,
+			State:     cluster.State,
+			NodeCount: int(cluster.NodeCount),
+			CreatedAt: createdAt,
 		}
 		clusters = append(clusters, c)
 	}
