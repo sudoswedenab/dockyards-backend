@@ -12,8 +12,8 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
 )
 
-func (r *Rancher) prepareOpenstackEnvironment(clusterName string, nodePoolOptions model.NodePoolOptions) (*openstackConfig, error) {
-	logger := r.Logger.With("node-pool", nodePoolOptions.Name, "cluster", clusterName)
+func (r *Rancher) prepareOpenstackEnvironment(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*openstackConfig, error) {
+	logger := r.Logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name)
 
 	computev2, err := openstack.NewComputeV2(r.providerClient, gophercloud.EndpointOpts{Region: "sto1"})
 	if err != nil {
@@ -115,7 +115,7 @@ func (r *Rancher) prepareOpenstackEnvironment(clusterName string, nodePoolOption
 		return nil, errors.New("unable to find suitable network")
 	}
 
-	keypairName := clusterName + "-" + nodePoolOptions.Name
+	keypairName := cluster.Name + "-" + nodePoolOptions.Name
 	createOpts := keypairs.CreateOpts{
 		Name: keypairName,
 	}

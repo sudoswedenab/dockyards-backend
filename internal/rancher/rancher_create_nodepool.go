@@ -5,11 +5,8 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) CreateNodePool(cluster *model.Cluster) (*model.NodePool, error) {
-	nodePoolOptions := model.NodePoolOptions{
-		Name: cluster.Name,
-	}
-	openstackConfig, err := r.prepareOpenstackEnvironment(cluster.Name, nodePoolOptions)
+func (r *Rancher) CreateNodePool(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*model.NodePool, error) {
+	openstackConfig, err := r.prepareOpenstackEnvironment(cluster, nodePoolOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -30,19 +27,20 @@ func (r *Rancher) CreateNodePool(cluster *model.Cluster) (*model.NodePool, error
 	// Create Nodetemplate
 	// + tester, använd samma typ av logik som finns i rancher configs
 	//Call create node template
+	hostnamePrefix := cluster.Name + "-" + nodePoolOptions.Name + "-"
 	opts := managementv3.NodePool{
 		ClusterID:               cluster.ID,
-		ControlPlane:            true,
+		ControlPlane:            nodePoolOptions.ControlPlane,
 		DeleteNotReadyAfterSecs: 0,
 		DrainBeforeDelete:       true,
-		Etcd:                    true,
-		HostnamePrefix:          cluster.Name + "-node-",
-		Name:                    "",
+		Etcd:                    nodePoolOptions.Etcd,
+		HostnamePrefix:          hostnamePrefix,
+		Name:                    nodePoolOptions.Name,
 		NamespaceId:             "",
 		NodeTaints:              []managementv3.Taint{},
 		NodeTemplateID:          createdNodeTemplate.ID,
-		Quantity:                3,
-		Worker:                  true,
+		Quantity:                int64(nodePoolOptions.Quantity),
+		Worker:                  !nodePoolOptions.ControlPlaneComponentsOnly,
 	}
 
 	createdNodePool, err := r.ManagementClient.NodePool.Create(&opts)
