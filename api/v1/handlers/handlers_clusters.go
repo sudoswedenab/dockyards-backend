@@ -1,4 +1,4 @@
-package cluster
+package handlers
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *handler) CreateCluster(c *gin.Context) {
+func (h *handler) PostClusters(c *gin.Context) {
 	var clusterOptions model.ClusterOptions
 	if c.BindJSON(&clusterOptions) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

@@ -29,4 +29,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	r.POST("/v1/login", h.Login)
 	r.POST("/v1/logout", h.Logout)
 	r.GET("/cluster-options", h.ContainerOptions)
+
+	r.POST("/v1/createcluster", h.PostClusters)
 }

@@ -19,7 +19,6 @@ func RegisterRoutes(r *gin.Engine, clusterService types.ClusterService) {
 		refreshTokenName: internal.RefreshTokenName,
 	}
 
-	r.POST("/v1/createcluster", h.CreateCluster)
 	r.GET("/v1/clusters", h.GetAllClusters)
 	r.DELETE("/v1/clusters/:id", h.DeleteCluster)
 }
