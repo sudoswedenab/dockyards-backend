@@ -25,10 +25,11 @@ func (h *handler) PostClusters(c *gin.Context) {
 	}
 
 	controlPlaneNodePoolOptions := model.NodePoolOptions{
-		Name:         "control-plane",
-		Quantity:     3,
-		ControlPlane: true,
-		Etcd:         true,
+		Name:                       "control-plane",
+		Quantity:                   3,
+		ControlPlane:               true,
+		Etcd:                       true,
+		ControlPlaneComponentsOnly: true,
 	}
 
 	controlPlaneNodePool, err := h.clusterService.CreateNodePool(cluster, &controlPlaneNodePoolOptions)
