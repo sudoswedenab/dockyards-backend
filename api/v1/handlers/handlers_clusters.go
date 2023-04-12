@@ -128,7 +128,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	})
 }
 
-func (h *handler) GetAllClusters(c *gin.Context) {
+func (h *handler) GetClusters(c *gin.Context) {
 	// If filter len is 0, list all
 	clusters, err := h.clusterService.GetAllClusters()
 	if err != nil {
