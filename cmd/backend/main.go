@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/backend/api/v1/handlers"
-	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/jwt"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/backend/api/v1/routes"
@@ -165,7 +164,6 @@ func main() {
 	handlers.RegisterRoutes(r, db, rancherService, logger)
 	jwt.RegisterRoutes(r, db, rancherService)
 	user.RegisterRoutes(r, db)
-	cluster.RegisterRoutes(r, rancherService)
 
 	routes.RegisterRoutesInternal(i)
 

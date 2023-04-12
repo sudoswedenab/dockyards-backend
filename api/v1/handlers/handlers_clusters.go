@@ -111,3 +111,34 @@ func (h *handler) GetClusterKubeConfig(c *gin.Context) {
 		"kubeconfig": kubeConfig,
 	})
 }
+
+func (h *handler) DeleteCluster(c *gin.Context) {
+	name := c.Param("name")
+
+	err := h.clusterService.DeleteCluster(name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "Cluster Deleted",
+	})
+}
+
+func (h *handler) GetAllClusters(c *gin.Context) {
+	// If filter len is 0, list all
+	clusters, err := h.clusterService.GetAllClusters()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"clusters": clusters,
+	})
+}

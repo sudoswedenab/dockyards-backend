@@ -32,4 +32,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 
 	r.POST("/v1/clusters", h.PostClusters)
 	r.GET("/v1/clusters/:name/kubeconfig", h.GetClusterKubeConfig)
+	r.GET("/v1/clusters", h.GetAllClusters)
+	r.DELETE("/v1/clusters/:name", h.DeleteCluster)
 }
