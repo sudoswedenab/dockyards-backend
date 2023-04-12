@@ -10,6 +10,7 @@ type MockRancherHelper struct {
 	MockCreateNodePool func(*model.Cluster, *model.NodePoolOptions) (*model.NodePool, error)
 	MockGetAllClusters func() (*[]model.Cluster, error)
 	MockDeleteCluster  func(string) error
+	MockGetKubeConfig  func(*model.Cluster) (string, error)
 }
 
 func (h *MockRancherHelper) CreateCluster(c *model.ClusterOptions) (*model.Cluster, error) {
@@ -30,6 +31,10 @@ func (h *MockRancherHelper) DeleteCluster(clusterId string) error {
 
 func (h *MockRancherHelper) GetSupportedVersions() []string {
 	return []string{}
+}
+
+func (h *MockRancherHelper) GetKubeConfig(c *model.Cluster) (string, error) {
+	return h.MockGetKubeConfig(c)
 }
 
 var _ types.ClusterService = &MockRancherHelper{}
