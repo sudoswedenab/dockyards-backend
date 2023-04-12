@@ -3,7 +3,6 @@ package routes
 import (
 	"bitbucket.org/sudosweden/backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
-	"bitbucket.org/sudosweden/backend/api/v1/handlers/genkubeconfig"
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/backend/internal/types"
 	"gorm.io/gorm"
@@ -38,10 +37,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	v1Admin := v1.Group("/admin", func(c *gin.Context) {
 		// Handles errors
 		middlewareHandler.RequireAuth(c)
-	})
-
-	v1Admin.POST("/kubeconf/:id", func(c *gin.Context) {
-		genkubeconfig.GenKubeConfig(c)
 	})
 
 	v1Admin.GET("/auth", func(c *gin.Context) {
