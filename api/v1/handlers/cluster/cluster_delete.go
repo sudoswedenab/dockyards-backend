@@ -12,11 +12,12 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	err := h.clusterService.DeleteCluster(name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"Error": err.Error(),
+			"error": err.Error(),
 		})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"Status": "Cluster Deleted",
+		"status": "Cluster Deleted",
 	})
 }
