@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/backend/internal"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,6 +13,16 @@ func (h *handler) PostClusters(c *gin.Context) {
 	if c.BindJSON(&clusterOptions) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
+		})
+		return
+	}
+
+	h.logger.Debug("create cluster", "name", clusterOptions.Name, "version", clusterOptions.Version)
+
+	if !internal.IsValidName(clusterOptions.Name) {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error":   "name is not valid",
+			"details": "name must contain only alphanumber characters and the '-' character. name must be max 63 characters long",
 		})
 		return
 	}
