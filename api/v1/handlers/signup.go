@@ -22,7 +22,7 @@ import (
 func (h *handler) Signup(c *gin.Context) {
 	var body model.Signup
 
-	if c.Bind(&body) != nil {
+	if c.BindJSON(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
 		})

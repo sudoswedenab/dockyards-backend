@@ -26,7 +26,7 @@ func (h *handler) Login(c *gin.Context) {
 	// Get email and pass off req body
 	var body model.Login
 
-	if c.Bind(&body) != nil {
+	if c.BindJSON(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
 		})

@@ -75,7 +75,7 @@ func (h *handler) UpdateUser(c *gin.Context) {
 		Password string
 	}
 
-	err := c.Bind(&User)
+	err := c.BindJSON(&User)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
