@@ -20,5 +20,5 @@ func RegisterRoutes(r *gin.Engine, clusterService types.ClusterService) {
 	}
 
 	r.GET("/v1/clusters", h.GetAllClusters)
-	r.DELETE("/v1/clusters/:id", h.DeleteCluster)
+	r.DELETE("/v1/clusters/:name", h.DeleteCluster)
 }

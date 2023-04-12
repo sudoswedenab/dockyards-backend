@@ -7,9 +7,9 @@ import (
 )
 
 func (h *handler) DeleteCluster(c *gin.Context) {
-	clusterID := c.Param("id")
+	name := c.Param("name")
 
-	err := h.clusterService.DeleteCluster(clusterID)
+	err := h.clusterService.DeleteCluster(name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"Error": err.Error(),
