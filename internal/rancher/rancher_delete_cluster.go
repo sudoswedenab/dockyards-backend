@@ -1,16 +1,35 @@
 package rancher
 
-import managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
+import (
+	"errors"
+
+	"github.com/rancher/norman/types"
+)
 
 func (r *Rancher) DeleteCluster(name string) error {
-	cluster := managementv3.Cluster{
-		Name: name,
+	listOpts := types.ListOpts{
+		Filters: map[string]interface{}{
+			"name": name,
+		},
 	}
-
-	err := r.ManagementClient.Cluster.Delete(&cluster)
+	clusterCollection, err := r.ManagementClient.Cluster.List(&listOpts)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	r.Logger.Debug("list cluster collection", "len", len(clusterCollection.Data))
+
+	for _, cluster := range clusterCollection.Data {
+		if cluster.Name == name {
+			r.Logger.Debug("cluster to delete found", "id", cluster.ID, "name", cluster.Name)
+
+			err := r.ManagementClient.Cluster.Delete(&cluster)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	return errors.New("unable to find cluster to delete")
 }
