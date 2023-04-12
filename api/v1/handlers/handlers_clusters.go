@@ -91,3 +91,23 @@ func (h *handler) PostClusters(c *gin.Context) {
 		"clusterName": cluster.Name,
 	})
 }
+
+func (h *handler) GetClusterKubeConfig(c *gin.Context) {
+	name := c.Param("name")
+	h.logger.Debug("get kubeconfig for cluster", "name", name)
+
+	cluster := model.Cluster{
+		Name: name,
+	}
+
+	kubeConfig, err := h.clusterService.GetKubeConfig(&cluster)
+	if err != nil {
+		h.logger.Error("unexpected error getting kubeconfig", "err", err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"kubeconfig": kubeConfig,
+	})
+}
