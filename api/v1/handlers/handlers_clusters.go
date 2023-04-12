@@ -117,12 +117,14 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 
 	err := h.clusterService.DeleteCluster(name)
 	if err != nil {
+		h.logger.Error("unexpected error deleting cluster", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
 
+	h.logger.Debug("successfully deleted cluster", "name", name)
 	c.JSON(http.StatusOK, gin.H{
 		"status": "Cluster Deleted",
 	})
@@ -132,12 +134,14 @@ func (h *handler) GetClusters(c *gin.Context) {
 	// If filter len is 0, list all
 	clusters, err := h.clusterService.GetAllClusters()
 	if err != nil {
+		h.logger.Error("unexpected error when getting clusters", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"Error": err.Error(),
 		})
 		return
 	}
 
+	h.logger.Debug("successfully got clusters", "clusters", clusters)
 	c.JSON(http.StatusOK, gin.H{
 		"clusters": clusters,
 	})
