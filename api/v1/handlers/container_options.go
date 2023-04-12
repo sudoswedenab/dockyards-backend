@@ -9,11 +9,11 @@ import (
 
 func (h *handler) ContainerOptions(c *gin.Context) {
 	supportedVersions := h.clusterService.GetSupportedVersions()
-	c.JSON(http.StatusOK, model.ContainerOptions{
 
+	c.JSON(http.StatusOK, model.ContainerOptions{
 		Options: []model.Options{{Name: "",
 			SingleNode:      false,
-			KubeVersion:     supportedVersions,
+			Version:         supportedVersions,
 			NodePoolOptions: []model.NodePoolOptions{{}},
 		}},
 	})

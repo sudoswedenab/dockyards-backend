@@ -6,7 +6,7 @@ type ContainerOptions struct {
 
 type Options struct {
 	Name            string            `json:"name"`
-	KubeVersion     []string          `json:"kube_version"`
+	Version         []string          `json:"version"`
 	SingleNode      bool              `json:"single_node"`
 	NodePoolOptions []NodePoolOptions `json:"node_pool_options"`
 }
