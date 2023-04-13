@@ -1,10 +1,13 @@
 package rancher
 
 import (
+	"sync"
+
 	"bitbucket.org/sudosweden/backend/internal/types"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/utils/openstack/clientconfig"
 	"github.com/rancher/norman/clientbase"
+	normanTypes "github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	"golang.org/x/exp/slog"
 )
@@ -16,6 +19,8 @@ type Rancher struct {
 	Logger           *slog.Logger
 	providerClient   *gophercloud.ProviderClient
 	authInfo         *clientconfig.AuthInfo
+	garbageMutex     *sync.Mutex
+	garbageObjects   map[string]*normanTypes.Resource
 }
 
 var _ types.ClusterService = &Rancher{}
@@ -56,6 +61,8 @@ func NewRancher(bearerToken, url string, logger *slog.Logger, trustInsecure bool
 		Logger:           logger,
 		providerClient:   providerClient,
 		authInfo:         authInfo,
+		garbageMutex:     &sync.Mutex{},
+		garbageObjects:   make(map[string]*normanTypes.Resource),
 	}
 
 	return &r, err
