@@ -37,4 +37,8 @@ func (h *MockRancherHelper) GetKubeConfig(c *model.Cluster) (string, error) {
 	return h.MockGetKubeConfig(c)
 }
 
+func (h *MockRancherHelper) DeleteGarbage() {
+	return
+}
+
 var _ types.ClusterService = &MockRancherHelper{}

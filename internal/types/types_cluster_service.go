@@ -9,4 +9,5 @@ type ClusterService interface {
 	DeleteCluster(string) error
 	GetSupportedVersions() []string
 	GetKubeConfig(*model.Cluster) (string, error)
+	DeleteGarbage()
 }
