@@ -82,9 +82,11 @@ func main() {
 	var logLevel string
 	var useInmemDb bool
 	var trustInsecure bool
+	var delGarbageInterval int
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
+	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -141,6 +143,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	go func() {
+		logger.Debug("creating garbage deletion goroutine", "interval", time.Duration(delGarbageInterval))
+
+		ticker := time.NewTicker(time.Second * time.Duration(delGarbageInterval))
+		for {
+			select {
+			case <-ticker.C:
+				rancherService.DeleteGarbage()
+			}
+		}
+
+	}()
 
 	logger.Info("rancher info", "url", internal.CattleUrl)
 	logger.Info("openstack info", "url", internal.OpenstackAuthURL)
