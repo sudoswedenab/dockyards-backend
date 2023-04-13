@@ -37,6 +37,17 @@ func (r *Rancher) DeleteCluster(name string) error {
 			}
 			r.Logger.Debug("deleted cluster", "id", cluster.ID, "name", cluster.Name)
 
+			clusterTemplate, err := r.ManagementClient.ClusterTemplate.ByID(cluster.ClusterTemplateID)
+			if err != nil {
+				r.Logger.Warn("error fetching cluster template by id", "id", cluster.ClusterTemplateID)
+			}
+
+			// cluster template cannot be deleted at this point
+			// add it to the garbage
+			r.addGarbage(&clusterTemplate.Resource)
+
+			r.Logger.Debug("added cluster template to garbage", "id", clusterTemplate.ID)
+
 			return nil
 		}
 	}
