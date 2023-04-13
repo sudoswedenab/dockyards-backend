@@ -142,3 +142,21 @@ func (r *Rancher) prepareOpenstackEnvironment(cluster *model.Cluster, nodePoolOp
 
 	return &config, nil
 }
+
+func (r *Rancher) cleanOpenstackEnvironment(config *openstackConfig) error {
+	computev2, err := openstack.NewComputeV2(r.providerClient, gophercloud.EndpointOpts{Region: "sto1"})
+	if err != nil {
+		r.Logger.Debug("unexpected error creating service client", "err", err)
+		return err
+	}
+
+	r.Logger.Debug("remove keypair", "name", config.KeypairName)
+
+	err = keypairs.Delete(computev2, config.KeypairName, keypairs.DeleteOpts{}).ExtractErr()
+	if err != nil {
+		r.Logger.Debug("error deleting keypair", "name", config.KeypairName, "err", err)
+		return err
+	}
+
+	return nil
+}
