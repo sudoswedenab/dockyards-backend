@@ -22,9 +22,21 @@ func (h *handler) PostClusters(c *gin.Context) {
 	if !internal.IsValidName(clusterOptions.Name) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error":   "name is not valid",
+			"name":    clusterOptions.Name,
 			"details": "name must contain only alphanumber characters and the '-' character. name must be max 63 characters long",
 		})
 		return
+	}
+
+	for _, nodePoolOptions := range clusterOptions.NodePoolOptions {
+		if !internal.IsValidName(nodePoolOptions.Name) {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"error":   "node pool name is not valid",
+				"name":    nodePoolOptions.Name,
+				"details": "name must contain only alphanumber characters and the '-' character. name must be max 63 characters long",
+			})
+			return
+		}
 	}
 
 	cluster, err := h.clusterService.CreateCluster(&clusterOptions)
