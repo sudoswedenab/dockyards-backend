@@ -16,6 +16,7 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 	// Get the cookie
 	tokenString, err := c.Cookie(internal.AccessTokenName)
 	if err != nil {
+		h.Logger.Error("error fetching access token", "access_token_name", internal.AccessTokenName, "err", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
@@ -33,6 +34,7 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		//Check the exp
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
+			h.Logger.Debug("jwt token expired", "exp", claims["exp"])
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -41,6 +43,7 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 		h.DB.First(&user, claims["sub"])
 
 		if user.ID == 0 {
+			h.Logger.Debug("no user found", "sub", claims["sub"])
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -49,6 +52,7 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 		//Continue
 		c.Next()
 	} else {
+		h.Logger.Debug("invalid token", "token", token)
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 }
