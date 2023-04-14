@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/backend/internal"
 	"bitbucket.org/sudosweden/backend/internal/types"
 	"github.com/gin-gonic/gin"
@@ -25,14 +26,20 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 		logger:           logger,
 	}
 
+	middlewareHandler := middleware.Handler{
+		DB: db,
+	}
+
 	r.POST("/v1/signup", h.Signup)
 	r.POST("/v1/login", h.Login)
-	r.POST("/v1/logout", h.Logout)
-	r.GET("/cluster-options", h.ContainerOptions)
-	r.POST("/v1/refresh", h.PostRefresh)
 
-	r.POST("/v1/clusters", h.PostClusters)
-	r.GET("/v1/clusters/:name/kubeconfig", h.GetClusterKubeConfig)
-	r.GET("/v1/clusters", h.GetClusters)
-	r.DELETE("/v1/clusters/:name", h.DeleteCluster)
+	g := r.Group("/v1", middlewareHandler.RequireAuth)
+	g.POST("/logout", h.Logout)
+	g.GET("/cluster-options", h.ContainerOptions)
+	g.POST("/refresh", h.PostRefresh)
+
+	g.POST("/clusters", h.PostClusters)
+	g.GET("/clusters/:name/kubeconfig", h.GetClusterKubeConfig)
+	g.GET("/clusters", h.GetClusters)
+	g.DELETE("clusters/:name", h.DeleteCluster)
 }
