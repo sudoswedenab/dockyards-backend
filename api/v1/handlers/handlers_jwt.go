@@ -14,9 +14,9 @@ import (
 func (h *handler) PostRefresh(c *gin.Context) {
 	// Get the cookie
 	refreshToken, err := c.Cookie(internal.RefreshTokenName)
-
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	// Parse the token string and a function for looking for the key.
@@ -28,11 +28,11 @@ func (h *handler) PostRefresh(c *gin.Context) {
 		// hmacSampleSecret is a []byte containing your incl secret key
 		return []byte(internal.RefSecret), nil
 	})
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
+		return
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
