@@ -27,7 +27,8 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	}
 
 	middlewareHandler := middleware.Handler{
-		DB: db,
+		DB:     db,
+		Logger: logger,
 	}
 
 	r.POST("/v1/signup", h.Signup)
