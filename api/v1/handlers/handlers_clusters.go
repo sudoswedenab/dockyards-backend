@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt"
 	"net/http"
 	"time"
+
+	"github.com/golang-jwt/jwt"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal"
@@ -22,21 +23,23 @@ func (h *handler) PostClusters(c *gin.Context) {
 
 	h.logger.Debug("create cluster", "name", clusterOptions.Name, "version", clusterOptions.Version)
 
-	if !internal.IsValidName(clusterOptions.Name) {
+	details, validName := internal.IsValidName(clusterOptions.Name)
+	if !validName {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error":   "name is not valid",
 			"name":    clusterOptions.Name,
-			"details": "name must contain only alphanumber characters and the '-' character. name must be max 63 characters long",
+			"details": details,
 		})
 		return
 	}
 
 	for _, nodePoolOptions := range clusterOptions.NodePoolOptions {
-		if !internal.IsValidName(nodePoolOptions.Name) {
+		details, validName := internal.IsValidName(nodePoolOptions.Name)
+		if !validName {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
 				"error":   "node pool name is not valid",
 				"name":    nodePoolOptions.Name,
-				"details": "name must contain only alphanumber characters and the '-' character. name must be max 63 characters long",
+				"details": details,
 			})
 			return
 		}
