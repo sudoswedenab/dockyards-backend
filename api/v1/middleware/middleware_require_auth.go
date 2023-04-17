@@ -1,12 +1,14 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -38,15 +40,21 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+
 		//Find the user with token sub
 		var user model.User
-		h.DB.First(&user, claims["sub"])
+		err := h.DB.First(&user, "id = ?", claims["sub"]).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				h.Logger.Debug("no user found", "sub", claims["sub"])
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
 
-		if user.ID == 0 {
-			h.Logger.Debug("no user found", "sub", claims["sub"])
-			c.AbortWithStatus(http.StatusUnauthorized)
+			h.Logger.Debug("error fetching user from db", "sub", claims["sub"], "err", err)
 			return
 		}
+
 		//Attach to req
 		c.Set("user", user)
 		//Continue

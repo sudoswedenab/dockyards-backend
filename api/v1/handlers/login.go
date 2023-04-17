@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -35,18 +37,20 @@ func (h *handler) Login(c *gin.Context) {
 
 	//Look up requested User
 	var user model.User
+	err := h.db.First(&user, "email = ?", body.Email).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			h.logger.Debug("no user found", "email", body.Email)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
 
-	h.db.First(&user, "email = ?", body.Email)
-
-	if user.ID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid email or password",
-		})
+		h.logger.Debug("error fetching user from db", "email", body.Email, "err", err)
 		return
 	}
-	//Compare sent in pass with saved user pass hash
-	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 
+	//Compare sent in pass with saved user pass hash
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Bad hash or encryption",

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
@@ -13,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
 )
 
@@ -65,9 +67,11 @@ func TestLogin(t *testing.T) {
 				Email:    "test@dockyards.io",
 				Password: "password",
 			},
-			expected: http.StatusBadRequest,
+			expected: http.StatusUnauthorized,
 		},
 	}
+
+	logger := slog.New(slog.HandlerOptions{Level: slog.LevelError + 1}.NewTextHandler(os.Stdout))
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
@@ -84,6 +88,7 @@ func TestLogin(t *testing.T) {
 			h := handler{
 				clusterService: tc.mockCluster,
 				db:             db,
+				logger:         logger,
 			}
 
 			r := gin.New()
