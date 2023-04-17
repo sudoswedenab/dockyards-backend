@@ -47,7 +47,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	g.GET("/cluster-options", h.ContainerOptions)
 	g.POST("/refresh", h.PostRefresh)
 
-	g.POST("/clusters", h.PostClusters)
 	g.GET("/clusters/:name/kubeconfig", h.GetClusterKubeConfig)
 	g.GET("/clusters", h.GetClusters)
 	g.DELETE("clusters/:name", h.DeleteCluster)
@@ -56,6 +55,8 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	g.POST("orgs", h.PostOrgs)
 	g.PUT("/orgs", methodNotAllowed)
 	g.DELETE("/orgs", methodNotAllowed)
+
+	g.POST("/orgs/:org/clusters", h.PostOrgClusters)
 }
 
 func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {

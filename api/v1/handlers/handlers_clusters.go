@@ -8,7 +8,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *handler) PostClusters(c *gin.Context) {
+func (h *handler) PostOrgClusters(c *gin.Context) {
+	org := c.Param("org")
+	if org == "" {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	var organization model.Organization
+	err := h.db.Take(&organization, "name = ?", org).Error
+	if err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	var clusterOptions model.ClusterOptions
 	if c.BindJSON(&clusterOptions) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -41,7 +54,7 @@ func (h *handler) PostClusters(c *gin.Context) {
 		}
 	}
 
-	cluster, err := h.clusterService.CreateCluster(&clusterOptions)
+	cluster, err := h.clusterService.CreateCluster(&organization, &clusterOptions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -101,8 +114,9 @@ func (h *handler) PostClusters(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"cluster":     "created successfully",
-		"clusterName": cluster.Name,
+		"cluster": "created successfully",
+		"name":    cluster.Name,
+		"org":     cluster.Organization,
 	})
 }
 
