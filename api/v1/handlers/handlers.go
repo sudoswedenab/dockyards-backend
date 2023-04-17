@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"errors"
+
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
+	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal"
 	"bitbucket.org/sudosweden/backend/internal/types"
 	"github.com/gin-gonic/gin"
@@ -43,4 +46,18 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	g.GET("/clusters/:name/kubeconfig", h.GetClusterKubeConfig)
 	g.GET("/clusters", h.GetClusters)
 	g.DELETE("clusters/:name", h.DeleteCluster)
+}
+
+func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {
+	u, exists := c.Get("user")
+	if !exists {
+		return model.User{}, errors.New("error fecthing user from context")
+	}
+
+	user, ok := u.(model.User)
+	if !ok {
+		return model.User{}, errors.New("error during user type conversion")
+	}
+
+	return user, nil
 }
