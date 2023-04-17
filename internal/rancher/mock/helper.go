@@ -6,15 +6,15 @@ import (
 )
 
 type MockRancherHelper struct {
-	MockCreateCluster  func(*model.ClusterOptions) (*model.Cluster, error)
+	MockCreateCluster  func(*model.Organization, *model.ClusterOptions) (*model.Cluster, error)
 	MockCreateNodePool func(*model.Cluster, *model.NodePoolOptions) (*model.NodePool, error)
 	MockGetAllClusters func() (*[]model.Cluster, error)
 	MockDeleteCluster  func(string) error
 	MockGetKubeConfig  func(*model.Cluster) (string, error)
 }
 
-func (h *MockRancherHelper) CreateCluster(c *model.ClusterOptions) (*model.Cluster, error) {
-	return h.MockCreateCluster(c)
+func (h *MockRancherHelper) CreateCluster(o *model.Organization, c *model.ClusterOptions) (*model.Cluster, error) {
+	return h.MockCreateCluster(o, c)
 }
 
 func (h *MockRancherHelper) CreateNodePool(c *model.Cluster, o *model.NodePoolOptions) (*model.NodePool, error) {
