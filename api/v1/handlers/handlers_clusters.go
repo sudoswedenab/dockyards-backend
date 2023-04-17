@@ -159,7 +159,27 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 }
 
 func (h *handler) GetClusters(c *gin.Context) {
-	// If filter len is 0, list all
+	user, err := h.getUserFromContext(c)
+	if err != nil {
+		h.logger.Debug("error fetching user from context", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	var organizations []model.Organization
+	err = h.db.Model(&user).Association("Organizations").Find(&organizations)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// create a map with organization names for quick lookup
+	// the map using bools has no functional use, bool is the smallest datatype
+	orgs := make(map[string]bool)
+	for _, organization := range organizations {
+		orgs[organization.Name] = true
+	}
+
 	clusters, err := h.clusterService.GetAllClusters()
 	if err != nil {
 		h.logger.Error("unexpected error when getting clusters", "err", err)
@@ -169,9 +189,17 @@ func (h *handler) GetClusters(c *gin.Context) {
 		return
 	}
 
-	h.logger.Debug("successfully got clusters", "clusters", clusters)
+	filteredClusters := []model.Cluster{}
+	for _, cluster := range *clusters {
+		_, isMember := orgs[cluster.Organization]
+		h.logger.Debug("checking cluster membership", "organization", cluster.Organization, "is_member", isMember)
+		if isMember {
+			filteredClusters = append(filteredClusters, cluster)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"clusters": clusters,
+		"clusters": filteredClusters,
 	})
 }
 
