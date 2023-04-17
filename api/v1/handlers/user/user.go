@@ -47,7 +47,7 @@ func (h *handler) FindUserById(c *gin.Context) {
 	id := c.Param("id")
 	//get the User
 	var userById model.User
-	h.db.First(&userById, id)
+	h.db.First(&userById, "id = ?", id)
 	//Respond
 	c.JSON(200, gin.H{
 		"user": userById,
@@ -118,7 +118,7 @@ func (h *handler) DeleteUser(c *gin.Context) {
 	//Get the id off the url
 	id := c.Param("id")
 	//delete the post
-	h.db.Delete(&model.User{}, id)
+	h.db.Delete(&model.User{}, "id = ?", id)
 	//respond
 	c.Status(200)
 }

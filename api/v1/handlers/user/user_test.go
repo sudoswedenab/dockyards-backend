@@ -13,6 +13,7 @@ import (
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -27,7 +28,7 @@ func TestFindAllUsers(t *testing.T) {
 			name: "test single user",
 			users: []model.User{
 				{
-					ID:        1,
+					ID:        uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:      "test",
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -38,17 +39,17 @@ func TestFindAllUsers(t *testing.T) {
 			name: "test multiple users",
 			users: []model.User{
 				{
-					ID:    1,
+					ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:  "user1",
 					Email: "user1@dockyards.io",
 				},
 				{
-					ID:    2,
+					ID:    uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 					Name:  "user2",
 					Email: "user2@dockyards.io",
 				},
 				{
-					ID:    3,
+					ID:    uuid.MustParse("33333333-3333-3333-3333-333333333333"),
 					Name:  "user3",
 					Email: "user3@dockyards.io",
 				},
@@ -120,7 +121,7 @@ func TestFindUserById(t *testing.T) {
 	tt := []struct {
 		name         string
 		users        []model.User
-		id           string
+		id           uuid.UUID
 		expectedUser model.User
 		expectedCode int
 	}{
@@ -128,16 +129,16 @@ func TestFindUserById(t *testing.T) {
 			name: "test single user",
 			users: []model.User{
 				{
-					ID:        1,
+					ID:        uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:      "single",
 					Email:     "single@dockyards.io",
 					CreatedAt: now,
 					UpdatedAt: now,
 				},
 			},
-			id: "1",
+			id: uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 			expectedUser: model.User{
-				ID:        1,
+				ID:        uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 				Name:      "single",
 				Email:     "single@dockyards.io",
 				CreatedAt: now,
@@ -149,30 +150,30 @@ func TestFindUserById(t *testing.T) {
 			name: "test multiple users",
 			users: []model.User{
 				{
-					ID:        1,
+					ID:        uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:      "multiple1",
 					Email:     "multiple1@dockyards.io",
 					CreatedAt: now,
 					UpdatedAt: now,
 				},
 				{
-					ID:        uint(2),
+					ID:        uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 					Name:      "multiple2",
 					Email:     "multiple2@dockyards.io",
 					CreatedAt: now,
 					UpdatedAt: now,
 				},
 				{
-					ID:        3,
+					ID:        uuid.MustParse("33333333-3333-3333-3333-333333333333"),
 					Name:      "multiple3",
 					Email:     "multiple3@dockyards.io",
 					CreatedAt: now,
 					UpdatedAt: now,
 				},
 			},
-			id: "2",
+			id: uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 			expectedUser: model.User{
-				ID:        uint(2),
+				ID:        uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 				Name:      "multiple2",
 				Email:     "multiple2@dockyards.io",
 				CreatedAt: now,
@@ -209,7 +210,7 @@ func TestFindUserById(t *testing.T) {
 			r.GET("/test/:id", h.FindUserById)
 
 			w := httptest.NewRecorder()
-			req, err := http.NewRequest(http.MethodGet, path.Join("/test", tc.id), nil)
+			req, err := http.NewRequest(http.MethodGet, path.Join("/test", tc.id.String()), nil)
 			if err != nil {
 				t.Fatalf("unexpected error preparing request: %s", err)
 			}
@@ -247,27 +248,27 @@ func TestUpdateUser(t *testing.T) {
 
 	tt := []struct {
 		name     string
-		id       string
+		id       uuid.UUID
 		users    []model.User
 		update   model.User
 		expected model.User
 	}{
 		{
 			name: "test email update",
-			id:   "1",
+			id:   uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 			users: []model.User{
 				{
-					ID:    1,
+					ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:  "multiple1",
 					Email: "multiple1@dockyards.io",
 				},
 				{
-					ID:    2,
+					ID:    uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 					Name:  "multiple2",
 					Email: "multiple2@dockyards.io",
 				},
 				{
-					ID:    3,
+					ID:    uuid.MustParse("33333333-3333-3333-3333-333333333333"),
 					Name:  "multiple3",
 					Email: "multiple3@dockyards.io",
 				},
@@ -276,36 +277,36 @@ func TestUpdateUser(t *testing.T) {
 				Email: "new@dockyards.io",
 			},
 			expected: model.User{
-				ID:    1,
+				ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 				Name:  "email",
 				Email: "new@dockyards.io",
 			},
 		},
 		{
 			name: "test id update is ignored",
-			id:   "1",
+			id:   uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 			users: []model.User{
 				{
-					ID:    1,
+					ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:  "multiple1",
 					Email: "multiple1@dockyards.io",
 				},
 				{
-					ID:    2,
+					ID:    uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 					Name:  "multiple2",
 					Email: "multiple2@dockyards.io",
 				},
 				{
-					ID:    3,
+					ID:    uuid.MustParse("33333333-3333-3333-3333-333333333333"),
 					Name:  "multiple3",
 					Email: "multiple3@dockyards.io",
 				},
 			},
 			update: model.User{
-				ID: 2,
+				ID: uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 			},
 			expected: model.User{
-				ID:    1,
+				ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 				Name:  "multiple1",
 				Email: "multiple1@dockyards.io",
 			},
@@ -344,7 +345,7 @@ func TestUpdateUser(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			req, err := http.NewRequest(http.MethodPut, path.Join("/test", tc.id), bytes.NewBuffer(b))
+			req, err := http.NewRequest(http.MethodPut, path.Join("/test", tc.id.String()), bytes.NewBuffer(b))
 			if err != nil {
 				t.Fatalf("unexpected error preparing request: %s", err)
 			}
@@ -390,39 +391,39 @@ func TestDeleteUser(t *testing.T) {
 	tt := []struct {
 		name  string
 		users []model.User
-		id    string
+		id    uuid.UUID
 	}{
 		{
 			name: "test multiple users",
 			users: []model.User{
 				{
-					ID:    1,
+					ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:  "multiple1",
 					Email: "multiple1@dockyards.io",
 				},
 				{
-					ID:    2,
+					ID:    uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 					Name:  "multiple2",
 					Email: "multiple2@dockyards.io",
 				},
 				{
-					ID:    3,
+					ID:    uuid.MustParse("33333333-3333-3333-3333-333333333333"),
 					Name:  "multiple3",
 					Email: "multiple3@dockyards.io",
 				},
 			},
-			id: "3",
+			id: uuid.MustParse("33333333-3333-3333-3333-333333333333"),
 		},
 		{
 			name: "test last user",
 			users: []model.User{
 				{
-					ID:    99,
+					ID:    uuid.MustParse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
 					Name:  "last",
 					Email: "lastdockyards.io",
 				},
 			},
-			id: "99",
+			id: uuid.MustParse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
 		},
 	}
 
@@ -449,7 +450,7 @@ func TestDeleteUser(t *testing.T) {
 			r.DELETE("/test/:id", h.DeleteUser)
 
 			w := httptest.NewRecorder()
-			req, err := http.NewRequest(http.MethodDelete, path.Join("/test", tc.id), nil)
+			req, err := http.NewRequest(http.MethodDelete, path.Join("/test", tc.id.String()), nil)
 			if err != nil {
 				t.Fatalf("unexpected error preparing request: %s", err)
 			}
