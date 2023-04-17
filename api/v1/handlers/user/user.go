@@ -95,7 +95,6 @@ func (h *handler) UpdateUser(c *gin.Context) {
 	h.db.First(&user, id)
 	//update it
 	h.db.Model(&user).Updates(model.User{
-		Idn:      User.Idn,
 		Name:     User.Name,
 		Email:    User.Email,
 		Password: string(hash),
