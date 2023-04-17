@@ -9,7 +9,7 @@ type MockRancherHelper struct {
 	MockCreateCluster  func(*model.Organization, *model.ClusterOptions) (*model.Cluster, error)
 	MockCreateNodePool func(*model.Cluster, *model.NodePoolOptions) (*model.NodePool, error)
 	MockGetAllClusters func() (*[]model.Cluster, error)
-	MockDeleteCluster  func(string) error
+	MockDeleteCluster  func(*model.Cluster) error
 	MockGetKubeConfig  func(*model.Cluster) (string, error)
 }
 
@@ -25,8 +25,8 @@ func (h *MockRancherHelper) GetAllClusters() (*[]model.Cluster, error) {
 	return h.MockGetAllClusters()
 }
 
-func (h *MockRancherHelper) DeleteCluster(clusterId string) error {
-	return h.MockDeleteCluster(clusterId)
+func (h *MockRancherHelper) DeleteCluster(c *model.Cluster) error {
+	return h.MockDeleteCluster(c)
 }
 
 func (h *MockRancherHelper) GetSupportedVersions() []string {
