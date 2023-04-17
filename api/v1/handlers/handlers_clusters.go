@@ -120,12 +120,24 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	})
 }
 
-func (h *handler) GetClusterKubeConfig(c *gin.Context) {
-	name := c.Param("name")
-	h.logger.Debug("get kubeconfig for cluster", "name", name)
+func (h *handler) GetOrgClusterKubeConfig(c *gin.Context) {
+	org := c.Param("org")
+	if org == "" {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	clusterName := c.Param("cluster")
+	if clusterName == "" {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	h.logger.Debug("get kubeconfig for cluster", "org", org, "cluster", clusterName)
 
 	cluster := model.Cluster{
-		Name: name,
+		Organization: org,
+		Name:         clusterName,
 	}
 
 	kubeConfig, err := h.clusterService.GetKubeConfig(&cluster)
