@@ -20,11 +20,14 @@ func (r *Rancher) GetAllClusters() (*[]model.Cluster, error) {
 			return nil, err
 		}
 
+		organization, name := decodeName(cluster.Name)
+
 		c := model.Cluster{
-			Name:      cluster.Name,
-			State:     cluster.State,
-			NodeCount: int(cluster.NodeCount),
-			CreatedAt: createdAt,
+			Organization: organization,
+			Name:         name,
+			State:        cluster.State,
+			NodeCount:    int(cluster.NodeCount),
+			CreatedAt:    createdAt,
 		}
 		clusters = append(clusters, c)
 	}
