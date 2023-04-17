@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"net/http"
 
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/backend/api/v1/model"
@@ -21,6 +22,10 @@ type handler struct {
 }
 
 func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger) {
+	methodNotAllowed := func(c *gin.Context) {
+		c.Status(http.StatusMethodNotAllowed)
+	}
+
 	h := handler{
 		db:               db,
 		clusterService:   clusterService,
@@ -46,6 +51,11 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	g.GET("/clusters/:name/kubeconfig", h.GetClusterKubeConfig)
 	g.GET("/clusters", h.GetClusters)
 	g.DELETE("clusters/:name", h.DeleteCluster)
+
+	g.GET("/orgs", h.GetOrgs)
+	g.POST("orgs", h.PostOrgs)
+	g.PUT("/orgs", methodNotAllowed)
+	g.DELETE("/orgs", methodNotAllowed)
 }
 
 func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {
