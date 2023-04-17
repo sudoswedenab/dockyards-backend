@@ -24,10 +24,9 @@ func (r *Rancher) CreateNodePool(cluster *model.Cluster, nodePoolOptions *model.
 		return nil, err
 	}
 
-	// Create Nodetemplate
-	// + tester, använd samma typ av logik som finns i rancher configs
-	//Call create node template
-	hostnamePrefix := cluster.Name + "-" + nodePoolOptions.Name + "-"
+	encodedName := encodeName(cluster.Organization, cluster.Name)
+
+	hostnamePrefix := encodedName + "-" + nodePoolOptions.Name + "-"
 	opts := managementv3.NodePool{
 		ClusterID:               cluster.ID,
 		ControlPlane:            nodePoolOptions.ControlPlane,
