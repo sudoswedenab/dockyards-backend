@@ -5,7 +5,7 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) CreateCluster(clusterOptions *model.ClusterOptions) (*model.Cluster, error) {
+func (r *Rancher) CreateCluster(organization *model.Organization, clusterOptions *model.ClusterOptions) (*model.Cluster, error) {
 	clusterTemplate := managementv3.ClusterTemplate{
 		Name: "testar",
 	}
@@ -34,8 +34,10 @@ func (r *Rancher) CreateCluster(clusterOptions *model.ClusterOptions) (*model.Cl
 		return nil, err
 	}
 
+	clusterName := encodeName(organization.Name, clusterOptions.Name)
+
 	opts := managementv3.Cluster{
-		Name:                      clusterOptions.Name,
+		Name:                      clusterName,
 		ClusterTemplateRevisionID: createdClusterTemplateRevision.ID,
 		ClusterTemplateID:         createdClusterTemplate.ID,
 	}
@@ -45,9 +47,12 @@ func (r *Rancher) CreateCluster(clusterOptions *model.ClusterOptions) (*model.Cl
 		return nil, err
 	}
 
+	clusterOrg, clusterName := decodeName(createdCluster.Name)
+
 	cluster := model.Cluster{
-		Name: createdCluster.Name,
-		ID:   createdCluster.ID,
+		Organization: clusterOrg,
+		Name:         clusterName,
+		ID:           createdCluster.ID,
 	}
 	return &cluster, nil
 }
