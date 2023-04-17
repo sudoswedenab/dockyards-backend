@@ -3,14 +3,17 @@ package rancher
 import (
 	"errors"
 
+	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) DeleteCluster(name string) error {
+func (r *Rancher) DeleteCluster(cluster *model.Cluster) error {
+	encodedName := encodeName(cluster.Organization, cluster.Name)
+
 	listOpts := types.ListOpts{
 		Filters: map[string]interface{}{
-			"name": name,
+			"name": encodedName,
 		},
 	}
 	clusterCollection, err := r.ManagementClient.Cluster.List(&listOpts)
@@ -21,7 +24,7 @@ func (r *Rancher) DeleteCluster(name string) error {
 	r.Logger.Debug("list cluster collection", "len", len(clusterCollection.Data))
 
 	for _, cluster := range clusterCollection.Data {
-		if cluster.Name == name {
+		if cluster.Name == encodedName {
 			r.Logger.Debug("cluster to delete found", "id", cluster.ID, "name", cluster.Name)
 
 			err := r.deleteNodePools(cluster.ID)
