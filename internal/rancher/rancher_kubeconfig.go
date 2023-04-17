@@ -8,9 +8,11 @@ import (
 )
 
 func (r *Rancher) GetKubeConfig(cluster *model.Cluster) (string, error) {
+	encodedName := encodeName(cluster.Organization, cluster.Name)
+
 	listOpts := types.ListOpts{
 		Filters: map[string]interface{}{
-			"name": cluster.Name,
+			"name": encodedName,
 		},
 	}
 	clusterCollection, err := r.ManagementClient.Cluster.List(&listOpts)
@@ -21,7 +23,7 @@ func (r *Rancher) GetKubeConfig(cluster *model.Cluster) (string, error) {
 	r.Logger.Debug("list cluster collection", "len", len(clusterCollection.Data))
 
 	for _, data := range clusterCollection.Data {
-		if data.Name == cluster.Name {
+		if data.Name == encodedName {
 			r.Logger.Debug("cluster to generate kubeconfig for found", "id", data.ID, "name", data.Name)
 			generatedKubeConfig, err := r.ManagementClient.Cluster.ActionGenerateKubeconfig(&data)
 			if err != nil {
