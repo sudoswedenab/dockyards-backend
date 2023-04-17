@@ -140,10 +140,25 @@ func (h *handler) GetClusterKubeConfig(c *gin.Context) {
 	})
 }
 
-func (h *handler) DeleteCluster(c *gin.Context) {
-	name := c.Param("name")
+func (h *handler) DeleteOrgClusters(c *gin.Context) {
+	org := c.Param("org")
+	if org == "" {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
 
-	err := h.clusterService.DeleteCluster(name)
+	clusterName := c.Param("cluster")
+	if clusterName == "" {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	cluster := model.Cluster{
+		Organization: org,
+		Name:         clusterName,
+	}
+
+	err := h.clusterService.DeleteCluster(&cluster)
 	if err != nil {
 		h.logger.Error("unexpected error deleting cluster", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -152,7 +167,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 		return
 	}
 
-	h.logger.Debug("successfully deleted cluster", "name", name)
+	h.logger.Debug("successfully deleted cluster", "organization", org, "name", clusterName)
 	c.JSON(http.StatusOK, gin.H{
 		"status": "Cluster Deleted",
 	})

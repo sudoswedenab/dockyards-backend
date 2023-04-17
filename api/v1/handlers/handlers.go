@@ -54,7 +54,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 
 	g.GET("/clusters/:name/kubeconfig", h.GetClusterKubeConfig)
 	g.GET("/clusters", h.GetClusters)
-	g.DELETE("clusters/:name", h.DeleteCluster)
 
 	g.GET("/orgs", h.GetOrgs)
 	g.POST("orgs", h.PostOrgs)
@@ -62,6 +61,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	g.DELETE("/orgs", methodNotAllowed)
 
 	g.POST("/orgs/:org/clusters", h.PostOrgClusters)
+	g.DELETE("orgs/:org/clusters/:cluster", h.DeleteOrgClusters)
 }
 
 func RegisterSudoRoutes(e *gin.Engine, clusterService types.ClusterService, logger *slog.Logger) {
