@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"net/http/cgi"
 
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/backend/api/v1/model"
@@ -44,6 +45,21 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 		Logger: logger,
 	}
 
+	gitHandler := cgi.Handler{
+		Path: "/usr/lib/git-core/git-http-backend",
+		Dir:  "/tmp/repos",
+		Env: []string{
+			"GIT_PROJECT_ROOT=/tmp/repos",
+			"GIT_HTTP_EXPORT_ALL=true",
+		},
+	}
+
+	anyGit := func(c *gin.Context) {
+		git := c.Param("git")
+		logger.Debug("git connection", "git", git)
+		gitHandler.ServeHTTP(c.Writer, c.Request)
+	}
+
 	r.POST("/v1/signup", h.Signup)
 	r.POST("/v1/login", h.Login)
 
@@ -62,6 +78,8 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	g.POST("/orgs/:org/clusters", h.PostOrgClusters)
 	g.DELETE("orgs/:org/clusters/:cluster", h.DeleteOrgClusters)
 	g.GET("/orgs/:org/clusters/:cluster/kubeconfig", h.GetOrgClusterKubeConfig)
+
+	r.Any("/v1/orgs/:org/clusters/:cluster/apps/*git", anyGit)
 }
 
 func RegisterSudoRoutes(e *gin.Engine, clusterService types.ClusterService, logger *slog.Logger) {
@@ -71,7 +89,7 @@ func RegisterSudoRoutes(e *gin.Engine, clusterService types.ClusterService, logg
 	}
 
 	e.GET("/sudo/clusters", s.GetClusters)
-	e.GET("/sudo/kubeconfig/:name", s.GetKubeconfig)
+	e.GET("/sudo/kubeconfig/:org/:name", s.GetKubeconfig)
 }
 
 func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {
