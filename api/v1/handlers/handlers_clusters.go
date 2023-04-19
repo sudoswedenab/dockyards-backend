@@ -174,3 +174,13 @@ func (h *handler) GetClusters(c *gin.Context) {
 		"clusters": clusters,
 	})
 }
+
+func (s *sudo) GetClusters(c *gin.Context) {
+	clusters, err := s.clusterService.GetAllClusters()
+	if err != nil {
+		c.AbortWithStatus(http.StatusTeapot)
+		return
+	}
+
+	c.JSON(http.StatusOK, clusters)
+}

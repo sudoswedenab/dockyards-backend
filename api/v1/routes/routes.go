@@ -2,17 +2,12 @@ package routes
 
 import (
 	"bitbucket.org/sudosweden/backend/api/v1/handlers"
-	"bitbucket.org/sudosweden/backend/api/v1/handlers/cluster"
 	"bitbucket.org/sudosweden/backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/backend/internal/types"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
-
-func RegisterRoutesInternal(i *gin.Engine) {
-	i.GET("/mapsupercluster", cluster.MapSuperClusters)
-}
 
 func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService) {
 	middlewareHandler := middleware.Handler{
