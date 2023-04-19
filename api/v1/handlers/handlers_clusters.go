@@ -184,3 +184,18 @@ func (s *sudo) GetClusters(c *gin.Context) {
 
 	c.JSON(http.StatusOK, clusters)
 }
+
+func (s *sudo) GetKubeconfig(c *gin.Context) {
+	name := c.Param("name")
+	cluster := model.Cluster{
+		Name: name,
+	}
+
+	kubeconfig, err := s.clusterService.GetKubeConfig(&cluster)
+	if err != nil {
+		c.AbortWithStatus(http.StatusTeapot)
+		return
+	}
+
+	c.JSON(http.StatusOK, kubeconfig)
+}

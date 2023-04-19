@@ -71,6 +71,7 @@ func RegisterSudoRoutes(e *gin.Engine, clusterService types.ClusterService, logg
 	}
 
 	e.GET("/sudo/clusters", s.GetClusters)
+	e.GET("/sudo/kubeconfig/:name", s.GetKubeconfig)
 }
 
 func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {
