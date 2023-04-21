@@ -178,7 +178,7 @@ func main() {
 	handlers.RegisterRoutes(r, db, rancherService, logger)
 	user.RegisterRoutes(r, db)
 
-	handlers.RegisterSudoRoutes(i, rancherService, logger)
+	handlers.RegisterSudoRoutes(i, rancherService, logger, db)
 
 	if internal.FlagUseSwagger {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

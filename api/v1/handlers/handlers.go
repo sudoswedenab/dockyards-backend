@@ -25,6 +25,7 @@ type handler struct {
 type sudo struct {
 	clusterService types.ClusterService
 	logger         *slog.Logger
+	db             *gorm.DB
 }
 
 func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger) {
@@ -82,10 +83,11 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	r.Any("/v1/orgs/:org/clusters/:cluster/apps/*git", anyGit)
 }
 
-func RegisterSudoRoutes(e *gin.Engine, clusterService types.ClusterService, logger *slog.Logger) {
+func RegisterSudoRoutes(e *gin.Engine, clusterService types.ClusterService, logger *slog.Logger, db *gorm.DB) {
 	s := sudo{
 		clusterService: clusterService,
 		logger:         logger,
+		db:             db,
 	}
 
 	e.GET("/sudo/clusters", s.GetClusters)
