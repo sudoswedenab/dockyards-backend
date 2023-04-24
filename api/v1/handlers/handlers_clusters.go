@@ -241,13 +241,16 @@ func (s *sudo) GetClusters(c *gin.Context) {
 }
 
 func (s *sudo) GetKubeconfig(c *gin.Context) {
+	org := c.Param("org")
 	name := c.Param("name")
 	cluster := model.Cluster{
-		Name: name,
+		Organization: org,
+		Name:         name,
 	}
 
 	kubeconfig, err := s.clusterService.GetKubeConfig(&cluster)
 	if err != nil {
+		s.logger.Debug("error getting kubeconfig", "org", org, "name", name, "err", err)
 		c.AbortWithStatus(http.StatusTeapot)
 		return
 	}
