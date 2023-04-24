@@ -159,3 +159,14 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 
 	h.db.Create(&app)
 }
+
+func (s *sudo) GetApps(c *gin.Context) {
+	var apps []model.App
+	err := s.db.Find(&apps).Error
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, apps)
+}
