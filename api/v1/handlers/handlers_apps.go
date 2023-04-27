@@ -174,7 +174,14 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 
 	h.logger.Debug("created commit", "hash", commit.String())
 
-	h.db.Create(&app)
+	err = h.db.Create(&app).Error
+	if err != nil {
+		h.logger.Error("error creating app in database", "name", app.Name, "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusCreated, app)
 }
 
 func (s *sudo) GetApps(c *gin.Context) {
