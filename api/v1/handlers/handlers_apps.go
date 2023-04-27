@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"path"
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"gorm.io/gorm"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,6 +96,21 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 			"name":    app.Name,
 			"details": details,
 		})
+		return
+	}
+
+	var existingApp model.App
+	err = h.db.Take(&existingApp, "name = ? AND organization = ? AND cluster = ?", app.Name, app.Organization, app.Cluster).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			h.logger.Error("error taking app from database", "name", app.Name, "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+	}
+
+	if existingApp.Name == app.Name && existingApp.Organization == app.Organization && existingApp.Cluster == app.Cluster {
+		h.logger.Debug("app already exists", "name", app.Name, "organization", app.Organization, "cluster", app.Cluster)
+		c.AbortWithStatus(http.StatusConflict)
 		return
 	}
 
