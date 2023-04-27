@@ -82,6 +82,8 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 
 	r.POST("/v1/orgs/:org/clusters/:cluster/apps", h.PostOrgApps)
 	r.Any("/v1/orgs/:org/clusters/:cluster/apps/*git", anyGit)
+
+	g.GET("/apps", h.GetApps)
 }
 
 func RegisterSudoRoutes(e *gin.Engine, clusterService types.ClusterService, logger *slog.Logger, db *gorm.DB) {

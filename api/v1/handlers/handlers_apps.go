@@ -170,3 +170,47 @@ func (s *sudo) GetApps(c *gin.Context) {
 
 	c.JSON(http.StatusOK, apps)
 }
+
+func (h *handler) GetApps(c *gin.Context) {
+	user, err := h.getUserFromContext(c)
+	if err != nil {
+		h.logger.Debug("error fetching user from context", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	var organizations []model.Organization
+	err = h.db.Model(&user).Association("Organizations").Find(&organizations)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	orgs := make(map[string]bool)
+	for _, organization := range organizations {
+		orgs[organization.Name] = true
+	}
+
+	var apps []model.App
+	err = h.db.Find(&apps).Error
+	if err != nil {
+		h.logger.Error("error finding apps in database", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	filteredApps := []model.App{}
+	for _, app := range apps {
+		_, isMember := orgs[app.Organization]
+
+		h.logger.Debug("checking app membership", "name", app.Name, "organization", app.Organization, "member", isMember)
+
+		if !isMember {
+			continue
+		}
+
+		filteredApps = append(filteredApps, app)
+	}
+
+	c.JSON(http.StatusOK, filteredApps)
+}
