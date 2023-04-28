@@ -10,6 +10,7 @@ import (
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"bitbucket.org/sudosweden/backend/internal"
+	"github.com/docker/distribution/reference"
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -98,6 +99,15 @@ func (h *handler) createService(app *model.App) (*corev1.Service, error) {
 	return &service, nil
 }
 
+func (h *handler) parseContainerImage(ref string) (string, error) {
+	named, err := reference.ParseDockerRef(ref)
+	if err != nil {
+		return "", err
+	}
+
+	return named.Name(), nil
+}
+
 func (h *handler) PostOrgApps(c *gin.Context) {
 	org := c.Param("org")
 	if org == "" {
@@ -124,9 +134,20 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 	app.Organization = org
 	app.Cluster = cluster
 
+	normalizedName, err := h.parseContainerImage(app.ContainerImage)
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error":   "container image is not valid",
+			"name":    app.ContainerImage,
+			"details": err.Error(),
+		})
+	}
+
+	app.ContainerImage = normalizedName
+
 	details, validName := internal.IsValidName(app.Name)
 	if !validName {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error":   "name is not valid",
 			"name":    app.Name,
 			"details": details,
