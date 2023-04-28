@@ -11,6 +11,7 @@ type App struct {
 	ContainerImage string    `json:"container_image"`
 	Organization   string    `json:"organization"`
 	Cluster        string    `json:"cluster"`
+	Port           int       `json:"port"`
 }
 
 func (a *App) BeforeCreate(tx *gorm.DB) error {

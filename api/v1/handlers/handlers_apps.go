@@ -20,6 +20,19 @@ import (
 )
 
 func (h *handler) createDeployment(app *model.App) (*appsv1.Deployment, error) {
+	containerPort := 80
+	if app.Port != 0 {
+		containerPort = app.Port
+	}
+
+	containerPorts := []corev1.ContainerPort{
+		{
+			Name:          "http",
+			Protocol:      corev1.ProtocolTCP,
+			ContainerPort: int32(containerPort),
+		},
+	}
+
 	deployment := appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -46,13 +59,7 @@ func (h *handler) createDeployment(app *model.App) (*appsv1.Deployment, error) {
 							Name:            app.Name,
 							Image:           app.ContainerImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Ports: []corev1.ContainerPort{
-								{
-									Name:          "http",
-									Protocol:      corev1.ProtocolTCP,
-									ContainerPort: 80,
-								},
-							},
+							Ports:           containerPorts,
 						},
 					},
 				},
