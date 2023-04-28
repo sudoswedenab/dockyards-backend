@@ -144,6 +144,10 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 	}
 
 	app.ContainerImage = normalizedName
+	if app.Name == "" {
+		base := path.Base(app.ContainerImage)
+		app.Name = base
+	}
 
 	details, validName := internal.IsValidName(app.Name)
 	if !validName {
