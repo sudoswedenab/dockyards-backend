@@ -81,7 +81,9 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	g.GET("/orgs/:org/clusters/:cluster/kubeconfig", h.GetOrgClusterKubeConfig)
 
 	r.POST("/v1/orgs/:org/clusters/:cluster/apps", h.PostOrgApps)
-	r.Any("/v1/orgs/:org/clusters/:cluster/apps/*git", anyGit)
+	r.GET("/v1/orgs/:org/clusters/:cluster/apps/*git", anyGit)
+	r.POST("/v1/orgs/:org/clusters/:cluster/apps/*git", anyGit)
+	r.DELETE("/v1/orgs/:org/clusters/:cluster/apps/:app", h.DeleteOrgApps)
 
 	g.GET("/apps", h.GetApps)
 }
