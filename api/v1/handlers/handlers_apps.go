@@ -238,3 +238,58 @@ func (h *handler) GetApps(c *gin.Context) {
 
 	c.JSON(http.StatusOK, filteredApps)
 }
+
+func (h *handler) DeleteOrgApps(c *gin.Context) {
+	org := c.Param("org")
+	if org == "" {
+		h.logger.Debug("org empty")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	cluster := c.Param("cluster")
+	if cluster == "" {
+		h.logger.Debug("cluster empty")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	appName := c.Param("app")
+	if appName == "" {
+		h.logger.Debug("app empty")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	var app model.App
+	err := h.db.Take(&app, "name = ? AND organization = ? AND cluster = ?", appName, org, cluster).Error
+	if err != nil {
+		h.logger.Error("error taking app from database", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Debug("deleting app from database", "id", app.ID)
+
+	err = h.db.Delete(&app).Error
+	if err != nil {
+		h.logger.Error("error deleting app from database", "id", app.ID, "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Debug("deleted app from database", "id", app.ID)
+
+	repoPath := path.Join("/tmp/repos/v1", "orgs", org, "clusters", cluster, "apps", appName)
+
+	h.logger.Debug("deleting repository from filesystem", "path", repoPath)
+
+	err = os.RemoveAll(repoPath)
+	if err != nil {
+		h.logger.Error("error deleting repository from filesystem", "path", repoPath, "err", err)
+		return
+	}
+
+	h.logger.Debug("deleted repository from filesystem", "path", repoPath)
+
+}
