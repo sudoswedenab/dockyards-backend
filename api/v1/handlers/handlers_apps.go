@@ -17,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func (h *handler) createDeployment(app *model.App) (*appsv1.Deployment, error) {
@@ -68,6 +69,33 @@ func (h *handler) createDeployment(app *model.App) (*appsv1.Deployment, error) {
 	}
 
 	return &deployment, nil
+}
+
+func (h *handler) createService(app *model.App) (*corev1.Service, error) {
+	service := corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: app.Name,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http",
+					Port:       80,
+					TargetPort: intstr.FromString("http"),
+					Protocol:   corev1.ProtocolTCP,
+				},
+			},
+			Selector: map[string]string{
+				"app.kubernetes.io/name": app.Name,
+			},
+		},
+	}
+
+	return &service, nil
 }
 
 func (h *handler) PostOrgApps(c *gin.Context) {
@@ -126,9 +154,23 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 		h.logger.Error("failed to create deployment", "name", app.Name, "err", err)
 	}
 
-	b, err := json.Marshal(deployment)
+	deploymentJson, err := json.Marshal(deployment)
 	if err != nil {
 		h.logger.Error("error marshalling deployment as json", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	service, err := h.createService(&app)
+	if err != nil {
+		h.logger.Error("error creating service", "name", app.Name, "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	serviceJson, err := json.Marshal(service)
+	if err != nil {
+		h.logger.Error("error mashalling service as json", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -155,16 +197,35 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	defer file.Close()
 
-	_, err = file.Write(b)
+	_, err = file.Write(deploymentJson)
 	if err != nil {
 		h.logger.Error("error writing to file", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
+	file.Close()
 	worktree.Add("deployment.json")
+
+	filename = path.Join(repoPath, "service.json")
+	file, err = os.Create(filename)
+	if err != nil {
+		h.logger.Error("error creating service file", "filename", filename, "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	_, err = file.Write(serviceJson)
+	if err != nil {
+		h.logger.Error("error writing service json to file", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	file.Close()
+	worktree.Add("service.json")
+
 	commit, err := worktree.Commit("Add deployment", &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "dockyards",
