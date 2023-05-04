@@ -36,32 +36,15 @@ func (r *Rancher) prepareOpenstackEnvironment(cluster *model.Cluster, nodePoolOp
 		return nil, err
 	}
 
-	ramSize := nodePoolOptions.RAMSize
-	if ramSize == 0 {
-		ramSize = 4096
+	if nodePoolOptions.CPUCount == 0 && nodePoolOptions.RAMSize == 0 && nodePoolOptions.DiskSize == 0 {
+		nodePoolOptions.CPUCount = 2
+		nodePoolOptions.RAMSize = 4096
+		nodePoolOptions.DiskSize = 100
 	}
 
-	cpuCount := nodePoolOptions.CPUCount
-	if cpuCount == 0 {
-		cpuCount = 2
-	}
+	logger.Debug("flavor requirements", "ram", nodePoolOptions.RAMSize, "cpu", nodePoolOptions.CPUCount, "disk", nodePoolOptions.DiskSize)
 
-	diskSize := nodePoolOptions.DiskSize
-	if diskSize == 0 {
-		diskSize = 100
-	}
-
-	logger.Debug("flavor requirements", "ram", ramSize, "cpu", cpuCount, "disk", diskSize)
-
-	var flavorID string
-	for _, flavor := range allFlavors {
-		logger.Debug("checking flavor", "flavor", flavor)
-		if flavor.RAM == ramSize && flavor.VCPUs == cpuCount && flavor.Disk == diskSize {
-			logger.Debug("found flavor to use", "id", flavor.ID, "name", flavor.Name)
-			flavorID = flavor.ID
-			break
-		}
-	}
+	flavorID := r.getClosestFlavorID(allFlavors, nodePoolOptions)
 	if flavorID == "" {
 		return nil, errors.New("unable to find a suitable flavor")
 	}
