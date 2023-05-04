@@ -2,6 +2,7 @@ package rancher
 
 import (
 	"errors"
+	"math"
 
 	"bitbucket.org/sudosweden/backend/api/v1/model"
 	"github.com/gophercloud/gophercloud"
@@ -161,4 +162,33 @@ func (r *Rancher) cleanOpenstackEnvironment(config *openstackConfig) error {
 	}
 
 	return nil
+}
+
+func (r *Rancher) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *model.NodePoolOptions) string {
+	closestFlavorID := ""
+	shortestDistance := math.MaxFloat64
+
+	for _, flavor := range flavors {
+		diskSquared := math.Pow(float64(flavor.Disk-nodePoolOptions.DiskSize), 2)
+		ramSquared := math.Pow(float64(flavor.RAM-nodePoolOptions.RAMSize), 2)
+		vcpuSquared := math.Pow(float64(flavor.VCPUs-nodePoolOptions.CPUCount), 2)
+
+		distance := math.Sqrt(diskSquared + ramSquared + vcpuSquared)
+
+		r.Logger.Debug("checking flavor distance", "id", flavor.ID, "disk", flavor.Disk, "ram", flavor.RAM, "vcpus", flavor.VCPUs, "distance", distance)
+
+		if distance == 0 {
+			closestFlavorID = flavor.ID
+			break
+		}
+
+		if distance < shortestDistance {
+			shortestDistance = distance
+			closestFlavorID = flavor.ID
+		}
+	}
+
+	r.Logger.Debug("found flavor to use", "id", closestFlavorID)
+
+	return closestFlavorID
 }
