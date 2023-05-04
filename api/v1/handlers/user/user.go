@@ -15,14 +15,6 @@ type handler struct {
 	db *gorm.DB
 }
 
-// FindAllUsers godoc
-//
-//	@Summary		Lists all users "Find all users"
-//	@Tags				Crud
-//	@Accept     application/json
-//	@Produce		application/json
-//	@Success		200	{array}	model.User
-//	@Router			/admin/getusers [get]
 func (h *handler) FindAllUsers(c *gin.Context) {
 	var users []model.User
 
@@ -33,15 +25,6 @@ func (h *handler) FindAllUsers(c *gin.Context) {
 	})
 }
 
-// FindUserById godoc
-//
-//	@Summary		Find a user "FindUserById"
-//	@Tags				Crud
-//	@Accept     application/json
-//	@Produce		application/json
-//	@Param			id	path		int	true	"User ID"
-//	@Success		200	{object}	model.User
-//	@Router			/admin/getuser/{id} [get]
 func (h *handler) FindUserById(c *gin.Context) {
 	//Get Id off url
 	id := c.Param("id")
@@ -54,16 +37,6 @@ func (h *handler) FindUserById(c *gin.Context) {
 	})
 }
 
-// UpdateUser godoc
-//
-//	@Summary		Update a user "UpdateUser"
-//	@Tags				Crud
-//	@Accept       	application/json
-//	@Produce		application/json
-//	@Param			id	path		int	true	"User ID"
-//	@Param			request	body	model.User	true "User model"
-//	@Success		200	{object}	model.User
-//	@Router			/admin/updateuser/{id} [put]
 func (h *handler) UpdateUser(c *gin.Context) {
 	//Get id of url
 	id := c.Param("id")
@@ -105,15 +78,6 @@ func (h *handler) UpdateUser(c *gin.Context) {
 	})
 }
 
-// DeleteUser godoc
-//
-//	@Summary		Delete a user "DeleteUserByID"
-//	@Tags				Crud
-//	@Accept       	application/json
-//	@Produce		text/plain
-//	@Param			id	path	int	true	"User ID"
-//	@Success		200
-//	@Router			/admin/deleteuser/{id} [delete]
 func (h *handler) DeleteUser(c *gin.Context) {
 	//Get the id off the url
 	id := c.Param("id")

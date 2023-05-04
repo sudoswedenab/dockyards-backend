@@ -29,21 +29,6 @@ export PATH=$HOME/bin:/usr/local/bin:/Users/"YOUR NAME"/go/bin:$PATH "
 * docker-compose up -d 
 * go run cmd/main.go
 
-### Swagger docs generation
-* swag init -g cmd/main.go
-
-Link to swagger:
-* http://localhost:9000/swagger/index.html 
-
-
-```
-{
-    "name":"Adam",
-    "email":"adam3@test.com",
-    "password":"12345"
-}
-```
-
 ### For dotenv file
 ask admin for permission. 
 

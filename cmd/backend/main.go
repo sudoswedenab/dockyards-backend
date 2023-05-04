@@ -11,15 +11,12 @@ import (
 	"bitbucket.org/sudosweden/backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/backend/api/v1/routes"
-	_ "bitbucket.org/sudosweden/backend/docs"
 	"bitbucket.org/sudosweden/backend/internal"
 	"bitbucket.org/sudosweden/backend/internal/rancher"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"golang.org/x/exp/slog"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -64,20 +61,6 @@ func buildDataSourceName() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", host, port, user, password, name)
 }
 
-//	@title			Themis API
-//	@version		1.0
-//	@description	This server.
-//	@termsOfService	http://swagger.io/terms/
-
-//	@contact.name	API Support
-//	@contact.url	http://www.swagger.io/support
-//	@contact.email	support@swagger.io
-
-//	@license.name	Proprietary
-//	@license.url	Copyright©
-
-// @host		localhost:9000
-// @BasePath	/v1/
 func main() {
 	var logLevel string
 	var useInmemDb bool
@@ -179,10 +162,6 @@ func main() {
 	user.RegisterRoutes(r, db)
 
 	handlers.RegisterSudoRoutes(i, rancherService, logger, db)
-
-	if internal.FlagUseSwagger {
-		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	}
 
 	go i.Run(":9001")
 	r.Run()

@@ -14,16 +14,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Login godoc
-//
-//	@Summary		Login to app
-//	@Tags			Login
-//	@Accept			application/json
-//	@Produce		text/plain
-//	@Param			request	body	model.Login	true "Login model"
-//	@Success		200
-//	@Failure		400
-//	@Router			/login [post]
 func (h *handler) Login(c *gin.Context) {
 	// Get email and pass off req body
 	var body model.Login

@@ -17,7 +17,6 @@ var (
 	CattleUrl          string
 	CattleBearerToken  string
 	FlagUseCors        = false
-	FlagUseSwagger     = false
 	FlagServerCookie   = false
 	OpenstackAuthURL   string
 	OpenstackAppID     string
@@ -31,10 +30,6 @@ func LoadEnvVariables() {
 	}
 
 	FlagUseCors, err = strconv.ParseBool(os.Getenv("FLAG_USE_CORS"))
-	if err != nil {
-		fmt.Printf("error parsing: %s", err)
-	}
-	FlagUseSwagger, err = strconv.ParseBool(os.Getenv("FLAG_USE_SWAGGER"))
 	if err != nil {
 		fmt.Printf("error parsing: %s", err)
 	}

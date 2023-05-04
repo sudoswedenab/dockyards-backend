@@ -8,15 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Validate godoc
-//
-//	@Summary		Validate a user
-//	@Tags			Login
-//	@Accept			application/json
-//	@Produce		application/json
-//	@Param			request	body	model.User	true "User model"
-//	@Success		200	{object}	model.User
-//	@Router			/admin/auth [get]
 func Validate(c *gin.Context) {
 	r := user.Response(c)
 

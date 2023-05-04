@@ -9,16 +9,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Signup godoc
-//
-//	@Summary		Signup to app
-//	@Tags			Login
-//	@Accept			application/json
-//	@Produce		text/plain
-//	@Param			request	body	model.Signup	true "Signup model"
-//	@Success		201
-//	@Failure		400
-//	@Router			/signup [post]
 func (h *handler) Signup(c *gin.Context) {
 	var body model.Signup
 
