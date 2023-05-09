@@ -1,7 +1,7 @@
 package rancher
 
 import (
-	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 

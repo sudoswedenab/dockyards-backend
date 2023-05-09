@@ -1,6 +1,6 @@
 package types
 
-import "bitbucket.org/sudosweden/backend/api/v1/model"
+import "bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 
 type ClusterService interface {
 	CreateCluster(*model.Organization, *model.ClusterOptions) (*model.Cluster, error)

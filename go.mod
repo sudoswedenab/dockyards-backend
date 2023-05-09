@@ -1,4 +1,4 @@
-module bitbucket.org/sudosweden/backend
+module bitbucket.org/sudosweden/dockyards-backend
 
 go 1.19
 

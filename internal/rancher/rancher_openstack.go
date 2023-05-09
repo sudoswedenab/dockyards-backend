@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"

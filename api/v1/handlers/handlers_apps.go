@@ -8,8 +8,8 @@ import (
 	"path"
 	"time"
 
-	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"github.com/docker/distribution/reference"
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"

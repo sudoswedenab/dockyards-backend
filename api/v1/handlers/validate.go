@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers/user"
 
 	"github.com/gin-gonic/gin"
 )

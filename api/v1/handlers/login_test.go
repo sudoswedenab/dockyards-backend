@@ -9,8 +9,8 @@ import (
 	"os"
 	"testing"
 
-	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"golang.org/x/crypto/bcrypt"

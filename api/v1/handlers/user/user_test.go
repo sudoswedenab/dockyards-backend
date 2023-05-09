@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/google/uuid"

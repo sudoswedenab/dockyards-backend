@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 )
 
 func TestClusterOptionsToRKEConfig(t *testing.T) {

@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"bitbucket.org/sudosweden/backend/api/v1/handlers"
-	"bitbucket.org/sudosweden/backend/api/v1/middleware"
-	"bitbucket.org/sudosweden/backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"

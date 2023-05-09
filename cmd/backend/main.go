@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/sudosweden/backend/api/v1/handlers"
-	"bitbucket.org/sudosweden/backend/api/v1/handlers/user"
-	"bitbucket.org/sudosweden/backend/api/v1/routes"
-	"bitbucket.org/sudosweden/backend/internal"
-	"bitbucket.org/sudosweden/backend/internal/rancher"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers/user"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/routes"
+	"bitbucket.org/sudosweden/dockyards-backend/internal"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/rancher"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"

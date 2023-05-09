@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"

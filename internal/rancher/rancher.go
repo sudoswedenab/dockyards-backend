@@ -4,7 +4,7 @@ import (
 	"strings"
 	"sync"
 
-	"bitbucket.org/sudosweden/backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/utils/openstack/clientconfig"
 	"github.com/rancher/norman/clientbase"

@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"bitbucket.org/sudosweden/backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"gorm.io/gorm"
 )
 

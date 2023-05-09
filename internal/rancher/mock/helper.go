@@ -1,8 +1,8 @@
 package mock
 
 import (
-	"bitbucket.org/sudosweden/backend/api/v1/model"
-	"bitbucket.org/sudosweden/backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 )
 
 type MockRancherHelper struct {
