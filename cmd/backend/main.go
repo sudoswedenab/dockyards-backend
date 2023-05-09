@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -17,13 +18,28 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
+	"github.com/joho/godotenv"
 	"golang.org/x/exp/slog"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
+var (
+	refreshTokenName   string
+	accessTokenName    string
+	secret             string
+	refSecret          string
+	cattleURL          string
+	cattleBearerToken  string
+	flagUseCors        = false
+	flagServerCookie   = false
+	openstackAuthURL   string
+	openstackAppID     string
+	openstackAppSecret string
+)
+
 func init() {
-	internal.LoadEnvVariables()
+	loadEnvVariables()
 }
 
 func newLogger(logLevel string) (*slog.Logger, error) {
@@ -59,6 +75,31 @@ func buildDataSourceName() string {
 	name := os.Getenv("DB_NAME")
 
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", host, port, user, password, name)
+}
+
+func loadEnvVariables() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("could not load .env file")
+	}
+
+	flagUseCors, err = strconv.ParseBool(os.Getenv("FLAG_USE_CORS"))
+	if err != nil {
+		fmt.Printf("error parsing FLAG_USE_CORS: %s", err)
+	}
+	flagServerCookie, err = strconv.ParseBool(os.Getenv("FLAG_SET_SERVER_COOKIE"))
+	if err != nil {
+		fmt.Printf("error parsing FLAG_SET_SERVER_COOKIE: %s", err)
+	}
+	accessTokenName = os.Getenv("ACCESS_TOKEN_NAME")
+	refreshTokenName = os.Getenv("REFRESH_TOKEN_NAME")
+	secret = os.Getenv("SECRET")
+	refSecret = os.Getenv("REF_SECRET")
+	cattleURL = os.Getenv("CATTLE_URL")
+	cattleBearerToken = os.Getenv("CATTLE_BEARER_TOKEN")
+	openstackAuthURL = os.Getenv("OPENSTACK_AUTH_URL")
+	openstackAppID = os.Getenv("OPENSTACK_APP_ID")
+	openstackAppSecret = os.Getenv("OPENSTACK_APP_SECRET")
 }
 
 func main() {
@@ -115,13 +156,13 @@ func main() {
 	}
 
 	rancherService, err := rancher.NewRancher(
-		internal.CattleBearerToken,
-		internal.CattleUrl,
+		cattleBearerToken,
+		cattleURL,
 		logger,
 		trustInsecure,
-		internal.OpenstackAuthURL,
-		internal.OpenstackAppID,
-		internal.OpenstackAppSecret,
+		openstackAuthURL,
+		openstackAppID,
+		openstackAppSecret,
 	)
 	if err != nil {
 		log.Fatal(err.Error())
@@ -140,13 +181,13 @@ func main() {
 
 	}()
 
-	logger.Info("rancher info", "url", internal.CattleUrl)
-	logger.Info("openstack info", "url", internal.OpenstackAuthURL)
+	logger.Info("rancher info", "url", cattleURL)
+	logger.Info("openstack info", "url", openstackAuthURL)
 
 	r := gin.Default()
 	i := gin.Default()
 
-	if internal.FlagUseCors {
+	if flagUseCors {
 		r.Use(cors.New(cors.Config{
 			AllowOrigins:     []string{"http://localhost:3000", "https://demo.k8s.dockyards.io"},
 			AllowMethods:     []string{"POST", "PUT", "GET", "DELETE"},
@@ -158,7 +199,7 @@ func main() {
 	}
 
 	routes.RegisterRoutes(r, db, rancherService)
-	handlers.RegisterRoutes(r, db, rancherService, logger)
+	handlers.RegisterRoutes(r, db, rancherService, logger, secret, refSecret, accessTokenName, refreshTokenName, flagServerCookie)
 	user.RegisterRoutes(r, db)
 
 	handlers.RegisterSudoRoutes(i, rancherService, logger, db)

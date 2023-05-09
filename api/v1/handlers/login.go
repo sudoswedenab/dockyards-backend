@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
-	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
@@ -57,7 +56,7 @@ func (h *handler) Login(c *gin.Context) {
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
 	// Sign and get the complete encoded token as a string using the secret
-	at, err := accessToken.SignedString([]byte(internal.Secret))
+	at, err := accessToken.SignedString([]byte(h.secret))
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -72,7 +71,7 @@ func (h *handler) Login(c *gin.Context) {
 	rtClaims["sub"] = user.ID
 	rtClaims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 
-	rt, rerr := refreshToken.SignedString([]byte(internal.RefSecret))
+	rt, rerr := refreshToken.SignedString([]byte(h.refSecret))
 
 	if rerr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -81,19 +80,19 @@ func (h *handler) Login(c *gin.Context) {
 		return
 	}
 
-	if internal.FlagServerCookie {
+	if h.flagServerCookie {
 		// Send back a Cookie
 		c.SetSameSite(http.SameSiteLaxMode)
-		c.SetCookie(internal.AccessTokenName, at, 900, "", "", false, true)
-		c.SetCookie(internal.RefreshTokenName, rt, 3600*1, "", "", false, true)
+		c.SetCookie(h.accessTokenName, at, 900, "", "", false, true)
+		c.SetCookie(h.refreshTokenName, rt, 3600*1, "", "", false, true)
 		c.JSON(http.StatusOK, gin.H{
 			"Login": "Success",
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
-			"Login":                   "Success",
-			internal.AccessTokenName:  at,
-			internal.RefreshTokenName: rt,
+			"Login":            "Success",
+			h.accessTokenName:  at,
+			h.refreshTokenName: rt,
 		})
 	}
 }

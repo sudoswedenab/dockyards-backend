@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
-	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
@@ -16,9 +15,9 @@ import (
 
 func (h *Handler) RequireAuth(c *gin.Context) {
 	// Get the cookie
-	tokenString, err := c.Cookie(internal.AccessTokenName)
+	tokenString, err := c.Cookie(h.AccessTokenName)
 	if err != nil {
-		h.Logger.Error("error fetching access token", "access_token_name", internal.AccessTokenName, "err", err)
+		h.Logger.Error("error fetching access token", "access_token_name", h.AccessTokenName, "err", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
@@ -30,7 +29,7 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 		}
 
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
-		return []byte(internal.Secret), nil
+		return []byte(h.Secret), nil
 	})
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {

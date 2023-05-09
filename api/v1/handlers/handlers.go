@@ -7,8 +7,8 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
-	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
@@ -20,6 +20,9 @@ type handler struct {
 	accessTokenName  string
 	refreshTokenName string
 	logger           *slog.Logger
+	secret           string
+	refSecret        string
+	flagServerCookie bool
 }
 
 type sudo struct {
@@ -28,7 +31,7 @@ type sudo struct {
 	db             *gorm.DB
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger) {
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, secret, refSecret, accessTokenName, refreshTokenName string, flagServerCookie bool) {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
 	}
@@ -36,14 +39,21 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	h := handler{
 		db:               db,
 		clusterService:   clusterService,
-		accessTokenName:  internal.AccessTokenName,
-		refreshTokenName: internal.RefreshTokenName,
+		accessTokenName:  accessTokenName,
+		refreshTokenName: refreshTokenName,
 		logger:           logger,
+		secret:           secret,
+		refSecret:        refSecret,
+		flagServerCookie: flagServerCookie,
 	}
 
 	middlewareHandler := middleware.Handler{
-		DB:     db,
-		Logger: logger,
+		DB:               db,
+		Logger:           logger,
+		Secret:           secret,
+		RefSecret:        refSecret,
+		AccessTokenName:  accessTokenName,
+		RefreshTokenName: refreshTokenName,
 	}
 
 	gitHandler := cgi.Handler{

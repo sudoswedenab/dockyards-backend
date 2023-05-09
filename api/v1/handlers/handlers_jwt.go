@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
-	"bitbucket.org/sudosweden/dockyards-backend/internal"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 )
 
 func (h *handler) PostRefresh(c *gin.Context) {
 	// Get the cookie
-	refreshToken, err := c.Cookie(internal.RefreshTokenName)
+	refreshToken, err := c.Cookie(h.refreshTokenName)
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
@@ -26,7 +26,7 @@ func (h *handler) PostRefresh(c *gin.Context) {
 		}
 
 		// hmacSampleSecret is a []byte containing your incl secret key
-		return []byte(internal.RefSecret), nil
+		return []byte(h.refSecret), nil
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -56,9 +56,9 @@ func (h *handler) PostRefresh(c *gin.Context) {
 				})
 			}
 			c.JSON(http.StatusOK, gin.H{
-				"Login":                   "Success",
-				internal.AccessTokenName:  newTokenPair[internal.AccessTokenName],
-				internal.RefreshTokenName: newTokenPair[internal.RefreshTokenName],
+				"Login":            "Success",
+				h.accessTokenName:  newTokenPair[h.accessTokenName],
+				h.refreshTokenName: newTokenPair[h.refreshTokenName],
 			})
 		}
 	}
@@ -76,7 +76,7 @@ func (h *handler) generateTokenPair(user model.User) (map[string]string, error) 
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte(internal.Secret))
+	t, err := token.SignedString([]byte(h.secret))
 	if err != nil {
 		return nil, err
 	}
@@ -86,13 +86,13 @@ func (h *handler) generateTokenPair(user model.User) (map[string]string, error) 
 	rtClaims["sub"] = user.ID
 	rtClaims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 
-	rt, err := refreshToken.SignedString([]byte(internal.RefSecret))
+	rt, err := refreshToken.SignedString([]byte(h.refSecret))
 	if err != nil {
 		return nil, err
 	}
 
 	return map[string]string{
-		internal.AccessTokenName:  t,
-		internal.RefreshTokenName: rt,
+		h.accessTokenName:  t,
+		h.refreshTokenName: rt,
 	}, nil
 }
