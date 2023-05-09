@@ -6,10 +6,10 @@ import (
 )
 
 type Handler struct {
-	DB               *gorm.DB
-	Logger           *slog.Logger
-	Secret           string
-	RefSecret        string
-	AccessTokenName  string
-	RefreshTokenName string
+	DB                 *gorm.DB
+	Logger             *slog.Logger
+	AccessTokenSecret  string
+	RefreshTokenSecret string
+	AccessTokenName    string
+	RefreshTokenName   string
 }

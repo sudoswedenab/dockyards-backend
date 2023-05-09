@@ -25,17 +25,17 @@ import (
 )
 
 var (
-	refreshTokenName   string
-	accessTokenName    string
-	secret             string
-	refSecret          string
-	cattleURL          string
-	cattleBearerToken  string
-	flagUseCors        = false
-	flagServerCookie   = false
-	openstackAuthURL   string
-	openstackAppID     string
-	openstackAppSecret string
+	refreshTokenName      string
+	accessTokenName       string
+	jwtAccessTokenSecret  string
+	jwtRefreshTokenSecret string
+	cattleURL             string
+	cattleBearerToken     string
+	flagUseCors           = false
+	flagServerCookie      = false
+	openstackAuthURL      string
+	openstackAppID        string
+	openstackAppSecret    string
 )
 
 func init() {
@@ -93,8 +93,8 @@ func loadEnvVariables() {
 	}
 	accessTokenName = os.Getenv("ACCESS_TOKEN_NAME")
 	refreshTokenName = os.Getenv("REFRESH_TOKEN_NAME")
-	secret = os.Getenv("SECRET")
-	refSecret = os.Getenv("REF_SECRET")
+	jwtAccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
+	jwtRefreshTokenSecret = os.Getenv("JWT_REFRESH_TOKEN_SECRET")
 	cattleURL = os.Getenv("CATTLE_URL")
 	cattleBearerToken = os.Getenv("CATTLE_BEARER_TOKEN")
 	openstackAuthURL = os.Getenv("OPENSTACK_AUTH_URL")
@@ -199,7 +199,7 @@ func main() {
 	}
 
 	routes.RegisterRoutes(r, db, rancherService)
-	handlers.RegisterRoutes(r, db, rancherService, logger, secret, refSecret, accessTokenName, refreshTokenName, flagServerCookie)
+	handlers.RegisterRoutes(r, db, rancherService, logger, jwtAccessTokenSecret, jwtRefreshTokenSecret, accessTokenName, refreshTokenName, flagServerCookie)
 	user.RegisterRoutes(r, db)
 
 	handlers.RegisterSudoRoutes(i, rancherService, logger, db)

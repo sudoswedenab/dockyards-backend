@@ -15,14 +15,14 @@ import (
 )
 
 type handler struct {
-	db               *gorm.DB
-	clusterService   types.ClusterService
-	accessTokenName  string
-	refreshTokenName string
-	logger           *slog.Logger
-	secret           string
-	refSecret        string
-	flagServerCookie bool
+	db                    *gorm.DB
+	clusterService        types.ClusterService
+	accessTokenName       string
+	refreshTokenName      string
+	logger                *slog.Logger
+	jwtAccessTokenSecret  string
+	jwtRefreshTokenSecret string
+	flagServerCookie      bool
 }
 
 type sudo struct {
@@ -31,29 +31,29 @@ type sudo struct {
 	db             *gorm.DB
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, secret, refSecret, accessTokenName, refreshTokenName string, flagServerCookie bool) {
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, jwtAccessTokenSecret, jwtRefreshTokenSecret, accessTokenName, refreshTokenName string, flagServerCookie bool) {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
 	}
 
 	h := handler{
-		db:               db,
-		clusterService:   clusterService,
-		accessTokenName:  accessTokenName,
-		refreshTokenName: refreshTokenName,
-		logger:           logger,
-		secret:           secret,
-		refSecret:        refSecret,
-		flagServerCookie: flagServerCookie,
+		db:                    db,
+		clusterService:        clusterService,
+		accessTokenName:       accessTokenName,
+		refreshTokenName:      refreshTokenName,
+		logger:                logger,
+		jwtAccessTokenSecret:  jwtAccessTokenSecret,
+		jwtRefreshTokenSecret: jwtRefreshTokenSecret,
+		flagServerCookie:      flagServerCookie,
 	}
 
 	middlewareHandler := middleware.Handler{
-		DB:               db,
-		Logger:           logger,
-		Secret:           secret,
-		RefSecret:        refSecret,
-		AccessTokenName:  accessTokenName,
-		RefreshTokenName: refreshTokenName,
+		DB:                 db,
+		Logger:             logger,
+		AccessTokenSecret:  jwtAccessTokenSecret,
+		RefreshTokenSecret: jwtRefreshTokenSecret,
+		AccessTokenName:    accessTokenName,
+		RefreshTokenName:   refreshTokenName,
 	}
 
 	gitHandler := cgi.Handler{

@@ -56,7 +56,7 @@ func (h *handler) Login(c *gin.Context) {
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
 	// Sign and get the complete encoded token as a string using the secret
-	at, err := accessToken.SignedString([]byte(h.secret))
+	at, err := accessToken.SignedString([]byte(h.jwtAccessTokenSecret))
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -71,7 +71,7 @@ func (h *handler) Login(c *gin.Context) {
 	rtClaims["sub"] = user.ID
 	rtClaims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 
-	rt, rerr := refreshToken.SignedString([]byte(h.refSecret))
+	rt, rerr := refreshToken.SignedString([]byte(h.jwtRefreshTokenSecret))
 
 	if rerr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

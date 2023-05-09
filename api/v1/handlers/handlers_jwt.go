@@ -26,7 +26,7 @@ func (h *handler) PostRefresh(c *gin.Context) {
 		}
 
 		// hmacSampleSecret is a []byte containing your incl secret key
-		return []byte(h.refSecret), nil
+		return []byte(h.jwtRefreshTokenSecret), nil
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -76,7 +76,7 @@ func (h *handler) generateTokenPair(user model.User) (map[string]string, error) 
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte(h.secret))
+	t, err := token.SignedString([]byte(h.jwtAccessTokenSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (h *handler) generateTokenPair(user model.User) (map[string]string, error) 
 	rtClaims["sub"] = user.ID
 	rtClaims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 
-	rt, err := refreshToken.SignedString([]byte(h.refSecret))
+	rt, err := refreshToken.SignedString([]byte(h.jwtRefreshTokenSecret))
 	if err != nil {
 		return nil, err
 	}
