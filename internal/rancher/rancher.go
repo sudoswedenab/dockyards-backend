@@ -15,8 +15,7 @@ import (
 
 type rancher struct {
 	managementClient *managementv3.Client
-	url              string
-	bearerToken      string
+	clientOpts       *clientbase.ClientOpts
 	logger           *slog.Logger
 	providerClient   *gophercloud.ProviderClient
 	authInfo         *clientconfig.AuthInfo
@@ -26,45 +25,61 @@ type rancher struct {
 
 var _ types.ClusterService = &rancher{}
 
-func NewRancher(bearerToken, url string, logger *slog.Logger, trustInsecure bool, authURL, appID, appSecret string) (types.ClusterService, error) {
-	clientOpts := clientbase.ClientOpts{
-		URL:      url,
-		TokenKey: bearerToken,
-		Insecure: trustInsecure,
-	}
+type RancherOption func(*rancher)
 
-	managementClient, err := managementv3.NewClient(&clientOpts)
-	if err != nil {
-		return nil, err
+func WithLogger(logger *slog.Logger) RancherOption {
+	return func(r *rancher) {
+		r.logger = logger
 	}
+}
 
-	authInfo := &clientconfig.AuthInfo{
-		AuthURL:                     authURL,
-		ApplicationCredentialID:     appID,
-		ApplicationCredentialSecret: appSecret,
-		AllowReauth:                 true,
+func WithOpenStackAuthInfo(authURL, applicationCredentialID, applicationCredentialSecret string) RancherOption {
+	return func(r *rancher) {
+		r.authInfo = &clientconfig.AuthInfo{
+			AuthURL:                     authURL,
+			ApplicationCredentialID:     applicationCredentialID,
+			ApplicationCredentialSecret: applicationCredentialSecret,
+			AllowReauth:                 true,
+		}
 	}
+}
 
-	openstackOpts := clientconfig.ClientOpts{
-		AuthType: clientconfig.AuthV3ApplicationCredential,
-		AuthInfo: authInfo,
+func WithRancherClientOpts(url, tokenKey string, insecure bool) RancherOption {
+	return func(r *rancher) {
+		r.clientOpts = &clientbase.ClientOpts{
+			URL:      url,
+			TokenKey: tokenKey,
+			Insecure: insecure,
+		}
 	}
+}
 
-	providerClient, err := clientconfig.AuthenticatedClient(&openstackOpts)
-	if err != nil {
-		return nil, err
-	}
-
+func NewRancher(rancherOptions ...RancherOption) (types.ClusterService, error) {
 	r := rancher{
-		managementClient: managementClient,
-		bearerToken:      bearerToken,
-		url:              url,
-		logger:           logger,
-		providerClient:   providerClient,
-		authInfo:         authInfo,
-		garbageMutex:     &sync.Mutex{},
-		garbageObjects:   make(map[string]*normanTypes.Resource),
+		garbageMutex:   &sync.Mutex{},
+		garbageObjects: make(map[string]*normanTypes.Resource),
 	}
+
+	for _, rancherOption := range rancherOptions {
+		rancherOption(&r)
+	}
+
+	managementClient, err := managementv3.NewClient(r.clientOpts)
+	if err != nil {
+		return nil, err
+	}
+	r.managementClient = managementClient
+
+	clientOpts := clientconfig.ClientOpts{
+		AuthType: clientconfig.AuthV3ApplicationCredential,
+		AuthInfo: r.authInfo,
+	}
+
+	providerClient, err := clientconfig.AuthenticatedClient(&clientOpts)
+	if err != nil {
+		return nil, err
+	}
+	r.providerClient = providerClient
 
 	return &r, err
 }

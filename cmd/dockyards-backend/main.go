@@ -155,15 +155,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	rancherService, err := rancher.NewRancher(
-		cattleBearerToken,
-		cattleURL,
-		logger,
-		trustInsecure,
-		openstackAuthURL,
-		openstackAppID,
-		openstackAppSecret,
-	)
+	rancherOptions := []rancher.RancherOption{
+		rancher.WithRancherClientOpts(cattleURL, cattleBearerToken, trustInsecure),
+		rancher.WithLogger(logger),
+		rancher.WithOpenStackAuthInfo(openstackAuthURL, openstackAppID, openstackAppSecret),
+	}
+
+	rancherService, err := rancher.NewRancher(rancherOptions...)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
