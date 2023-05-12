@@ -13,18 +13,18 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type Rancher struct {
-	ManagementClient *managementv3.Client
+type rancher struct {
+	managementClient *managementv3.Client
 	url              string
 	bearerToken      string
-	Logger           *slog.Logger
+	logger           *slog.Logger
 	providerClient   *gophercloud.ProviderClient
 	authInfo         *clientconfig.AuthInfo
 	garbageMutex     *sync.Mutex
 	garbageObjects   map[string]*normanTypes.Resource
 }
 
-var _ types.ClusterService = &Rancher{}
+var _ types.ClusterService = &rancher{}
 
 func NewRancher(bearerToken, url string, logger *slog.Logger, trustInsecure bool, authURL, appID, appSecret string) (types.ClusterService, error) {
 	clientOpts := clientbase.ClientOpts{
@@ -55,11 +55,11 @@ func NewRancher(bearerToken, url string, logger *slog.Logger, trustInsecure bool
 		return nil, err
 	}
 
-	r := Rancher{
-		ManagementClient: managementClient,
+	r := rancher{
+		managementClient: managementClient,
 		bearerToken:      bearerToken,
 		url:              url,
-		Logger:           logger,
+		logger:           logger,
 		providerClient:   providerClient,
 		authInfo:         authInfo,
 		garbageMutex:     &sync.Mutex{},

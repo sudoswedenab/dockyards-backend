@@ -133,8 +133,8 @@ func TestGetClosestFlavorID(t *testing.T) {
 
 	logger := slog.New(slog.HandlerOptions{Level: slog.LevelError + 1}.NewTextHandler(os.Stdout))
 
-	r := Rancher{
-		Logger: logger,
+	r := rancher{
+		logger: logger,
 	}
 
 	for _, tc := range tt {

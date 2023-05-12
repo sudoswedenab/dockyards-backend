@@ -5,7 +5,7 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) CreateNodePool(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*model.NodePool, error) {
+func (r *rancher) CreateNodePool(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*model.NodePool, error) {
 	openstackConfig, err := r.prepareOpenstackEnvironment(cluster, nodePoolOptions)
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func (r *Rancher) CreateNodePool(cluster *model.Cluster, nodePoolOptions *model.
 	}
 
 	var createdNodeTemplate CustomNodeTemplate
-	err = r.ManagementClient.APIBaseClient.Create(managementv3.NodeTemplateType, &customNodeTemplate, &createdNodeTemplate)
+	err = r.managementClient.APIBaseClient.Create(managementv3.NodeTemplateType, &customNodeTemplate, &createdNodeTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (r *Rancher) CreateNodePool(cluster *model.Cluster, nodePoolOptions *model.
 		Worker:                  !nodePoolOptions.ControlPlaneComponentsOnly,
 	}
 
-	createdNodePool, err := r.ManagementClient.NodePool.Create(&opts)
+	createdNodePool, err := r.managementClient.NodePool.Create(&opts)
 	if err != nil {
 		return nil, err
 	}

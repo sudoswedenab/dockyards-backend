@@ -13,8 +13,8 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
 )
 
-func (r *Rancher) prepareOpenstackEnvironment(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*openstackConfig, error) {
-	logger := r.Logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name, "organization", cluster.Organization)
+func (r *rancher) prepareOpenstackEnvironment(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*openstackConfig, error) {
+	logger := r.logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name, "organization", cluster.Organization)
 
 	computev2, err := openstack.NewComputeV2(r.providerClient, gophercloud.EndpointOpts{Region: "sto1"})
 	if err != nil {
@@ -129,25 +129,25 @@ func (r *Rancher) prepareOpenstackEnvironment(cluster *model.Cluster, nodePoolOp
 	return &config, nil
 }
 
-func (r *Rancher) cleanOpenstackEnvironment(config *openstackConfig) error {
+func (r *rancher) cleanOpenstackEnvironment(config *openstackConfig) error {
 	computev2, err := openstack.NewComputeV2(r.providerClient, gophercloud.EndpointOpts{Region: "sto1"})
 	if err != nil {
-		r.Logger.Debug("unexpected error creating service client", "err", err)
+		r.logger.Debug("unexpected error creating service client", "err", err)
 		return err
 	}
 
-	r.Logger.Debug("remove keypair", "name", config.KeypairName)
+	r.logger.Debug("remove keypair", "name", config.KeypairName)
 
 	err = keypairs.Delete(computev2, config.KeypairName, keypairs.DeleteOpts{}).ExtractErr()
 	if err != nil {
-		r.Logger.Debug("error deleting keypair", "name", config.KeypairName, "err", err)
+		r.logger.Debug("error deleting keypair", "name", config.KeypairName, "err", err)
 		return err
 	}
 
 	return nil
 }
 
-func (r *Rancher) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *model.NodePoolOptions) string {
+func (r *rancher) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *model.NodePoolOptions) string {
 	closestFlavorID := ""
 	shortestDistance := math.MaxFloat64
 
@@ -158,7 +158,7 @@ func (r *Rancher) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *
 
 		distance := math.Sqrt(diskSquared + ramSquared + vcpuSquared)
 
-		r.Logger.Debug("checking flavor distance", "id", flavor.ID, "disk", flavor.Disk, "ram", flavor.RAM, "vcpus", flavor.VCPUs, "distance", distance)
+		r.logger.Debug("checking flavor distance", "id", flavor.ID, "disk", flavor.Disk, "ram", flavor.RAM, "vcpus", flavor.VCPUs, "distance", distance)
 
 		if distance == 0 {
 			closestFlavorID = flavor.ID
@@ -171,7 +171,7 @@ func (r *Rancher) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *
 		}
 	}
 
-	r.Logger.Debug("found flavor to use", "id", closestFlavorID)
+	r.logger.Debug("found flavor to use", "id", closestFlavorID)
 
 	return closestFlavorID
 }

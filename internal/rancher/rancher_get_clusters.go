@@ -7,8 +7,8 @@ import (
 	"github.com/rancher/norman/types"
 )
 
-func (r *Rancher) GetAllClusters() (*[]model.Cluster, error) {
-	clusterCollection, err := r.ManagementClient.Cluster.ListAll(&types.ListOpts{})
+func (r *rancher) GetAllClusters() (*[]model.Cluster, error) {
+	clusterCollection, err := r.managementClient.Cluster.ListAll(&types.ListOpts{})
 	if err != nil {
 		return nil, err
 	}

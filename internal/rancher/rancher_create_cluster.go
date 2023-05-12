@@ -5,12 +5,12 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) CreateCluster(organization *model.Organization, clusterOptions *model.ClusterOptions) (*model.Cluster, error) {
+func (r *rancher) CreateCluster(organization *model.Organization, clusterOptions *model.ClusterOptions) (*model.Cluster, error) {
 	clusterTemplate := managementv3.ClusterTemplate{
 		Name: "testar",
 	}
 
-	createdClusterTemplate, err := r.ManagementClient.ClusterTemplate.Create(&clusterTemplate)
+	createdClusterTemplate, err := r.managementClient.ClusterTemplate.Create(&clusterTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (r *Rancher) CreateCluster(organization *model.Organization, clusterOptions
 		ClusterConfig:     &clusterConfig,
 	}
 
-	createdClusterTemplateRevision, err := r.ManagementClient.ClusterTemplateRevision.Create(&clusterTemplateRevision)
+	createdClusterTemplateRevision, err := r.managementClient.ClusterTemplateRevision.Create(&clusterTemplateRevision)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (r *Rancher) CreateCluster(organization *model.Organization, clusterOptions
 		ClusterTemplateID:         createdClusterTemplate.ID,
 	}
 
-	createdCluster, err := r.ManagementClient.Cluster.Create(&opts)
+	createdCluster, err := r.managementClient.Cluster.Create(&opts)
 	if err != nil {
 		return nil, err
 	}

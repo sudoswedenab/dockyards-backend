@@ -7,7 +7,7 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *Rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
+func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
 
 	version := "v1.24.9-rancher1-1"
 	ingressProvider := "nginx"
@@ -20,7 +20,6 @@ func (r *Rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 		return nil, errors.New("unsupported ingress provider")
 	}
 
-	//STRUCT for Config Rancher
 	rancherKubernetesEngineConfig := managementv3.RancherKubernetesEngineConfig{
 		Version:         version,
 		AddonJobTimeout: 45,
@@ -76,7 +75,7 @@ func (r *Rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 	return &rancherKubernetesEngineConfig, nil
 }
 
-func (r *Rancher) clusterOptionsToNodeTemplate(clusterOptions *model.ClusterOptions, config *openstackConfig) (*CustomNodeTemplate, error) {
+func (r *rancher) clusterOptionsToNodeTemplate(clusterOptions *model.ClusterOptions, config *openstackConfig) (*CustomNodeTemplate, error) {
 	customNodeTemplate := CustomNodeTemplate{
 		NodeTemplate: managementv3.NodeTemplate{
 			Name: clusterOptions.Name,
@@ -87,8 +86,6 @@ func (r *Rancher) clusterOptionsToNodeTemplate(clusterOptions *model.ClusterOpti
 	return &customNodeTemplate, nil
 }
 
-func (r *Rancher) GetSupportedVersions() []string {
-
+func (r *rancher) GetSupportedVersions() []string {
 	return []string{"v1.24.9-rancher1-1"}
-
 }

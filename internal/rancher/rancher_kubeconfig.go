@@ -7,7 +7,7 @@ import (
 	"github.com/rancher/norman/types"
 )
 
-func (r *Rancher) GetKubeConfig(cluster *model.Cluster) (string, error) {
+func (r *rancher) GetKubeConfig(cluster *model.Cluster) (string, error) {
 	encodedName := encodeName(cluster.Organization, cluster.Name)
 
 	listOpts := types.ListOpts{
@@ -15,17 +15,17 @@ func (r *Rancher) GetKubeConfig(cluster *model.Cluster) (string, error) {
 			"name": encodedName,
 		},
 	}
-	clusterCollection, err := r.ManagementClient.Cluster.List(&listOpts)
+	clusterCollection, err := r.managementClient.Cluster.List(&listOpts)
 	if err != nil {
 		return "", err
 	}
 
-	r.Logger.Debug("list cluster collection", "len", len(clusterCollection.Data))
+	r.logger.Debug("list cluster collection", "len", len(clusterCollection.Data))
 
 	for _, data := range clusterCollection.Data {
 		if data.Name == encodedName {
-			r.Logger.Debug("cluster to generate kubeconfig for found", "id", data.ID, "name", data.Name)
-			generatedKubeConfig, err := r.ManagementClient.Cluster.ActionGenerateKubeconfig(&data)
+			r.logger.Debug("cluster to generate kubeconfig for found", "id", data.ID, "name", data.Name)
+			generatedKubeConfig, err := r.managementClient.Cluster.ActionGenerateKubeconfig(&data)
 			if err != nil {
 				return "", err
 			}
