@@ -5,8 +5,6 @@ import (
 	"sync"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
-	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/utils/openstack/clientconfig"
 	"github.com/rancher/norman/clientbase"
 	normanTypes "github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
@@ -17,10 +15,9 @@ type rancher struct {
 	managementClient *managementv3.Client
 	clientOpts       *clientbase.ClientOpts
 	logger           *slog.Logger
-	providerClient   *gophercloud.ProviderClient
-	authInfo         *clientconfig.AuthInfo
 	garbageMutex     *sync.Mutex
 	garbageObjects   map[string]*normanTypes.Resource
+	cloudService     types.CloudService
 }
 
 var _ types.ClusterService = &rancher{}
@@ -33,17 +30,6 @@ func WithLogger(logger *slog.Logger) RancherOption {
 	}
 }
 
-func WithOpenStackAuthInfo(authURL, applicationCredentialID, applicationCredentialSecret string) RancherOption {
-	return func(r *rancher) {
-		r.authInfo = &clientconfig.AuthInfo{
-			AuthURL:                     authURL,
-			ApplicationCredentialID:     applicationCredentialID,
-			ApplicationCredentialSecret: applicationCredentialSecret,
-			AllowReauth:                 true,
-		}
-	}
-}
-
 func WithRancherClientOpts(url, tokenKey string, insecure bool) RancherOption {
 	return func(r *rancher) {
 		r.clientOpts = &clientbase.ClientOpts{
@@ -51,6 +37,12 @@ func WithRancherClientOpts(url, tokenKey string, insecure bool) RancherOption {
 			TokenKey: tokenKey,
 			Insecure: insecure,
 		}
+	}
+}
+
+func WithCloudService(cloudService types.CloudService) RancherOption {
+	return func(r *rancher) {
+		r.cloudService = cloudService
 	}
 }
 
@@ -69,17 +61,6 @@ func NewRancher(rancherOptions ...RancherOption) (types.ClusterService, error) {
 		return nil, err
 	}
 	r.managementClient = managementClient
-
-	clientOpts := clientconfig.ClientOpts{
-		AuthType: clientconfig.AuthV3ApplicationCredential,
-		AuthInfo: r.authInfo,
-	}
-
-	providerClient, err := clientconfig.AuthenticatedClient(&clientOpts)
-	if err != nil {
-		return nil, err
-	}
-	r.providerClient = providerClient
 
 	return &r, err
 }

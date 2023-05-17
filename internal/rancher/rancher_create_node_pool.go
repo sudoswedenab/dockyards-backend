@@ -6,16 +6,29 @@ import (
 )
 
 func (r *rancher) CreateNodePool(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*model.NodePool, error) {
-	openstackConfig, err := r.prepareOpenstackEnvironment(cluster, nodePoolOptions)
+	cloudConfig, err := r.cloudService.PrepareEnvironment(cluster, nodePoolOptions)
 	if err != nil {
 		return nil, err
+	}
+
+	openstackConfig := openstackConfig{
+		AuthURL:                     cloudConfig.AuthURL,
+		ApplicationCredentialID:     cloudConfig.ApplicationCredentialID,
+		ApplicationCredentialSecret: cloudConfig.ApplicationCredentialSecret,
+		FlavorID:                    cloudConfig.FlavorID,
+		ImageID:                     cloudConfig.ImageID,
+		KeypairName:                 cloudConfig.KeypairName,
+		NetID:                       cloudConfig.NetID,
+		PrivateKeyFile:              cloudConfig.PrivateKeyFile,
+		SecGroups:                   "default,arst",
+		SSHUser:                     "ubuntu",
 	}
 
 	customNodeTemplate := CustomNodeTemplate{
 		NodeTemplate: managementv3.NodeTemplate{
 			Name: cluster.Name,
 		},
-		OpenstackConfig: openstackConfig,
+		OpenstackConfig: &openstackConfig,
 	}
 
 	var createdNodeTemplate CustomNodeTemplate

@@ -13,6 +13,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/routes"
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/rancher"
 
 	"github.com/gin-contrib/cors"
@@ -155,10 +156,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	openStackOptions := []openstack.OpenStackOption{
+		openstack.WithAuthInfo(openstackAuthURL, openstackAppID, openstackAppSecret),
+		openstack.WithLogger(logger),
+	}
+
+	cloudService, err := openstack.NewOpenStackService(openStackOptions...)
+	if err != nil {
+		logger.Error("error creating new openstack cloud service", "err", err)
+		os.Exit(1)
+	}
+
 	rancherOptions := []rancher.RancherOption{
 		rancher.WithRancherClientOpts(cattleURL, cattleBearerToken, trustInsecure),
 		rancher.WithLogger(logger),
-		rancher.WithOpenStackAuthInfo(openstackAuthURL, openstackAppID, openstackAppSecret),
+		rancher.WithCloudService(cloudService),
 	}
 
 	rancherService, err := rancher.NewRancher(rancherOptions...)

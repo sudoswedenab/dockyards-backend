@@ -4,14 +4,15 @@ import (
 	"errors"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
-	"github.com/rancher/norman/types"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	normanTypes "github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
 func (r *rancher) DeleteCluster(cluster *model.Cluster) error {
 	encodedName := encodeName(cluster.Organization, cluster.Name)
 
-	listOpts := types.ListOpts{
+	listOpts := normanTypes.ListOpts{
 		Filters: map[string]interface{}{
 			"name": encodedName,
 		},
@@ -59,7 +60,7 @@ func (r *rancher) DeleteCluster(cluster *model.Cluster) error {
 }
 
 func (r *rancher) deleteNodePools(clusterID string) error {
-	listOpts := types.ListOpts{
+	listOpts := normanTypes.ListOpts{
 		Filters: map[string]interface{}{
 			"clusterId": clusterID,
 		},
@@ -85,7 +86,11 @@ func (r *rancher) deleteNodePools(clusterID string) error {
 		r.logger.Debug("custom node template", "id", customNodeTemplate.ID, "openstackConfig",
 			customNodeTemplate.OpenstackConfig)
 
-		err = r.cleanOpenstackEnvironment(customNodeTemplate.OpenstackConfig)
+		cloudConfig := types.CloudConfig{
+			KeypairName: customNodeTemplate.OpenstackConfig.KeypairName,
+		}
+
+		err = r.cloudService.CleanEnvironment(&cloudConfig)
 		if err != nil {
 			r.logger.Warn("error cleaning openstack environment", "err", err)
 			return err
