@@ -1,10 +1,11 @@
-package rancher
+package openstack
 
 import (
 	"errors"
 	"math"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
@@ -13,10 +14,10 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
 )
 
-func (r *rancher) prepareOpenstackEnvironment(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*openstackConfig, error) {
-	logger := r.logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name, "organization", cluster.Organization)
+func (s *openStackService) PrepareEnvironment(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*types.CloudConfig, error) {
+	logger := s.logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name, "organization", cluster.Organization)
 
-	computev2, err := openstack.NewComputeV2(r.providerClient, gophercloud.EndpointOpts{Region: "sto1"})
+	computev2, err := openstack.NewComputeV2(s.providerClient, gophercloud.EndpointOpts{Region: s.region})
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +45,7 @@ func (r *rancher) prepareOpenstackEnvironment(cluster *model.Cluster, nodePoolOp
 
 	logger.Debug("flavor requirements", "ram", nodePoolOptions.RAMSize, "cpu", nodePoolOptions.CPUCount, "disk", nodePoolOptions.DiskSize)
 
-	flavorID := r.getClosestFlavorID(allFlavors, nodePoolOptions)
+	flavorID := s.getClosestFlavorID(allFlavors, nodePoolOptions)
 	if flavorID == "" {
 		return nil, errors.New("unable to find a suitable flavor")
 	}
@@ -99,9 +100,7 @@ func (r *rancher) prepareOpenstackEnvironment(cluster *model.Cluster, nodePoolOp
 		return nil, errors.New("unable to find suitable network")
 	}
 
-	encodedName := encodeName(cluster.Organization, cluster.Name)
-
-	keypairName := encodedName + "-" + nodePoolOptions.Name
+	keypairName := cluster.Name + "-" + nodePoolOptions.Name
 	createOpts := keypairs.CreateOpts{
 		Name: keypairName,
 	}
@@ -111,43 +110,41 @@ func (r *rancher) prepareOpenstackEnvironment(cluster *model.Cluster, nodePoolOp
 		return nil, err
 	}
 
-	config := openstackConfig{
-		AuthURL:                     r.authInfo.AuthURL,
-		ApplicationCredentialID:     r.authInfo.ApplicationCredentialID,
-		ApplicationCredentialSecret: r.authInfo.ApplicationCredentialSecret,
+	config := types.CloudConfig{
+		AuthURL:                     s.authInfo.AuthURL,
+		ApplicationCredentialID:     s.authInfo.ApplicationCredentialID,
+		ApplicationCredentialSecret: s.authInfo.ApplicationCredentialSecret,
 		FlavorID:                    flavorID,
 		ImageID:                     imageID,
 		KeypairName:                 keypair.Name,
 		NetID:                       netID,
 		PrivateKeyFile:              keypair.PrivateKey,
-		SecGroups:                   "default,arst",
-		SSHUser:                     "ubuntu",
 	}
 
-	logger.Debug("openstack config created", "config", config)
+	logger.Debug("openstack cloud config created", "config", config)
 
 	return &config, nil
 }
 
-func (r *rancher) cleanOpenstackEnvironment(config *openstackConfig) error {
-	computev2, err := openstack.NewComputeV2(r.providerClient, gophercloud.EndpointOpts{Region: "sto1"})
+func (s *openStackService) CleanEnvironment(config *types.CloudConfig) error {
+	computev2, err := openstack.NewComputeV2(s.providerClient, gophercloud.EndpointOpts{Region: s.region})
 	if err != nil {
-		r.logger.Debug("unexpected error creating service client", "err", err)
+		s.logger.Debug("unexpected error creating service client", "err", err)
 		return err
 	}
 
-	r.logger.Debug("remove keypair", "name", config.KeypairName)
+	s.logger.Debug("remove keypair", "name", config.KeypairName)
 
 	err = keypairs.Delete(computev2, config.KeypairName, keypairs.DeleteOpts{}).ExtractErr()
 	if err != nil {
-		r.logger.Debug("error deleting keypair", "name", config.KeypairName, "err", err)
+		s.logger.Debug("error deleting keypair", "name", config.KeypairName, "err", err)
 		return err
 	}
 
 	return nil
 }
 
-func (r *rancher) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *model.NodePoolOptions) string {
+func (s *openStackService) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *model.NodePoolOptions) string {
 	closestFlavorID := ""
 	shortestDistance := math.MaxFloat64
 
@@ -158,7 +155,7 @@ func (r *rancher) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *
 
 		distance := math.Sqrt(diskSquared + ramSquared + vcpuSquared)
 
-		r.logger.Debug("checking flavor distance", "id", flavor.ID, "disk", flavor.Disk, "ram", flavor.RAM, "vcpus", flavor.VCPUs, "distance", distance)
+		s.logger.Debug("checking flavor distance", "id", flavor.ID, "disk", flavor.Disk, "ram", flavor.RAM, "vcpus", flavor.VCPUs, "distance", distance)
 
 		if distance == 0 {
 			closestFlavorID = flavor.ID
@@ -171,7 +168,7 @@ func (r *rancher) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *
 		}
 	}
 
-	r.logger.Debug("found flavor to use", "id", closestFlavorID)
+	s.logger.Debug("found flavor to use", "id", closestFlavorID)
 
 	return closestFlavorID
 }

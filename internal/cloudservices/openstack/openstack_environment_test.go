@@ -1,4 +1,4 @@
-package rancher
+package openstack
 
 import (
 	"os"
@@ -133,13 +133,13 @@ func TestGetClosestFlavorID(t *testing.T) {
 
 	logger := slog.New(slog.HandlerOptions{Level: slog.LevelError + 1}.NewTextHandler(os.Stdout))
 
-	r := rancher{
+	s := openStackService{
 		logger: logger,
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			actual := r.getClosestFlavorID(tc.flavors, &tc.nodePoolOptions)
+			actual := s.getClosestFlavorID(tc.flavors, &tc.nodePoolOptions)
 			if actual != tc.expected {
 				t.Errorf("expected '%s', got '%s'", tc.expected, actual)
 			}
