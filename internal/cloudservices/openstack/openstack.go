@@ -5,21 +5,9 @@ import (
 	"os"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
-	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/utils/openstack/clientconfig"
 	"golang.org/x/exp/slog"
 )
-
-type openStackService struct {
-	authInfo       *clientconfig.AuthInfo
-	providerClient *gophercloud.ProviderClient
-	logger         *slog.Logger
-	region         string
-}
-
-var _ types.CloudService = &openStackService{}
-
-type OpenStackOption func(*openStackService)
 
 func WithAuthInfo(authURL, applicationCredentialID, applicationCredentialSecret string) OpenStackOption {
 	return func(s *openStackService) {
