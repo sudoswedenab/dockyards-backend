@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gophercloud/utils/openstack/clientconfig"
 	"golang.org/x/exp/slog"
+	"gorm.io/gorm"
 )
 
 func WithAuthInfo(authURL, applicationCredentialID, applicationCredentialSecret string) OpenStackOption {
@@ -30,6 +31,26 @@ func WithRegion(region string) OpenStackOption {
 	return func(s *openStackService) {
 		s.region = region
 	}
+}
+
+func WithDatabase(db *gorm.DB) OpenStackOption {
+	return func(s *openStackService) {
+		s.db = db
+	}
+}
+
+func SyncDatabase(db *gorm.DB) error {
+	err := db.AutoMigrate(&OpenStackProject{})
+	if err != nil {
+		return err
+	}
+
+	err = db.AutoMigrate(&OpenStackOrganization{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func NewOpenStackService(openStackOptions ...OpenStackOption) (types.CloudService, error) {

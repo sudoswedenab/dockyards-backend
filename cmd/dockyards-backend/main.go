@@ -156,9 +156,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = openstack.SyncDatabase(db)
+	if err != nil {
+		logger.Error("error syncing database with openstack models", "err", err)
+		os.Exit(1)
+	}
+
 	openStackOptions := []openstack.OpenStackOption{
 		openstack.WithAuthInfo(openstackAuthURL, openstackAppID, openstackAppSecret),
 		openstack.WithLogger(logger),
+		openstack.WithDatabase(db),
 	}
 
 	cloudService, err := openstack.NewOpenStackService(openStackOptions...)
