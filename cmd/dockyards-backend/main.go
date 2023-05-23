@@ -215,8 +215,10 @@ func main() {
 		}))
 	}
 
+	withCloudService := handlers.WithCloudService(cloudService)
+
 	routes.RegisterRoutes(r, db, rancherService)
-	handlers.RegisterRoutes(r, db, rancherService, logger, jwtAccessTokenSecret, jwtRefreshTokenSecret, accessTokenName, refreshTokenName, flagServerCookie)
+	handlers.RegisterRoutes(r, db, rancherService, logger, jwtAccessTokenSecret, jwtRefreshTokenSecret, accessTokenName, refreshTokenName, flagServerCookie, withCloudService)
 	user.RegisterRoutes(r, db)
 
 	handlers.RegisterSudoRoutes(i, rancherService, logger, db)

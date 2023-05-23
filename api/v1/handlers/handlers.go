@@ -23,6 +23,7 @@ type handler struct {
 	jwtAccessTokenSecret  string
 	jwtRefreshTokenSecret string
 	flagServerCookie      bool
+	cloudService          types.CloudService
 }
 
 type sudo struct {
@@ -31,7 +32,15 @@ type sudo struct {
 	db             *gorm.DB
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, jwtAccessTokenSecret, jwtRefreshTokenSecret, accessTokenName, refreshTokenName string, flagServerCookie bool) {
+type HandlerOption func(*handler)
+
+func WithCloudService(cloudService types.CloudService) HandlerOption {
+	return func(h *handler) {
+		h.cloudService = cloudService
+	}
+}
+
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, jwtAccessTokenSecret, jwtRefreshTokenSecret, accessTokenName, refreshTokenName string, flagServerCookie bool, handlerOptions ...HandlerOption) {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
 	}
@@ -45,6 +54,10 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 		jwtAccessTokenSecret:  jwtAccessTokenSecret,
 		jwtRefreshTokenSecret: jwtRefreshTokenSecret,
 		flagServerCookie:      flagServerCookie,
+	}
+
+	for _, handlerOption := range handlerOptions {
+		handlerOption(&h)
 	}
 
 	middlewareHandler := middleware.Handler{
