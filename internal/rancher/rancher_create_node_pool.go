@@ -1,6 +1,8 @@
 package rancher
 
 import (
+	"strings"
+
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
@@ -11,6 +13,8 @@ func (r *rancher) CreateNodePool(organization *model.Organization, cluster *mode
 		return nil, err
 	}
 
+	secGroups := strings.Join(cloudConfig.SecurityGroups, ",")
+
 	openstackConfig := openstackConfig{
 		AuthURL:                     cloudConfig.AuthURL,
 		ApplicationCredentialID:     cloudConfig.ApplicationCredentialID,
@@ -20,7 +24,7 @@ func (r *rancher) CreateNodePool(organization *model.Organization, cluster *mode
 		KeypairName:                 cloudConfig.KeypairName,
 		NetID:                       cloudConfig.NetID,
 		PrivateKeyFile:              cloudConfig.PrivateKeyFile,
-		SecGroups:                   "default,arst",
+		SecGroups:                   secGroups,
 		SSHUser:                     "ubuntu",
 	}
 

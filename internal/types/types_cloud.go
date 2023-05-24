@@ -18,4 +18,5 @@ type CloudConfig struct {
 	KeypairName                 string
 	NetID                       string
 	PrivateKeyFile              string
+	SecurityGroups              []string
 }

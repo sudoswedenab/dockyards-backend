@@ -10,6 +10,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/networks"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/secgroups"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
 	"github.com/gophercloud/utils/openstack/clientconfig"
@@ -136,6 +137,57 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 		return nil, err
 	}
 
+	allSecurityGroupPages, err := secgroups.List(computev2).AllPages()
+	if err != nil {
+		return nil, err
+	}
+
+	allSecurityGroups, err := secgroups.ExtractSecurityGroups(allSecurityGroupPages)
+	if err != nil {
+	}
+
+	securityGroups := []string{}
+	for _, securityGroup := range allSecurityGroups {
+		logger.Debug("checking security group", "name", securityGroup.Name, "id", securityGroup.ID)
+		if securityGroup.Name == "default" {
+			securityGroups = append(securityGroups, securityGroup.ID)
+		}
+	}
+
+	if len(securityGroups) == 0 {
+		logger.Debug("could not find a default security group")
+	}
+
+	secgroupName := cluster.Name + "-" + nodePoolOptions.Name
+	secgroupOpts := secgroups.CreateOpts{
+		Name:        secgroupName,
+		Description: "no",
+	}
+
+	securityGroup, err := secgroups.Create(computev2, secgroupOpts).Extract()
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Debug("created security group", "name", securityGroup.Name, "id", securityGroup.ID)
+
+	securityGroups = append(securityGroups, securityGroup.ID)
+
+	createRuleOpts := secgroups.CreateRuleOpts{
+		ParentGroupID: securityGroup.ID,
+		FromPort:      1,
+		ToPort:        65535,
+		IPProtocol:    "TCP",
+		CIDR:          "0.0.0.0/0",
+	}
+
+	rule, err := secgroups.CreateRule(computev2, createRuleOpts).Extract()
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Debug("created security group rule", "id", rule.ID)
+
 	config := types.CloudConfig{
 		AuthURL:                     s.authOptions.IdentityEndpoint,
 		ApplicationCredentialID:     openStackOrganization.ApplicationCredentialID,
@@ -145,6 +197,7 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 		KeypairName:                 keypair.Name,
 		NetID:                       netID,
 		PrivateKeyFile:              keypair.PrivateKey,
+		SecurityGroups:              securityGroups,
 	}
 
 	logger.Debug("openstack cloud config created", "config", config)
