@@ -120,3 +120,13 @@ func (s *openStackService) GetOrganization(organization *model.Organization) (st
 
 	return openStackProject.OpenStackID, nil
 }
+
+func (s *openStackService) getOpenStackOrganization(organization *model.Organization) (*OpenStackOrganization, error) {
+	var openStackOrganization OpenStackOrganization
+	err := s.db.Take(&openStackOrganization, "organization_id = ?", organization.ID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &openStackOrganization, nil
+}
