@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (h *handler) GetOrgs(c *gin.Context) {
@@ -86,5 +87,21 @@ func (h *handler) PostOrgs(c *gin.Context) {
 		})
 		return
 	}
+
+	cloudOrganizationID, err := h.cloudService.CreateOrganization(&organization)
+	if err != nil {
+		h.logger.Error("error creating organization in cloud service", "err", err)
+
+		err = h.db.Select(clause.Associations).Delete(&organization).Error
+		if err != nil {
+			h.logger.Error("error deleting organization from database", "err", err)
+		}
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Debug("created cloud organization", "id", cloudOrganizationID)
+
 	c.Status(http.StatusOK)
 }
