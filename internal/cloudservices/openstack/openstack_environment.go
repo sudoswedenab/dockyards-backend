@@ -12,12 +12,38 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/networks"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
+	"github.com/gophercloud/utils/openstack/clientconfig"
 )
 
-func (s *openStackService) PrepareEnvironment(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*types.CloudConfig, error) {
-	logger := s.logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name, "organization", cluster.Organization)
+func (s *openStackService) PrepareEnvironment(organization *model.Organization, cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*types.CloudConfig, error) {
+	logger := s.logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name, "organization", organization.Name)
 
-	computev2, err := openstack.NewComputeV2(s.providerClient, gophercloud.EndpointOpts{Region: s.region})
+	openStackOrganization, err := s.getOpenStackOrganization(organization)
+	if err != nil {
+		logger.Error("error getting openstack organization", "err", err)
+		return nil, err
+	}
+
+	logger.Debug("got openstack organization", "id", openStackOrganization.ID, "project", openStackOrganization.OpenStackProject.OpenStackID)
+
+	projectAuthInfo := clientconfig.AuthInfo{
+		AuthURL:                     s.authOptions.IdentityEndpoint,
+		ApplicationCredentialID:     openStackOrganization.ApplicationCredentialID,
+		ApplicationCredentialSecret: openStackOrganization.ApplicationCredentialSecret,
+	}
+
+	clientOpts := clientconfig.ClientOpts{
+		AuthType: clientconfig.AuthV3ApplicationCredential,
+		AuthInfo: &projectAuthInfo,
+	}
+
+	providerClient, err := clientconfig.AuthenticatedClient(&clientOpts)
+	if err != nil {
+		s.logger.Error("error creating openstack provider client", "err", err)
+		return nil, err
+	}
+
+	computev2, err := openstack.NewComputeV2(providerClient, gophercloud.EndpointOpts{Region: s.region})
 	if err != nil {
 		return nil, err
 	}
@@ -111,9 +137,9 @@ func (s *openStackService) PrepareEnvironment(cluster *model.Cluster, nodePoolOp
 	}
 
 	config := types.CloudConfig{
-		AuthURL:                     s.authInfo.AuthURL,
-		ApplicationCredentialID:     s.authInfo.ApplicationCredentialID,
-		ApplicationCredentialSecret: s.authInfo.ApplicationCredentialSecret,
+		AuthURL:                     s.authOptions.IdentityEndpoint,
+		ApplicationCredentialID:     openStackOrganization.ApplicationCredentialID,
+		ApplicationCredentialSecret: openStackOrganization.ApplicationCredentialSecret,
 		FlavorID:                    flavorID,
 		ImageID:                     imageID,
 		KeypairName:                 keypair.Name,

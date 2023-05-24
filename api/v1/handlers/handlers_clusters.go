@@ -30,7 +30,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		return
 	}
 
-	h.logger.Debug("create cluster", "name", clusterOptions.Name, "version", clusterOptions.Version)
+	h.logger.Debug("create cluster", "organization", organization.Name, "name", clusterOptions.Name, "version", clusterOptions.Version)
 
 	details, validName := internal.IsValidName(clusterOptions.Name)
 	if !validName {
@@ -80,7 +80,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 	}
 
-	controlPlaneNodePool, err := h.clusterService.CreateNodePool(cluster, &controlPlaneNodePoolOptions)
+	controlPlaneNodePool, err := h.clusterService.CreateNodePool(&organization, cluster, &controlPlaneNodePoolOptions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -102,7 +102,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 
 		for _, nodePoolOption := range nodePoolOptions {
-			nodePool, err := h.clusterService.CreateNodePool(cluster, &nodePoolOption)
+			nodePool, err := h.clusterService.CreateNodePool(&organization, cluster, &nodePoolOption)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),

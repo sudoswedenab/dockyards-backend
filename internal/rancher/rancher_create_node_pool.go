@@ -5,8 +5,8 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *rancher) CreateNodePool(cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*model.NodePool, error) {
-	cloudConfig, err := r.cloudService.PrepareEnvironment(cluster, nodePoolOptions)
+func (r *rancher) CreateNodePool(organization *model.Organization, cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*model.NodePool, error) {
+	cloudConfig, err := r.cloudService.PrepareEnvironment(organization, cluster, nodePoolOptions)
 	if err != nil {
 		return nil, err
 	}
