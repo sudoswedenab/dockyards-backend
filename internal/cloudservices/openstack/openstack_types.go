@@ -5,13 +5,12 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/google/uuid"
 	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/utils/openstack/clientconfig"
 	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
 )
 
 type openStackService struct {
-	authInfo       *clientconfig.AuthInfo
+	authOptions    *gophercloud.AuthOptions
 	providerClient *gophercloud.ProviderClient
 	logger         *slog.Logger
 	region         string

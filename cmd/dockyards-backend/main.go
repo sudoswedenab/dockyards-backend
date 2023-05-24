@@ -34,9 +34,6 @@ var (
 	cattleBearerToken     string
 	flagUseCors           = false
 	flagServerCookie      = false
-	openstackAuthURL      string
-	openstackAppID        string
-	openstackAppSecret    string
 )
 
 func init() {
@@ -98,9 +95,6 @@ func loadEnvVariables() {
 	jwtRefreshTokenSecret = os.Getenv("JWT_REFRESH_TOKEN_SECRET")
 	cattleURL = os.Getenv("CATTLE_URL")
 	cattleBearerToken = os.Getenv("CATTLE_BEARER_TOKEN")
-	openstackAuthURL = os.Getenv("OPENSTACK_AUTH_URL")
-	openstackAppID = os.Getenv("OPENSTACK_APP_ID")
-	openstackAppSecret = os.Getenv("OPENSTACK_APP_SECRET")
 }
 
 func main() {
@@ -163,9 +157,9 @@ func main() {
 	}
 
 	openStackOptions := []openstack.OpenStackOption{
-		openstack.WithAuthInfo(openstackAuthURL, openstackAppID, openstackAppSecret),
 		openstack.WithLogger(logger),
 		openstack.WithDatabase(db),
+		openstack.WithCloudsYAML("openstack"),
 	}
 
 	cloudService, err := openstack.NewOpenStackService(openStackOptions...)
@@ -199,7 +193,6 @@ func main() {
 	}()
 
 	logger.Info("rancher info", "url", cattleURL)
-	logger.Info("openstack info", "url", openstackAuthURL)
 
 	r := gin.Default()
 	i := gin.Default()

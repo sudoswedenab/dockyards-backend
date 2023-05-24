@@ -1,25 +1,14 @@
 package openstack
 
 import (
-	"errors"
 	"os"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/utils/openstack/clientconfig"
 	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
 )
-
-func WithAuthInfo(authURL, applicationCredentialID, applicationCredentialSecret string) OpenStackOption {
-	return func(s *openStackService) {
-		s.authInfo = &clientconfig.AuthInfo{
-			AuthURL:                     authURL,
-			ApplicationCredentialID:     applicationCredentialID,
-			ApplicationCredentialSecret: applicationCredentialSecret,
-			AllowReauth:                 true,
-		}
-	}
-}
 
 func WithLogger(logger *slog.Logger) OpenStackOption {
 	return func(s *openStackService) {
@@ -36,6 +25,21 @@ func WithRegion(region string) OpenStackOption {
 func WithDatabase(db *gorm.DB) OpenStackOption {
 	return func(s *openStackService) {
 		s.db = db
+	}
+}
+
+func WithCloudsYAML(cloud string) OpenStackOption {
+	clientOpts := clientconfig.ClientOpts{
+		Cloud: cloud,
+	}
+
+	authOptions, err := clientconfig.AuthOptions(&clientOpts)
+	if err != nil {
+		panic(err)
+	}
+
+	return func(s *openStackService) {
+		s.authOptions = authOptions
 	}
 }
 
@@ -60,10 +64,6 @@ func NewOpenStackService(openStackOptions ...OpenStackOption) (types.CloudServic
 		openStackOption(&s)
 	}
 
-	if s.authInfo == nil {
-		return nil, errors.New("no auth information provided")
-	}
-
 	if s.logger == nil {
 		s.logger = slog.New(slog.HandlerOptions{Level: slog.LevelInfo}.NewTextHandler(os.Stdout))
 		s.logger.Info("no logger was provided, using default")
@@ -74,12 +74,7 @@ func NewOpenStackService(openStackOptions ...OpenStackOption) (types.CloudServic
 		s.logger.Debug("using default region", "region", s.region)
 	}
 
-	clientOpts := clientconfig.ClientOpts{
-		AuthType: clientconfig.AuthV3ApplicationCredential,
-		AuthInfo: s.authInfo,
-	}
-
-	providerClient, err := clientconfig.AuthenticatedClient(&clientOpts)
+	providerClient, err := openstack.AuthenticatedClient(*s.authOptions)
 	if err != nil {
 		return nil, err
 	}
