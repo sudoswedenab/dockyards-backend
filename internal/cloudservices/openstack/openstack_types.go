@@ -31,11 +31,13 @@ func (p *OpenStackProject) TableName() string {
 }
 
 type OpenStackOrganization struct {
-	ID                 uuid.UUID `gorm:"primaryKey"`
-	OpenStackProjectID uuid.UUID `gorm:"column:openstack_project_id"`
-	OpenStackProject   OpenStackProject
-	OrganizationID     uuid.UUID
-	Organization       model.Organization
+	ID                          uuid.UUID `gorm:"primaryKey"`
+	OpenStackProjectID          uuid.UUID `gorm:"column:openstack_project_id"`
+	OpenStackProject            OpenStackProject
+	OrganizationID              uuid.UUID
+	Organization                model.Organization
+	ApplicationCredentialID     string
+	ApplicationCredentialSecret string
 }
 
 func (o *OpenStackOrganization) TableName() string {
