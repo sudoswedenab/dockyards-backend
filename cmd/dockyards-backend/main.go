@@ -54,10 +54,12 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 	default:
 		return nil, fmt.Errorf("unknown log level %s", logLevel)
 	}
+
 	handlerOptions := slog.HandlerOptions{
 		Level: level,
 	}
-	return slog.New(handlerOptions.NewTextHandler(os.Stdout)), nil
+
+	return slog.New(slog.NewTextHandler(os.Stdout, &handlerOptions)), nil
 }
 
 func buildDataSourceName() string {

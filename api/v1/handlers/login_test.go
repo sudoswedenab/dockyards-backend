@@ -71,7 +71,7 @@ func TestLogin(t *testing.T) {
 		},
 	}
 
-	logger := slog.New(slog.HandlerOptions{Level: slog.LevelError + 1}.NewTextHandler(os.Stdout))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

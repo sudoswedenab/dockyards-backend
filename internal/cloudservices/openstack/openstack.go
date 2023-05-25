@@ -65,7 +65,7 @@ func NewOpenStackService(openStackOptions ...OpenStackOption) (types.CloudServic
 	}
 
 	if s.logger == nil {
-		s.logger = slog.New(slog.HandlerOptions{Level: slog.LevelInfo}.NewTextHandler(os.Stdout))
+		s.logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
 		s.logger.Info("no logger was provided, using default")
 	}
 

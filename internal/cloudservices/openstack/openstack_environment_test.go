@@ -131,7 +131,7 @@ func TestGetClosestFlavorID(t *testing.T) {
 		},
 	}
 
-	logger := slog.New(slog.HandlerOptions{Level: slog.LevelError + 1}.NewTextHandler(os.Stdout))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
 	s := openStackService{
 		logger: logger,
