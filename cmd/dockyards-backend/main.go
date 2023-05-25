@@ -157,7 +157,7 @@ func main() {
 	}
 
 	openStackOptions := []openstack.OpenStackOption{
-		openstack.WithLogger(logger),
+		openstack.WithLogger(logger.With("cloudservice", "openstack")),
 		openstack.WithDatabase(db),
 		openstack.WithCloudsYAML("openstack"),
 	}
@@ -170,7 +170,7 @@ func main() {
 
 	rancherOptions := []rancher.RancherOption{
 		rancher.WithRancherClientOpts(cattleURL, cattleBearerToken, trustInsecure),
-		rancher.WithLogger(logger),
+		rancher.WithLogger(logger.With("clusterservice", "rancher")),
 		rancher.WithCloudService(cloudService),
 	}
 
