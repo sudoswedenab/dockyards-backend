@@ -108,7 +108,7 @@ func main() {
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
-	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval")
+	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval seconds")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -188,9 +188,11 @@ func main() {
 	}
 
 	go func() {
-		logger.Debug("creating garbage deletion goroutine", "interval", time.Duration(delGarbageInterval))
+		interval := time.Second * time.Duration(delGarbageInterval)
 
-		ticker := time.NewTicker(time.Second * time.Duration(delGarbageInterval))
+		logger.Debug("creating garbage deletion goroutine", "interval", interval)
+
+		ticker := time.NewTicker(interval)
 		for {
 			select {
 			case <-ticker.C:
