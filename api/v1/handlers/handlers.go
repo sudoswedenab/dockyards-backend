@@ -40,20 +40,25 @@ func WithCloudService(cloudService types.CloudService) HandlerOption {
 	}
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, jwtAccessTokenSecret, jwtRefreshTokenSecret, accessTokenName, refreshTokenName string, flagServerCookie bool, handlerOptions ...HandlerOption) {
+func WithJWTAccessTokens(accessToken, refreshToken string) HandlerOption {
+	return func(h *handler) {
+		h.jwtAccessTokenSecret = accessToken
+		h.jwtRefreshTokenSecret = refreshToken
+	}
+}
+
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, accessTokenName, refreshTokenName string, flagServerCookie bool, handlerOptions ...HandlerOption) {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
 	}
 
 	h := handler{
-		db:                    db,
-		clusterService:        clusterService,
-		accessTokenName:       accessTokenName,
-		refreshTokenName:      refreshTokenName,
-		logger:                logger,
-		jwtAccessTokenSecret:  jwtAccessTokenSecret,
-		jwtRefreshTokenSecret: jwtRefreshTokenSecret,
-		flagServerCookie:      flagServerCookie,
+		db:               db,
+		clusterService:   clusterService,
+		accessTokenName:  accessTokenName,
+		refreshTokenName: refreshTokenName,
+		logger:           logger,
+		flagServerCookie: flagServerCookie,
 	}
 
 	for _, handlerOption := range handlerOptions {
@@ -63,8 +68,8 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	middlewareHandler := middleware.Handler{
 		DB:                 db,
 		Logger:             logger,
-		AccessTokenSecret:  jwtAccessTokenSecret,
-		RefreshTokenSecret: jwtRefreshTokenSecret,
+		AccessTokenSecret:  h.jwtAccessTokenSecret,
+		RefreshTokenSecret: h.jwtRefreshTokenSecret,
 		AccessTokenName:    accessTokenName,
 		RefreshTokenName:   refreshTokenName,
 	}
