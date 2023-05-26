@@ -14,6 +14,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/routes"
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/rancher"
 
 	"github.com/gin-contrib/cors"
@@ -121,8 +122,13 @@ func main() {
 	var db *gorm.DB
 	var connectToDB func(*sync.WaitGroup)
 
+	gormLogger := loggers.NewGormSlogger(logger.With("orm", "gorm"))
+	gormConfig := gorm.Config{
+		Logger: gormLogger,
+	}
+
 	if useInmemDb {
-		db, err = gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+		db, err = gorm.Open(sqlite.Open(":memory:"), &gormConfig)
 		if err != nil {
 			logger.Error("error creating in-memory db", "err", err)
 			os.Exit(1)
@@ -132,7 +138,7 @@ func main() {
 		logger.Debug("database config", "dsn", dsn)
 		connectToDB = func(wg *sync.WaitGroup) {
 			logger.Info("Trying to connect..")
-			db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+			db, err = gorm.Open(postgres.Open(dsn), &gormConfig)
 			if err != nil {
 				logger.Info("Failed to connect to database, trying again..")
 				time.Sleep(time.Second * 3)
