@@ -83,8 +83,7 @@ func (r *rancher) deleteNodePools(clusterID string) error {
 			return err
 		}
 
-		r.logger.Debug("custom node template", "id", customNodeTemplate.ID, "openstackConfig",
-			customNodeTemplate.OpenstackConfig)
+		r.logger.Debug("node pool custom node template", "id", customNodeTemplate.ID)
 
 		cloudConfig := types.CloudConfig{
 			KeypairName: customNodeTemplate.OpenstackConfig.KeypairName,
