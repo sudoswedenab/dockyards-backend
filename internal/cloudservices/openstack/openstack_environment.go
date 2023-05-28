@@ -116,7 +116,7 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 
 	var netID string
 	for _, network := range allNetworks {
-		logger.Debug("checking network", "network", network)
+		logger.Debug("checking network", "id", network.ID)
 		if network.Label == "default" {
 			logger.Debug("found network to use", "id", network.ID, "label", network.Label)
 			netID = network.ID
@@ -200,7 +200,7 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 		SecurityGroups:              securityGroups,
 	}
 
-	logger.Debug("openstack cloud config created", "config", config)
+	logger.Debug("openstack cloud config created")
 
 	return &config, nil
 }
