@@ -185,6 +185,7 @@ func main() {
 		rancher.WithRancherClientOpts(cattleURL, cattleBearerToken, trustInsecure),
 		rancher.WithLogger(logger.With("clusterservice", "rancher")),
 		rancher.WithCloudService(cloudService),
+		rancher.WithPrometheusRegistry(registry),
 	}
 
 	rancherService, err := rancher.NewRancher(rancherOptions...)
@@ -221,6 +222,7 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
+				rancherService.CollectMetrics()
 			}
 		}
 	}()
