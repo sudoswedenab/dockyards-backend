@@ -116,11 +116,31 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	g.GET("/apps", h.GetApps)
 }
 
-func RegisterSudoRoutes(e *gin.Engine, clusterService types.ClusterService, logger *slog.Logger, db *gorm.DB) {
-	s := sudo{
-		clusterService: clusterService,
-		logger:         logger,
-		db:             db,
+type SudoHandlerOption func(s *sudo)
+
+func WithSudoClusterService(clusterService types.ClusterService) SudoHandlerOption {
+	return func(s *sudo) {
+		s.clusterService = clusterService
+	}
+}
+
+func WithSudoLogger(logger *slog.Logger) SudoHandlerOption {
+	return func(s *sudo) {
+		s.logger = logger
+	}
+}
+
+func WithSudoGormDB(db *gorm.DB) SudoHandlerOption {
+	return func(s *sudo) {
+		s.db = db
+	}
+}
+
+func RegisterSudoRoutes(e *gin.Engine, sudoHandlerOptions ...SudoHandlerOption) {
+	s := sudo{}
+
+	for _, sudoHandlerOption := range sudoHandlerOptions {
+		sudoHandlerOption(&s)
 	}
 
 	e.GET("/sudo/clusters", s.GetClusters)

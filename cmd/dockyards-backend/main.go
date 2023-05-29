@@ -227,7 +227,13 @@ func main() {
 	handlers.RegisterRoutes(r, db, rancherService, logger, accessTokenName, refreshTokenName, flagServerCookie, handlerOptions...)
 	user.RegisterRoutes(r, db)
 
-	handlers.RegisterSudoRoutes(i, rancherService, logger, db)
+	sudoHandlerOptions := []handlers.SudoHandlerOption{
+		handlers.WithSudoClusterService(rancherService),
+		handlers.WithSudoLogger(logger),
+		handlers.WithSudoGormDB(db),
+	}
+
+	handlers.RegisterSudoRoutes(i, sudoHandlerOptions...)
 
 	go i.Run(":9001")
 	r.Run()
