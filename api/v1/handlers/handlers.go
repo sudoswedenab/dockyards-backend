@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
 )
@@ -154,6 +155,16 @@ func RegisterSudoRoutes(e *gin.Engine, sudoHandlerOptions ...SudoHandlerOption) 
 	e.GET("/sudo/clusters", s.GetClusters)
 	e.GET("/sudo/kubeconfig/:org/:name", s.GetKubeconfig)
 	e.GET("/sudo/apps", s.GetApps)
+
+	handlerOpts := promhttp.HandlerOpts{
+		Registry: s.prometheusRegistry,
+	}
+
+	handlerFor := promhttp.HandlerFor(s.prometheusRegistry, handlerOpts)
+
+	e.GET("/metrics", func(c *gin.Context) {
+		handlerFor.ServeHTTP(c.Writer, c.Request)
+	})
 }
 
 func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {
