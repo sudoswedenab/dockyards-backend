@@ -21,6 +21,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/exp/slog"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -105,10 +106,12 @@ func main() {
 	var useInmemDb bool
 	var trustInsecure bool
 	var delGarbageInterval int
+	var collectMetricsInterval int
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
 	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval seconds")
+	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -176,6 +179,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	registry := prometheus.NewRegistry()
+
 	rancherOptions := []rancher.RancherOption{
 		rancher.WithRancherClientOpts(cattleURL, cattleBearerToken, trustInsecure),
 		rancher.WithLogger(logger.With("clusterservice", "rancher")),
@@ -204,6 +209,22 @@ func main() {
 
 	logger.Info("rancher info", "url", cattleURL)
 
+	go func() {
+		interval := time.Second * time.Duration(collectMetricsInterval)
+
+		logger.Debug("creating prometheus metrics goroutine", "interval", interval)
+
+		prometheusMetrics.CollectMetrics()
+		rancherService.CollectMetrics()
+
+		ticker := time.NewTicker(interval)
+		for {
+			select {
+			case <-ticker.C:
+			}
+		}
+	}()
+
 	r := gin.Default()
 	i := gin.Default()
 
@@ -231,6 +252,7 @@ func main() {
 		handlers.WithSudoClusterService(rancherService),
 		handlers.WithSudoLogger(logger),
 		handlers.WithSudoGormDB(db),
+		handlers.WithSudoPrometheusRegistry(registry),
 	}
 
 	handlers.RegisterSudoRoutes(i, sudoHandlerOptions...)

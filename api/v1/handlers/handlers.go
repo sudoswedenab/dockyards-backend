@@ -10,6 +10,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
 )
@@ -27,9 +28,10 @@ type handler struct {
 }
 
 type sudo struct {
-	clusterService types.ClusterService
-	logger         *slog.Logger
-	db             *gorm.DB
+	clusterService     types.ClusterService
+	logger             *slog.Logger
+	db                 *gorm.DB
+	prometheusRegistry *prometheus.Registry
 }
 
 type HandlerOption func(*handler)
@@ -133,6 +135,12 @@ func WithSudoLogger(logger *slog.Logger) SudoHandlerOption {
 func WithSudoGormDB(db *gorm.DB) SudoHandlerOption {
 	return func(s *sudo) {
 		s.db = db
+	}
+}
+
+func WithSudoPrometheusRegistry(registry *prometheus.Registry) SudoHandlerOption {
+	return func(s *sudo) {
+		s.prometheusRegistry = registry
 	}
 }
 
