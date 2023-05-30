@@ -6,7 +6,7 @@ import (
 )
 
 type App struct {
-	ID             uuid.UUID `json:"-"`
+	ID             uuid.UUID `json:"id"`
 	Name           string    `json:"name"`
 	ContainerImage string    `json:"container_image"`
 	Organization   string    `json:"organization"`
