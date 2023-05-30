@@ -1,6 +1,10 @@
 package model
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -27,4 +31,27 @@ func (a *App) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (v *HelmValues) Scan(source any) error {
+	switch source := source.(type) {
+	case []byte:
+		err := json.Unmarshal(source, &v)
+		if err != nil {
+			return nil
+		}
+	default:
+		fmt.Errorf("cannot scan helm values of type %T", source)
+	}
+
+	return nil
+}
+
+func (v HelmValues) Value() (driver.Value, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
