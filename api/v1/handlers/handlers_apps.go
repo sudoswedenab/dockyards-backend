@@ -21,6 +21,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+type AppType int
+
+const (
+	AppTypeContainer = iota
+	AppTypeHelm
+)
+
 func (h *handler) createDeployment(app *model.App) (*appsv1.Deployment, error) {
 	containerPort := 80
 	if app.Port != 0 {
@@ -134,19 +141,35 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 	app.Organization = org
 	app.Cluster = cluster
 
-	normalizedName, err := h.parseContainerImage(app.ContainerImage)
-	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error":   "container image is not valid",
-			"name":    app.ContainerImage,
-			"details": err.Error(),
-		})
+	var appType AppType
+
+	if app.ContainerImage != "" {
+		normalizedName, err := h.parseContainerImage(app.ContainerImage)
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"error":   "container image is not valid",
+				"name":    app.ContainerImage,
+				"details": err.Error(),
+			})
+		}
+
+		app.ContainerImage = normalizedName
+
+		if app.Name == "" {
+			base := path.Base(app.ContainerImage)
+			app.Name = base
+		}
+
+		appType = AppTypeContainer
 	}
 
-	app.ContainerImage = normalizedName
-	if app.Name == "" {
-		base := path.Base(app.ContainerImage)
-		app.Name = base
+	if app.HelmChart != "" {
+		if app.Name == "" {
+			h.logger.Debug("app name empty, using helm chart name", "name", app.HelmChart)
+			app.Name = app.HelmChart
+		}
+
+		appType = AppTypeHelm
 	}
 
 	details, validName := internal.IsValidName(app.Name)
@@ -157,6 +180,11 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 			"details": details,
 		})
 		return
+	}
+
+	if app.Namespace == "" {
+		h.logger.Debug("empty namespace in app, using app name", "name", app.Name)
+		app.Namespace = app.Name
 	}
 
 	var existingApp model.App
@@ -174,98 +202,102 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 		return
 	}
 
-	deployment, err := h.createDeployment(&app)
-	if err != nil {
-		h.logger.Error("failed to create deployment", "name", app.Name, "err", err)
+	if appType == AppTypeContainer {
+		h.logger.Debug("app type is container, creating git repository")
+
+		deployment, err := h.createDeployment(&app)
+		if err != nil {
+			h.logger.Error("failed to create deployment", "name", app.Name, "err", err)
+		}
+
+		deploymentJson, err := json.Marshal(deployment)
+		if err != nil {
+			h.logger.Error("error marshalling deployment as json", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		service, err := h.createService(&app)
+		if err != nil {
+			h.logger.Error("error creating service", "name", app.Name, "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		serviceJson, err := json.Marshal(service)
+		if err != nil {
+			h.logger.Error("error mashalling service as json", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		repoPath := path.Join("/tmp/repos/v1", "orgs", org, "clusters", cluster, "apps", app.Name)
+
+		repo, err := git.PlainInit(repoPath, false)
+		if err != nil {
+			h.logger.Error("error creating git repository", "path", repoPath, "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		worktree, err := repo.Worktree()
+		if err != nil {
+			h.logger.Error("error getting default worktree", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		filename := path.Join(repoPath, "deployment.json")
+		file, err := os.Create(filename)
+		if err != nil {
+			h.logger.Error("error creating deployment file", "filename", filename, "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		_, err = file.Write(deploymentJson)
+		if err != nil {
+			h.logger.Error("error writing to file", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		file.Close()
+		worktree.Add("deployment.json")
+
+		filename = path.Join(repoPath, "service.json")
+		file, err = os.Create(filename)
+		if err != nil {
+			h.logger.Error("error creating service file", "filename", filename, "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		_, err = file.Write(serviceJson)
+		if err != nil {
+			h.logger.Error("error writing service json to file", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		file.Close()
+		worktree.Add("service.json")
+
+		commit, err := worktree.Commit("Add deployment", &git.CommitOptions{
+			Author: &object.Signature{
+				Name:  "dockyards",
+				Email: "git@dockyards.io",
+				When:  time.Now(),
+			},
+		})
+
+		if err != nil {
+			h.logger.Error("error creating commit", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		h.logger.Debug("created commit", "hash", commit.String())
 	}
-
-	deploymentJson, err := json.Marshal(deployment)
-	if err != nil {
-		h.logger.Error("error marshalling deployment as json", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	service, err := h.createService(&app)
-	if err != nil {
-		h.logger.Error("error creating service", "name", app.Name, "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	serviceJson, err := json.Marshal(service)
-	if err != nil {
-		h.logger.Error("error mashalling service as json", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	repoPath := path.Join("/tmp/repos/v1", "orgs", org, "clusters", cluster, "apps", app.Name)
-
-	repo, err := git.PlainInit(repoPath, false)
-	if err != nil {
-		h.logger.Error("error creating git repository", "path", repoPath, "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	worktree, err := repo.Worktree()
-	if err != nil {
-		h.logger.Error("error getting default worktree", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	filename := path.Join(repoPath, "deployment.json")
-	file, err := os.Create(filename)
-	if err != nil {
-		h.logger.Error("error creating deployment file", "filename", filename, "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	_, err = file.Write(deploymentJson)
-	if err != nil {
-		h.logger.Error("error writing to file", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	file.Close()
-	worktree.Add("deployment.json")
-
-	filename = path.Join(repoPath, "service.json")
-	file, err = os.Create(filename)
-	if err != nil {
-		h.logger.Error("error creating service file", "filename", filename, "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	_, err = file.Write(serviceJson)
-	if err != nil {
-		h.logger.Error("error writing service json to file", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	file.Close()
-	worktree.Add("service.json")
-
-	commit, err := worktree.Commit("Add deployment", &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  "dockyards",
-			Email: "git@dockyards.io",
-			When:  time.Now(),
-		},
-	})
-
-	if err != nil {
-		h.logger.Error("error creating commit", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	h.logger.Debug("created commit", "hash", commit.String())
 
 	err = h.db.Create(&app).Error
 	if err != nil {
