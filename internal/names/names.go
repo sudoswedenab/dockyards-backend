@@ -40,3 +40,43 @@ func IsValidName(name string) (string, bool) {
 
 	return "", true
 }
+
+func encodeString(s string) string {
+	return strings.ReplaceAll(s, "-", "--")
+}
+
+func decodeString(s string) string {
+	return strings.ReplaceAll(s, "--", "-")
+}
+
+func EncodeName(org, cluster string) string {
+	encodedOrg := encodeString(org)
+	encodedCluster := encodeString(cluster)
+	return encodedOrg + "-" + encodedCluster
+}
+
+func DecodeName(s string) (string, string) {
+	var split [2]string
+	i := 0
+	t := len(s) - 1
+	for i < t {
+		if s[i] == '-' {
+			if s[i-1] != '-' && s[i+1] != '-' {
+				split[0] = s[0:i]
+				split[1] = s[i+1:]
+				break
+			}
+		}
+		i += 1
+	}
+
+	// name has no dash in it, name is for a cluster without org
+	if split[0] == "" {
+		return "", s
+	}
+
+	decodedOrg := decodeString(split[0])
+	decodedName := decodeString(split[1])
+
+	return decodedOrg, decodedName
+}

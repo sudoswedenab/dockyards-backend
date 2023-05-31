@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"github.com/rancher/norman/types"
 )
 
@@ -20,7 +21,7 @@ func (r *rancher) GetAllClusters() (*[]model.Cluster, error) {
 			return nil, err
 		}
 
-		organization, name := decodeName(cluster.Name)
+		organization, name := names.DecodeName(cluster.Name)
 
 		c := model.Cluster{
 			Organization: organization,

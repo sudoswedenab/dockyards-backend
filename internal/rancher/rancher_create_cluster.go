@@ -2,6 +2,7 @@ package rancher
 
 import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
@@ -34,7 +35,7 @@ func (r *rancher) CreateCluster(organization *model.Organization, clusterOptions
 		return nil, err
 	}
 
-	clusterName := encodeName(organization.Name, clusterOptions.Name)
+	clusterName := names.EncodeName(organization.Name, clusterOptions.Name)
 
 	opts := managementv3.Cluster{
 		Name:                      clusterName,
@@ -47,7 +48,7 @@ func (r *rancher) CreateCluster(organization *model.Organization, clusterOptions
 		return nil, err
 	}
 
-	clusterOrg, clusterName := decodeName(createdCluster.Name)
+	clusterOrg, clusterName := names.DecodeName(createdCluster.Name)
 
 	cluster := model.Cluster{
 		Organization: clusterOrg,
