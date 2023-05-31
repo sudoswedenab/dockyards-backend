@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
-	"bitbucket.org/sudosweden/dockyards-backend/internal"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"github.com/docker/distribution/reference"
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"
@@ -172,7 +172,7 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 		appType = AppTypeHelm
 	}
 
-	details, validName := internal.IsValidName(app.Name)
+	details, validName := names.IsValidName(app.Name)
 	if !validName {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error":   "name is not valid",
