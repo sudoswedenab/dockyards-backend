@@ -42,9 +42,7 @@ func (r *rancher) CreateNodePool(organization *model.Organization, cluster *mode
 		return nil, err
 	}
 
-	encodedName := encodeName(cluster.Organization, cluster.Name)
-
-	hostnamePrefix := encodedName + "-" + nodePoolOptions.Name + "-"
+	hostnamePrefix := cluster.Name + "-" + nodePoolOptions.Name + "-"
 	opts := managementv3.NodePool{
 		ClusterID:               cluster.ID,
 		ControlPlane:            nodePoolOptions.ControlPlane,
