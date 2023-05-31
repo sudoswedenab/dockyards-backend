@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
@@ -127,7 +128,7 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 		return nil, errors.New("unable to find suitable network")
 	}
 
-	keypairName := cluster.Name + "-" + nodePoolOptions.Name
+	keypairName := names.EncodeName(organization.Name, names.EncodeName(cluster.Name, nodePoolOptions.Name))
 	createOpts := keypairs.CreateOpts{
 		Name: keypairName,
 	}
@@ -136,6 +137,8 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 	if err != nil {
 		return nil, err
 	}
+
+	s.logger.Debug("created keypair", "name", keypair.Name)
 
 	allSecurityGroupPages, err := secgroups.List(computev2).AllPages()
 	if err != nil {
