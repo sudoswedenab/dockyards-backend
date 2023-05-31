@@ -28,9 +28,10 @@ func (r *rancher) CreateNodePool(organization *model.Organization, cluster *mode
 		SSHUser:                     "ubuntu",
 	}
 
+	nodeTemplateName := cluster.Name + "-" + nodePoolOptions.Name
 	customNodeTemplate := CustomNodeTemplate{
 		NodeTemplate: managementv3.NodeTemplate{
-			Name: cluster.Name,
+			Name: nodeTemplateName,
 		},
 		OpenstackConfig: &openstackConfig,
 	}
