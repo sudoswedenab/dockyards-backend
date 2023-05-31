@@ -7,8 +7,9 @@ import (
 )
 
 func (r *rancher) CreateCluster(organization *model.Organization, clusterOptions *model.ClusterOptions) (*model.Cluster, error) {
+	clusterTemplateName := names.EncodeName(organization.Name, clusterOptions.Name)
 	clusterTemplate := managementv3.ClusterTemplate{
-		Name: "testar",
+		Name: clusterTemplateName,
 	}
 
 	createdClusterTemplate, err := r.managementClient.ClusterTemplate.Create(&clusterTemplate)
