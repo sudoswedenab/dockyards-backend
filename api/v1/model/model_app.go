@@ -23,6 +23,7 @@ type App struct {
 	HelmVersion    string     `json:"helm_version,omitempty"`
 	HelmValues     HelmValues `json:"helm_values,omitempty"`
 	Namespace      string     `json:"namespace,omitempty"`
+	CredentialID   *uuid.UUID `json:"credential_id,omitempty"`
 }
 
 func (a *App) BeforeCreate(tx *gorm.DB) error {
