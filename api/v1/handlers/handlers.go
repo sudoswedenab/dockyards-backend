@@ -117,6 +117,11 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	r.DELETE("/v1/orgs/:org/clusters/:cluster/apps/:app", h.DeleteOrgApps)
 
 	g.GET("/apps", h.GetApps)
+
+	g.GET("/credentials", h.GetCredentials)
+	g.GET("/credentials/:uuid", h.GetCredentialUUID)
+	g.POST("/orgs/:org/credentials", h.PostOrgCredentials)
+	g.DELETE("orgs/:org/credentials/:credential", h.DeleteOrgCredentials)
 }
 
 type SudoHandlerOption func(s *sudo)
