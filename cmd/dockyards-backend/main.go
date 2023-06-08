@@ -15,6 +15,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/rancher"
 
 	"github.com/gin-contrib/cors"
@@ -210,6 +211,18 @@ func main() {
 
 	logger.Info("rancher info", "url", cattleURL)
 
+	prometheusMetricsOptions := []metrics.PrometheusMetricsOption{
+		metrics.WithLogger(logger),
+		metrics.WithDatabase(db),
+		metrics.WithPrometheusRegistry(registry),
+	}
+
+	prometheusMetrics, err := metrics.NewPrometheusMetrics(prometheusMetricsOptions...)
+	if err != nil {
+		logger.Error("error creating new prometheus metrics", "err", err)
+		os.Exit(1)
+	}
+
 	go func() {
 		interval := time.Second * time.Duration(collectMetricsInterval)
 
@@ -222,6 +235,7 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
+				prometheusMetrics.CollectMetrics()
 				rancherService.CollectMetrics()
 			}
 		}
