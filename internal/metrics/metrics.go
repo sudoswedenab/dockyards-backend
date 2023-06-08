@@ -16,6 +16,7 @@ type prometheusMetrics struct {
 	organizationMetric *prometheus.GaugeVec
 	userMetric         *prometheus.GaugeVec
 	appMetric          *prometheus.GaugeVec
+	credentialMetric   *prometheus.GaugeVec
 }
 
 type PrometheusMetricsOption func(*prometheusMetrics)
@@ -69,10 +70,21 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 		},
 	)
 
+	credentialMetric := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "dockyards_backend_credential",
+		},
+		[]string{
+			"name",
+			"organization_name",
+		},
+	)
+
 	m := prometheusMetrics{
 		organizationMetric: organizationMetric,
 		userMetric:         userMetric,
 		appMetric:          appMetric,
+		credentialMetric:   credentialMetric,
 	}
 
 	for _, prometheusMetricsOption := range prometheusMetricsOptions {
@@ -82,6 +94,7 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 	m.registry.MustRegister(m.organizationMetric)
 	m.registry.MustRegister(m.userMetric)
 	m.registry.MustRegister(m.appMetric)
+	m.registry.MustRegister(m.credentialMetric)
 
 	buildInfo, ok := debug.ReadBuildInfo()
 	if ok {
@@ -169,6 +182,24 @@ func (m *prometheusMetrics) CollectMetrics() error {
 		}
 
 		m.appMetric.With(labels).Set(1)
+	}
+
+	m.credentialMetric.Reset()
+
+	var credentials []model.Credential
+	err = m.db.Find(&credentials).Error
+	if err != nil {
+		m.logger.Error("error finding credentials in database", "err", err)
+		return err
+	}
+
+	for _, credential := range credentials {
+		labels := prometheus.Labels{
+			"name":              credential.Name,
+			"organization_name": credential.Organization,
+		}
+
+		m.credentialMetric.With(labels).Set(1)
 	}
 
 	return nil
