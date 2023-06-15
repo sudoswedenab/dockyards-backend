@@ -160,6 +160,7 @@ func RegisterSudoRoutes(e *gin.Engine, sudoHandlerOptions ...SudoHandlerOption) 
 	e.GET("/sudo/clusters", s.GetClusters)
 	e.GET("/sudo/kubeconfig/:org/:name", s.GetKubeconfig)
 	e.GET("/sudo/apps", s.GetApps)
+	e.GET("/sudo/orgs", s.GetOrgs)
 
 	handlerOpts := promhttp.HandlerOpts{
 		Registry: s.prometheusRegistry,

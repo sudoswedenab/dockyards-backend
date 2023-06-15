@@ -105,3 +105,14 @@ func (h *handler) PostOrgs(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+func (s *sudo) GetOrgs(c *gin.Context) {
+	var orgs []model.Organization
+	err := s.db.Find(&orgs).Error
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, orgs)
+}
