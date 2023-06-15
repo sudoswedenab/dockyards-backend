@@ -29,6 +29,7 @@ func (r *rancher) GetAllClusters() (*[]model.Cluster, error) {
 			State:        cluster.State,
 			NodeCount:    int(cluster.NodeCount),
 			CreatedAt:    createdAt,
+			ID:           cluster.ID,
 		}
 		clusters = append(clusters, c)
 	}
