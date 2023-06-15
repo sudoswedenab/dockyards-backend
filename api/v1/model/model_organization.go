@@ -8,7 +8,7 @@ import (
 )
 
 type Organization struct {
-	ID          uuid.UUID `json:"-" gorm:"primaryKey"`
+	ID          uuid.UUID `json:"id" gorm:"primaryKey"`
 	Name        string    `json:"name" gorm:"unique;not null"`
 	DisplayName string    `json:"display_name,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`
