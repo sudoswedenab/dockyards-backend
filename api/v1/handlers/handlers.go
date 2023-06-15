@@ -162,6 +162,7 @@ func RegisterSudoRoutes(e *gin.Engine, sudoHandlerOptions ...SudoHandlerOption) 
 	e.GET("/sudo/apps", s.GetApps)
 	e.GET("/sudo/orgs", s.GetOrgs)
 	e.GET("/sudo/apps/:org/:cluster/:name", s.GetApp)
+	e.POST("/sudo/apps", s.PostApps)
 
 	handlerOpts := promhttp.HandlerOpts{
 		Registry: s.prometheusRegistry,

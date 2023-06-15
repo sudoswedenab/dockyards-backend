@@ -440,3 +440,24 @@ func (s *sudo) GetApp(c *gin.Context) {
 
 	c.JSON(http.StatusOK, app)
 }
+
+func (s *sudo) PostApps(c *gin.Context) {
+	var app model.App
+	err := c.BindJSON(&app)
+	if err != nil {
+		s.logger.Error("failed to read body", "err", err)
+
+		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		return
+	}
+
+	err = s.db.Create(&app).Error
+	if err != nil {
+		s.logger.Error("error creating app in database", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusCreated, app)
+}
