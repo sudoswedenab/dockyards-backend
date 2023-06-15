@@ -418,3 +418,25 @@ func (h *handler) DeleteOrgApps(c *gin.Context) {
 	h.logger.Debug("deleted repository from filesystem", "path", repoPath)
 
 }
+
+func (s *sudo) GetApp(c *gin.Context) {
+	s.logger.Debug("get app")
+
+	orgName := c.Param("org")
+	clusterName := c.Param("cluster")
+	appName := c.Param("name")
+
+	var app model.App
+	err := s.db.First(&app, "organization = ? AND cluster = ? AND name = ?", orgName, clusterName, appName).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	c.JSON(http.StatusOK, app)
+}
