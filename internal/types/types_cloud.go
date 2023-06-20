@@ -7,6 +7,7 @@ type CloudService interface {
 	CleanEnvironment(*CloudConfig) error
 	CreateOrganization(*model.Organization) (string, error)
 	GetOrganization(*model.Organization) (string, error)
+	GetClusterApps(*model.Organization, *model.Cluster) (*[]model.App, error)
 }
 
 type CloudConfig struct {
