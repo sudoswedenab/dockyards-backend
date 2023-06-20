@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"net/http"
 	"net/http/cgi"
@@ -14,6 +17,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+)
+
+const (
+	defaultDockyardsNamespace = "dockyards"
+	defaultJWTSecretName      = "jwt-tokens"
 )
 
 type handler struct {
@@ -50,7 +63,7 @@ func WithJWTAccessTokens(accessToken, refreshToken string) HandlerOption {
 	}
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, flagServerCookie bool, handlerOptions ...HandlerOption) {
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, flagServerCookie bool, handlerOptions ...HandlerOption) error {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
 	}
@@ -66,6 +79,15 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 
 	for _, handlerOption := range handlerOptions {
 		handlerOption(&h)
+	}
+
+	if h.jwtAccessTokenSecret == "" || h.jwtRefreshTokenSecret == "" {
+		logger.Info("using jwt private secrets from kubernetes")
+
+		err := h.setOrGenerateTokens()
+		if err != nil {
+			return err
+		}
 	}
 
 	middlewareHandler := middleware.Handler{
@@ -122,6 +144,8 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	g.GET("/credentials/:uuid", h.GetCredentialUUID)
 	g.POST("/orgs/:org/credentials", h.PostOrgCredentials)
 	g.DELETE("orgs/:org/credentials/:credential", h.DeleteOrgCredentials)
+
+	return nil
 }
 
 type SudoHandlerOption func(s *sudo)
@@ -187,4 +211,84 @@ func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {
 	}
 
 	return user, nil
+}
+
+func (h *handler) setOrGenerateTokens() error {
+	ctx := context.Background()
+
+	kubeconfig, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	controllerClient, err := client.New(kubeconfig, client.Options{})
+	if err != nil {
+		return err
+	}
+
+	objectKey := client.ObjectKey{
+		Namespace: defaultDockyardsNamespace,
+		Name:      defaultJWTSecretName,
+	}
+
+	var secret corev1.Secret
+	err = controllerClient.Get(ctx, objectKey, &secret)
+	if client.IgnoreNotFound(err) != nil {
+		return err
+	}
+
+	if apierrors.IsNotFound(err) {
+		h.logger.Debug("generating private secrets")
+
+		b := make([]byte, 32)
+		_, err := rand.Read(b)
+		if err != nil {
+			return err
+		}
+		accessToken := base64.StdEncoding.EncodeToString(b)
+
+		h.logger.Debug("generated access token")
+
+		b = make([]byte, 32)
+		_, err = rand.Read(b)
+		if err != nil {
+			return err
+		}
+		refreshToken := base64.StdEncoding.EncodeToString(b)
+
+		h.logger.Debug("generated refresh token")
+
+		secret = corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: defaultDockyardsNamespace,
+				Name:      defaultJWTSecretName,
+			},
+			StringData: map[string]string{
+				"accessToken":  accessToken,
+				"refreshToken": refreshToken,
+			},
+		}
+
+		err = controllerClient.Create(ctx, &secret)
+		if err != nil {
+			return err
+		}
+
+		h.logger.Debug("created jwt tokens secret in kubernetes", "uid", secret.UID)
+	}
+
+	accessToken, hasToken := secret.Data["accessToken"]
+	if !hasToken {
+		return errors.New("jwt tokens secret has no access token in data")
+	}
+
+	refreshToken, hasToken := secret.Data["refreshToken"]
+	if !hasToken {
+		return errors.New("jwt tokens secret has no refresh token in data")
+	}
+
+	h.jwtAccessTokenSecret = string(accessToken)
+	h.jwtRefreshTokenSecret = string(refreshToken)
+
+	return nil
 }

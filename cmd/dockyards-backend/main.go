@@ -258,7 +258,12 @@ func main() {
 	}
 
 	routes.RegisterRoutes(r, db, rancherService)
-	handlers.RegisterRoutes(r, db, rancherService, logger, flagServerCookie, handlerOptions...)
+	err = handlers.RegisterRoutes(r, db, rancherService, logger, flagServerCookie, handlerOptions...)
+	if err != nil {
+		logger.Error("error registering handler routes", "err", err)
+		os.Exit(1)
+	}
+
 	user.RegisterRoutes(r, db)
 
 	sudoHandlerOptions := []handlers.SudoHandlerOption{
