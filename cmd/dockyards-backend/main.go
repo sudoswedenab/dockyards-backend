@@ -29,8 +29,6 @@ import (
 )
 
 var (
-	refreshTokenName      string
-	accessTokenName       string
 	jwtAccessTokenSecret  string
 	jwtRefreshTokenSecret string
 	cattleURL             string
@@ -94,8 +92,7 @@ func loadEnvVariables() {
 	if err != nil {
 		fmt.Printf("error parsing FLAG_SET_SERVER_COOKIE: %s", err)
 	}
-	accessTokenName = os.Getenv("ACCESS_TOKEN_NAME")
-	refreshTokenName = os.Getenv("REFRESH_TOKEN_NAME")
+
 	jwtAccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
 	jwtRefreshTokenSecret = os.Getenv("JWT_REFRESH_TOKEN_SECRET")
 	cattleURL = os.Getenv("CATTLE_URL")
@@ -261,7 +258,7 @@ func main() {
 	}
 
 	routes.RegisterRoutes(r, db, rancherService)
-	handlers.RegisterRoutes(r, db, rancherService, logger, accessTokenName, refreshTokenName, flagServerCookie, handlerOptions...)
+	handlers.RegisterRoutes(r, db, rancherService, logger, flagServerCookie, handlerOptions...)
 	user.RegisterRoutes(r, db)
 
 	sudoHandlerOptions := []handlers.SudoHandlerOption{

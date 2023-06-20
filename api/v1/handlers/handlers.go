@@ -50,7 +50,7 @@ func WithJWTAccessTokens(accessToken, refreshToken string) HandlerOption {
 	}
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, accessTokenName, refreshTokenName string, flagServerCookie bool, handlerOptions ...HandlerOption) {
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, flagServerCookie bool, handlerOptions ...HandlerOption) {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
 	}
@@ -58,8 +58,8 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	h := handler{
 		db:               db,
 		clusterService:   clusterService,
-		accessTokenName:  accessTokenName,
-		refreshTokenName: refreshTokenName,
+		accessTokenName:  "AccessToken",
+		refreshTokenName: "RefreshToken",
 		logger:           logger,
 		flagServerCookie: flagServerCookie,
 	}
@@ -73,8 +73,8 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 		Logger:             logger,
 		AccessTokenSecret:  h.jwtAccessTokenSecret,
 		RefreshTokenSecret: h.jwtRefreshTokenSecret,
-		AccessTokenName:    accessTokenName,
-		RefreshTokenName:   refreshTokenName,
+		AccessTokenName:    "AccessToken",
+		RefreshTokenName:   "RefreshToken",
 	}
 
 	gitHandler := cgi.Handler{
