@@ -6,4 +6,5 @@ type ClusterOptions struct {
 	IngressProvider string            `json:"ingress_provider"`
 	NodePoolOptions []NodePoolOptions `json:"node_pool_options"`
 	SingleNode      bool              `json:"single_node"`
+	NoClusterApps   bool              `json:"no_cluster_apps"`
 }

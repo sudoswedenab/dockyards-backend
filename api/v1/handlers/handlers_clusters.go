@@ -113,24 +113,26 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 	}
 
-	clusterApps, err := h.cloudService.GetClusterApps(&organization, cluster)
-	if err != nil {
-		h.logger.Error("error getting cloud service cluster apps", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	for _, clusterApp := range *clusterApps {
-		h.logger.Debug("creating cluster app", "name", clusterApp.Name)
-
-		err := h.db.Create(&clusterApp).Error
+	if !clusterOptions.NoClusterApps {
+		clusterApps, err := h.cloudService.GetClusterApps(&organization, cluster)
 		if err != nil {
-			h.logger.Error("error creating cluster app in database", "name", clusterApp.Name, "err", err)
+			h.logger.Error("error getting cloud service cluster apps", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
-		h.logger.Debug("created cluster app", "name", clusterApp.Name, "id", clusterApp.ID)
+		for _, clusterApp := range *clusterApps {
+			h.logger.Debug("creating cluster app", "name", clusterApp.Name)
+
+			err := h.db.Create(&clusterApp).Error
+			if err != nil {
+				h.logger.Error("error creating cluster app in database", "name", clusterApp.Name, "err", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+
+			h.logger.Debug("created cluster app", "name", clusterApp.Name, "id", clusterApp.ID)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
