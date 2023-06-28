@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
@@ -30,6 +31,15 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 		Ingress: &managementv3.IngressConfig{
 			DefaultIngressClass: boolPtr(true),
 			Provider:            ingressProvider,
+			NodeSelector: map[string]string{
+				LabelNodeRoleLoadBalancer: "",
+			},
+			Tolerations: []managementv3.Toleration{
+				{
+					Effect: string(corev1.TaintEffectNoSchedule),
+					Key:    TaintNodeRoleLoadBalancer,
+				},
+			},
 		},
 		Monitoring: &managementv3.MonitoringConfig{
 			Provider: "metrics-server",
