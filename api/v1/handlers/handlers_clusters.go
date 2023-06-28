@@ -98,6 +98,11 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 					Name:     "worker",
 					Quantity: 2,
 				},
+				{
+					Name:         "load-balancer",
+					Quantity:     2,
+					LoadBalancer: true,
+				},
 			}
 		}
 
