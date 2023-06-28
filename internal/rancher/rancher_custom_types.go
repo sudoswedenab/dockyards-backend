@@ -2,6 +2,11 @@ package rancher
 
 import managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 
+const (
+	TaintNodeRoleLoadBalancer = "node-role.dockyards.io/load-balancer"
+	LabelNodeRoleLoadBalancer = "node-role.dockyards.io/load-balancer"
+)
+
 type CustomNodeTemplate struct {
 	managementv3.NodeTemplate
 	OpenstackConfig *openstackConfig `json:"openstackConfig,omitempty" yaml:"openstackConfig,omitempty"`

@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func (r *rancher) CreateNodePool(organization *model.Organization, cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*model.NodePool, error) {
@@ -28,10 +29,24 @@ func (r *rancher) CreateNodePool(organization *model.Organization, cluster *mode
 		SSHUser:                     "ubuntu",
 	}
 
+	nodeTaints := []managementv3.Taint{}
+	nodeLabels := map[string]string{}
+
+	if nodePoolOptions.LoadBalancer {
+		taint := managementv3.Taint{
+			Effect: string(corev1.TaintEffectNoSchedule),
+			Key:    TaintNodeRoleLoadBalancer,
+		}
+		nodeTaints = append(nodeTaints, taint)
+
+		nodeLabels[LabelNodeRoleLoadBalancer] = ""
+	}
+
 	nodeTemplateName := cluster.Name + "-" + nodePoolOptions.Name
 	customNodeTemplate := CustomNodeTemplate{
 		NodeTemplate: managementv3.NodeTemplate{
-			Name: nodeTemplateName,
+			Name:   nodeTemplateName,
+			Labels: nodeLabels,
 		},
 		OpenstackConfig: &openstackConfig,
 	}
@@ -52,7 +67,7 @@ func (r *rancher) CreateNodePool(organization *model.Organization, cluster *mode
 		HostnamePrefix:          hostnamePrefix,
 		Name:                    nodePoolOptions.Name,
 		NamespaceId:             "",
-		NodeTaints:              []managementv3.Taint{},
+		NodeTaints:              nodeTaints,
 		NodeTemplateID:          createdNodeTemplate.ID,
 		Quantity:                int64(nodePoolOptions.Quantity),
 		Worker:                  !nodePoolOptions.ControlPlaneComponentsOnly,
