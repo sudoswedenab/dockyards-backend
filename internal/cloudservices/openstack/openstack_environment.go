@@ -115,10 +115,15 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 		return nil, err
 	}
 
+	networkLabel := "default"
+	if nodePoolOptions.LoadBalancer {
+		networkLabel = "elasticip"
+	}
+
 	var netID string
 	for _, network := range allNetworks {
 		logger.Debug("checking network", "id", network.ID)
-		if network.Label == "default" {
+		if network.Label == networkLabel {
 			logger.Debug("found network to use", "id", network.ID, "label", network.Label)
 			netID = network.ID
 			break
