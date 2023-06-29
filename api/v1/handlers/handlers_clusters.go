@@ -207,9 +207,8 @@ func (h *handler) DeleteOrgClusters(c *gin.Context) {
 	}
 
 	h.logger.Debug("successfully deleted cluster", "organization", org, "name", clusterName)
-	c.JSON(http.StatusOK, gin.H{
-		"status": "Cluster Deleted",
-	})
+
+	c.Status(http.StatusAccepted)
 }
 
 func (h *handler) GetClusters(c *gin.Context) {
