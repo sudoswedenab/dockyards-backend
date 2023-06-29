@@ -25,13 +25,13 @@ func TestClusterOptionsToRKEConfig(t *testing.T) {
 		{
 			name: "test supported version",
 			clusterOptions: model.ClusterOptions{
-				Version: "v1.24.9-rancher1-1",
+				Version: "v1.24.13-rancher2-2",
 			},
 		},
 		{
 			name: "test unsupported version",
 			clusterOptions: model.ClusterOptions{
-				Version: "lalallala",
+				Version: "v1.24.9-rancher1-1",
 			},
 			expected: errors.New("unsupported version"),
 		},

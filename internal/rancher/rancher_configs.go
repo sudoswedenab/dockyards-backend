@@ -9,12 +9,21 @@ import (
 )
 
 func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
-
-	version := "v1.24.9-rancher1-1"
+	version := r.GetSupportedVersions()[0]
 	ingressProvider := "nginx"
 
-	if clusterOptions.Version != "" && clusterOptions.Version != "v1.24.9-rancher1-1" {
-		return nil, errors.New("unsupported version")
+	if clusterOptions.Version != "" {
+		versionSupported := false
+		for _, supportedVersion := range r.GetSupportedVersions() {
+			if clusterOptions.Version == supportedVersion {
+				versionSupported = true
+				break
+			}
+		}
+
+		if !versionSupported {
+			return nil, errors.New("unsupported version")
+		}
 	}
 
 	if clusterOptions.IngressProvider != "" && clusterOptions.IngressProvider != "nginx" {
@@ -97,5 +106,8 @@ func (r *rancher) clusterOptionsToNodeTemplate(clusterOptions *model.ClusterOpti
 }
 
 func (r *rancher) GetSupportedVersions() []string {
-	return []string{"v1.24.9-rancher1-1"}
+	return []string{
+		"v1.25.9-rancher2-2",
+		"v1.24.13-rancher2-2",
+	}
 }
