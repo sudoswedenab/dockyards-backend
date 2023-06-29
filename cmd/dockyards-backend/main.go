@@ -105,11 +105,13 @@ func main() {
 	var trustInsecure bool
 	var delGarbageInterval int
 	var collectMetricsInterval int
+	var ginMode string
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
 	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval seconds")
 	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
+	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -237,6 +239,10 @@ func main() {
 			}
 		}
 	}()
+
+	logger.Debug("setting gin mode", "mode", ginMode)
+
+	gin.SetMode(ginMode)
 
 	r := gin.Default()
 	i := gin.Default()
