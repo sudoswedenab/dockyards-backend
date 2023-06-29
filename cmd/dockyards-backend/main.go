@@ -86,11 +86,12 @@ func loadEnvVariables() {
 
 	flagUseCors, err = strconv.ParseBool(os.Getenv("FLAG_USE_CORS"))
 	if err != nil {
-		fmt.Printf("error parsing FLAG_USE_CORS: %s", err)
+		flagUseCors = false
 	}
+
 	flagServerCookie, err = strconv.ParseBool(os.Getenv("FLAG_SET_SERVER_COOKIE"))
 	if err != nil {
-		fmt.Printf("error parsing FLAG_SET_SERVER_COOKIE: %s", err)
+		flagServerCookie = false
 	}
 
 	jwtAccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
