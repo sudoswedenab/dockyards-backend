@@ -283,5 +283,5 @@ func main() {
 	handlers.RegisterSudoRoutes(i, sudoHandlerOptions...)
 
 	go i.Run(":9001")
-	r.Run()
+	r.Run(":9000")
 }
