@@ -197,6 +197,10 @@ func RegisterSudoRoutes(e *gin.Engine, sudoHandlerOptions ...SudoHandlerOption) 
 	e.GET("/metrics", func(c *gin.Context) {
 		handlerFor.ServeHTTP(c.Writer, c.Request)
 	})
+
+	e.GET("/healthz", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
 }
 
 func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {
