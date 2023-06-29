@@ -283,3 +283,17 @@ func (s *sudo) GetKubeconfig(c *gin.Context) {
 
 	c.JSON(http.StatusOK, kubeconfig)
 }
+
+func (h *handler) GetCluster(c *gin.Context) {
+	id := c.Param("id")
+
+	cluster, err := h.clusterService.GetCluster(id)
+	if err != nil {
+		h.logger.Error("error getting cluster from cluster service", "id", id, "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	c.JSON(http.StatusOK, cluster)
+}

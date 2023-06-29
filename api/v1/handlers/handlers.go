@@ -123,6 +123,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	g.POST("/refresh", h.PostRefresh)
 
 	g.GET("/clusters", h.GetClusters)
+	g.GET("/clusters/:id", h.GetCluster)
 
 	g.GET("/orgs", h.GetOrgs)
 	g.POST("orgs", h.PostOrgs)
