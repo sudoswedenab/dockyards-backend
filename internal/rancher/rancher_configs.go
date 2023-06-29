@@ -58,7 +58,7 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 			Options: map[string]string{
 				"flannel_backend_type": "vxlan",
 			},
-			Plugin: "canal",
+			Plugin: "flannel",
 		},
 
 		Services: &managementv3.RKEConfigServices{
