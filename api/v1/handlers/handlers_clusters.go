@@ -56,9 +56,9 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 	cluster, err := h.clusterService.CreateCluster(&organization, &clusterOptions)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.logger.Error("error creating cluster", "name", clusterOptions.Name, "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
@@ -82,9 +82,9 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 	controlPlaneNodePool, err := h.clusterService.CreateNodePool(&organization, cluster, &controlPlaneNodePoolOptions)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		h.logger.Error("error creating control plane node pool", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
@@ -107,11 +107,13 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 
 		for _, nodePoolOption := range nodePoolOptions {
+			h.logger.Debug("creating cluster node pool", "name", nodePoolOption.Name)
+
 			nodePool, err := h.clusterService.CreateNodePool(&organization, cluster, &nodePoolOption)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": err.Error(),
-				})
+				h.logger.Error("error creating node pool", "name", nodePoolOption.Name, "err", err)
+
+				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
 			h.logger.Debug("created cluster node pool", "name", nodePool.Name)
@@ -122,6 +124,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		clusterApps, err := h.cloudService.GetClusterApps(&organization, cluster)
 		if err != nil {
 			h.logger.Error("error getting cloud service cluster apps", "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -132,6 +135,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 			err := h.db.Create(&clusterApp).Error
 			if err != nil {
 				h.logger.Error("error creating cluster app in database", "name", clusterApp.Name, "err", err)
+
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
