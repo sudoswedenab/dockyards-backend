@@ -36,3 +36,51 @@ func (r *rancher) GetAllClusters() (*[]model.Cluster, error) {
 
 	return &clusters, nil
 }
+
+func (r *rancher) GetCluster(id string) (*model.Cluster, error) {
+	rancherCluster, err := r.managementClient.Cluster.ByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	organization, name := names.DecodeName(rancherCluster.Name)
+
+	cluster := model.Cluster{
+		ID:           rancherCluster.ID,
+		Name:         name,
+		Organization: organization,
+		State:        rancherCluster.State,
+		NodeCount:    int(rancherCluster.NodeCount),
+	}
+
+	listOpts := types.ListOpts{
+		Filters: map[string]interface{}{
+			"clusterId": rancherCluster.ID,
+		},
+	}
+
+	nodePools, err := r.managementClient.NodePool.List(&listOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rancherNodePool := range nodePools.Data {
+		isLoadBalancer := false
+		for _, nodeTaint := range rancherNodePool.NodeTaints {
+			if nodeTaint.Key == TaintNodeRoleLoadBalancer {
+				isLoadBalancer = true
+			}
+		}
+
+		nodePool := model.NodePool{
+			Name:         rancherNodePool.Name,
+			ControlPlane: rancherNodePool.ControlPlane,
+			Etcd:         rancherNodePool.Etcd,
+			LoadBalancer: isLoadBalancer,
+		}
+
+		cluster.NodePools = append(cluster.NodePools, nodePool)
+	}
+
+	return &cluster, nil
+}
