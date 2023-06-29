@@ -144,11 +144,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"cluster": "created successfully",
-		"name":    cluster.Name,
-		"org":     cluster.Organization,
-	})
+	c.JSON(http.StatusCreated, cluster)
 }
 
 func (h *handler) GetOrgClusterKubeConfig(c *gin.Context) {
