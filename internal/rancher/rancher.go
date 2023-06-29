@@ -1,6 +1,7 @@
 package rancher
 
 import (
+	"errors"
 	"sync"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
@@ -139,6 +140,37 @@ func NewRancher(rancherOptions ...RancherOption) (*rancher, error) {
 
 	}
 
+	r.logger.Debug("ensuring openstack node driver is active")
+
+	nodeDriverCollection, err := r.managementClient.NodeDriver.ListAll(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDriverFound := false
+	for _, nodeDriver := range nodeDriverCollection.Data {
+		if nodeDriver.ID == "openstack" {
+			r.logger.Debug("found openstack node driver", "id", nodeDriver.ID, "active", nodeDriver.Active)
+
+			nodeDriverFound = true
+
+			if !nodeDriver.Active {
+				r.logger.Debug("activating node driver", "id", nodeDriver.ID)
+
+				activatedNodeDriver, err := r.managementClient.NodeDriver.ActionActivate(&nodeDriver)
+				if err != nil {
+					return nil, err
+				}
+
+				r.logger.Debug("activated node driver", "id", activatedNodeDriver.ID, "active", activatedNodeDriver.Active)
+			}
+		}
+	}
+
+	if !nodeDriverFound {
+		return nil, errors.New("openstack node driver was not found")
+
+	}
 	return &r, err
 }
 
