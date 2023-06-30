@@ -461,3 +461,18 @@ func (s *sudo) PostApps(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, app)
 }
+
+func (h *handler) GetApp(c *gin.Context) {
+	id := c.Param("id")
+
+	var app model.App
+	err := h.db.Take(&app, "id = ?", id).Error
+	if err != nil {
+		h.logger.Debug("error taking app from database", "id", id, "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	c.JSON(http.StatusOK, app)
+}

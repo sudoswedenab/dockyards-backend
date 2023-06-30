@@ -140,6 +140,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 	r.DELETE("/v1/orgs/:org/clusters/:cluster/apps/:app", h.DeleteOrgApps)
 
 	g.GET("/apps", h.GetApps)
+	g.GET("/apps/:id", h.GetApp)
 
 	g.GET("/credentials", h.GetCredentials)
 	g.GET("/credentials/:uuid", h.GetCredentialUUID)
