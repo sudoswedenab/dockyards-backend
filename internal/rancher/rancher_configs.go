@@ -38,17 +38,7 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 		},
 		IgnoreDockerVersion: boolPtr(true),
 		Ingress: &managementv3.IngressConfig{
-			DefaultIngressClass: boolPtr(true),
-			Provider:            ingressProvider,
-			NodeSelector: map[string]string{
-				LabelNodeRoleLoadBalancer: "",
-			},
-			Tolerations: []managementv3.Toleration{
-				{
-					Effect: string(corev1.TaintEffectNoSchedule),
-					Key:    TaintNodeRoleLoadBalancer,
-				},
-			},
+			Provider: "none",
 		},
 		Monitoring: &managementv3.MonitoringConfig{
 			Provider: "metrics-server",
@@ -91,6 +81,25 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 			},
 		},
 	}
+
+	if !clusterOptions.NoIngressProvider {
+		ingressConfig := managementv3.IngressConfig{
+			DefaultIngressClass: boolPtr(true),
+			Provider:            ingressProvider,
+			NodeSelector: map[string]string{
+				LabelNodeRoleLoadBalancer: "",
+			},
+			Tolerations: []managementv3.Toleration{
+				{
+					Effect: string(corev1.TaintEffectNoSchedule),
+					Key:    TaintNodeRoleLoadBalancer,
+				},
+			},
+		}
+
+		rancherKubernetesEngineConfig.Ingress = &ingressConfig
+	}
+
 	return &rancherKubernetesEngineConfig, nil
 }
 
