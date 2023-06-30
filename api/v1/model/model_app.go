@@ -14,10 +14,10 @@ type HelmValues map[string]any
 type App struct {
 	ID             uuid.UUID  `json:"id"`
 	Name           string     `json:"name"`
-	ContainerImage string     `json:"container_image"`
+	ContainerImage string     `json:"container_image,omitempty"`
 	Organization   string     `json:"organization"`
 	Cluster        string     `json:"cluster"`
-	Port           int        `json:"port"`
+	Port           int        `json:"port,omitempty"`
 	HelmChart      string     `json:"helm_chart,omitempty"`
 	HelmRepository string     `json:"helm_repository,omitempty"`
 	HelmVersion    string     `json:"helm_version,omitempty"`
