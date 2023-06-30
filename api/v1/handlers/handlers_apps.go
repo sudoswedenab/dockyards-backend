@@ -417,6 +417,7 @@ func (h *handler) DeleteOrgApps(c *gin.Context) {
 
 	h.logger.Debug("deleted repository from filesystem", "path", repoPath)
 
+	c.Status(http.StatusNoContent)
 }
 
 func (s *sudo) GetApp(c *gin.Context) {
