@@ -29,14 +29,6 @@ func (h *handler) Signup(c *gin.Context) {
 		return
 	}
 
-	if err != nil {
-		h.logger.Debug("unxepected error creating user in rancher", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err,
-		})
-		return
-	}
-
 	//Create the user
 	user := model.User{
 		Name:     body.Name,
