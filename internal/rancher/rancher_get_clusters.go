@@ -77,6 +77,7 @@ func (r *rancher) GetCluster(id string) (*model.Cluster, error) {
 			ControlPlane: rancherNodePool.ControlPlane,
 			Etcd:         rancherNodePool.Etcd,
 			LoadBalancer: isLoadBalancer,
+			Quantity:     int(rancherNodePool.Quantity),
 		}
 
 		cluster.NodePools = append(cluster.NodePools, nodePool)

@@ -5,4 +5,5 @@ type NodePool struct {
 	ControlPlane bool   `json:"control_plane"`
 	Etcd         bool   `json:"etcd"`
 	LoadBalancer bool   `json:"load_balancer"`
+	Quantity     int    `json:"quantity"`
 }
