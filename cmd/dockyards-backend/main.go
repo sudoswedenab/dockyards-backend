@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -33,8 +34,8 @@ var (
 	jwtRefreshTokenSecret string
 	cattleURL             string
 	cattleBearerToken     string
-	flagUseCors           = false
 	flagServerCookie      = false
+	corsAllowOrigins      string
 )
 
 func init() {
@@ -84,11 +85,6 @@ func loadEnvVariables() {
 		log.Println("could not load .env file")
 	}
 
-	flagUseCors, err = strconv.ParseBool(os.Getenv("FLAG_USE_CORS"))
-	if err != nil {
-		flagUseCors = false
-	}
-
 	flagServerCookie, err = strconv.ParseBool(os.Getenv("FLAG_SET_SERVER_COOKIE"))
 	if err != nil {
 		flagServerCookie = false
@@ -98,6 +94,7 @@ func loadEnvVariables() {
 	jwtRefreshTokenSecret = os.Getenv("JWT_REFRESH_TOKEN_SECRET")
 	cattleURL = os.Getenv("CATTLE_URL")
 	cattleBearerToken = os.Getenv("CATTLE_BEARER_TOKEN")
+	corsAllowOrigins = os.Getenv("CORS_ALLOW_ORIGINS")
 }
 
 func main() {
@@ -248,9 +245,13 @@ func main() {
 	r := gin.Default()
 	i := gin.Default()
 
-	if flagUseCors {
+	if corsAllowOrigins != "" {
+		allowOrigins := strings.Split(corsAllowOrigins, ",")
+
+		logger.Debug("configuring cors middleware", "origins", allowOrigins)
+
 		r.Use(cors.New(cors.Config{
-			AllowOrigins:     []string{"http://localhost:3000", "https://demo.k8s.dockyards.io"},
+			AllowOrigins:     allowOrigins,
 			AllowMethods:     []string{"POST", "PUT", "GET", "DELETE"},
 			AllowHeaders:     []string{"Origin", "Content-Type"},
 			ExposeHeaders:    []string{"Content-Length"},
