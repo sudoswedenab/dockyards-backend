@@ -37,7 +37,6 @@ type handler struct {
 	logger                *slog.Logger
 	jwtAccessTokenSecret  string
 	jwtRefreshTokenSecret string
-	flagServerCookie      bool
 	cloudService          types.CloudService
 }
 
@@ -63,7 +62,7 @@ func WithJWTAccessTokens(accessToken, refreshToken string) HandlerOption {
 	}
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, flagServerCookie bool, handlerOptions ...HandlerOption) error {
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, handlerOptions ...HandlerOption) error {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
 	}
@@ -74,7 +73,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 		accessTokenName:  "AccessToken",
 		refreshTokenName: "RefreshToken",
 		logger:           logger,
-		flagServerCookie: flagServerCookie,
 	}
 
 	for _, handlerOption := range handlerOptions {

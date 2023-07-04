@@ -80,19 +80,8 @@ func (h *handler) Login(c *gin.Context) {
 		return
 	}
 
-	if h.flagServerCookie {
-		// Send back a Cookie
-		c.SetSameSite(http.SameSiteLaxMode)
-		c.SetCookie(h.accessTokenName, at, 900, "", "", false, true)
-		c.SetCookie(h.refreshTokenName, rt, 3600*1, "", "", false, true)
-		c.JSON(http.StatusOK, gin.H{
-			"Login": "Success",
-		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{
-			"Login":            "Success",
-			h.accessTokenName:  at,
-			h.refreshTokenName: rt,
-		})
-	}
+	c.JSON(http.StatusOK, gin.H{
+		h.accessTokenName:  at,
+		h.refreshTokenName: rt,
+	})
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -34,7 +33,6 @@ var (
 	jwtRefreshTokenSecret string
 	cattleURL             string
 	cattleBearerToken     string
-	flagServerCookie      = false
 	corsAllowOrigins      string
 )
 
@@ -83,11 +81,6 @@ func loadEnvVariables() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("could not load .env file")
-	}
-
-	flagServerCookie, err = strconv.ParseBool(os.Getenv("FLAG_SET_SERVER_COOKIE"))
-	if err != nil {
-		flagServerCookie = false
 	}
 
 	jwtAccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
@@ -266,7 +259,7 @@ func main() {
 	}
 
 	routes.RegisterRoutes(r, db, rancherService)
-	err = handlers.RegisterRoutes(r, db, rancherService, logger, flagServerCookie, handlerOptions...)
+	err = handlers.RegisterRoutes(r, db, rancherService, logger, handlerOptions...)
 	if err != nil {
 		logger.Error("error registering handler routes", "err", err)
 		os.Exit(1)
