@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
@@ -14,16 +15,18 @@ import (
 )
 
 func (h *Handler) RequireAuth(c *gin.Context) {
-	// Get the cookie
-	tokenString, err := c.Cookie(h.AccessTokenName)
-	if err != nil {
-		h.Logger.Error("error fetching access token", "access_token_name", h.AccessTokenName, "err", err)
+	authorizationHeader := c.GetHeader("Authorization")
+	if authorizationHeader == "" {
+		h.Logger.Error("empty or missing authorization header")
+
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
+	bearerToken := strings.TrimPrefix(authorizationHeader, "Bearer ")
+
 	// Parse takes the token string and a function for looking up the key.
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(bearerToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -31,6 +34,14 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return []byte(h.AccessTokenSecret), nil
 	})
+
+	if err != nil {
+		h.Logger.Error("error parsing bearer token", "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+
+	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		//Check the exp
