@@ -114,11 +114,11 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterServ
 
 	r.POST("/v1/signup", h.Signup)
 	r.POST("/v1/login", h.Login)
+	r.POST("/v1/refresh", h.PostRefresh)
 
 	g := r.Group("/v1", middlewareHandler.RequireAuth)
 	g.POST("/logout", h.Logout)
 	g.GET("/cluster-options", h.ContainerOptions)
-	g.POST("/refresh", h.PostRefresh)
 
 	g.GET("/clusters", h.GetClusters)
 	g.GET("/clusters/:id", h.GetCluster)
