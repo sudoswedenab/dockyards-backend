@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
@@ -12,12 +13,15 @@ import (
 )
 
 func (h *handler) PostRefresh(c *gin.Context) {
-	// Get the cookie
-	refreshToken, err := c.Cookie(h.refreshTokenName)
-	if err != nil {
+	authorizationHeader := c.GetHeader("Authorization")
+	if authorizationHeader == "" {
+		h.logger.Debug("empty or missing authorization header during refresh")
+
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
+
+	refreshToken := strings.TrimPrefix(authorizationHeader, "Bearer ")
 
 	// Parse the token string and a function for looking for the key.
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
@@ -28,6 +32,7 @@ func (h *handler) PostRefresh(c *gin.Context) {
 		// hmacSampleSecret is a []byte containing your incl secret key
 		return []byte(h.jwtRefreshTokenSecret), nil
 	})
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -44,11 +49,10 @@ func (h *handler) PostRefresh(c *gin.Context) {
 
 		//Find the user with token sub
 		var user model.User
-
-		First := h.db.First(&user, claims["sub"])
+		err := h.db.First(&user, "id = ?", claims["sub"]).Error
 
 		// replace with jwt response
-		if First.Error == nil {
+		if err == nil {
 			newTokenPair, err := h.generateTokenPair(user)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
