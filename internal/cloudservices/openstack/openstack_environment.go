@@ -197,7 +197,8 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 func (s *openStackService) CleanEnvironment(config *types.CloudConfig) error {
 	computev2, err := openstack.NewComputeV2(s.providerClient, gophercloud.EndpointOpts{Region: s.region})
 	if err != nil {
-		s.logger.Debug("unexpected error creating service client", "err", err)
+		s.logger.Error("unexpected error creating service client", "err", err)
+
 		return err
 	}
 
@@ -205,8 +206,20 @@ func (s *openStackService) CleanEnvironment(config *types.CloudConfig) error {
 
 	err = keypairs.Delete(computev2, config.KeypairName, keypairs.DeleteOpts{}).ExtractErr()
 	if err != nil {
-		s.logger.Debug("error deleting keypair", "name", config.KeypairName, "err", err)
-		return err
+		s.logger.Warn("error deleting keypair", "name", config.KeypairName, "err", err)
+	}
+
+	for _, securityGroup := range config.SecurityGroups {
+		s.logger.Debug("delete security group", "id", securityGroup)
+
+		err = secgroups.Delete(computev2, securityGroup).ExtractErr()
+		if err != nil {
+			s.logger.Warn("unexpected error deleting security group", "err", err)
+
+			continue
+		}
+
+		s.logger.Debug("deleted security group", "id", securityGroup)
 	}
 
 	return nil
