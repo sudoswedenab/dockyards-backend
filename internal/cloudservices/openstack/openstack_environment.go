@@ -145,26 +145,7 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 
 	s.logger.Debug("created keypair", "name", keypair.Name)
 
-	allSecurityGroupPages, err := secgroups.List(computev2).AllPages()
-	if err != nil {
-		return nil, err
-	}
-
-	allSecurityGroups, err := secgroups.ExtractSecurityGroups(allSecurityGroupPages)
-	if err != nil {
-	}
-
 	securityGroups := []string{}
-	for _, securityGroup := range allSecurityGroups {
-		logger.Debug("checking security group", "name", securityGroup.Name, "id", securityGroup.ID)
-		if securityGroup.Name == "default" {
-			securityGroups = append(securityGroups, securityGroup.ID)
-		}
-	}
-
-	if len(securityGroups) == 0 {
-		logger.Debug("could not find a default security group")
-	}
 
 	secgroupName := cluster.Name + "-" + nodePoolOptions.Name
 	secgroupOpts := secgroups.CreateOpts{
