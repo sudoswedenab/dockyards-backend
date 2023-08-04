@@ -16,7 +16,7 @@ definitions:
       script:
       - git fetch --tags
       - echo "export IMAGE_NAME=$BITBUCKET_REPO_SLUG" >> env.sh
-      - echo "export VERSION=$(git describe --always --tags --dirty)" >> env.sh
+      - echo "export VERSION=$BITBUCKET_BRANCH-$(git describe --always --dirty)-$(date +%s)" >> env.sh
       - echo "export IMAGE=075899289117.dkr.ecr.eu-north-1.amazonaws.com/dockyards-backend" >> env.sh
       - cat env.sh
       artifacts:
