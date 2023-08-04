@@ -8,10 +8,10 @@
 
 image: atlassian/default-image:3
 
-pipelines:
-  default:
-  - step:
-      name: Environment
+definitions:
+  steps:
+  - step: &environment
+      name: environment
       image: docker.io/library/golang:1.20.2
       script:
       - git fetch --tags
@@ -21,13 +21,13 @@ pipelines:
       - cat env.sh
       artifacts:
       - env.sh
-  - step:
-      name: Test
+  - step: &test
+      name: test
       image: docker.io/library/golang:1.20.2
       script:
       - go test ./... -v
-  - step:
-      name: Build
+  - step: &build
+      name: build
       script:
       - source env.sh
       - docker build . --file Dockerfile --tag ${IMAGE_NAME}
@@ -38,9 +38,8 @@ pipelines:
       - docker
       artifacts:
       - "*.tar"
-  - step:
-      name: Deploy
-      deployment: Production
+  - step: &push
+      name: push
       image: docker.io/amazon/aws-cli:2.11.8
       script:
       - source env.sh
@@ -50,3 +49,10 @@ pipelines:
       - docker push "${IMAGE}:${VERSION}"
       services:
       - docker
+
+pipelines:
+  default:
+  - step: *environment
+  - step: *test
+  - step: *build
+  - step: *push
