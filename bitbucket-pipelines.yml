@@ -30,7 +30,7 @@ definitions:
       name: build
       script:
       - source env.sh
-      - docker build . --file Dockerfile --tag ${IMAGE_NAME}
+      - docker build . --file Containerfile --tag ${IMAGE_NAME}
       - docker save ${IMAGE_NAME} --output "${IMAGE_NAME}.tar"
       services:
       - docker
