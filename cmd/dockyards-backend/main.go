@@ -11,7 +11,6 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers/user"
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/routes"
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher"
@@ -259,7 +258,6 @@ func main() {
 		handlers.WithClusterService(rancherService),
 	}
 
-	routes.RegisterRoutes(r, db, rancherService)
 	err = handlers.RegisterRoutes(r, db, logger, handlerOptions...)
 	if err != nil {
 		logger.Error("error registering handler routes", "err", err)
