@@ -2,6 +2,7 @@ package rancher
 
 import (
 	"errors"
+	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
@@ -86,8 +87,11 @@ func (r *rancher) deleteNodePools(clusterID string) error {
 
 		r.logger.Debug("node pool custom node template", "id", customNodeTemplate.ID)
 
+		securityGroups := strings.Split(customNodeTemplate.OpenstackConfig.SecGroups, ",")
+
 		cloudConfig := types.CloudConfig{
-			KeypairName: customNodeTemplate.OpenstackConfig.KeypairName,
+			KeypairName:    customNodeTemplate.OpenstackConfig.KeypairName,
+			SecurityGroups: securityGroups,
 		}
 
 		err = r.cloudService.CleanEnvironment(&cloudConfig)
