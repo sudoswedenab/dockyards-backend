@@ -14,9 +14,9 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/routes"
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/rancher"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
