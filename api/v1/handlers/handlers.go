@@ -62,14 +62,19 @@ func WithJWTAccessTokens(accessToken, refreshToken string) HandlerOption {
 	}
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, clusterService types.ClusterService, logger *slog.Logger, handlerOptions ...HandlerOption) error {
+func WithClusterService(clusterService types.ClusterService) HandlerOption {
+	return func(h *handler) {
+		h.clusterService = clusterService
+	}
+}
+
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOptions ...HandlerOption) error {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
 	}
 
 	h := handler{
 		db:               db,
-		clusterService:   clusterService,
 		accessTokenName:  "AccessToken",
 		refreshTokenName: "RefreshToken",
 		logger:           logger,

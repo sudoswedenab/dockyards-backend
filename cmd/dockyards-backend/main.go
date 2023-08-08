@@ -256,10 +256,11 @@ func main() {
 	handlerOptions := []handlers.HandlerOption{
 		handlers.WithJWTAccessTokens(jwtAccessTokenSecret, jwtRefreshTokenSecret),
 		handlers.WithCloudService(cloudService),
+		handlers.WithClusterService(rancherService),
 	}
 
 	routes.RegisterRoutes(r, db, rancherService)
-	err = handlers.RegisterRoutes(r, db, rancherService, logger, handlerOptions...)
+	err = handlers.RegisterRoutes(r, db, logger, handlerOptions...)
 	if err != nil {
 		logger.Error("error registering handler routes", "err", err)
 		os.Exit(1)
