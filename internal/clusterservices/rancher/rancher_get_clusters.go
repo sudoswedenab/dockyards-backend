@@ -6,7 +6,28 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"github.com/rancher/norman/types"
+	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
+
+func (r *rancher) clusterToModel(cluster *managementv3.Cluster) model.Cluster {
+	createdAt, _ := time.Parse(time.RFC3339, cluster.Created)
+	organization, name := names.DecodeName(cluster.Name)
+
+	c := model.Cluster{
+		Organization: organization,
+		Name:         name,
+		State:        cluster.State,
+		NodeCount:    int(cluster.NodeCount),
+		CreatedAt:    createdAt,
+		ID:           cluster.ID,
+	}
+
+	if cluster.RancherKubernetesEngineConfig != nil {
+		c.Version = cluster.RancherKubernetesEngineConfig.Version
+	}
+
+	return c
+}
 
 func (r *rancher) GetAllClusters() (*[]model.Cluster, error) {
 	clusterCollection, err := r.managementClient.Cluster.ListAll(&types.ListOpts{})
@@ -16,26 +37,7 @@ func (r *rancher) GetAllClusters() (*[]model.Cluster, error) {
 
 	clusters := []model.Cluster{}
 	for _, cluster := range clusterCollection.Data {
-		createdAt, err := time.Parse(time.RFC3339, cluster.Created)
-		if err != nil {
-			return nil, err
-		}
-
-		organization, name := names.DecodeName(cluster.Name)
-
-		c := model.Cluster{
-			Organization: organization,
-			Name:         name,
-			State:        cluster.State,
-			NodeCount:    int(cluster.NodeCount),
-			CreatedAt:    createdAt,
-			ID:           cluster.ID,
-		}
-
-		if cluster.RancherKubernetesEngineConfig != nil {
-			c.Version = cluster.RancherKubernetesEngineConfig.Version
-		}
-
+		c := r.clusterToModel(&cluster)
 		clusters = append(clusters, c)
 	}
 
@@ -48,15 +50,7 @@ func (r *rancher) GetCluster(id string) (*model.Cluster, error) {
 		return nil, err
 	}
 
-	organization, name := names.DecodeName(rancherCluster.Name)
-
-	cluster := model.Cluster{
-		ID:           rancherCluster.ID,
-		Name:         name,
-		Organization: organization,
-		State:        rancherCluster.State,
-		NodeCount:    int(rancherCluster.NodeCount),
-	}
+	cluster := r.clusterToModel(rancherCluster)
 
 	listOpts := types.ListOpts{
 		Filters: map[string]interface{}{
