@@ -10,4 +10,5 @@ type Cluster struct {
 	CreatedAt    time.Time  `json:"created_at"`
 	Organization string     `json:"org,omitempty"`
 	NodePools    []NodePool `json:"node_pools,omitempty"`
+	Version      string     `json:"version"`
 }
