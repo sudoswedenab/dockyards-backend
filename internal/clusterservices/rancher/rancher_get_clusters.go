@@ -31,6 +31,11 @@ func (r *rancher) GetAllClusters() (*[]model.Cluster, error) {
 			CreatedAt:    createdAt,
 			ID:           cluster.ID,
 		}
+
+		if cluster.RancherKubernetesEngineConfig != nil {
+			c.Version = cluster.RancherKubernetesEngineConfig.Version
+		}
+
 		clusters = append(clusters, c)
 	}
 
