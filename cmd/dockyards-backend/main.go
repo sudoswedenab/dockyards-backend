@@ -193,6 +193,7 @@ func main() {
 			select {
 			case <-ticker.C:
 				rancherService.DeleteGarbage()
+				cloudService.DeleteGarbage()
 			}
 		}
 

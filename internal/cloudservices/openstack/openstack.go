@@ -60,6 +60,7 @@ func SyncDatabase(db *gorm.DB) error {
 
 func NewOpenStackService(openStackOptions ...OpenStackOption) (types.CloudService, error) {
 	s := openStackService{
+		garbageObjects: make(map[string]any),
 		scopedClients:  make(map[string]*gophercloud.ProviderClient),
 	}
 
