@@ -1,5 +1,5 @@
 # Build-stage
-FROM golang:1.19 as builder
+FROM docker.io/library/golang:1.21 as builder
 
 WORKDIR /usr/src/app
 # pre-copy/cache go.mod for pre-downloading dependencies and only redownloading them in subsequent builds if they change
