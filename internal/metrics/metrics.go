@@ -1,11 +1,11 @@
 package metrics
 
 import (
+	"log/slog"
 	"runtime/debug"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
 )
 

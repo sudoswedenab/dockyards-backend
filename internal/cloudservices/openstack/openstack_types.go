@@ -1,11 +1,12 @@
 package openstack
 
 import (
+	"log/slog"
+
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/google/uuid"
 	"github.com/gophercloud/gophercloud"
-	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
 )
 

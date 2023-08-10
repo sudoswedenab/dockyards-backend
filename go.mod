@@ -17,7 +17,6 @@ require (
 	github.com/rancher/norman v0.0.0-20221205184727-32ef2e185b99
 	github.com/rancher/rancher/pkg/client v0.0.0-20230315001606-cd1a71624a94
 	golang.org/x/crypto v0.6.0
-	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	gorm.io/driver/postgres v1.4.5
 	gorm.io/gorm v1.24.5
 	k8s.io/api v0.27.2

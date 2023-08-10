@@ -2,6 +2,7 @@ package rancher
 
 import (
 	"errors"
+	"log/slog"
 	"sync"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
@@ -9,7 +10,6 @@ import (
 	"github.com/rancher/norman/clientbase"
 	normanTypes "github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
-	"golang.org/x/exp/slog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )

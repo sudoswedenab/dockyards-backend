@@ -1,7 +1,8 @@
 package middleware
 
 import (
-	"golang.org/x/exp/slog"
+	"log/slog"
+
 	"gorm.io/gorm"
 )
 

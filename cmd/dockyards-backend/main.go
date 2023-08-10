@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"sync"
@@ -22,7 +23,6 @@ import (
 	"github.com/glebarez/sqlite"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/exp/slog"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

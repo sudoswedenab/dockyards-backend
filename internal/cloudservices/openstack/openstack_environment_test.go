@@ -1,12 +1,12 @@
 package openstack
 
 import (
+	"log/slog"
 	"os"
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
-	"golang.org/x/exp/slog"
 )
 
 func TestGetClosestFlavorID(t *testing.T) {

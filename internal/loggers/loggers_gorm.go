@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
-	"golang.org/x/exp/slog"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
 )
