@@ -54,6 +54,25 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 	}
 
+	existingClusters, err := h.clusterService.GetAllClusters()
+	if err != nil {
+		h.logger.Error("unexpected error getting existing clusters", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	for _, existingCluster := range *existingClusters {
+		if existingCluster.Organization != organization.Name {
+			continue
+		}
+
+		if existingCluster.Name == clusterOptions.Name {
+			c.AbortWithStatus(http.StatusConflict)
+			return
+		}
+	}
+
 	h.logger.Debug("forcing no ingress provider")
 	clusterOptions.NoIngressProvider = true
 
