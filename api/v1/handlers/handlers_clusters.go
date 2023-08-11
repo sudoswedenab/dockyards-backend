@@ -121,6 +121,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 	}
 
+	hasErrors := false
 	for _, nodePoolOption := range nodePoolOptions {
 		h.logger.Debug("creating cluster node pool", "name", nodePoolOption.Name)
 
@@ -128,8 +129,8 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		if err != nil {
 			h.logger.Error("error creating node pool", "name", nodePoolOption.Name, "err", err)
 
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
+			hasErrors = true
+			break
 		}
 
 		h.logger.Debug("created cluster node pool", "name", nodePool.Name)
@@ -140,23 +141,36 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		if err != nil {
 			h.logger.Error("error getting cloud service cluster apps", "err", err)
 
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
+			hasErrors = true
 		}
 
-		for _, clusterApp := range *clusterApps {
-			h.logger.Debug("creating cluster app", "name", clusterApp.Name)
+		if !hasErrors {
+			for _, clusterApp := range *clusterApps {
+				h.logger.Debug("creating cluster app", "name", clusterApp.Name)
 
-			err := h.db.Create(&clusterApp).Error
-			if err != nil {
-				h.logger.Error("error creating cluster app in database", "name", clusterApp.Name, "err", err)
+				err := h.db.Create(&clusterApp).Error
+				if err != nil {
+					h.logger.Error("error creating cluster app in database", "name", clusterApp.Name, "err", err)
 
-				c.AbortWithStatus(http.StatusInternalServerError)
-				return
+					hasErrors = true
+					break
+				}
+
+				h.logger.Debug("created cluster app", "name", clusterApp.Name, "id", clusterApp.ID)
 			}
-
-			h.logger.Debug("created cluster app", "name", clusterApp.Name, "id", clusterApp.ID)
 		}
+	}
+
+	if hasErrors {
+		h.logger.Error("deleting cluster", "id", cluster.ID)
+
+		err := h.clusterService.DeleteCluster(cluster)
+		if err != nil {
+			h.logger.Warn("unexpected error deleting cluster", "err", err)
+		}
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
 	c.JSON(http.StatusCreated, cluster)
