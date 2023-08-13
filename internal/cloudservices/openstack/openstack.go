@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/utils/openstack/clientconfig"
 	"gorm.io/gorm"
@@ -58,7 +59,9 @@ func SyncDatabase(db *gorm.DB) error {
 }
 
 func NewOpenStackService(openStackOptions ...OpenStackOption) (types.CloudService, error) {
-	s := openStackService{}
+	s := openStackService{
+		scopedClients:  make(map[string]*gophercloud.ProviderClient),
+	}
 
 	for _, openStackOption := range openStackOptions {
 		openStackOption(&s)

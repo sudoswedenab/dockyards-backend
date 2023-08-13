@@ -16,6 +16,7 @@ type openStackService struct {
 	logger         *slog.Logger
 	region         string
 	db             *gorm.DB
+	scopedClients  map[string]*gophercloud.ProviderClient
 }
 
 var _ types.CloudService = &openStackService{}

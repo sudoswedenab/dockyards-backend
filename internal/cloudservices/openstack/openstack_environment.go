@@ -14,7 +14,6 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/secgroups"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
-	"github.com/gophercloud/utils/openstack/clientconfig"
 )
 
 func (s *openStackService) PrepareEnvironment(organization *model.Organization, cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*types.CloudConfig, error) {
@@ -28,24 +27,12 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 
 	logger.Debug("got openstack organization", "id", openStackOrganization.ID, "project", openStackOrganization.OpenStackProject.OpenStackID)
 
-	projectAuthInfo := clientconfig.AuthInfo{
-		AuthURL:                     s.authOptions.IdentityEndpoint,
-		ApplicationCredentialID:     openStackOrganization.ApplicationCredentialID,
-		ApplicationCredentialSecret: openStackOrganization.ApplicationCredentialSecret,
-	}
-
-	clientOpts := clientconfig.ClientOpts{
-		AuthType: clientconfig.AuthV3ApplicationCredential,
-		AuthInfo: &projectAuthInfo,
-	}
-
-	providerClient, err := clientconfig.AuthenticatedClient(&clientOpts)
+	scopedClient, err := s.getScopedClient(openStackOrganization.OpenStackProject.OpenStackID)
 	if err != nil {
-		s.logger.Error("error creating openstack provider client", "err", err)
 		return nil, err
 	}
 
-	computev2, err := openstack.NewComputeV2(providerClient, gophercloud.EndpointOpts{Region: s.region})
+	computev2, err := openstack.NewComputeV2(scopedClient, gophercloud.EndpointOpts{Region: s.region})
 	if err != nil {
 		return nil, err
 	}

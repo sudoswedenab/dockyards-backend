@@ -13,43 +13,19 @@ import (
 )
 
 func (s *openStackService) createApplicationCredential(organization *model.Organization, projectID string) (*applicationcredentials.ApplicationCredential, error) {
-	scope := gophercloud.AuthScope{
-		ProjectID: projectID,
-	}
-
-	authOptions := gophercloud.AuthOptions{
-		IdentityEndpoint:            s.authOptions.IdentityEndpoint,
-		Username:                    s.authOptions.Username,
-		UserID:                      s.authOptions.UserID,
-		Password:                    s.authOptions.Password,
-		Passcode:                    s.authOptions.Passcode,
-		DomainID:                    s.authOptions.DomainID,
-		DomainName:                  s.authOptions.DomainName,
-		AllowReauth:                 s.authOptions.AllowReauth,
-		TokenID:                     s.authOptions.TokenID,
-		ApplicationCredentialID:     s.authOptions.ApplicationCredentialID,
-		ApplicationCredentialName:   s.authOptions.ApplicationCredentialName,
-		ApplicationCredentialSecret: s.authOptions.ApplicationCredentialSecret,
-		TenantID:                    s.authOptions.TenantID,
-		TenantName:                  s.authOptions.TenantName,
-		Scope:                       &scope,
-	}
-
-	providerClient, err := openstack.AuthenticatedClient(authOptions)
+	scopedClient, err := s.getScopedClient(projectID)
 	if err != nil {
 		return nil, err
 	}
 
-	s.logger.Debug("created new provider client", "scope", scope)
-
-	authResult := providerClient.GetAuthResult()
+	authResult := scopedClient.GetAuthResult()
 	createResult := authResult.(tokens.CreateResult)
 	user, err := createResult.ExtractUser()
 	if err != nil {
 		return nil, err
 	}
 
-	identityv3, err := openstack.NewIdentityV3(providerClient, gophercloud.EndpointOpts{})
+	identityv3, err := openstack.NewIdentityV3(scopedClient, gophercloud.EndpointOpts{})
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +99,7 @@ func (s *openStackService) GetOrganization(organization *model.Organization) (st
 
 func (s *openStackService) getOpenStackOrganization(organization *model.Organization) (*OpenStackOrganization, error) {
 	var openStackOrganization OpenStackOrganization
-	err := s.db.Take(&openStackOrganization, "organization_id = ?", organization.ID).Error
+	err := s.db.Preload("OpenStackProject").Take(&openStackOrganization, "organization_id = ?", organization.ID).Error
 	if err != nil {
 		return nil, err
 	}
