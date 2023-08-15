@@ -2,6 +2,7 @@ package openstack
 
 import (
 	"log/slog"
+	"sync"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
@@ -18,6 +19,7 @@ type openStackService struct {
 	db             *gorm.DB
 	scopedClients  map[string]*gophercloud.ProviderClient
 	garbageObjects map[string]any
+	garbageMutex   *sync.Mutex
 }
 
 var _ types.CloudService = &openStackService{}

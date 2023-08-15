@@ -14,7 +14,9 @@ func (s *openStackService) addGarbage(g any) {
 
 	switch v := g.(type) {
 	case *secgroups.SecurityGroup:
+		s.garbageMutex.Lock()
 		s.garbageObjects[garbageID] = v
+		s.garbageMutex.Unlock()
 	default:
 		s.logger.Warn("ignoring unsupported garbage type", "type", fmt.Sprintf("%T", g))
 	}
@@ -22,6 +24,8 @@ func (s *openStackService) addGarbage(g any) {
 
 func (s *openStackService) DeleteGarbage() {
 	s.logger.Debug("delete garbage start")
+
+	s.garbageMutex.Lock()
 
 	for garbageID, g := range s.garbageObjects {
 		switch garbageObject := g.(type) {
@@ -62,6 +66,8 @@ func (s *openStackService) DeleteGarbage() {
 			s.logger.Warn("unknown garbage object type", "type", fmt.Sprintf("%T", garbageObject))
 		}
 	}
+
+	s.garbageMutex.Unlock()
 
 	s.logger.Debug("delete garbage end")
 }

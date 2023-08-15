@@ -3,6 +3,7 @@ package openstack
 import (
 	"log/slog"
 	"os"
+	"sync"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gophercloud/gophercloud"
@@ -62,6 +63,7 @@ func NewOpenStackService(openStackOptions ...OpenStackOption) (types.CloudServic
 	s := openStackService{
 		garbageObjects: make(map[string]any),
 		scopedClients:  make(map[string]*gophercloud.ProviderClient),
+		garbageMutex:   &sync.Mutex{},
 	}
 
 	for _, openStackOption := range openStackOptions {
