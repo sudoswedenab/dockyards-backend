@@ -181,10 +181,21 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 	return &config, nil
 }
 
-func (s *openStackService) CleanEnvironment(config *types.CloudConfig) error {
-	computev2, err := openstack.NewComputeV2(s.providerClient, gophercloud.EndpointOpts{Region: s.region})
+func (s *openStackService) CleanEnvironment(organization *model.Organization, config *types.CloudConfig) error {
+	openStackOrganization, err := s.getOpenStackOrganization(organization)
 	if err != nil {
-		s.logger.Error("unexpected error creating service client", "err", err)
+		s.logger.Error("error getting openstack organization", "err", err)
+
+		return err
+	}
+
+	s.logger.Debug("cleaning environment", "id", openStackOrganization.ID, "project", openStackOrganization.OpenStackProject.OpenStackID)
+
+	scopedClient, err := s.getScopedClient(openStackOrganization.OpenStackProject.OpenStackID)
+
+	computev2, err := openstack.NewComputeV2(scopedClient, gophercloud.EndpointOpts{Region: s.region})
+	if err != nil {
+		s.logger.Error("error creating compute service client", "err", err)
 
 		return err
 	}
@@ -196,17 +207,15 @@ func (s *openStackService) CleanEnvironment(config *types.CloudConfig) error {
 		s.logger.Warn("error deleting keypair", "name", config.KeypairName, "err", err)
 	}
 
-	for _, securityGroup := range config.SecurityGroups {
-		s.logger.Debug("delete security group", "id", securityGroup)
+	for _, securityGroupID := range config.SecurityGroups {
+		s.logger.Debug("adding security group to garbage", "id", securityGroupID)
 
-		err = secgroups.Delete(computev2, securityGroup).ExtractErr()
-		if err != nil {
-			s.logger.Warn("unexpected error deleting security group", "err", err)
-
-			continue
+		securityGroup := secgroups.SecurityGroup{
+			ID:       securityGroupID,
+			TenantID: openStackOrganization.OpenStackProject.OpenStackID,
 		}
 
-		s.logger.Debug("deleted security group", "id", securityGroup)
+		s.addGarbage(&securityGroup)
 	}
 
 	return nil
