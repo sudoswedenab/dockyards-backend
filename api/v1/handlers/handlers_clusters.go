@@ -164,7 +164,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	if hasErrors {
 		h.logger.Error("deleting cluster", "id", cluster.ID)
 
-		err := h.clusterService.DeleteCluster(cluster)
+		err := h.clusterService.DeleteCluster(&organization, cluster)
 		if err != nil {
 			h.logger.Warn("unexpected error deleting cluster", "err", err)
 		}
@@ -221,12 +221,20 @@ func (h *handler) DeleteOrgClusters(c *gin.Context) {
 		return
 	}
 
+	var organization model.Organization
+	err := h.db.Take(&organization, "name = ?", org).Error
+	if err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+
+		return
+	}
+
 	cluster := model.Cluster{
 		Organization: org,
 		Name:         clusterName,
 	}
 
-	err := h.clusterService.DeleteCluster(&cluster)
+	err = h.clusterService.DeleteCluster(&organization, &cluster)
 	if err != nil {
 		h.logger.Error("unexpected error deleting cluster", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
