@@ -42,8 +42,8 @@ func TestGetClosestFlavorID(t *testing.T) {
 				},
 			},
 			nodePoolOptions: model.NodePoolOptions{
-				DiskSize: 10,
-				RAMSize:  2048,
+				DiskSizeGB: 10,
+				RAMSizeMB:  2048,
 				CPUCount: 1,
 			},
 			expected: "ram-123",
@@ -98,7 +98,7 @@ func TestGetClosestFlavorID(t *testing.T) {
 				},
 			},
 			nodePoolOptions: model.NodePoolOptions{
-				RAMSize: 2000,
+				RAMSizeMB: 2000,
 			},
 			expected: "ram-123",
 		},
@@ -125,7 +125,7 @@ func TestGetClosestFlavorID(t *testing.T) {
 				},
 			},
 			nodePoolOptions: model.NodePoolOptions{
-				DiskSize: 75,
+				DiskSizeGB: 75,
 			},
 			expected: "disk-123",
 		},

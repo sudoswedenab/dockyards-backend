@@ -52,13 +52,13 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 		return nil, err
 	}
 
-	if nodePoolOptions.CPUCount == 0 && nodePoolOptions.RAMSize == 0 && nodePoolOptions.DiskSize == 0 {
+	if nodePoolOptions.CPUCount == 0 && nodePoolOptions.RAMSizeMB == 0 && nodePoolOptions.DiskSizeGB == 0 {
 		nodePoolOptions.CPUCount = 2
-		nodePoolOptions.RAMSize = 4096
-		nodePoolOptions.DiskSize = 100
+		nodePoolOptions.RAMSizeMB = 4096
+		nodePoolOptions.DiskSizeGB = 100
 	}
 
-	logger.Debug("flavor requirements", "ram", nodePoolOptions.RAMSize, "cpu", nodePoolOptions.CPUCount, "disk", nodePoolOptions.DiskSize)
+	logger.Debug("flavor requirements", "ram", nodePoolOptions.RAMSizeMB, "cpu", nodePoolOptions.CPUCount, "disk", nodePoolOptions.DiskSizeGB)
 
 	flavorID := s.getClosestFlavorID(allFlavors, nodePoolOptions)
 	if flavorID == "" {
@@ -251,8 +251,8 @@ func (s *openStackService) getClosestFlavorID(flavors []flavors.Flavor, nodePool
 	shortestDistance := math.MaxFloat64
 
 	for _, flavor := range flavors {
-		diskSquared := math.Pow(float64(flavor.Disk-nodePoolOptions.DiskSize), 2)
-		ramSquared := math.Pow(float64(flavor.RAM-nodePoolOptions.RAMSize), 2)
+		diskSquared := math.Pow(float64(flavor.Disk-nodePoolOptions.DiskSizeGB), 2)
+		ramSquared := math.Pow(float64(flavor.RAM-nodePoolOptions.RAMSizeMB), 2)
 		vcpuSquared := math.Pow(float64(flavor.VCPUs-nodePoolOptions.CPUCount), 2)
 
 		distance := math.Sqrt(diskSquared + ramSquared + vcpuSquared)

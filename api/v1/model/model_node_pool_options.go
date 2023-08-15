@@ -7,7 +7,7 @@ type NodePoolOptions struct {
 	Quantity                   int    `json:"quantity"`
 	Name                       string `json:"name"`
 	CPUCount                   int    `json:"cpu_count"`
-	RAMSize                    int    `json:"ram_size"`
-	DiskSize                   int    `json:"disk_sice"`
+	RAMSizeMB                  int    `json:"ram_size_mb"`
+	DiskSizeGB                 int    `json:"disk_size_gb"`
 	LoadBalancer               bool   `json:"load_balancer"`
 }
