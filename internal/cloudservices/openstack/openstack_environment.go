@@ -142,6 +142,15 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 
 	securityGroup, err := secgroups.Create(computev2, secgroupOpts).Extract()
 	if err != nil {
+		s.logger.Error("error preparing environment", "err", err)
+
+		s.logger.Debug("deleting new keypair", "name", keypair.Name)
+
+		deleteErr := keypairs.Delete(computev2, keypair.Name, nil).ExtractErr()
+		if deleteErr != nil {
+			s.logger.Warn("error deleting new keypair", "err", deleteErr)
+		}
+
 		return nil, err
 	}
 
@@ -159,6 +168,22 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 
 	rule, err := secgroups.CreateRule(computev2, createRuleOpts).Extract()
 	if err != nil {
+		s.logger.Error("error preparing environment", "err", err)
+
+		s.logger.Debug("deleting new security group", "id", securityGroup.ID)
+
+		deleteErr := secgroups.Delete(computev2, securityGroup.ID).ExtractErr()
+		if deleteErr != nil {
+			s.logger.Warn("error deleting new security group", "err", err)
+		}
+
+		s.logger.Debug("deleting new keypair", "name", keypair.Name)
+
+		deleteErr = keypairs.Delete(computev2, keypair.Name, nil).ExtractErr()
+		if deleteErr != nil {
+			s.logger.Warn("error deleting new keypair", "err", err)
+		}
+
 		return nil, err
 	}
 
