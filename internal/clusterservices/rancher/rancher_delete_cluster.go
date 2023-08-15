@@ -11,7 +11,7 @@ import (
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *rancher) DeleteCluster(cluster *model.Cluster) error {
+func (r *rancher) DeleteCluster(organization *model.Organization, cluster *model.Cluster) error {
 	encodedName := names.EncodeName(cluster.Organization, cluster.Name)
 
 	listOpts := normanTypes.ListOpts{
@@ -30,7 +30,7 @@ func (r *rancher) DeleteCluster(cluster *model.Cluster) error {
 		if cluster.Name == encodedName {
 			r.logger.Debug("cluster to delete found", "id", cluster.ID, "name", cluster.Name)
 
-			err := r.deleteNodePools(cluster.ID)
+			err := r.deleteNodePools(organization, cluster.ID)
 			if err != nil {
 				// any errors here are only logged as warnings, they do not abort the cluster deletion
 				// deleting any objects related to the node pools are not required to delete the cluster
@@ -61,7 +61,7 @@ func (r *rancher) DeleteCluster(cluster *model.Cluster) error {
 	return errors.New("unable to find cluster to delete")
 }
 
-func (r *rancher) deleteNodePools(clusterID string) error {
+func (r *rancher) deleteNodePools(organization *model.Organization, clusterID string) error {
 	listOpts := normanTypes.ListOpts{
 		Filters: map[string]interface{}{
 			"clusterId": clusterID,
@@ -94,7 +94,7 @@ func (r *rancher) deleteNodePools(clusterID string) error {
 			SecurityGroups: securityGroups,
 		}
 
-		err = r.cloudService.CleanEnvironment(&cloudConfig)
+		err = r.cloudService.CleanEnvironment(organization, &cloudConfig)
 		if err != nil {
 			r.logger.Warn("error cleaning openstack environment", "err", err)
 			return err
