@@ -2,6 +2,8 @@ package rancher
 
 import (
 	"errors"
+	"slices"
+	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
@@ -9,12 +11,18 @@ import (
 )
 
 func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
-	version := r.GetSupportedVersions()[0]
+	supportedVersions, err := r.GetSupportedVersions()
+	if err != nil {
+		return nil, err
+	}
+
+	version := supportedVersions[0]
+
 	ingressProvider := "nginx"
 
 	if clusterOptions.Version != "" {
 		versionSupported := false
-		for _, supportedVersion := range r.GetSupportedVersions() {
+		for _, supportedVersion := range supportedVersions {
 			if clusterOptions.Version == supportedVersion {
 				versionSupported = true
 				break
@@ -114,9 +122,16 @@ func (r *rancher) clusterOptionsToNodeTemplate(clusterOptions *model.ClusterOpti
 	return &customNodeTemplate, nil
 }
 
-func (r *rancher) GetSupportedVersions() []string {
-	return []string{
-		"v1.25.9-rancher2-2",
-		"v1.24.13-rancher2-2",
+func (r *rancher) GetSupportedVersions() ([]string, error) {
+	setting, err := r.managementClient.Setting.ByID("k8s-versions-current")
+	if err != nil {
+		return []string{}, err
 	}
+
+	versions := strings.Split(setting.Value, ",")
+
+	slices.Sort(versions)
+	slices.Reverse(versions)
+
+	return versions, nil
 }

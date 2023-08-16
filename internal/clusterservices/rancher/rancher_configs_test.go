@@ -48,6 +48,16 @@ func TestClusterOptionsToRKEConfig(t *testing.T) {
 			},
 			expected: errors.New("unsupported ingress provider"),
 		},
+		{
+			name: "test versions error",
+			clusterOptions: model.ClusterOptions{
+				Version: "v1.2.3",
+			},
+			mockOptions: []mock.MockOption{
+				mock.WithSettings(map[string]*managementv3.Setting{}),
+			},
+			expected: errors.New("no such setting"),
+		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
