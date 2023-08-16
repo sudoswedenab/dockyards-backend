@@ -7,15 +7,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// User.go line 42
-// User example
 type User struct {
-	ID            uuid.UUID `gorm:"primarykey"`
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID            uuid.UUID      `gorm:"primarykey" json:"id"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
 	Name          string         `json:"name"`
 	Email         string         `json:"email" gorm:"unique"`
-	Password      string         `json:"password"`
+	Password      string         `json:"password,omitempty"`
 	Organizations []Organization `json:"orgs,omitempty" gorm:"many2many:organization_user"`
 }
 
