@@ -151,6 +151,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	g.DELETE("orgs/:org/credentials/:credential", h.DeleteOrgCredentials)
 
 	g.GET("/overview", h.GetOverview)
+	g.GET("/whoami", h.GetWhoami)
 
 	return nil
 }
