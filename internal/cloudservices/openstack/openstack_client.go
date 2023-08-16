@@ -30,7 +30,6 @@ func (s *openStackService) getScopedClient(projectID string) (*gophercloud.Provi
 			Passcode:                    s.authOptions.Passcode,
 			DomainID:                    s.authOptions.DomainID,
 			DomainName:                  s.authOptions.DomainName,
-			AllowReauth:                 s.authOptions.AllowReauth,
 			TokenID:                     s.authOptions.TokenID,
 			ApplicationCredentialID:     s.authOptions.ApplicationCredentialID,
 			ApplicationCredentialName:   s.authOptions.ApplicationCredentialName,
@@ -38,6 +37,7 @@ func (s *openStackService) getScopedClient(projectID string) (*gophercloud.Provi
 			TenantID:                    s.authOptions.TenantID,
 			TenantName:                  s.authOptions.TenantName,
 			Scope:                       &scope,
+			AllowReauth:                 true,
 		}
 
 		var err error
