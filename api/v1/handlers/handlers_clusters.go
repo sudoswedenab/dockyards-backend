@@ -86,26 +86,9 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 	nodePoolOptions := clusterOptions.NodePoolOptions
 	if len(nodePoolOptions) == 0 {
-		h.logger.Debug("using default node pool options")
+		h.logger.Debug("using recommended node pool options")
 
-		nodePoolOptions = []model.NodePoolOptions{
-			{
-				Name:                       "control-plane",
-				Quantity:                   3,
-				ControlPlane:               true,
-				Etcd:                       true,
-				ControlPlaneComponentsOnly: true,
-			},
-			{
-				Name:     "worker",
-				Quantity: 2,
-			},
-			{
-				Name:         "load-balancer",
-				Quantity:     2,
-				LoadBalancer: true,
-			},
-		}
+		nodePoolOptions = h.getRecommendedNodePools()
 	}
 
 	if clusterOptions.SingleNode {
