@@ -6,5 +6,5 @@ type NodePool struct {
 	Etcd                       bool   `json:"etcd"`
 	LoadBalancer               bool   `json:"load_balancer"`
 	Quantity                   int    `json:"quantity"`
-	ControlPlaneComponentsOnly bool   `json:"control_plane_components_only`
+	ControlPlaneComponentsOnly bool   `json:"control_plane_components_only"`
 }
