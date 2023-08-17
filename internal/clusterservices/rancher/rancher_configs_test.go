@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher/ranchermock"
+	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
 func TestClusterOptionsToRKEConfig(t *testing.T) {
@@ -12,6 +14,7 @@ func TestClusterOptionsToRKEConfig(t *testing.T) {
 		name           string
 		clusterOptions model.ClusterOptions
 		expected       error
+		mockOptions    []ranchermock.MockOption
 	}{
 		{
 			name: "test empty",
@@ -26,6 +29,13 @@ func TestClusterOptionsToRKEConfig(t *testing.T) {
 			name: "test supported version",
 			clusterOptions: model.ClusterOptions{
 				Version: "v1.24.13-rancher2-2",
+			},
+			mockOptions: []ranchermock.MockOption{
+				ranchermock.WithSettings(map[string]*managementv3.Setting{
+					"k8s-versions-current": {
+						Value: "v1.24.13-rancher2-2",
+					},
+				}),
 			},
 		},
 		{
@@ -53,15 +63,18 @@ func TestClusterOptionsToRKEConfig(t *testing.T) {
 			clusterOptions: model.ClusterOptions{
 				Version: "v1.2.3",
 			},
-			mockOptions: []mock.MockOption{
-				mock.WithSettings(map[string]*managementv3.Setting{}),
+			mockOptions: []ranchermock.MockOption{
+				ranchermock.WithSettings(map[string]*managementv3.Setting{}),
 			},
 			expected: errors.New("no such setting"),
 		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			r := rancher{}
+			mockRancherClient := ranchermock.NewMockRancherClient(tc.mockOptions...)
+			r := rancher{
+				managementClient: mockRancherClient,
+			}
 			_, err := r.clusterOptionsToRKEConfig(&tc.clusterOptions)
 			if err != tc.expected {
 				if err != nil && tc.expected != nil {
