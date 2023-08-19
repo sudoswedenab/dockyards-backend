@@ -38,7 +38,11 @@ func (h *handler) getRecommendedNodePools() []model.NodePoolOptions {
 }
 
 func (h *handler) GetClusterOptions(c *gin.Context) {
-	supportedVersions := h.clusterService.GetSupportedVersions()
+	supportedVersions, err := h.clusterService.GetSupportedVersions()
+	if err != nil {
+		h.logger.Error("error getting supported versions from cluster service", "err", err)
+	}
+
 	recommendedNodePools := h.getRecommendedNodePools()
 
 	c.JSON(http.StatusOK, model.Options{

@@ -7,7 +7,7 @@ type ClusterService interface {
 	CreateNodePool(*model.Organization, *model.Cluster, *model.NodePoolOptions) (*model.NodePool, error)
 	GetAllClusters() (*[]model.Cluster, error)
 	DeleteCluster(*model.Organization, *model.Cluster) error
-	GetSupportedVersions() []string
+	GetSupportedVersions() ([]string, error)
 	GetKubeConfig(*model.Cluster) (string, error)
 	DeleteGarbage()
 	GetCluster(string) (*model.Cluster, error)

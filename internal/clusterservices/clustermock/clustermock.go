@@ -30,8 +30,8 @@ func (h *MockClusterService) DeleteCluster(o *model.Organization, c *model.Clust
 	return h.MockDeleteCluster(o, c)
 }
 
-func (h *MockClusterService) GetSupportedVersions() []string {
-	return []string{}
+func (h *MockClusterService) GetSupportedVersions() ([]string, error) {
+	return []string{}, nil
 }
 
 func (h *MockClusterService) GetKubeConfig(c *model.Cluster) (string, error) {
