@@ -9,6 +9,7 @@ type CloudService interface {
 	GetOrganization(*model.Organization) (string, error)
 	GetClusterApps(*model.Organization, *model.Cluster) (*[]model.App, error)
 	DeleteGarbage()
+	GetFlavorNodePool(string) (*model.NodePool, error)
 }
 
 type CloudConfig struct {
