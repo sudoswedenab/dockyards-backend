@@ -1,6 +1,10 @@
 package ranchermock
 
 import (
+	"net/http"
+
+	"github.com/rancher/norman/clientbase"
+	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
@@ -30,6 +34,36 @@ func WithNodePools(nodePools map[string]*managementv3.NodePool) MockOption {
 	}
 	return func(c *managementv3.Client) {
 		c.NodePool = &mockNodePool
+	}
+}
+
+func WithAPIBaseClient(resources map[string]any) MockOption {
+	mockBaseClient := MockBaseClient{
+		resources: resources,
+	}
+	client := http.Client{
+		Transport: &mockBaseClient,
+	}
+	apiBaseClient := clientbase.APIBaseClient{
+		Ops: &clientbase.APIOperations{
+			Client: &client,
+			Opts: &clientbase.ClientOpts{
+				TokenKey: "abc123",
+			},
+			Types: map[string]types.Schema{
+				"nodeTemplate": {
+					ResourceMethods: []string{
+						http.MethodGet,
+					},
+					Links: map[string]string{
+						clientbase.COLLECTION: "http://localhost",
+					},
+				},
+			},
+		},
+	}
+	return func(c *managementv3.Client) {
+		c.APIBaseClient = apiBaseClient
 	}
 }
 
