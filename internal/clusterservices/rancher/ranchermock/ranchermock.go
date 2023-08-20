@@ -15,6 +15,15 @@ func WithSettings(settings map[string]*managementv3.Setting) MockOption {
 	}
 }
 
+func WithClusters(clusters map[string]*managementv3.Cluster) MockOption {
+	mockCluster := MockCluster{
+		clusters: clusters,
+	}
+	return func(c *managementv3.Client) {
+		c.Cluster = &mockCluster
+	}
+}
+
 func NewMockRancherClient(mockOptions ...MockOption) *managementv3.Client {
 	c := managementv3.Client{}
 
