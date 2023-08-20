@@ -24,6 +24,15 @@ func WithClusters(clusters map[string]*managementv3.Cluster) MockOption {
 	}
 }
 
+func WithNodePools(nodePools map[string]*managementv3.NodePool) MockOption {
+	mockNodePool := MockNodePool{
+		nodePools: nodePools,
+	}
+	return func(c *managementv3.Client) {
+		c.NodePool = &mockNodePool
+	}
+}
+
 func NewMockRancherClient(mockOptions ...MockOption) *managementv3.Client {
 	c := managementv3.Client{}
 
