@@ -14,6 +14,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/secgroups"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 )
 
 func (s *openStackService) PrepareEnvironment(organization *model.Organization, cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*types.CloudConfig, error) {
@@ -33,6 +34,11 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 	}
 
 	computev2, err := openstack.NewComputeV2(scopedClient, gophercloud.EndpointOpts{Region: s.region})
+	if err != nil {
+		return nil, err
+	}
+
+	networkv2, err := openstack.NewNetworkV2(scopedClient, gophercloud.EndpointOpts{Region: s.region})
 	if err != nil {
 		return nil, err
 	}
@@ -158,36 +164,36 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 
 	securityGroups = append(securityGroups, securityGroup.ID)
 
-	createRuleOpts := secgroups.CreateRuleOpts{
-		ParentGroupID: securityGroup.ID,
-		FromPort:      1,
-		ToPort:        65535,
-		IPProtocol:    "TCP",
-		CIDR:          "0.0.0.0/0",
-	}
-
-	rule, err := secgroups.CreateRule(computev2, createRuleOpts).Extract()
-	if err != nil {
-		s.logger.Error("error preparing environment", "err", err)
-
-		s.logger.Debug("deleting new security group", "id", securityGroup.ID)
-
-		deleteErr := secgroups.Delete(computev2, securityGroup.ID).ExtractErr()
-		if deleteErr != nil {
-			s.logger.Warn("error deleting new security group", "err", err)
+	for _, etherType := range []rules.RuleEtherType{rules.EtherType4, rules.EtherType6} {
+		createRuleOpts := rules.CreateOpts{
+			Direction:  rules.DirIngress,
+			EtherType:  etherType,
+			SecGroupID: securityGroup.ID,
 		}
 
-		s.logger.Debug("deleting new keypair", "name", keypair.Name)
+		rule, err := rules.Create(networkv2, createRuleOpts).Extract()
+		if err != nil {
+			s.logger.Error("error preparing environment", "err", err)
 
-		deleteErr = keypairs.Delete(computev2, keypair.Name, nil).ExtractErr()
-		if deleteErr != nil {
-			s.logger.Warn("error deleting new keypair", "err", err)
+			s.logger.Debug("deleting new security group", "id", securityGroup.ID)
+
+			deleteErr := secgroups.Delete(computev2, securityGroup.ID).ExtractErr()
+			if deleteErr != nil {
+				s.logger.Warn("error deleting new security group", "err", err)
+			}
+
+			s.logger.Debug("deleting new keypair", "name", keypair.Name)
+
+			deleteErr = keypairs.Delete(computev2, keypair.Name, nil).ExtractErr()
+			if deleteErr != nil {
+				s.logger.Warn("error deleting new keypair", "err", err)
+			}
+
+			return nil, err
 		}
 
-		return nil, err
+		logger.Debug("created security group rule", "id", rule.ID)
 	}
-
-	logger.Debug("created security group rule", "id", rule.ID)
 
 	config := types.CloudConfig{
 		AuthURL:                     s.authOptions.IdentityEndpoint,
