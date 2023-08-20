@@ -71,6 +71,17 @@ func (r *rancher) GetCluster(id string) (*model.Cluster, error) {
 			}
 		}
 
+		var customNodeTemplate CustomNodeTemplate
+		err := r.managementClient.ByID(managementv3.NodeTemplateType, rancherNodePool.NodeTemplateID, &customNodeTemplate)
+		if err != nil {
+			return nil, err
+		}
+
+		flavorNodePool, err := r.cloudService.GetFlavorNodePool(customNodeTemplate.OpenstackConfig.FlavorID)
+		if err != nil {
+			return nil, err
+		}
+
 		nodePool := model.NodePool{
 			Name:                       rancherNodePool.Name,
 			ControlPlane:               rancherNodePool.ControlPlane,
@@ -78,6 +89,9 @@ func (r *rancher) GetCluster(id string) (*model.Cluster, error) {
 			LoadBalancer:               isLoadBalancer,
 			Quantity:                   int(rancherNodePool.Quantity),
 			ControlPlaneComponentsOnly: !rancherNodePool.Worker,
+			CPUCount:                   flavorNodePool.CPUCount,
+			RAMSizeMB:                  flavorNodePool.RAMSizeMB,
+			DiskSizeGB:                 flavorNodePool.DiskSizeGB,
 		}
 
 		cluster.NodePools = append(cluster.NodePools, nodePool)
