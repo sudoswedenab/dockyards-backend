@@ -16,7 +16,7 @@ func SyncDataBase(db *gorm.DB) error {
 		return err
 	}
 
-	err = db.AutoMigrate(&model.App{})
+	err = db.AutoMigrate(&model.Deployment{})
 	if err != nil {
 		return err
 	}

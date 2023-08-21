@@ -11,7 +11,7 @@ import (
 
 type HelmValues map[string]any
 
-type App struct {
+type Deployment struct {
 	ID             uuid.UUID  `json:"id"`
 	Name           string     `json:"name"`
 	ContainerImage string     `json:"container_image,omitempty"`
@@ -26,9 +26,9 @@ type App struct {
 	CredentialID   *uuid.UUID `json:"credential_id,omitempty"`
 }
 
-func (a *App) BeforeCreate(tx *gorm.DB) error {
-	if a.ID == uuid.Nil {
-		a.ID = uuid.New()
+func (d *Deployment) BeforeCreate(tx *gorm.DB) error {
+	if d.ID == uuid.Nil {
+		d.ID = uuid.New()
 	}
 
 	return nil
@@ -42,7 +42,7 @@ func (v *HelmValues) Scan(source any) error {
 			return nil
 		}
 	default:
-		fmt.Errorf("cannot scan helm values of type %T", source)
+		return fmt.Errorf("cannot scan helm values of type %T", source)
 	}
 
 	return nil
