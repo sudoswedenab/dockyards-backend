@@ -9,7 +9,8 @@ import (
 
 type MockCloudService struct {
 	types.CloudService
-	flavors map[string]*model.NodePool
+	flavors       map[string]*model.NodePool
+	organizations map[string]bool
 }
 
 var _ types.CloudService = &MockCloudService{}
@@ -28,6 +29,12 @@ func (s *MockCloudService) GetFlavorNodePool(flavorID string) (*model.NodePool, 
 func WithFlavors(flavors map[string]*model.NodePool) MockOption {
 	return func(s *MockCloudService) {
 		s.flavors = flavors
+	}
+}
+
+func WithOrganizations(organizations map[string]bool) MockOption {
+	return func(s *MockCloudService) {
+		s.organizations = organizations
 	}
 }
 
