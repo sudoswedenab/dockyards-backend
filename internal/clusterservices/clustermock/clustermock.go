@@ -6,44 +6,36 @@ import (
 )
 
 type MockClusterService struct {
-	MockCreateCluster  func(*model.Organization, *model.ClusterOptions) (*model.Cluster, error)
-	MockCreateNodePool func(*model.Organization, *model.Cluster, *model.NodePoolOptions) (*model.NodePool, error)
-	MockGetAllClusters func() (*[]model.Cluster, error)
-	MockDeleteCluster  func(*model.Organization, *model.Cluster) error
-	MockGetKubeConfig  func(*model.Cluster) (string, error)
-	MockGetCluster     func(string) (*model.Cluster, error)
+	types.ClusterService
+	clusters map[string]model.Cluster
 }
 
-func (h *MockClusterService) CreateCluster(o *model.Organization, c *model.ClusterOptions) (*model.Cluster, error) {
-	return h.MockCreateCluster(o, c)
+type MockOption func(*MockClusterService)
+
+func (s *MockClusterService) GetAllClusters() (*[]model.Cluster, error) {
+	clusters := []model.Cluster{}
+
+	for _, cluster := range s.clusters {
+		clusters = append(clusters, cluster)
+	}
+
+	return &clusters, nil
 }
 
-func (h *MockClusterService) CreateNodePool(org *model.Organization, c *model.Cluster, o *model.NodePoolOptions) (*model.NodePool, error) {
-	return h.MockCreateNodePool(org, c, o)
+func WithClusters(clusters map[string]model.Cluster) MockOption {
+	return func(s *MockClusterService) {
+		s.clusters = clusters
+	}
 }
 
-func (h *MockClusterService) GetAllClusters() (*[]model.Cluster, error) {
-	return h.MockGetAllClusters()
-}
+func NewMockClusterService(mockOptions ...MockOption) *MockClusterService {
+	s := MockClusterService{}
 
-func (h *MockClusterService) DeleteCluster(o *model.Organization, c *model.Cluster) error {
-	return h.MockDeleteCluster(o, c)
-}
+	for _, mockOption := range mockOptions {
+		mockOption(&s)
+	}
 
-func (h *MockClusterService) GetSupportedVersions() ([]string, error) {
-	return []string{}, nil
-}
-
-func (h *MockClusterService) GetKubeConfig(c *model.Cluster) (string, error) {
-	return h.MockGetKubeConfig(c)
-}
-
-func (h *MockClusterService) DeleteGarbage() {
-	return
-}
-
-func (h *MockClusterService) GetCluster(s string) (*model.Cluster, error) {
-	return h.MockGetCluster(s)
+	return &s
 }
 
 var _ types.ClusterService = &MockClusterService{}
