@@ -116,3 +116,72 @@ func (s *sudo) GetOrgs(c *gin.Context) {
 
 	c.JSON(http.StatusOK, orgs)
 }
+
+func (h *handler) DeleteOrganization(c *gin.Context) {
+	organizationID := c.Param("org")
+
+	var organization model.Organization
+	err := h.db.Take(&organization, "id = ?", organizationID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		h.logger.Error("error taking organization from database", "id", organizationID, "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	allClusters, err := h.clusterService.GetAllClusters()
+	if err != nil {
+		h.logger.Error("error getting all clusters from cluster service", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	organizationClusters := []model.Cluster{}
+	for _, cluster := range *allClusters {
+		if cluster.Organization == organization.Name {
+			h.logger.Warn("existing cluster belongs to organization", "organization", organization.ID, "id", cluster.ID)
+
+			organizationClusters = append(organizationClusters, cluster)
+		}
+	}
+
+	if len(organizationClusters) > 0 {
+		h.logger.Debug("refusing delete since clusters exists in organization", "n", len(organizationClusters))
+
+		c.JSON(http.StatusForbidden, organizationClusters)
+		return
+	}
+
+	err = h.cloudService.DeleteOrganization(&organization)
+	if err != nil {
+		h.logger.Error("error deleting organization from cluster service", "id", organization.ID, "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	err = h.db.Model(&organization).Association("Users").Clear()
+	if err != nil {
+		h.logger.Error("error removing users from organization", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	err = h.db.Delete(&organization).Error
+	if err != nil {
+		h.logger.Error("error deleting organization from database", "id", organization.ID, "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
+	h.logger.Debug("deleted organization from database", "id", organizationID)
+
+	c.Status(http.StatusNoContent)
+}
