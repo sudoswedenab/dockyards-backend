@@ -106,3 +106,47 @@ func (s *openStackService) getOpenStackOrganization(organization *model.Organiza
 
 	return &openStackOrganization, nil
 }
+
+func (s *openStackService) DeleteOrganization(organization *model.Organization) error {
+	openStackOrganization, err := s.getOpenStackOrganization(organization)
+	if err != nil {
+		return err
+	}
+
+	scopedClient, err := s.getScopedClient(openStackOrganization.OpenStackProject.OpenStackID)
+	if err != nil {
+		return err
+	}
+
+	authResult := scopedClient.GetAuthResult()
+	createResult := authResult.(tokens.CreateResult)
+	user, err := createResult.ExtractUser()
+	if err != nil {
+		return err
+	}
+
+	s.logger.Debug("deleting application credential", "user", user.ID, "id", openStackOrganization.ApplicationCredentialID)
+
+	identityv3, err := openstack.NewIdentityV3(scopedClient, gophercloud.EndpointOpts{Region: s.region})
+	if err != nil {
+		return err
+	}
+
+	err = applicationcredentials.Delete(identityv3, user.ID, openStackOrganization.ApplicationCredentialID).ExtractErr()
+	if err != nil {
+		return err
+	}
+
+	s.logger.Debug("deleted application credential", "id", openStackOrganization.ApplicationCredentialID)
+
+	s.logger.Debug("deleting openstack organization binding", "id", openStackOrganization.ID)
+
+	err = s.db.Delete(&openStackOrganization, "id = ?", openStackOrganization.ID).Error
+	if err != nil {
+		return err
+	}
+
+	s.logger.Debug("deleted openstack organization binding", "id", openStackOrganization.ID)
+
+	return nil
+}
