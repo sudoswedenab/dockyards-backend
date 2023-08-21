@@ -15,8 +15,7 @@ type Deployment struct {
 	ID             uuid.UUID  `json:"id"`
 	Name           string     `json:"name"`
 	ContainerImage string     `json:"container_image,omitempty"`
-	Organization   string     `json:"organization"`
-	Cluster        string     `json:"cluster"`
+	ClusterID      string     `json:"cluster_id"`
 	Port           int        `json:"port,omitempty"`
 	HelmChart      string     `json:"helm_chart,omitempty"`
 	HelmRepository string     `json:"helm_repository,omitempty"`
