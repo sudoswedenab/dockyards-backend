@@ -6,7 +6,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 )
 
-func (s *openStackService) GetClusterApps(organization *model.Organization, cluster *model.Cluster) (*[]model.App, error) {
+func (s *openStackService) GetClusterDeployments(organization *model.Organization, cluster *model.Cluster) (*[]model.Deployment, error) {
 	openStackOrganization, err := s.getOpenStackOrganization(organization)
 	if err != nil {
 		s.logger.Error("error getting openstack organization", "name", organization.Name, "err", err)
@@ -20,9 +20,8 @@ func (s *openStackService) GetClusterApps(organization *model.Organization, clus
 		"application-credential-secret=" + openStackOrganization.ApplicationCredentialSecret,
 	}
 
-	openStackCinderCSIApp := model.App{
-		Organization:   organization.Name,
-		Cluster:        cluster.Name,
+	openStackCinderCSIDeployment := model.Deployment{
+		ClusterID:      cluster.ID,
 		Name:           "openstack-cinder-csi",
 		HelmChart:      "openstack-cinder-csi",
 		HelmRepository: "https://kubernetes.github.io/cloud-provider-openstack",
@@ -47,8 +46,8 @@ func (s *openStackService) GetClusterApps(organization *model.Organization, clus
 		},
 	}
 
-	clusterApps := []model.App{
-		openStackCinderCSIApp,
+	clusterApps := []model.Deployment{
+		openStackCinderCSIDeployment,
 	}
 
 	return &clusterApps, nil
