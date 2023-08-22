@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -21,17 +22,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-type AppType int
+type DeploymentType int
 
 const (
-	AppTypeContainer = iota
-	AppTypeHelm
+	DeploymentTypeContainer = iota
+	DeploymentTypeHelm
 )
 
-func (h *handler) createDeployment(app *model.App) (*appsv1.Deployment, error) {
+func (h *handler) createDeployment(deployment *model.Deployment) (*appsv1.Deployment, error) {
 	containerPort := 80
-	if app.Port != 0 {
-		containerPort = app.Port
+	if deployment.Port != 0 {
+		containerPort = deployment.Port
 	}
 
 	containerPorts := []corev1.ContainerPort{
@@ -42,31 +43,31 @@ func (h *handler) createDeployment(app *model.App) (*appsv1.Deployment, error) {
 		},
 	}
 
-	deployment := appsv1.Deployment{
+	d := appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: app.Name,
+			Name: deployment.Name,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": app.Name,
+					"app.kubernetes.io/name": deployment.Name,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": app.Name,
+						"app.kubernetes.io/name": deployment.Name,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:            app.Name,
-							Image:           app.ContainerImage,
+							Name:            deployment.Name,
+							Image:           deployment.ContainerImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Ports:           containerPorts,
 						},
@@ -76,17 +77,17 @@ func (h *handler) createDeployment(app *model.App) (*appsv1.Deployment, error) {
 		},
 	}
 
-	return &deployment, nil
+	return &d, nil
 }
 
-func (h *handler) createService(app *model.App) (*corev1.Service, error) {
+func (h *handler) createService(deployment *model.Deployment) (*corev1.Service, error) {
 	service := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: app.Name,
+			Name: deployment.Name,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -98,7 +99,7 @@ func (h *handler) createService(app *model.App) (*corev1.Service, error) {
 				},
 			},
 			Selector: map[string]string{
-				"app.kubernetes.io/name": app.Name,
+				"app.kubernetes.io/name": deployment.Name,
 			},
 		},
 	}
@@ -115,111 +116,117 @@ func (h *handler) parseContainerImage(ref string) (string, error) {
 	return named.Name(), nil
 }
 
-func (h *handler) PostOrgApps(c *gin.Context) {
-	org := c.Param("org")
-	if org == "" {
-		h.logger.Debug("org empty")
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	cluster := c.Param("cluster")
-	if cluster == "" {
+func (h *handler) PostClusterDeployments(c *gin.Context) {
+	clusterID := c.Param("clusterID")
+	if clusterID == "" {
 		h.logger.Debug("cluster empty")
+
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	var app model.App
-	err := c.BindJSON(&app)
+	var deployment model.Deployment
+	err := c.BindJSON(&deployment)
 	if err != nil {
 		h.logger.Error("failed to read body", "err", err)
-		c.AbortWithStatus(http.StatusBadRequest)
+
+		c.AbortWithStatus(http.StatusUnprocessableEntity)
 		return
 	}
 
-	app.Organization = org
-	app.Cluster = cluster
+	deployment.ClusterID = clusterID
 
-	var appType AppType
+	var deploymentType DeploymentType
 
-	if app.ContainerImage != "" {
-		normalizedName, err := h.parseContainerImage(app.ContainerImage)
+	if deployment.ContainerImage != "" {
+		normalizedName, err := h.parseContainerImage(deployment.ContainerImage)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
 				"error":   "container image is not valid",
-				"name":    app.ContainerImage,
+				"name":    deployment.ContainerImage,
 				"details": err.Error(),
 			})
 		}
 
-		app.ContainerImage = normalizedName
+		deployment.ContainerImage = normalizedName
 
-		if app.Name == "" {
-			base := path.Base(app.ContainerImage)
-			app.Name = base
+		if deployment.Name == "" {
+			base := path.Base(deployment.ContainerImage)
+			deployment.Name = base
 		}
 
-		appType = AppTypeContainer
+		deploymentType = DeploymentTypeContainer
 	}
 
-	if app.HelmChart != "" {
-		if app.Name == "" {
-			h.logger.Debug("app name empty, using helm chart name", "name", app.HelmChart)
-			app.Name = app.HelmChart
+	if deployment.HelmChart != "" {
+		if deployment.Name == "" {
+			h.logger.Debug("deployment name empty, using helm chart name", "chart", deployment.HelmChart)
+
+			deployment.Name = deployment.HelmChart
 		}
 
-		appType = AppTypeHelm
+		deploymentType = DeploymentTypeHelm
 	}
 
-	details, validName := names.IsValidName(app.Name)
+	details, validName := names.IsValidName(deployment.Name)
 	if !validName {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error":   "name is not valid",
-			"name":    app.Name,
+			"name":    deployment.Name,
 			"details": details,
 		})
 		return
 	}
 
-	if app.Namespace == "" {
-		h.logger.Debug("empty namespace in app, using app name", "name", app.Name)
-		app.Namespace = app.Name
+	if deployment.Namespace == "" {
+		h.logger.Debug("deployment namespace empty, using deployment name", "name", deployment.Name)
+
+		deployment.Namespace = deployment.Name
 	}
 
-	var existingApp model.App
-	err = h.db.Take(&existingApp, "name = ? AND organization = ? AND cluster = ?", app.Name, app.Organization, app.Cluster).Error
+	var existingDeployment model.Deployment
+	err = h.db.Take(&existingDeployment, "name = ? AND cluster_id = ?", deployment.Name, deployment.ClusterID).Error
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			h.logger.Error("error taking app from database", "name", app.Name, "err", err)
+			h.logger.Error("error taking deployment from database", "name", deployment.Name, "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
 	}
 
-	if existingApp.Name == app.Name && existingApp.Organization == app.Organization && existingApp.Cluster == app.Cluster {
-		h.logger.Debug("app already exists", "name", app.Name, "organization", app.Organization, "cluster", app.Cluster)
+	if existingDeployment.Name == deployment.Name && existingDeployment.ClusterID == deployment.ClusterID {
+		h.logger.Debug("deployment name already in-use", "name", deployment.Name, "cluster", deployment.ClusterID)
+
 		c.AbortWithStatus(http.StatusConflict)
 		return
 	}
 
-	if appType == AppTypeContainer {
-		h.logger.Debug("app type is container, creating git repository")
+	deployment.ID = uuid.New()
 
-		deployment, err := h.createDeployment(&app)
-		if err != nil {
-			h.logger.Error("failed to create deployment", "name", app.Name, "err", err)
-		}
+	if deploymentType == DeploymentTypeContainer {
+		h.logger.Debug("deployment type is container, creating git repository")
 
-		deploymentJson, err := json.Marshal(deployment)
+		appsv1Deployment, err := h.createDeployment(&deployment)
 		if err != nil {
-			h.logger.Error("error marshalling deployment as json", "err", err)
+			h.logger.Error("failed to create appsv1/deployment", "name", deployment.Name, "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
-		service, err := h.createService(&app)
+		deploymentJson, err := json.Marshal(appsv1Deployment)
 		if err != nil {
-			h.logger.Error("error creating service", "name", app.Name, "err", err)
+			h.logger.Error("error marshalling deployment as json", "err", err)
+
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		service, err := h.createService(&deployment)
+		if err != nil {
+			h.logger.Error("error creating service", "name", deployment.Name, "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -227,21 +234,25 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 		serviceJson, err := json.Marshal(service)
 		if err != nil {
 			h.logger.Error("error mashalling service as json", "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
-		repoPath := path.Join("/tmp/repos/v1", "orgs", org, "clusters", cluster, "apps", app.Name)
+		repoPath := path.Join("/tmp/repos/deployment", deployment.ID.String())
 
 		repo, err := git.PlainInit(repoPath, false)
 		if err != nil {
 			h.logger.Error("error creating git repository", "path", repoPath, "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
+
 		worktree, err := repo.Worktree()
 		if err != nil {
 			h.logger.Error("error getting default worktree", "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -250,6 +261,7 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 		file, err := os.Create(filename)
 		if err != nil {
 			h.logger.Error("error creating deployment file", "filename", filename, "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -257,6 +269,7 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 		_, err = file.Write(deploymentJson)
 		if err != nil {
 			h.logger.Error("error writing to file", "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -268,6 +281,7 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 		file, err = os.Create(filename)
 		if err != nil {
 			h.logger.Error("error creating service file", "filename", filename, "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -275,6 +289,7 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 		_, err = file.Write(serviceJson)
 		if err != nil {
 			h.logger.Error("error writing service json to file", "err", err)
+
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -299,136 +314,102 @@ func (h *handler) PostOrgApps(c *gin.Context) {
 		h.logger.Debug("created commit", "hash", commit.String())
 	}
 
-	err = h.db.Create(&app).Error
+	err = h.db.Create(&deployment).Error
 	if err != nil {
-		h.logger.Error("error creating app in database", "name", app.Name, "err", err)
+		h.logger.Error("error creating deployment in database", "name", deployment.Name, "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusCreated, app)
+	c.JSON(http.StatusCreated, deployment)
 }
 
-func (s *sudo) GetApps(c *gin.Context) {
-	var apps []model.App
-	err := s.db.Find(&apps).Error
+func (s *sudo) GetDeployments(c *gin.Context) {
+	var deployments []model.Deployment
+	err := s.db.Find(&deployments).Error
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, apps)
+	c.JSON(http.StatusOK, deployments)
 }
 
-func (h *handler) GetApps(c *gin.Context) {
-	user, err := h.getUserFromContext(c)
+func (h *handler) GetClusterDeployments(c *gin.Context) {
+	clusterID := c.Param("clusterID")
+
+	cluster, err := h.clusterService.GetCluster(clusterID)
 	if err != nil {
-		h.logger.Debug("error fetching user from context", "err", err)
+		h.logger.Error("error getting deployment cluster from cluster service", "id", clusterID, "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	h.logger.Debug("cluster", "organization", cluster.Organization)
+
+	var deployments []model.Deployment
+	err = h.db.Find(&deployments, "cluster_id = ?", clusterID).Error
+	if err != nil {
+		h.logger.Error("error finding deployments in database", "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	var organizations []model.Organization
-	err = h.db.Model(&user).Association("Organizations").Find(&organizations)
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	orgs := make(map[string]bool)
-	for _, organization := range organizations {
-		orgs[organization.Name] = true
-	}
-
-	var apps []model.App
-	err = h.db.Find(&apps).Error
-	if err != nil {
-		h.logger.Error("error finding apps in database", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	filteredApps := []model.App{}
-	for _, app := range apps {
-		_, isMember := orgs[app.Organization]
-
-		h.logger.Debug("checking app membership", "name", app.Name, "organization", app.Organization, "member", isMember)
-
-		if !isMember {
-			continue
-		}
-
-		filteredApps = append(filteredApps, app)
-	}
-
-	c.JSON(http.StatusOK, filteredApps)
+	c.JSON(http.StatusOK, deployments)
 }
 
-func (h *handler) DeleteOrgApps(c *gin.Context) {
-	org := c.Param("org")
-	if org == "" {
-		h.logger.Debug("org empty")
+func (h *handler) DeleteDeployment(c *gin.Context) {
+	deploymentID := c.Param("deploymentID")
+	if deploymentID == "" {
+		h.logger.Debug("deployment id empty")
+
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	cluster := c.Param("cluster")
-	if cluster == "" {
-		h.logger.Debug("cluster empty")
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	appName := c.Param("app")
-	if appName == "" {
-		h.logger.Debug("app empty")
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	var app model.App
-	err := h.db.Take(&app, "name = ? AND organization = ? AND cluster = ?", appName, org, cluster).Error
+	var deployment model.Deployment
+	err := h.db.Take(&deployment, "id = ?", deploymentID).Error
 	if err != nil {
-		h.logger.Error("error taking app from database", "err", err)
+		h.logger.Error("error taking deployment from database", "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Debug("deleting app from database", "id", app.ID)
+	h.logger.Debug("deleting deployment from database", "id", deployment.ID)
 
-	err = h.db.Delete(&app).Error
+	err = h.db.Delete(&deployment).Error
 	if err != nil {
-		h.logger.Error("error deleting app from database", "id", app.ID, "err", err)
+		h.logger.Error("error deleting deployment from database", "id", deployment.ID, "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Debug("deleted app from database", "id", app.ID)
+	h.logger.Debug("deleted deployment from database", "id", deployment.ID)
 
-	repoPath := path.Join("/tmp/repos/v1", "orgs", org, "clusters", cluster, "apps", appName)
+	repoPath := path.Join("/tmp/repos/v1/deployments", deployment.ID.String())
 
 	h.logger.Debug("deleting repository from filesystem", "path", repoPath)
 
 	err = os.RemoveAll(repoPath)
 	if err != nil {
-		h.logger.Error("error deleting repository from filesystem", "path", repoPath, "err", err)
-		return
+		h.logger.Warn("error deleting repository from filesystem", "path", repoPath, "err", err)
 	}
-
-	h.logger.Debug("deleted repository from filesystem", "path", repoPath)
 
 	c.Status(http.StatusNoContent)
 }
 
-func (s *sudo) GetApp(c *gin.Context) {
-	s.logger.Debug("get app")
+func (s *sudo) GetDeployment(c *gin.Context) {
+	s.logger.Debug("get deployment")
 
-	orgName := c.Param("org")
-	clusterName := c.Param("cluster")
-	appName := c.Param("name")
+	deploymentID := c.Param("deploymentID")
 
-	var app model.App
-	err := s.db.First(&app, "organization = ? AND cluster = ? AND name = ?", orgName, clusterName, appName).Error
+	var deployment model.Deployment
+	err := s.db.First(&deployment, "id = ?", deploymentID).Error
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -439,20 +420,20 @@ func (s *sudo) GetApp(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, app)
+	c.JSON(http.StatusOK, deployment)
 }
 
-func (s *sudo) PostApps(c *gin.Context) {
-	var app model.App
-	err := c.BindJSON(&app)
+func (s *sudo) PostDeployments(c *gin.Context) {
+	var deployment model.Deployment
+	err := c.BindJSON(&deployment)
 	if err != nil {
-		s.logger.Error("failed to read body", "err", err)
+		s.logger.Error("failed to read request body", "err", err)
 
 		c.AbortWithStatus(http.StatusUnprocessableEntity)
 		return
 	}
 
-	err = s.db.Create(&app).Error
+	err = s.db.Create(&deployment).Error
 	if err != nil {
 		s.logger.Error("error creating app in database", "err", err)
 
@@ -460,20 +441,20 @@ func (s *sudo) PostApps(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, app)
+	c.JSON(http.StatusCreated, deployment)
 }
 
-func (h *handler) GetApp(c *gin.Context) {
-	id := c.Param("id")
+func (h *handler) GetDeployment(c *gin.Context) {
+	id := c.Param("deploymentID")
 
-	var app model.App
-	err := h.db.Take(&app, "id = ?", id).Error
+	var deployment model.Deployment
+	err := h.db.Take(&deployment, "id = ?", id).Error
 	if err != nil {
-		h.logger.Debug("error taking app from database", "id", id, "err", err)
+		h.logger.Debug("error taking deployment from database", "id", id, "err", err)
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	c.JSON(http.StatusOK, app)
+	c.JSON(http.StatusOK, deployment)
 }
