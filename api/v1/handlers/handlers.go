@@ -126,7 +126,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	g.GET("/cluster-options", h.GetClusterOptions)
 
 	g.GET("/clusters", h.GetClusters)
-	g.GET("/clusters/:id", h.GetCluster)
+	g.GET("/clusters/:clusterID", h.GetCluster)
 
 	g.GET("/orgs", h.GetOrgs)
 	g.POST("/orgs", h.PostOrgs)
@@ -137,13 +137,14 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	g.DELETE("/orgs/:org/clusters/:cluster", h.DeleteOrgClusters)
 	g.GET("/orgs/:org/clusters/:cluster/kubeconfig", h.GetOrgClusterKubeConfig)
 
-	r.POST("/v1/orgs/:org/clusters/:cluster/apps", h.PostOrgApps)
+	g.GET("/clusters/:clusterID/deployments", h.GetClusterDeployments)
+	g.POST("/clusters/:clusterID/deployments", h.PostClusterDeployments)
+
+	g.GET("/deployments/:deploymentID", h.GetDeployment)
+	g.DELETE("/deployments/:deploymentID", h.DeleteDeployment)
+
 	r.GET("/v1/orgs/:org/clusters/:cluster/apps/*git", anyGit)
 	r.POST("/v1/orgs/:org/clusters/:cluster/apps/*git", anyGit)
-	r.DELETE("/v1/orgs/:org/clusters/:cluster/apps/:app", h.DeleteOrgApps)
-
-	g.GET("/apps", h.GetApps)
-	g.GET("/apps/:id", h.GetApp)
 
 	g.GET("/credentials", h.GetCredentials)
 	g.GET("/credentials/:uuid", h.GetCredentialUUID)
@@ -193,10 +194,10 @@ func RegisterSudoRoutes(e *gin.Engine, sudoHandlerOptions ...SudoHandlerOption) 
 
 	e.GET("/sudo/clusters", s.GetClusters)
 	e.GET("/sudo/kubeconfig/:org/:name", s.GetKubeconfig)
-	e.GET("/sudo/apps", s.GetApps)
+	e.GET("/sudo/deployments", s.GetDeployments)
 	e.GET("/sudo/orgs", s.GetOrgs)
-	e.GET("/sudo/apps/:org/:cluster/:name", s.GetApp)
-	e.POST("/sudo/apps", s.PostApps)
+	e.GET("/sudo/deployment/:deploymentID", s.GetDeployment)
+	e.POST("/sudo/deployments", s.PostDeployments)
 
 	handlerOpts := promhttp.HandlerOpts{
 		Registry: s.prometheusRegistry,

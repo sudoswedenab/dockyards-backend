@@ -26,6 +26,7 @@ func TestPostOrgClusters(t *testing.T) {
 	tt := []struct {
 		name             string
 		organizationName string
+		user             model.User
 		users            []model.User
 		organizations    []model.Organization
 		clusterOptions   model.ClusterOptions
@@ -33,6 +34,9 @@ func TestPostOrgClusters(t *testing.T) {
 		{
 			name:             "test recommended",
 			organizationName: "test-org",
+			user: model.User{
+				ID: uuid.MustParse("fec813fc-7938-4cb9-ba12-bb28f6b1f5d9"),
+			},
 			users: []model.User{
 				{
 					ID:    uuid.MustParse("fec813fc-7938-4cb9-ba12-bb28f6b1f5d9"),
@@ -44,8 +48,7 @@ func TestPostOrgClusters(t *testing.T) {
 					Name: "test-org",
 					Users: []model.User{
 						{
-							ID:    uuid.MustParse("fec813fc-7938-4cb9-ba12-bb28f6b1f5d9"),
-							Email: "test@dockyards.dev",
+							ID: uuid.MustParse("fec813fc-7938-4cb9-ba12-bb28f6b1f5d9"),
 						},
 					},
 				},
@@ -99,8 +102,10 @@ func TestPostOrgClusters(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			c.Params = []gin.Param{{Key: "org", Value: tc.organizationName}}
-			c.Set("user", tc.users[0])
+			c.Params = []gin.Param{
+				{Key: "org", Value: tc.organizationName},
+			}
+			c.Set("user", tc.user)
 
 			u := url.URL{
 				Path: path.Join("/v1/orgs", tc.organizationName, "clusters"),
@@ -303,7 +308,9 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			c.Params = []gin.Param{{Key: "org", Value: tc.organizationName}}
+			c.Params = []gin.Param{
+				{Key: "org", Value: tc.organizationName},
+			}
 			c.Set("user", tc.user)
 
 			u := url.URL{
@@ -658,7 +665,7 @@ func TestGetCluster(t *testing.T) {
 			c, _ := gin.CreateTestContext(w)
 
 			c.Params = []gin.Param{
-				{Key: "id", Value: tc.clusterID},
+				{Key: "clusterID", Value: tc.clusterID},
 			}
 			c.Set("user", tc.user)
 
@@ -777,7 +784,7 @@ func TestGetClusterErrors(t *testing.T) {
 			c, _ := gin.CreateTestContext(w)
 
 			c.Params = []gin.Param{
-				{Key: "id", Value: tc.clusterID},
+				{Key: "clusterID", Value: tc.clusterID},
 			}
 			c.Set("user", tc.user)
 

@@ -349,7 +349,7 @@ func (s *sudo) GetKubeconfig(c *gin.Context) {
 }
 
 func (h *handler) GetCluster(c *gin.Context) {
-	id := c.Param("id")
+	id := c.Param("clusterID")
 	if id == "" {
 		h.logger.Error("empty cluster id")
 
