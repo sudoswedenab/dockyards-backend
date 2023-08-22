@@ -129,12 +129,12 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	g.GET("/clusters/:id", h.GetCluster)
 
 	g.GET("/orgs", h.GetOrgs)
-	g.POST("orgs", h.PostOrgs)
+	g.POST("/orgs", h.PostOrgs)
 	g.PUT("/orgs", methodNotAllowed)
 	g.DELETE("/orgs", methodNotAllowed)
 
 	g.POST("/orgs/:org/clusters", h.PostOrgClusters)
-	g.DELETE("orgs/:org/clusters/:cluster", h.DeleteOrgClusters)
+	g.DELETE("/orgs/:org/clusters/:cluster", h.DeleteOrgClusters)
 	g.GET("/orgs/:org/clusters/:cluster/kubeconfig", h.GetOrgClusterKubeConfig)
 
 	r.POST("/v1/orgs/:org/clusters/:cluster/apps", h.PostOrgApps)
