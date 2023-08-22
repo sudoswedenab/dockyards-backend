@@ -7,7 +7,7 @@ type CloudService interface {
 	CleanEnvironment(*model.Organization, *CloudConfig) error
 	CreateOrganization(*model.Organization) (string, error)
 	GetOrganization(*model.Organization) (string, error)
-	GetClusterApps(*model.Organization, *model.Cluster) (*[]model.App, error)
+	GetClusterDeployments(*model.Organization, *model.Cluster) (*[]model.Deployment, error)
 	DeleteGarbage()
 	GetFlavorNodePool(string) (*model.NodePool, error)
 	DeleteOrganization(*model.Organization) error

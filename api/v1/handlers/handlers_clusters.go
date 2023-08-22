@@ -142,9 +142,9 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	if !clusterOptions.NoClusterApps {
-		clusterApps, err := h.cloudService.GetClusterApps(&organization, cluster)
+		clusterApps, err := h.cloudService.GetClusterDeployments(&organization, cluster)
 		if err != nil {
-			h.logger.Error("error getting cloud service cluster apps", "err", err)
+			h.logger.Error("error getting cloud service cluster deployments ", "err", err)
 
 			hasErrors = true
 		}
