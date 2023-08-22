@@ -17,7 +17,7 @@ func (h *handler) getRecommendedNodePools() []model.NodePoolOptions {
 			Quantity:                   3,
 			CPUCount:                   2,
 			RAMSizeMB:                  4096,
-			DiskSizeGB:                 10,
+			DiskSizeGB:                 100,
 		},
 		{
 			Name:         "load-balancer",
@@ -25,14 +25,14 @@ func (h *handler) getRecommendedNodePools() []model.NodePoolOptions {
 			Quantity:     2,
 			CPUCount:     2,
 			RAMSizeMB:    4096,
-			DiskSizeGB:   10,
+			DiskSizeGB:   100,
 		},
 		{
 			Name:       "worker",
 			Quantity:   2,
 			CPUCount:   4,
 			RAMSizeMB:  8192,
-			DiskSizeGB: 10,
+			DiskSizeGB: 100,
 		},
 	}
 }
