@@ -15,7 +15,7 @@ type prometheusMetrics struct {
 	registry           *prometheus.Registry
 	organizationMetric *prometheus.GaugeVec
 	userMetric         *prometheus.GaugeVec
-	appMetric          *prometheus.GaugeVec
+	deploymentMetric   *prometheus.GaugeVec
 	credentialMetric   *prometheus.GaugeVec
 }
 
@@ -59,14 +59,13 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 		},
 	)
 
-	appMetric := prometheus.NewGaugeVec(
+	deploymentMetric := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "dockyards_backend_app",
+			Name: "dockyards_backend_deployment",
 		},
 		[]string{
 			"name",
-			"organization_name",
-			"cluster_name",
+			"cluster_id",
 		},
 	)
 
@@ -83,7 +82,7 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 	m := prometheusMetrics{
 		organizationMetric: organizationMetric,
 		userMetric:         userMetric,
-		appMetric:          appMetric,
+		deploymentMetric:   deploymentMetric,
 		credentialMetric:   credentialMetric,
 	}
 
@@ -93,7 +92,7 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 
 	m.registry.MustRegister(m.organizationMetric)
 	m.registry.MustRegister(m.userMetric)
-	m.registry.MustRegister(m.appMetric)
+	m.registry.MustRegister(m.deploymentMetric)
 	m.registry.MustRegister(m.credentialMetric)
 
 	buildInfo, ok := debug.ReadBuildInfo()
@@ -165,23 +164,22 @@ func (m *prometheusMetrics) CollectMetrics() error {
 		m.userMetric.With(labels).Set(1)
 	}
 
-	m.appMetric.Reset()
+	m.deploymentMetric.Reset()
 
-	var apps []model.App
-	err = m.db.Find(&apps).Error
+	var deployments []model.Deployment
+	err = m.db.Find(&deployments).Error
 	if err != nil {
-		m.logger.Error("error finding apps in database", "err", err)
+		m.logger.Error("error finding deployments in database", "err", err)
 		return err
 	}
 
-	for _, app := range apps {
+	for _, deployment := range deployments {
 		labels := prometheus.Labels{
-			"name":              app.Name,
-			"organization_name": app.Organization,
-			"cluster_name":      app.Cluster,
+			"name":       deployment.Name,
+			"cluster_id": deployment.ClusterID,
 		}
 
-		m.appMetric.With(labels).Set(1)
+		m.deploymentMetric.With(labels).Set(1)
 	}
 
 	m.credentialMetric.Reset()
