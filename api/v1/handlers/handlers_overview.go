@@ -39,21 +39,21 @@ func (h *handler) GetOverview(c *gin.Context) {
 			ID:   cluster.ID,
 		}
 
-		var apps []model.App
-		err := h.db.Find(&apps, "organization = ? and cluster = ?", cluster.Organization, cluster.Name).Error
+		var deployments []model.Deployment
+		err := h.db.Find(&deployments, "organization = ? and cluster = ?", cluster.Organization, cluster.Name).Error
 		if err != nil {
-			h.logger.Error("error getting apps from database", "err", err)
+			h.logger.Error("error getting deployments from database", "err", err)
 
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 
-		for _, app := range apps {
-			appOverview := model.AppOverview{
-				Name: app.Name,
-				ID:   app.ID,
+		for _, deployment := range deployments {
+			deploymentOverview := model.DeploymentOverview{
+				Name: deployment.Name,
+				ID:   deployment.ID,
 			}
 
-			clusterOverview.Apps = append(clusterOverview.Apps, appOverview)
+			clusterOverview.Deployments = append(clusterOverview.Deployments, deploymentOverview)
 		}
 
 		organizationClusters := clustersOverviews[cluster.Organization]

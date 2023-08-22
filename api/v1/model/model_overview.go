@@ -9,15 +9,15 @@ type UserOverview struct {
 	Email string    `json:"email"`
 }
 
-type AppOverview struct {
+type DeploymentOverview struct {
 	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`
 }
 
 type ClusterOverview struct {
-	ID   string        `json:"id"`
-	Name string        `json:"name"`
-	Apps []AppOverview `json:"apps"`
+	ID          string               `json:"id"`
+	Name        string               `json:"name"`
+	Deployments []DeploymentOverview `json:"apps"`
 }
 
 type OrganizationOverview struct {
