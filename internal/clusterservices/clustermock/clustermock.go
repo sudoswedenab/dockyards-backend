@@ -58,6 +58,15 @@ func (s *MockClusterService) DeleteCluster(organization *model.Organization, clu
 
 }
 
+func (s *MockClusterService) GetCluster(clusterID string) (*model.Cluster, error) {
+	cluster, hasCluster := s.clusters[clusterID]
+	if !hasCluster {
+		return nil, errors.New("no such cluster")
+	}
+
+	return &cluster, nil
+}
+
 func WithClusters(clusters map[string]model.Cluster) MockOption {
 	return func(s *MockClusterService) {
 		s.clusters = clusters
