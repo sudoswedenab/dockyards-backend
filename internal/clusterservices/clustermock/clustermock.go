@@ -39,6 +39,14 @@ func (s *MockClusterService) CreateCluster(organization *model.Organization, clu
 	return &cluster, nil
 }
 
+func (s *MockClusterService) CreateNodePool(organization *model.Organization, cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*model.NodePool, error) {
+	nodePool := model.NodePool{
+		Name: nodePoolOptions.Name,
+	}
+
+	return &nodePool, nil
+}
+
 func WithClusters(clusters map[string]model.Cluster) MockOption {
 	return func(s *MockClusterService) {
 		s.clusters = clusters
