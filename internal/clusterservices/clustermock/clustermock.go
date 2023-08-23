@@ -47,6 +47,17 @@ func (s *MockClusterService) CreateNodePool(organization *model.Organization, cl
 	return &nodePool, nil
 }
 
+func (s *MockClusterService) DeleteCluster(organization *model.Organization, cluster *model.Cluster) error {
+	for _, c := range s.clusters {
+		if c.Organization == organization.Name && c.Name == cluster.Name {
+			return nil
+		}
+	}
+
+	return errors.New("no such cluster")
+
+}
+
 func WithClusters(clusters map[string]model.Cluster) MockOption {
 	return func(s *MockClusterService) {
 		s.clusters = clusters
