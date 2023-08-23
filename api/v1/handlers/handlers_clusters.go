@@ -234,6 +234,28 @@ func (h *handler) DeleteOrgClusters(c *gin.Context) {
 		return
 	}
 
+	user, err := h.getUserFromContext(c)
+	if err != nil {
+		h.logger.Debug("error fetching user from context", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	isMember, err := h.isMember(&user, &organization)
+	if err != nil {
+		h.logger.Error("error getting user membership", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
+	if !isMember {
+		h.logger.Debug("user is not a member of organization", "user", user.ID, "organization", organization.ID)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	cluster := model.Cluster{
 		Organization: org,
 		Name:         clusterName,
@@ -250,7 +272,7 @@ func (h *handler) DeleteOrgClusters(c *gin.Context) {
 
 	h.logger.Debug("successfully deleted cluster", "organization", org, "name", clusterName)
 
-	c.Status(http.StatusAccepted)
+	c.JSON(http.StatusAccepted, gin.H{})
 }
 
 func (h *handler) GetClusters(c *gin.Context) {
