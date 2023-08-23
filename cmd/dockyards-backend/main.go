@@ -96,12 +96,14 @@ func main() {
 	var delGarbageInterval int
 	var collectMetricsInterval int
 	var ginMode string
+	var gitProjectRoot string
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
 	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval seconds")
 	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
+	flag.StringVar(&gitProjectRoot, "git-project-root", "/var/www/git", "git project root")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -257,6 +259,7 @@ func main() {
 		handlers.WithJWTAccessTokens(jwtAccessTokenSecret, jwtRefreshTokenSecret),
 		handlers.WithCloudService(cloudService),
 		handlers.WithClusterService(rancherService),
+		handlers.WithGitProjectRoot(gitProjectRoot),
 	}
 
 	err = handlers.RegisterRoutes(r, db, logger, handlerOptions...)
