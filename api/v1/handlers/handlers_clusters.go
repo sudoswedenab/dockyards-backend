@@ -22,6 +22,28 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		return
 	}
 
+	user, err := h.getUserFromContext(c)
+	if err != nil {
+		h.logger.Debug("error fetching user from context", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	isMember, err := h.isMember(&user, &organization)
+	if err != nil {
+		h.logger.Error("error getting user membership", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
+	if !isMember {
+		h.logger.Debug("user is not a member of organization", "user", user.ID, "organization", organization.ID)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	var clusterOptions model.ClusterOptions
 	if c.BindJSON(&clusterOptions) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
