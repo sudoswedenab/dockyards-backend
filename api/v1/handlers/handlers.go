@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/cgi"
+	"path"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
@@ -46,6 +47,7 @@ type sudo struct {
 	logger             *slog.Logger
 	db                 *gorm.DB
 	prometheusRegistry *prometheus.Registry
+	gitProjectRoot     string
 }
 
 type HandlerOption func(*handler)
@@ -115,21 +117,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 		h.gitProjectRoot = "/var/www/git"
 	}
 
-	gitHandler := cgi.Handler{
-		Path: "/usr/lib/git-core/git-http-backend",
-		Dir:  h.gitProjectRoot,
-		Env: []string{
-			"GIT_PROJECT_ROOT=" + h.gitProjectRoot,
-			"GIT_HTTP_EXPORT_ALL=true",
-		},
-	}
-
-	anyGit := func(c *gin.Context) {
-		git := c.Param("git")
-		logger.Debug("git connection", "git", git)
-		gitHandler.ServeHTTP(c.Writer, c.Request)
-	}
-
 	r.POST("/v1/signup", h.Signup)
 	r.POST("/v1/login", h.Login)
 	r.POST("/v1/refresh", h.PostRefresh)
@@ -155,9 +142,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 
 	g.GET("/deployments/:deploymentID", h.GetDeployment)
 	g.DELETE("/deployments/:deploymentID", h.DeleteDeployment)
-
-	r.GET("/v1/orgs/:org/clusters/:cluster/apps/*git", anyGit)
-	r.POST("/v1/orgs/:org/clusters/:cluster/apps/*git", anyGit)
 
 	g.GET("/credentials", h.GetCredentials)
 	g.GET("/credentials/:uuid", h.GetCredentialUUID)
@@ -198,6 +182,12 @@ func WithSudoPrometheusRegistry(registry *prometheus.Registry) SudoHandlerOption
 	}
 }
 
+func WithSudoGitProjectRoot(gitProjectRoot string) SudoHandlerOption {
+	return func(s *sudo) {
+		s.gitProjectRoot = gitProjectRoot
+	}
+}
+
 func RegisterSudoRoutes(e *gin.Engine, sudoHandlerOptions ...SudoHandlerOption) {
 	s := sudo{}
 
@@ -225,6 +215,29 @@ func RegisterSudoRoutes(e *gin.Engine, sudoHandlerOptions ...SudoHandlerOption) 
 	e.GET("/healthz", func(c *gin.Context) {
 		c.Status(http.StatusOK)
 	})
+
+	gitHandler := cgi.Handler{
+		Path: "/usr/lib/git-core/git-http-backend",
+		Dir:  s.gitProjectRoot,
+		Env: []string{
+			"GIT_PROJECT_ROOT=" + s.gitProjectRoot,
+			"GIT_HTTP_EXPORT_ALL=true",
+		},
+	}
+
+	anyGit := func(c *gin.Context) {
+		deploymentID := c.Param("deploymentID")
+		git := c.Param("git")
+
+		newPath := path.Join("/v1/deployments", deploymentID, git)
+		c.Request.URL.Path = newPath
+
+		s.logger.Debug("git connection", "git", git, "path", newPath)
+		gitHandler.ServeHTTP(c.Writer, c.Request)
+	}
+
+	e.GET("/sudo/git/:deploymentID/*git", anyGit)
+	e.POST("/sudo/git/:deploymentID/*git", anyGit)
 }
 
 func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {

@@ -275,6 +275,7 @@ func main() {
 		handlers.WithSudoLogger(logger),
 		handlers.WithSudoGormDB(db),
 		handlers.WithSudoPrometheusRegistry(registry),
+		handlers.WithSudoGitProjectRoot(gitProjectRoot),
 	}
 
 	handlers.RegisterSudoRoutes(i, sudoHandlerOptions...)
