@@ -227,6 +227,26 @@ func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {
 	return user, nil
 }
 
+func (h *handler) isMember(user *model.User, organization *model.Organization) (bool, error) {
+	var userOrganizations []model.Organization
+	err := h.db.Model(&user).Association("Organizations").Find(&userOrganizations)
+	if err != nil {
+		return false, err
+	}
+
+	isMember := false
+	for _, userOrganization := range userOrganizations {
+		if userOrganization.ID == organization.ID {
+			isMember = true
+		}
+	}
+
+	h.logger.Debug("arst", "orgs", userOrganizations, "user", user, "isMember", isMember)
+
+	return isMember, nil
+
+}
+
 func (h *handler) setOrGenerateTokens() error {
 	ctx := context.Background()
 
