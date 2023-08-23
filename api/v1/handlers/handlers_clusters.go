@@ -350,10 +350,47 @@ func (s *sudo) GetKubeconfig(c *gin.Context) {
 
 func (h *handler) GetCluster(c *gin.Context) {
 	id := c.Param("id")
+	if id == "" {
+		h.logger.Error("empty cluster id")
+
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
 
 	cluster, err := h.clusterService.GetCluster(id)
 	if err != nil {
 		h.logger.Error("error getting cluster from cluster service", "id", id, "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	var organization model.Organization
+	err = h.db.Take(&organization, "name = ?", cluster.Organization).Error
+	if err != nil {
+		h.logger.Error("error taking organization from database", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	user, err := h.getUserFromContext(c)
+	if err != nil {
+		h.logger.Error("error fetching user from context", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	isMember, err := h.isMember(&user, &organization)
+	if err != nil {
+		h.logger.Error("error getting user membership", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
+	if !isMember {
+		h.logger.Debug("user is not a member of organization", "user", user.ID, "organization", organization.ID)
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
