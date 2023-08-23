@@ -1,6 +1,8 @@
 package clustermock
 
 import (
+	"errors"
+
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 )
@@ -20,6 +22,21 @@ func (s *MockClusterService) GetAllClusters() (*[]model.Cluster, error) {
 	}
 
 	return &clusters, nil
+}
+
+func (s *MockClusterService) CreateCluster(organization *model.Organization, clusterOptions *model.ClusterOptions) (*model.Cluster, error) {
+	_, hasCluster := s.clusters[clusterOptions.Name]
+	if hasCluster {
+		return nil, errors.New("cluster name in-use")
+
+	}
+
+	cluster := model.Cluster{
+		ID:   "cluster-123",
+		Name: clusterOptions.Name,
+	}
+
+	return &cluster, nil
 }
 
 func WithClusters(clusters map[string]model.Cluster) MockOption {
