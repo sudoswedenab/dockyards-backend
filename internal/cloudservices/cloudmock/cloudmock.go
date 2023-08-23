@@ -11,6 +11,7 @@ type MockCloudService struct {
 	types.CloudService
 	flavors       map[string]*model.NodePool
 	organizations map[string]bool
+	apps          map[string]*model.App
 }
 
 var _ types.CloudService = &MockCloudService{}
@@ -35,6 +36,12 @@ func WithFlavors(flavors map[string]*model.NodePool) MockOption {
 func WithOrganizations(organizations map[string]bool) MockOption {
 	return func(s *MockCloudService) {
 		s.organizations = organizations
+	}
+}
+
+func WithClusterApps(apps map[string]*model.App) MockOption {
+	return func(s *MockCloudService) {
+		s.apps = apps
 	}
 }
 
