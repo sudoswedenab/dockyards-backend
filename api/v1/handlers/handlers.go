@@ -38,6 +38,7 @@ type handler struct {
 	jwtAccessTokenSecret  string
 	jwtRefreshTokenSecret string
 	cloudService          types.CloudService
+	gitProjectRoot        string
 }
 
 type sudo struct {
@@ -65,6 +66,12 @@ func WithJWTAccessTokens(accessToken, refreshToken string) HandlerOption {
 func WithClusterService(clusterService types.ClusterService) HandlerOption {
 	return func(h *handler) {
 		h.clusterService = clusterService
+	}
+}
+
+func WithGitProjectRoot(gitProjectRoot string) HandlerOption {
+	return func(h *handler) {
+		h.gitProjectRoot = gitProjectRoot
 	}
 }
 
@@ -102,11 +109,17 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 		RefreshTokenName:   "RefreshToken",
 	}
 
+	if h.gitProjectRoot == "" {
+		logger.Warn("no git project root set, using '/var/www/git'")
+
+		h.gitProjectRoot = "/var/www/git"
+	}
+
 	gitHandler := cgi.Handler{
 		Path: "/usr/lib/git-core/git-http-backend",
-		Dir:  "/tmp/repos",
+		Dir:  h.gitProjectRoot,
 		Env: []string{
-			"GIT_PROJECT_ROOT=/tmp/repos",
+			"GIT_PROJECT_ROOT=" + h.gitProjectRoot,
 			"GIT_HTTP_EXPORT_ALL=true",
 		},
 	}

@@ -239,7 +239,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			return
 		}
 
-		repoPath := path.Join("/tmp/repos/deployment", deployment.ID.String())
+		repoPath := path.Join(h.gitProjectRoot, "/v1/deployments", deployment.ID.String())
 
 		repo, err := git.PlainInit(repoPath, false)
 		if err != nil {
@@ -391,7 +391,7 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 
 	h.logger.Debug("deleted deployment from database", "id", deployment.ID)
 
-	repoPath := path.Join("/tmp/repos/v1/deployments", deployment.ID.String())
+	repoPath := path.Join(h.gitProjectRoot, "/v1/deployments", deployment.ID.String())
 
 	h.logger.Debug("deleting repository from filesystem", "path", repoPath)
 
