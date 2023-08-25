@@ -40,7 +40,7 @@ func (h *handler) GetOverview(c *gin.Context) {
 		}
 
 		var deployments []model.Deployment
-		err := h.db.Find(&deployments, "organization = ? and cluster = ?", cluster.Organization, cluster.Name).Error
+		err := h.db.Find(&deployments, "cluster_id = ?", cluster.ID).Error
 		if err != nil {
 			h.logger.Error("error getting deployments from database", "err", err)
 
