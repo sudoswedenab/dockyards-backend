@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -21,9 +22,11 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -33,6 +36,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var (
@@ -355,6 +361,41 @@ func main() {
 	}
 
 	go privateServer.ListenAndServe()
+	go r.Run(":9000")
 
-	r.Run(":9000")
+	kubeconfig, err := config.GetConfig()
+	if err != nil {
+		logger.Error("error getting kubeconfig", "err", err)
+
+		os.Exit(1)
+	}
+
+	controllerClient, err := client.New(kubeconfig, client.Options{})
+	if err != nil {
+		logger.Error("error creating controller client", "err", err)
+
+		os.Exit(1)
+	}
+
+	scheme := controllerClient.Scheme()
+	v1alpha1.AddToScheme(scheme)
+
+	manager, err := ctrl.NewManager(kubeconfig, ctrl.Options{
+		Scheme: scheme,
+	})
+
+	appControllerOptions := []controller.ControllerOption{
+		controller.WithLogger(logger.With("controller", "app")),
+		controller.WithManager(manager),
+		controller.WithDatabase(db),
+	}
+
+	err = controller.NewAppController(appControllerOptions...)
+
+	err = manager.Start(context.Background())
+	if err != nil {
+		logger.Error("error starting manager", "err", err)
+
+		os.Exit(1)
+	}
 }
