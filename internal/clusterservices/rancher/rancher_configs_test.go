@@ -4,15 +4,16 @@ import (
 	"errors"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher/ranchermock"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
 func TestClusterOptionsToRKEConfig(t *testing.T) {
 	tt := []struct {
 		name           string
-		clusterOptions model.ClusterOptions
+		clusterOptions v1.ClusterOptions
 		expected       error
 		mockOptions    []ranchermock.MockOption
 	}{
@@ -21,14 +22,14 @@ func TestClusterOptionsToRKEConfig(t *testing.T) {
 		},
 		{
 			name: "test basic",
-			clusterOptions: model.ClusterOptions{
+			clusterOptions: v1.ClusterOptions{
 				Name: "basic",
 			},
 		},
 		{
 			name: "test supported version",
-			clusterOptions: model.ClusterOptions{
-				Version: "v1.24.13-rancher2-2",
+			clusterOptions: v1.ClusterOptions{
+				Version: util.Ptr("v1.24.13-rancher2-2"),
 			},
 			mockOptions: []ranchermock.MockOption{
 				ranchermock.WithSettings(map[string]*managementv3.Setting{
@@ -40,28 +41,28 @@ func TestClusterOptionsToRKEConfig(t *testing.T) {
 		},
 		{
 			name: "test unsupported version",
-			clusterOptions: model.ClusterOptions{
-				Version: "v1.24.9-rancher1-1",
+			clusterOptions: v1.ClusterOptions{
+				Version: util.Ptr("v1.24.9-rancher1-1"),
 			},
 			expected: errors.New("unsupported version"),
 		},
 		{
 			name: "test supported ingress provider",
-			clusterOptions: model.ClusterOptions{
-				IngressProvider: "nginx",
+			clusterOptions: v1.ClusterOptions{
+				IngressProvider: util.Ptr("nginx"),
 			},
 		},
 		{
 			name: "test unsupported ingress provider",
-			clusterOptions: model.ClusterOptions{
-				IngressProvider: "traefik",
+			clusterOptions: v1.ClusterOptions{
+				IngressProvider: util.Ptr("traefik"),
 			},
 			expected: errors.New("unsupported ingress provider"),
 		},
 		{
 			name: "test versions error",
-			clusterOptions: model.ClusterOptions{
-				Version: "v1.2.3",
+			clusterOptions: v1.ClusterOptions{
+				Version: util.Ptr("v1.2.3"),
 			},
 			mockOptions: []ranchermock.MockOption{
 				ranchermock.WithSettings(map[string]*managementv3.Setting{}),

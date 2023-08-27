@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher/ranchermock"
 	"github.com/rancher/norman/types"
@@ -18,7 +18,7 @@ func TestGetCluster(t *testing.T) {
 		clusterID          string
 		mockRancherOptions []ranchermock.MockOption
 		mockCloudOptions   []cloudmock.MockOption
-		expected           model.Cluster
+		expected           v1.Cluster
 	}{
 		{
 			name:      "test simple",
@@ -49,21 +49,21 @@ func TestGetCluster(t *testing.T) {
 				}),
 			},
 			mockCloudOptions: []cloudmock.MockOption{
-				cloudmock.WithFlavors(map[string]*model.NodePool{
+				cloudmock.WithFlavors(map[string]*v1.NodePool{
 					"flavor-123": {
 						CPUCount:   123,
-						RAMSizeMB:  1024,
-						DiskSizeGB: 512,
+						RAMSizeMb:  1024,
+						DiskSizeGb: 512,
 					},
 				}),
 			},
-			expected: model.Cluster{
+			expected: v1.Cluster{
 				ID: "cluster-123",
-				NodePools: []model.NodePool{
+				NodePools: []v1.NodePool{
 					{
 						CPUCount:   123,
-						RAMSizeMB:  1024,
-						DiskSizeGB: 512,
+						RAMSizeMb:  1024,
+						DiskSizeGb: 512,
 					},
 				},
 			},
@@ -85,7 +85,7 @@ func TestGetCluster(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(actual, &tc.expected) {
-				t.Errorf("expected %#v, got %#v", &tc.expected, actual)
+				t.Errorf("expected\n %#v, got\n %#v", &tc.expected, actual)
 			}
 		})
 	}
@@ -129,7 +129,7 @@ func TestGetAllClusters(t *testing.T) {
 	tt := []struct {
 		name        string
 		mockOptions []ranchermock.MockOption
-		expected    *[]model.Cluster
+		expected    *[]v1.Cluster
 	}{
 		{
 			name: "test single",
@@ -146,7 +146,7 @@ func TestGetAllClusters(t *testing.T) {
 					},
 				}),
 			},
-			expected: &[]model.Cluster{
+			expected: &[]v1.Cluster{
 				{
 					ID:           "cluster-123",
 					Organization: "test",
@@ -168,7 +168,7 @@ func TestGetAllClusters(t *testing.T) {
 				t.Fatalf("unxepected error getting clusters: %s", err)
 			}
 			if !reflect.DeepEqual(actual, tc.expected) {
-				t.Errorf("expected %#v, got %#v", tc.expected, actual)
+				t.Errorf("expected\n %#v, got\n %#v", tc.expected, actual)
 			}
 		})
 	}

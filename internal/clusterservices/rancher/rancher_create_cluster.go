@@ -1,12 +1,12 @@
 package rancher
 
 import (
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *rancher) CreateCluster(organization *model.Organization, clusterOptions *model.ClusterOptions) (*model.Cluster, error) {
+func (r *rancher) CreateCluster(organization *v1.Organization, clusterOptions *v1.ClusterOptions) (*v1.Cluster, error) {
 	clusterTemplateName := names.EncodeName(organization.Name, clusterOptions.Name)
 	clusterTemplate := managementv3.ClusterTemplate{
 		Name: clusterTemplateName,
@@ -51,7 +51,7 @@ func (r *rancher) CreateCluster(organization *model.Organization, clusterOptions
 
 	clusterOrg, clusterName := names.DecodeName(createdCluster.Name)
 
-	cluster := model.Cluster{
+	cluster := v1.Cluster{
 		Organization: clusterOrg,
 		Name:         clusterName,
 		ID:           createdCluster.ID,

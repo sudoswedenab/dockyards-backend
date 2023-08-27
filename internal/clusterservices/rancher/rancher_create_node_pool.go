@@ -3,12 +3,12 @@ package rancher
 import (
 	"strings"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (r *rancher) CreateNodePool(organization *model.Organization, cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*model.NodePool, error) {
+func (r *rancher) CreateNodePool(organization *v1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1.NodePool, error) {
 	cloudConfig, err := r.cloudService.PrepareEnvironment(organization, cluster, nodePoolOptions)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (r *rancher) CreateNodePool(organization *model.Organization, cluster *mode
 	nodeTaints := []managementv3.Taint{}
 	nodeLabels := map[string]string{}
 
-	if nodePoolOptions.LoadBalancer {
+	if nodePoolOptions.LoadBalancer != nil && *nodePoolOptions.LoadBalancer {
 		taint := managementv3.Taint{
 			Effect: string(corev1.TaintEffectNoSchedule),
 			Key:    TaintNodeRoleLoadBalancer,
@@ -60,17 +60,17 @@ func (r *rancher) CreateNodePool(organization *model.Organization, cluster *mode
 	hostnamePrefix := cluster.Name + "-" + nodePoolOptions.Name + "-"
 	opts := managementv3.NodePool{
 		ClusterID:               cluster.ID,
-		ControlPlane:            nodePoolOptions.ControlPlane,
+		ControlPlane:            *nodePoolOptions.ControlPlane,
 		DeleteNotReadyAfterSecs: 0,
 		DrainBeforeDelete:       true,
-		Etcd:                    nodePoolOptions.Etcd,
+		Etcd:                    *nodePoolOptions.Etcd,
 		HostnamePrefix:          hostnamePrefix,
 		Name:                    nodePoolOptions.Name,
 		NamespaceId:             "",
 		NodeTaints:              nodeTaints,
 		NodeTemplateID:          createdNodeTemplate.ID,
-		Quantity:                int64(nodePoolOptions.Quantity),
-		Worker:                  !nodePoolOptions.ControlPlaneComponentsOnly,
+		Quantity:                int64(*nodePoolOptions.Quantity),
+		Worker:                  !*nodePoolOptions.ControlPlaneComponentsOnly,
 	}
 
 	createdNodePool, err := r.managementClient.NodePool.Create(&opts)
@@ -78,7 +78,7 @@ func (r *rancher) CreateNodePool(organization *model.Organization, cluster *mode
 		return nil, err
 	}
 
-	nodePool := model.NodePool{
+	nodePool := v1.NodePool{
 		Name: createdNodePool.Name,
 	}
 

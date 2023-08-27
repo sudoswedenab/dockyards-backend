@@ -3,17 +3,18 @@ package rancher
 import (
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *rancher) clusterToModel(cluster *managementv3.Cluster) model.Cluster {
+func (r *rancher) clusterToModel(cluster *managementv3.Cluster) v1.Cluster {
 	createdAt, _ := time.Parse(time.RFC3339, cluster.Created)
 	organization, name := names.DecodeName(cluster.Name)
 
-	c := model.Cluster{
+	c := v1.Cluster{
 		Organization: organization,
 		Name:         name,
 		State:        cluster.State,
@@ -29,13 +30,13 @@ func (r *rancher) clusterToModel(cluster *managementv3.Cluster) model.Cluster {
 	return c
 }
 
-func (r *rancher) GetAllClusters() (*[]model.Cluster, error) {
+func (r *rancher) GetAllClusters() (*[]v1.Cluster, error) {
 	clusterCollection, err := r.managementClient.Cluster.ListAll(&types.ListOpts{})
 	if err != nil {
 		return nil, err
 	}
 
-	clusters := []model.Cluster{}
+	clusters := []v1.Cluster{}
 	for _, cluster := range clusterCollection.Data {
 		c := r.clusterToModel(&cluster)
 		clusters = append(clusters, c)
@@ -44,7 +45,7 @@ func (r *rancher) GetAllClusters() (*[]model.Cluster, error) {
 	return &clusters, nil
 }
 
-func (r *rancher) GetCluster(id string) (*model.Cluster, error) {
+func (r *rancher) GetCluster(id string) (*v1.Cluster, error) {
 	rancherCluster, err := r.managementClient.Cluster.ByID(id)
 	if err != nil {
 		return nil, err
@@ -58,12 +59,12 @@ func (r *rancher) GetCluster(id string) (*model.Cluster, error) {
 		},
 	}
 
-	nodePools, err := r.managementClient.NodePool.List(&listOpts)
+	rancherNodePools, err := r.managementClient.NodePool.List(&listOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, rancherNodePool := range nodePools.Data {
+	for _, rancherNodePool := range rancherNodePools.Data {
 		isLoadBalancer := false
 		for _, nodeTaint := range rancherNodePool.NodeTaints {
 			if nodeTaint.Key == TaintNodeRoleLoadBalancer {
@@ -82,16 +83,28 @@ func (r *rancher) GetCluster(id string) (*model.Cluster, error) {
 			return nil, err
 		}
 
-		nodePool := model.NodePool{
-			Name:                       rancherNodePool.Name,
-			ControlPlane:               rancherNodePool.ControlPlane,
-			Etcd:                       rancherNodePool.Etcd,
-			LoadBalancer:               isLoadBalancer,
-			Quantity:                   int(rancherNodePool.Quantity),
-			ControlPlaneComponentsOnly: !rancherNodePool.Worker,
-			CPUCount:                   flavorNodePool.CPUCount,
-			RAMSizeMB:                  flavorNodePool.RAMSizeMB,
-			DiskSizeGB:                 flavorNodePool.DiskSizeGB,
+		nodePool := v1.NodePool{
+			Name:       rancherNodePool.Name,
+			Quantity:   int(rancherNodePool.Quantity),
+			CPUCount:   flavorNodePool.CPUCount,
+			RAMSizeMb:  flavorNodePool.RAMSizeMb,
+			DiskSizeGb: flavorNodePool.DiskSizeGb,
+		}
+
+		if rancherNodePool.ControlPlane {
+			nodePool.ControlPlane = &rancherNodePool.ControlPlane
+		}
+
+		if rancherNodePool.Etcd {
+			nodePool.Etcd = &rancherNodePool.Etcd
+		}
+
+		if !rancherNodePool.Worker {
+			nodePool.ControlPlaneComponentsOnly = util.Ptr(true)
+		}
+
+		if isLoadBalancer {
+			nodePool.LoadBalancer = util.Ptr(true)
 		}
 
 		cluster.NodePools = append(cluster.NodePools, nodePool)

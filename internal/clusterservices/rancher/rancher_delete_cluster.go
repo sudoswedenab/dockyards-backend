@@ -4,14 +4,14 @@ import (
 	"errors"
 	"strings"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	normanTypes "github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-func (r *rancher) DeleteCluster(organization *model.Organization, cluster *model.Cluster) error {
+func (r *rancher) DeleteCluster(organization *v1.Organization, cluster *v1.Cluster) error {
 	encodedName := names.EncodeName(cluster.Organization, cluster.Name)
 
 	listOpts := normanTypes.ListOpts{
@@ -61,7 +61,7 @@ func (r *rancher) DeleteCluster(organization *model.Organization, cluster *model
 	return errors.New("unable to find cluster to delete")
 }
 
-func (r *rancher) deleteNodePools(organization *model.Organization, clusterID string) error {
+func (r *rancher) deleteNodePools(organization *v1.Organization, clusterID string) error {
 	listOpts := normanTypes.ListOpts{
 		Filters: map[string]interface{}{
 			"clusterId": clusterID,

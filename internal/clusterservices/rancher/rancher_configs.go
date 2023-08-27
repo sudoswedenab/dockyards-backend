@@ -5,13 +5,13 @@ import (
 	"slices"
 	"strings"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
+func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *v1.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
 	supportedVersions, err := r.GetSupportedVersions()
 	if err != nil {
 		return nil, err
@@ -21,10 +21,10 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 
 	ingressProvider := "nginx"
 
-	if clusterOptions.Version != "" {
+	if clusterOptions.Version != nil {
 		versionSupported := false
 		for _, supportedVersion := range supportedVersions {
-			if clusterOptions.Version == supportedVersion {
+			if *clusterOptions.Version == supportedVersion {
 				versionSupported = true
 				break
 			}
@@ -35,7 +35,7 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 		}
 	}
 
-	if clusterOptions.IngressProvider != "" && clusterOptions.IngressProvider != "nginx" {
+	if clusterOptions.IngressProvider != nil && *clusterOptions.IngressProvider != "nginx" {
 		return nil, errors.New("unsupported ingress provider")
 	}
 
@@ -91,7 +91,7 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 		},
 	}
 
-	if !clusterOptions.NoIngressProvider {
+	if clusterOptions.NoIngressProvider != nil {
 		ingressConfig := managementv3.IngressConfig{
 			DefaultIngressClass: util.Ptr(true),
 			Provider:            ingressProvider,
@@ -112,7 +112,7 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 	return &rancherKubernetesEngineConfig, nil
 }
 
-func (r *rancher) clusterOptionsToNodeTemplate(clusterOptions *model.ClusterOptions, config *openstackConfig) (*CustomNodeTemplate, error) {
+func (r *rancher) clusterOptionsToNodeTemplate(clusterOptions *v1.ClusterOptions, config *openstackConfig) (*CustomNodeTemplate, error) {
 	customNodeTemplate := CustomNodeTemplate{
 		NodeTemplate: managementv3.NodeTemplate{
 			Name: clusterOptions.Name,

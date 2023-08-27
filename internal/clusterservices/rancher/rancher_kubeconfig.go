@@ -3,12 +3,12 @@ package rancher
 import (
 	"errors"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"github.com/rancher/norman/types"
 )
 
-func (r *rancher) GetKubeConfig(cluster *model.Cluster) (string, error) {
+func (r *rancher) GetKubeConfig(cluster *v1.Cluster) (string, error) {
 	encodedName := names.EncodeName(cluster.Organization, cluster.Name)
 
 	listOpts := types.ListOpts{
