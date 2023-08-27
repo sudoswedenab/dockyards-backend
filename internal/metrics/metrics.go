@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"runtime/debug"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	"gorm.io/gorm"
 )
@@ -130,7 +130,7 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 func (m *prometheusMetrics) CollectMetrics() error {
 	m.logger.Debug("collecting prometheus metrics from database")
 
-	var organizations []model.Organization
+	var organizations []v1.Organization
 	err := m.db.Find(&organizations).Error
 	if err != nil {
 		m.logger.Error("error finding organizations in database", "err", err)
@@ -149,7 +149,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 	m.userMetric.Reset()
 
-	var users []model.User
+	var users []v1.User
 	err = m.db.Find(&users).Error
 	if err != nil {
 		m.logger.Error("error finding users in database", "err", err)
@@ -166,7 +166,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 	m.deploymentMetric.Reset()
 
-	var deployments []model.Deployment
+	var deployments []v1.Deployment
 	err = m.db.Find(&deployments).Error
 	if err != nil {
 		m.logger.Error("error finding deployments in database", "err", err)
@@ -184,7 +184,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 	m.credentialMetric.Reset()
 
-	var credentials []model.Credential
+	var credentials []v1.Credential
 	err = m.db.Find(&credentials).Error
 	if err != nil {
 		m.logger.Error("error finding credentials in database", "err", err)
