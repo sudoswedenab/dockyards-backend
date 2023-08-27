@@ -1,0 +1,680 @@
+openapi: "3.0.0"
+info:
+  version: 0.1.0
+  title: dockyards-backend
+  description: no
+security:
+- bearerAuth: []
+paths:
+  /v1/signup:
+    post:
+      operationId: signup
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/signup'
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+        400: {}
+  /v1/login:
+    post:
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/login'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tokens'
+        400: {}
+  /v1/refresh:
+    post:
+      operationId: refresh
+      security: []
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tokens'
+        401: {}
+        500: {}
+  /v1/cluster-options:
+    get:
+      operationId: getClusterOptions
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/options'
+        500: {}
+  /v1/clusters:
+    get:
+      operationId: getClusters
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/cluster'
+  /v1/clusters/{cluster_id}:
+    get:
+      operationId: getCluster
+      parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cluster'
+        401: {}
+        500: {}
+  /v1/orgs:
+    get:
+      operationId: getOrganizations
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/organization'
+    post:
+      operationId: createOrganization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/organization'
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/organization'
+        409: {}
+        500: {}
+  /v1/orgs/{organization_name}/clusters:
+    post:
+      operationId: createCluster
+      parameters:
+      - name: organization_name
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/cluster_options'
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cluster'
+        401: {}
+        422: {}
+        500: {}
+  /v1/orgs/{organization_name}/clusters/{cluster_name}:
+    delete:
+      operationId: deleteCluster
+      parameters:
+      - name: organization_name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cluster_name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        202: {}
+        401: {}
+        500: {}
+  /v1/orgs/{organization_name}/clusters/{cluster_name}/kubeconfig:
+    get:
+      operationId: getKubeconfig
+      parameters:
+      - name: organization_name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cluster_name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: string
+        401: {}
+        500: {} 
+  /v1/clusters/{cluster_id}/deployments:
+    get:
+      operationId: getDeployments
+      parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/deployment'
+        401: {}
+        500: {}
+    post:
+      operationId: createDeployment
+      parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/deployment'
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deployment'
+        401: {}
+        422: {}
+        500: {}
+  /v1/deployments/{deployment_id}:
+    get:
+      operationId: getDeployment
+      parameters:
+      - name: deployment_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deployment'
+        401: {}
+        500: {}
+    delete:
+      operationId: deleteDeployment
+      parameters:
+      - name: deployment_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        204: {}
+        401: {}
+        500: {}
+  /v1/credentials:
+    get:
+      operationId: getCredentials
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/credential'
+        500: {}
+  /v1/credentials/{credential_id}:
+    get:
+      operationId: getCredential
+      parameters:
+      - name: credential_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/credential'
+        500: {}
+  /v1/orgs/{organization_name}/credentials:
+    post:
+      operationId: createCredential
+      parameters:
+      - name: organization_name
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/credential'
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/credential'
+        401: {}
+        500: {}
+  /v1/orgs/{organization_name}/credentials/{credential_name}:
+    delete:
+      operationId: deleteCredential
+      parameters:
+      - name: organization_name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: credential_name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        204: {}
+        401: {}
+        500: {}
+  /v1/overview:
+    get:
+      operationId: getOverview
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/overview'
+  /v1/whoami:
+    get:
+      operationId: whoami
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+  /v1/orgs/{organization_id}:
+    delete:
+      operationId: deleteOrganization
+      parameters:
+      - name: organization_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        204: {}
+        401: {}
+        500: {}
+components:
+  schemas:
+    overview:
+      properties:
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/organization_overview'
+      required:
+      - organizations
+    organization_overview:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        clusters:
+          type: array
+          items:
+            $ref: '#/components/schemas/cluster_overview'
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/user_overview'
+      required:
+      - id
+      - name
+    cluster_overview:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        deployments:
+          type: array
+          items:
+            $ref: '#/components/schemas/deployment_overview'
+      required:
+      - id
+      - name
+    deployment_overview:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      - name
+    user_overview:
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+      required:
+      - id
+      - email
+    options:
+      properties:
+        single_node:
+          type: boolean
+        version:
+          type: array
+          items:
+            type: string
+        node_pool_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/node_pool_options'
+      required:
+      - single_node
+      - version
+      - node_pool_options
+    organization:
+      properties:
+        id:
+          type: string
+          x-go-type: uuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
+        name:
+          type: string
+          x-oapi-codegen-extra-tags:
+            gorm: 'unique; not null'
+        display_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/user'
+          x-oapi-codegen-extra-tags:
+            gorm: many2many:organization_user
+      required:
+      - id
+      - name
+      - created_at
+      - updated_at
+      - users
+    tokens:
+      properties:
+        AccessToken:
+          type: string
+        RefreshToken:
+          type: string
+      required:
+      - AccessToken
+      - RefreshToken
+    login:
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+      - email
+      - password
+    deployment:
+      properties:
+        id:
+          type: string
+          x-go-type: uuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
+        name:
+          type: string
+        cluster_id:
+          type: string
+        namespace:
+          type: string
+        container_image:
+          type: string
+        helm_chart:
+          type: string
+        helm_repository:
+          type: string
+        helm_version:
+          type: string
+        helm_values:
+          type: object
+          x-go-type: HelmValues
+        credential_id:
+          type: string
+        port:
+          type: integer
+      required:
+      - id
+      - name
+      - cluster_id
+      - namespace
+      - container_image
+      - helm_chart
+      - helm_repository
+      - helm_version
+      - helm_values
+      - credential_id
+      - port
+    node_pool:
+      properties:
+        name:
+          type: string
+        control_plane:
+          type: boolean
+        control_plane_components_only:
+          type: boolean
+        etcd:
+          type: boolean
+        load_balancer:
+          type: boolean
+        quantity:
+          type: integer
+        cpu_count:
+          type: integer
+        ram_size_mb:
+          type: integer
+        disk_size_gb:
+          type: integer
+      required:
+      - name
+      - quantity
+      - cpu_count
+      - ram_size_mb
+      - disk_size_gb
+    node_pool_options:
+      properties:
+        name:
+          type: string
+        control_plane:
+          type: boolean
+        control_plane_components_only:
+          type: boolean
+        etcd:
+          type: boolean
+        load_balancer:
+          type: boolean
+        quantity:
+          type: integer
+        cpu_count:
+          type: integer
+        ram_size_mb:
+          type: integer
+        disk_size_gb:
+          type: integer
+      required:
+      - name
+    cluster_options:
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        single_node:
+          type: boolean
+        node_pool_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/node_pool_options'
+        ingress_provider:
+          type: string
+        no_ingress_provider:
+          type: boolean
+        no_cluster_apps:
+          type: boolean
+      required:
+      - name
+    cluster:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        organization:
+          type: string
+        node_count:
+          type: integer
+        state:
+          type: string
+        node_pools:
+          type: array
+          items:
+            $ref: '#/components/schemas/node_pool'
+        version:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - organization
+      - state
+      - version
+      - created_at
+      - node_count
+      - node_pools
+    credential:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        organization:
+          type: string
+        data:
+          type: object
+          x-go-type: CredentialData
+      required:
+      - name
+      - organization
+    signup:
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+      - name
+      - email
+      - password
+    user:
+      properties:
+        id:
+          type: string
+          x-go-type: uuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
+        name:
+          type: string
+          x-oapi-codegen-extra-tags:
+           gorm: 'unique; not null'
+        email:
+          type: string
+          x-oapi-codegen-extra-tags:
+            gorm: 'unique; not null'
+        password:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/organization'
+          x-oapi-codegen-extra-tags:
+            gorm: many2many:organization_user
+      required:
+      - id
+      - name
+      - email
+      - password
+  securitySchemas:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
