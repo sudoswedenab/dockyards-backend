@@ -3,7 +3,7 @@ package openstack
 import (
 	"errors"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"github.com/google/uuid"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *openStackService) createApplicationCredential(organization *model.Organization, projectID string) (*applicationcredentials.ApplicationCredential, error) {
+func (s *openStackService) createApplicationCredential(organization *v1.Organization, projectID string) (*applicationcredentials.ApplicationCredential, error) {
 	scopedClient, err := s.getScopedClient(projectID)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (s *openStackService) createApplicationCredential(organization *model.Organ
 
 }
 
-func (s *openStackService) CreateOrganization(organization *model.Organization) (string, error) {
+func (s *openStackService) CreateOrganization(organization *v1.Organization) (string, error) {
 	var openStackProject OpenStackProject
 	err := s.db.Joins("LEFT OUTER JOIN openstack_organizations ON openstack_projects.id = openstack_organizations.openstack_project_id").Take(&openStackProject, "openstack_organizations.openstack_project_id IS NULL").Error
 	if err != nil {
@@ -85,7 +85,7 @@ func (s *openStackService) CreateOrganization(organization *model.Organization) 
 	return openStackProject.OpenStackID, nil
 }
 
-func (s *openStackService) GetOrganization(organization *model.Organization) (string, error) {
+func (s *openStackService) GetOrganization(organization *v1.Organization) (string, error) {
 	var openStackProject OpenStackProject
 	err := s.db.Joins("LEFT JOIN openstack_organizations ON openstack_projects.id = openstack_organizations.openstack_project_id").Take(&openStackProject, "openstack_organizations.organization_id = ?", organization.ID).Error
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *openStackService) GetOrganization(organization *model.Organization) (st
 	return openStackProject.OpenStackID, nil
 }
 
-func (s *openStackService) getOpenStackOrganization(organization *model.Organization) (*OpenStackOrganization, error) {
+func (s *openStackService) getOpenStackOrganization(organization *v1.Organization) (*OpenStackOrganization, error) {
 	var openStackOrganization OpenStackOrganization
 	err := s.db.Preload("OpenStackProject").Take(&openStackOrganization, "organization_id = ?", organization.ID).Error
 	if err != nil {
@@ -107,7 +107,7 @@ func (s *openStackService) getOpenStackOrganization(organization *model.Organiza
 	return &openStackOrganization, nil
 }
 
-func (s *openStackService) DeleteOrganization(organization *model.Organization) error {
+func (s *openStackService) DeleteOrganization(organization *v1.Organization) error {
 	openStackOrganization, err := s.getOpenStackOrganization(organization)
 	if err != nil {
 		return err

@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"sync"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/google/uuid"
 	"github.com/gophercloud/gophercloud"
@@ -40,7 +40,7 @@ type OpenStackOrganization struct {
 	OpenStackProjectID          uuid.UUID `gorm:"column:openstack_project_id"`
 	OpenStackProject            OpenStackProject
 	OrganizationID              uuid.UUID
-	Organization                model.Organization
+	Organization                v1.Organization
 	ApplicationCredentialID     string
 	ApplicationCredentialSecret string
 }

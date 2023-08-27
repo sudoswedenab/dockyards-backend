@@ -1,13 +1,13 @@
 package openstack
 
 import (
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 )
 
-func (s *openStackService) GetFlavorNodePool(flavorID string) (*model.NodePool, error) {
+func (s *openStackService) GetFlavorNodePool(flavorID string) (*v1.NodePool, error) {
 	computev2, err := openstack.NewComputeV2(s.providerClient, gophercloud.EndpointOpts{Region: s.region})
 	if err != nil {
 		return nil, err
@@ -18,10 +18,10 @@ func (s *openStackService) GetFlavorNodePool(flavorID string) (*model.NodePool, 
 		return nil, err
 	}
 
-	nodePool := model.NodePool{
+	nodePool := v1.NodePool{
 		CPUCount:   flavor.VCPUs,
-		RAMSizeMB:  flavor.RAM,
-		DiskSizeGB: flavor.Disk,
+		RAMSizeMb:  flavor.RAM,
+		DiskSizeGb: flavor.Disk,
 	}
 
 	return &nodePool, nil

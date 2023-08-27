@@ -5,7 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 )
 
@@ -13,7 +14,7 @@ func TestGetClosestFlavorID(t *testing.T) {
 	tt := []struct {
 		name            string
 		flavors         []flavors.Flavor
-		nodePoolOptions model.NodePoolOptions
+		nodePoolOptions v1.NodePoolOptions
 		expected        string
 	}{
 		{
@@ -41,10 +42,10 @@ func TestGetClosestFlavorID(t *testing.T) {
 					VCPUs: 1,
 				},
 			},
-			nodePoolOptions: model.NodePoolOptions{
-				DiskSizeGB: 10,
-				RAMSizeMB:  2048,
-				CPUCount: 1,
+			nodePoolOptions: v1.NodePoolOptions{
+				DiskSizeGb: util.Ptr(10),
+				RAMSizeMb:  util.Ptr(2048),
+				CPUCount:   util.Ptr(1),
 			},
 			expected: "ram-123",
 		},
@@ -70,8 +71,8 @@ func TestGetClosestFlavorID(t *testing.T) {
 					VCPUs: 4,
 				},
 			},
-			nodePoolOptions: model.NodePoolOptions{
-				CPUCount: 3,
+			nodePoolOptions: v1.NodePoolOptions{
+				CPUCount: util.Ptr(3),
 			},
 			expected: "cpu-123",
 		},
@@ -97,8 +98,8 @@ func TestGetClosestFlavorID(t *testing.T) {
 					VCPUs: 1,
 				},
 			},
-			nodePoolOptions: model.NodePoolOptions{
-				RAMSizeMB: 2000,
+			nodePoolOptions: v1.NodePoolOptions{
+				RAMSizeMb: util.Ptr(2000),
 			},
 			expected: "ram-123",
 		},
@@ -124,8 +125,8 @@ func TestGetClosestFlavorID(t *testing.T) {
 					VCPUs: 1,
 				},
 			},
-			nodePoolOptions: model.NodePoolOptions{
-				DiskSizeGB: 75,
+			nodePoolOptions: v1.NodePoolOptions{
+				DiskSizeGb: util.Ptr(75),
 			},
 			expected: "disk-123",
 		},

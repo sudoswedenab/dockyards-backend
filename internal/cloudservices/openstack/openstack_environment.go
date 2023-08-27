@@ -4,9 +4,10 @@ import (
 	"errors"
 	"math"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
@@ -17,7 +18,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 )
 
-func (s *openStackService) PrepareEnvironment(organization *model.Organization, cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*types.CloudConfig, error) {
+func (s *openStackService) PrepareEnvironment(organization *v1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*types.CloudConfig, error) {
 	logger := s.logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name, "organization", organization.Name)
 
 	openStackOrganization, err := s.getOpenStackOrganization(organization)
@@ -57,14 +58,6 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 	if err != nil {
 		return nil, err
 	}
-
-	if nodePoolOptions.CPUCount == 0 && nodePoolOptions.RAMSizeMB == 0 && nodePoolOptions.DiskSizeGB == 0 {
-		nodePoolOptions.CPUCount = 2
-		nodePoolOptions.RAMSizeMB = 4096
-		nodePoolOptions.DiskSizeGB = 100
-	}
-
-	logger.Debug("flavor requirements", "ram", nodePoolOptions.RAMSizeMB, "cpu", nodePoolOptions.CPUCount, "disk", nodePoolOptions.DiskSizeGB)
 
 	flavorID := s.getClosestFlavorID(allFlavors, nodePoolOptions)
 	if flavorID == "" {
@@ -109,7 +102,7 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 	}
 
 	networkLabel := "default"
-	if nodePoolOptions.LoadBalancer {
+	if nodePoolOptions.LoadBalancer != nil && *nodePoolOptions.LoadBalancer {
 		networkLabel = "elasticip"
 	}
 
@@ -212,7 +205,7 @@ func (s *openStackService) PrepareEnvironment(organization *model.Organization, 
 	return &config, nil
 }
 
-func (s *openStackService) CleanEnvironment(organization *model.Organization, config *types.CloudConfig) error {
+func (s *openStackService) CleanEnvironment(organization *v1.Organization, config *types.CloudConfig) error {
 	openStackOrganization, err := s.getOpenStackOrganization(organization)
 	if err != nil {
 		s.logger.Error("error getting openstack organization", "err", err)
@@ -252,14 +245,28 @@ func (s *openStackService) CleanEnvironment(organization *model.Organization, co
 	return nil
 }
 
-func (s *openStackService) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *model.NodePoolOptions) string {
+func (s *openStackService) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *v1.NodePoolOptions) string {
 	closestFlavorID := ""
 	shortestDistance := math.MaxFloat64
 
+	if nodePoolOptions.CPUCount == nil {
+		nodePoolOptions.CPUCount = util.Ptr(0)
+	}
+
+	if nodePoolOptions.RAMSizeMb == nil {
+		nodePoolOptions.RAMSizeMb = util.Ptr(0)
+	}
+
+	if nodePoolOptions.DiskSizeGb == nil {
+		nodePoolOptions.DiskSizeGb = util.Ptr(0)
+	}
+
+	s.logger.Debug("flavor requirements", "ram", *nodePoolOptions.RAMSizeMb, "cpu", *nodePoolOptions.CPUCount, "disk", *nodePoolOptions.DiskSizeGb)
+
 	for _, flavor := range flavors {
-		diskSquared := math.Pow(float64(flavor.Disk-nodePoolOptions.DiskSizeGB), 2)
-		ramSquared := math.Pow(float64(flavor.RAM-nodePoolOptions.RAMSizeMB), 2)
-		vcpuSquared := math.Pow(float64(flavor.VCPUs-nodePoolOptions.CPUCount), 2)
+		diskSquared := math.Pow(float64(flavor.Disk-*nodePoolOptions.DiskSizeGb), 2)
+		ramSquared := math.Pow(float64(flavor.RAM-*nodePoolOptions.RAMSizeMb), 2)
+		vcpuSquared := math.Pow(float64(flavor.VCPUs-*nodePoolOptions.CPUCount), 2)
 
 		distance := math.Sqrt(diskSquared + ramSquared + vcpuSquared)
 

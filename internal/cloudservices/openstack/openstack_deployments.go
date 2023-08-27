@@ -3,10 +3,10 @@ package openstack
 import (
 	"strings"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 )
 
-func (s *openStackService) GetClusterDeployments(organization *model.Organization, cluster *model.Cluster) (*[]model.Deployment, error) {
+func (s *openStackService) GetClusterDeployments(organization *v1.Organization, cluster *v1.Cluster) (*[]v1.Deployment, error) {
 	openStackOrganization, err := s.getOpenStackOrganization(organization)
 	if err != nil {
 		s.logger.Error("error getting openstack organization", "name", organization.Name, "err", err)
@@ -20,14 +20,14 @@ func (s *openStackService) GetClusterDeployments(organization *model.Organizatio
 		"application-credential-secret=" + openStackOrganization.ApplicationCredentialSecret,
 	}
 
-	openStackCinderCSIDeployment := model.Deployment{
+	openStackCinderCSIDeployment := v1.Deployment{
 		ClusterID:      cluster.ID,
 		Name:           "openstack-cinder-csi",
 		HelmChart:      "openstack-cinder-csi",
 		HelmRepository: "https://kubernetes.github.io/cloud-provider-openstack",
 		HelmVersion:    "2.28.0-alpha.3",
 		Namespace:      "kube-system",
-		HelmValues: model.HelmValues{
+		HelmValues: v1.HelmValues{
 			"secret": map[string]any{
 				"enabled":  true,
 				"create":   true,
@@ -46,7 +46,7 @@ func (s *openStackService) GetClusterDeployments(organization *model.Organizatio
 		},
 	}
 
-	clusterApps := []model.Deployment{
+	clusterApps := []v1.Deployment{
 		openStackCinderCSIDeployment,
 	}
 
