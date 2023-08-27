@@ -3,22 +3,22 @@ package cloudmock
 import (
 	"errors"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 )
 
 type MockCloudService struct {
 	types.CloudService
-	flavors       map[string]*model.NodePool
+	flavors       map[string]*v1.NodePool
 	organizations map[string]bool
-	deployments   map[string]*model.Deployment
+	deployments   map[string]*v1.Deployment
 }
 
 var _ types.CloudService = &MockCloudService{}
 
 type MockOption func(*MockCloudService)
 
-func (s *MockCloudService) GetFlavorNodePool(flavorID string) (*model.NodePool, error) {
+func (s *MockCloudService) GetFlavorNodePool(flavorID string) (*v1.NodePool, error) {
 	nodePool, hasNodePool := s.flavors[flavorID]
 	if !hasNodePool {
 		return nil, errors.New("not such flavor")
@@ -27,7 +27,7 @@ func (s *MockCloudService) GetFlavorNodePool(flavorID string) (*model.NodePool, 
 	return nodePool, nil
 }
 
-func WithFlavors(flavors map[string]*model.NodePool) MockOption {
+func WithFlavors(flavors map[string]*v1.NodePool) MockOption {
 	return func(s *MockCloudService) {
 		s.flavors = flavors
 	}
@@ -39,7 +39,7 @@ func WithOrganizations(organizations map[string]bool) MockOption {
 	}
 }
 
-func WithClusterDeployments(deployments map[string]*model.Deployment) MockOption {
+func WithClusterDeployments(deployments map[string]*v1.Deployment) MockOption {
 	return func(s *MockCloudService) {
 		s.deployments = deployments
 	}

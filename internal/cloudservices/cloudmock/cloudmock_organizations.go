@@ -3,10 +3,10 @@ package cloudmock
 import (
 	"errors"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 )
 
-func (s *MockCloudService) DeleteOrganization(organization *model.Organization) error {
+func (s *MockCloudService) DeleteOrganization(organization *v1.Organization) error {
 	_, hasOrganization := s.organizations[organization.Name]
 	if !hasOrganization {
 		return errors.New("no such organization")

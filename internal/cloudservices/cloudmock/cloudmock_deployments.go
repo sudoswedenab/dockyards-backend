@@ -1,11 +1,11 @@
 package cloudmock
 
 import (
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 )
 
-func (s *MockCloudService) GetClusterDeployments(organization *model.Organization, cluster *model.Cluster) (*[]model.Deployment, error) {
-	deployments := []model.Deployment{}
+func (s *MockCloudService) GetClusterDeployments(organization *v1.Organization, cluster *v1.Cluster) (*[]v1.Deployment, error) {
+	deployments := []v1.Deployment{}
 	for key := range s.deployments {
 		deployments = append(deployments, *s.deployments[key])
 	}
