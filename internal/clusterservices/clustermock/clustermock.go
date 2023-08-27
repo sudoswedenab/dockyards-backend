@@ -3,19 +3,19 @@ package clustermock
 import (
 	"errors"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 )
 
 type MockClusterService struct {
 	types.ClusterService
-	clusters map[string]model.Cluster
+	clusters map[string]v1.Cluster
 }
 
 type MockOption func(*MockClusterService)
 
-func (s *MockClusterService) GetAllClusters() (*[]model.Cluster, error) {
-	clusters := []model.Cluster{}
+func (s *MockClusterService) GetAllClusters() (*[]v1.Cluster, error) {
+	clusters := []v1.Cluster{}
 
 	for _, cluster := range s.clusters {
 		clusters = append(clusters, cluster)
@@ -24,14 +24,14 @@ func (s *MockClusterService) GetAllClusters() (*[]model.Cluster, error) {
 	return &clusters, nil
 }
 
-func (s *MockClusterService) CreateCluster(organization *model.Organization, clusterOptions *model.ClusterOptions) (*model.Cluster, error) {
+func (s *MockClusterService) CreateCluster(organization *v1.Organization, clusterOptions *v1.ClusterOptions) (*v1.Cluster, error) {
 	_, hasCluster := s.clusters[clusterOptions.Name]
 	if hasCluster {
 		return nil, errors.New("cluster name in-use")
 
 	}
 
-	cluster := model.Cluster{
+	cluster := v1.Cluster{
 		ID:   "cluster-123",
 		Name: clusterOptions.Name,
 	}
@@ -39,15 +39,15 @@ func (s *MockClusterService) CreateCluster(organization *model.Organization, clu
 	return &cluster, nil
 }
 
-func (s *MockClusterService) CreateNodePool(organization *model.Organization, cluster *model.Cluster, nodePoolOptions *model.NodePoolOptions) (*model.NodePool, error) {
-	nodePool := model.NodePool{
+func (s *MockClusterService) CreateNodePool(organization *v1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1.NodePool, error) {
+	nodePool := v1.NodePool{
 		Name: nodePoolOptions.Name,
 	}
 
 	return &nodePool, nil
 }
 
-func (s *MockClusterService) DeleteCluster(organization *model.Organization, cluster *model.Cluster) error {
+func (s *MockClusterService) DeleteCluster(organization *v1.Organization, cluster *v1.Cluster) error {
 	for _, c := range s.clusters {
 		if c.Organization == organization.Name && c.Name == cluster.Name {
 			return nil
@@ -58,7 +58,7 @@ func (s *MockClusterService) DeleteCluster(organization *model.Organization, clu
 
 }
 
-func (s *MockClusterService) GetCluster(clusterID string) (*model.Cluster, error) {
+func (s *MockClusterService) GetCluster(clusterID string) (*v1.Cluster, error) {
 	cluster, hasCluster := s.clusters[clusterID]
 	if !hasCluster {
 		return nil, errors.New("no such cluster")
@@ -67,7 +67,7 @@ func (s *MockClusterService) GetCluster(clusterID string) (*model.Cluster, error
 	return &cluster, nil
 }
 
-func WithClusters(clusters map[string]model.Cluster) MockOption {
+func WithClusters(clusters map[string]v1.Cluster) MockOption {
 	return func(s *MockClusterService) {
 		s.clusters = clusters
 	}
