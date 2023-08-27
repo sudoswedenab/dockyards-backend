@@ -1,14 +1,16 @@
 package types
 
-import "bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+import (
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+)
 
 type ClusterService interface {
-	CreateCluster(*model.Organization, *model.ClusterOptions) (*model.Cluster, error)
-	CreateNodePool(*model.Organization, *model.Cluster, *model.NodePoolOptions) (*model.NodePool, error)
-	GetAllClusters() (*[]model.Cluster, error)
-	DeleteCluster(*model.Organization, *model.Cluster) error
+	CreateCluster(*v1.Organization, *v1.ClusterOptions) (*v1.Cluster, error)
+	CreateNodePool(*v1.Organization, *v1.Cluster, *v1.NodePoolOptions) (*v1.NodePool, error)
+	GetAllClusters() (*[]v1.Cluster, error)
+	DeleteCluster(*v1.Organization, *v1.Cluster) error
 	GetSupportedVersions() ([]string, error)
-	GetKubeConfig(*model.Cluster) (string, error)
+	GetKubeConfig(*v1.Cluster) (string, error)
 	DeleteGarbage()
-	GetCluster(string) (*model.Cluster, error)
+	GetCluster(string) (*v1.Cluster, error)
 }
