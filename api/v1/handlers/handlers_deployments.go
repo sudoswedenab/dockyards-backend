@@ -325,17 +325,6 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	c.JSON(http.StatusCreated, deployment)
 }
 
-func (s *sudo) GetDeployments(c *gin.Context) {
-	var deployments []model.Deployment
-	err := s.db.Find(&deployments).Error
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	c.JSON(http.StatusOK, deployments)
-}
-
 func (h *handler) GetClusterDeployments(c *gin.Context) {
 	clusterID := c.Param("clusterID")
 
@@ -401,47 +390,6 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
-}
-
-func (s *sudo) GetDeployment(c *gin.Context) {
-	s.logger.Debug("get deployment")
-
-	deploymentID := c.Param("deploymentID")
-
-	var deployment model.Deployment
-	err := s.db.First(&deployment, "id = ?", deploymentID).Error
-	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-
-	c.JSON(http.StatusOK, deployment)
-}
-
-func (s *sudo) PostDeployments(c *gin.Context) {
-	var deployment model.Deployment
-	err := c.BindJSON(&deployment)
-	if err != nil {
-		s.logger.Error("failed to read request body", "err", err)
-
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
-		return
-	}
-
-	err = s.db.Create(&deployment).Error
-	if err != nil {
-		s.logger.Error("error creating app in database", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	c.JSON(http.StatusCreated, deployment)
 }
 
 func (h *handler) GetDeployment(c *gin.Context) {

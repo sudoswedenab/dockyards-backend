@@ -320,34 +320,6 @@ func (h *handler) GetClusters(c *gin.Context) {
 	})
 }
 
-func (s *sudo) GetClusters(c *gin.Context) {
-	clusters, err := s.clusterService.GetAllClusters()
-	if err != nil {
-		c.AbortWithStatus(http.StatusTeapot)
-		return
-	}
-
-	c.JSON(http.StatusOK, clusters)
-}
-
-func (s *sudo) GetKubeconfig(c *gin.Context) {
-	org := c.Param("org")
-	name := c.Param("name")
-	cluster := model.Cluster{
-		Organization: org,
-		Name:         name,
-	}
-
-	kubeconfig, err := s.clusterService.GetKubeConfig(&cluster)
-	if err != nil {
-		s.logger.Debug("error getting kubeconfig", "org", org, "name", name, "err", err)
-		c.AbortWithStatus(http.StatusTeapot)
-		return
-	}
-
-	c.JSON(http.StatusOK, kubeconfig)
-}
-
 func (h *handler) GetCluster(c *gin.Context) {
 	id := c.Param("clusterID")
 	if id == "" {

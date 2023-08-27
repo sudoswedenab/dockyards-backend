@@ -7,16 +7,12 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"net/http/cgi"
-	"path"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,14 +36,6 @@ type handler struct {
 	jwtRefreshTokenSecret string
 	cloudService          types.CloudService
 	gitProjectRoot        string
-}
-
-type sudo struct {
-	clusterService     types.ClusterService
-	logger             *slog.Logger
-	db                 *gorm.DB
-	prometheusRegistry *prometheus.Registry
-	gitProjectRoot     string
 }
 
 type HandlerOption func(*handler)
@@ -154,90 +142,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	g.DELETE("/orgs/:org", h.DeleteOrganization)
 
 	return nil
-}
-
-type SudoHandlerOption func(s *sudo)
-
-func WithSudoClusterService(clusterService types.ClusterService) SudoHandlerOption {
-	return func(s *sudo) {
-		s.clusterService = clusterService
-	}
-}
-
-func WithSudoLogger(logger *slog.Logger) SudoHandlerOption {
-	return func(s *sudo) {
-		s.logger = logger
-	}
-}
-
-func WithSudoGormDB(db *gorm.DB) SudoHandlerOption {
-	return func(s *sudo) {
-		s.db = db
-	}
-}
-
-func WithSudoPrometheusRegistry(registry *prometheus.Registry) SudoHandlerOption {
-	return func(s *sudo) {
-		s.prometheusRegistry = registry
-	}
-}
-
-func WithSudoGitProjectRoot(gitProjectRoot string) SudoHandlerOption {
-	return func(s *sudo) {
-		s.gitProjectRoot = gitProjectRoot
-	}
-}
-
-func RegisterSudoRoutes(e *gin.Engine, sudoHandlerOptions ...SudoHandlerOption) {
-	s := sudo{}
-
-	for _, sudoHandlerOption := range sudoHandlerOptions {
-		sudoHandlerOption(&s)
-	}
-
-	e.GET("/sudo/clusters", s.GetClusters)
-	e.GET("/sudo/kubeconfig/:org/:name", s.GetKubeconfig)
-	e.GET("/sudo/deployments", s.GetDeployments)
-	e.GET("/sudo/orgs", s.GetOrgs)
-	e.GET("/sudo/deployment/:deploymentID", s.GetDeployment)
-	e.POST("/sudo/deployments", s.PostDeployments)
-
-	handlerOpts := promhttp.HandlerOpts{
-		Registry: s.prometheusRegistry,
-	}
-
-	handlerFor := promhttp.HandlerFor(s.prometheusRegistry, handlerOpts)
-
-	e.GET("/metrics", func(c *gin.Context) {
-		handlerFor.ServeHTTP(c.Writer, c.Request)
-	})
-
-	e.GET("/healthz", func(c *gin.Context) {
-		c.Status(http.StatusOK)
-	})
-
-	gitHandler := cgi.Handler{
-		Path: "/usr/lib/git-core/git-http-backend",
-		Dir:  s.gitProjectRoot,
-		Env: []string{
-			"GIT_PROJECT_ROOT=" + s.gitProjectRoot,
-			"GIT_HTTP_EXPORT_ALL=true",
-		},
-	}
-
-	anyGit := func(c *gin.Context) {
-		deploymentID := c.Param("deploymentID")
-		git := c.Param("git")
-
-		newPath := path.Join("/v1/deployments", deploymentID, git)
-		c.Request.URL.Path = newPath
-
-		s.logger.Debug("git connection", "git", git, "path", newPath)
-		gitHandler.ServeHTTP(c.Writer, c.Request)
-	}
-
-	e.GET("/sudo/git/:deploymentID/*git", anyGit)
-	e.POST("/sudo/git/:deploymentID/*git", anyGit)
 }
 
 func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {
