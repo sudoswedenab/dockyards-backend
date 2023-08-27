@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +11,7 @@ import (
 )
 
 func (h *handler) Signup(c *gin.Context) {
-	var body model.Signup
+	var body v1.Signup
 
 	if c.BindJSON(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -44,7 +44,7 @@ func (h *handler) Signup(c *gin.Context) {
 	}
 
 	//Create the user
-	user := model.User{
+	user := v1.User{
 		Name:     body.Name,
 		Email:    body.Email,
 		Password: string(hash),

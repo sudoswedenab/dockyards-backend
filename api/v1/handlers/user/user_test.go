@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/google/uuid"
@@ -20,24 +20,26 @@ import (
 func TestFindAllUsers(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 
+	now := time.Now()
+
 	tt := []struct {
 		name  string
-		users []model.User
+		users []v1.User
 	}{
 		{
 			name: "test single user",
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:        uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:      "test",
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
+					CreatedAt: &now,
+					UpdatedAt: &now,
 				},
 			},
 		},
 		{
 			name: "test multiple users",
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:  "user1",
@@ -58,7 +60,7 @@ func TestFindAllUsers(t *testing.T) {
 	}
 
 	type response struct {
-		Users []model.User `json:"user"`
+		Users []v1.User `json:"user"`
 	}
 
 	for _, tc := range tt {
@@ -67,7 +69,7 @@ func TestFindAllUsers(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.User{})
+			db.AutoMigrate(&v1.User{})
 
 			for _, user := range tc.users {
 				tx := db.Create(&user)
@@ -120,71 +122,71 @@ func TestFindUserById(t *testing.T) {
 
 	tt := []struct {
 		name         string
-		users        []model.User
+		users        []v1.User
 		id           uuid.UUID
-		expectedUser model.User
+		expectedUser v1.User
 		expectedCode int
 	}{
 		{
 			name: "test single user",
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:        uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:      "single",
 					Email:     "single@dockyards.io",
-					CreatedAt: now,
-					UpdatedAt: now,
+					CreatedAt: &now,
+					UpdatedAt: &now,
 				},
 			},
 			id: uuid.MustParse("11111111-1111-1111-1111-111111111111"),
-			expectedUser: model.User{
+			expectedUser: v1.User{
 				ID:        uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 				Name:      "single",
 				Email:     "single@dockyards.io",
-				CreatedAt: now,
-				UpdatedAt: now,
+				CreatedAt: &now,
+				UpdatedAt: &now,
 			},
 			expectedCode: http.StatusOK,
 		},
 		{
 			name: "test multiple users",
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:        uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:      "multiple1",
 					Email:     "multiple1@dockyards.io",
-					CreatedAt: now,
-					UpdatedAt: now,
+					CreatedAt: &now,
+					UpdatedAt: &now,
 				},
 				{
 					ID:        uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 					Name:      "multiple2",
 					Email:     "multiple2@dockyards.io",
-					CreatedAt: now,
-					UpdatedAt: now,
+					CreatedAt: &now,
+					UpdatedAt: &now,
 				},
 				{
 					ID:        uuid.MustParse("33333333-3333-3333-3333-333333333333"),
 					Name:      "multiple3",
 					Email:     "multiple3@dockyards.io",
-					CreatedAt: now,
-					UpdatedAt: now,
+					CreatedAt: &now,
+					UpdatedAt: &now,
 				},
 			},
 			id: uuid.MustParse("22222222-2222-2222-2222-222222222222"),
-			expectedUser: model.User{
+			expectedUser: v1.User{
 				ID:        uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 				Name:      "multiple2",
 				Email:     "multiple2@dockyards.io",
-				CreatedAt: now,
-				UpdatedAt: now,
+				CreatedAt: &now,
+				UpdatedAt: &now,
 			},
 			expectedCode: http.StatusOK,
 		},
 	}
 
 	type response struct {
-		User model.User `json:"user"`
+		User v1.User `json:"user"`
 	}
 
 	for _, tc := range tt {
@@ -193,7 +195,7 @@ func TestFindUserById(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.User{})
+			db.AutoMigrate(&v1.User{})
 
 			for _, user := range tc.users {
 				tx := db.Create(&user)
@@ -249,14 +251,14 @@ func TestUpdateUser(t *testing.T) {
 	tt := []struct {
 		name     string
 		id       uuid.UUID
-		users    []model.User
-		update   model.User
-		expected model.User
+		users    []v1.User
+		update   v1.User
+		expected v1.User
 	}{
 		{
 			name: "test email update",
 			id:   uuid.MustParse("11111111-1111-1111-1111-111111111111"),
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:  "multiple1",
@@ -273,10 +275,10 @@ func TestUpdateUser(t *testing.T) {
 					Email: "multiple3@dockyards.io",
 				},
 			},
-			update: model.User{
+			update: v1.User{
 				Email: "new@dockyards.io",
 			},
-			expected: model.User{
+			expected: v1.User{
 				ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 				Name:  "email",
 				Email: "new@dockyards.io",
@@ -285,7 +287,7 @@ func TestUpdateUser(t *testing.T) {
 		{
 			name: "test id update is ignored",
 			id:   uuid.MustParse("11111111-1111-1111-1111-111111111111"),
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:  "multiple1",
@@ -302,10 +304,10 @@ func TestUpdateUser(t *testing.T) {
 					Email: "multiple3@dockyards.io",
 				},
 			},
-			update: model.User{
+			update: v1.User{
 				ID: uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 			},
-			expected: model.User{
+			expected: v1.User{
 				ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 				Name:  "multiple1",
 				Email: "multiple1@dockyards.io",
@@ -314,7 +316,7 @@ func TestUpdateUser(t *testing.T) {
 	}
 
 	type response struct {
-		User model.User `json:"user"`
+		User v1.User `json:"user"`
 	}
 
 	for _, tc := range tt {
@@ -323,7 +325,7 @@ func TestUpdateUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.User{})
+			db.AutoMigrate(&v1.User{})
 
 			for _, user := range tc.users {
 				tx := db.Create(&user)
@@ -376,7 +378,7 @@ func TestUpdateUser(t *testing.T) {
 				t.Errorf("expected user email %s, got %s", tc.expected.Email, res.User.Email)
 			}
 
-			var actual model.User
+			var actual v1.User
 			tx := db.First(&actual, tc.id)
 			if tx.Error != nil {
 				t.Fatalf("unexpected error fetching user from database: %s", tx.Error)
@@ -390,12 +392,12 @@ func TestDeleteUser(t *testing.T) {
 
 	tt := []struct {
 		name  string
-		users []model.User
+		users []v1.User
 		id    uuid.UUID
 	}{
 		{
 			name: "test multiple users",
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:    uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 					Name:  "multiple1",
@@ -416,7 +418,7 @@ func TestDeleteUser(t *testing.T) {
 		},
 		{
 			name: "test last user",
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:    uuid.MustParse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
 					Name:  "last",
@@ -433,7 +435,7 @@ func TestDeleteUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.User{})
+			db.AutoMigrate(&v1.User{})
 
 			for _, user := range tc.users {
 				tx := db.Create(&user)
@@ -461,7 +463,7 @@ func TestDeleteUser(t *testing.T) {
 				t.Fatalf("expected code %d, got %d", http.StatusOK, w.Code)
 			}
 
-			var users []model.User
+			var users []v1.User
 			tx := db.Find(&users)
 			if tx.Error != nil {
 				t.Fatalf("unexpected error fetching users from database: %s", tx.Error)

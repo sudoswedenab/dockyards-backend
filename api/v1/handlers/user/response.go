@@ -3,7 +3,7 @@ package user
 import (
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,9 +18,9 @@ type userResponse struct {
 func Response(c *gin.Context) userResponse {
 	user, _ := c.Get("user")
 	return userResponse{
-		Name:      user.(model.User).Name,
-		Email:     user.(model.User).Email,
-		CreatedAt: user.(model.User).CreatedAt,
-		UpdatedAt: user.(model.User).UpdatedAt,
+		Name:      user.(v1.User).Name,
+		Email:     user.(v1.User).Email,
+		CreatedAt: *user.(v1.User).CreatedAt,
+		UpdatedAt: *user.(v1.User).UpdatedAt,
 	}
 }

@@ -8,8 +8,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 
 	"github.com/gin-gonic/gin"
@@ -144,22 +144,22 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	return nil
 }
 
-func (h *handler) getUserFromContext(c *gin.Context) (model.User, error) {
+func (h *handler) getUserFromContext(c *gin.Context) (v1.User, error) {
 	u, exists := c.Get("user")
 	if !exists {
-		return model.User{}, errors.New("error fecthing user from context")
+		return v1.User{}, errors.New("error fecthing user from context")
 	}
 
-	user, ok := u.(model.User)
+	user, ok := u.(v1.User)
 	if !ok {
-		return model.User{}, errors.New("error during user type conversion")
+		return v1.User{}, errors.New("error during user type conversion")
 	}
 
 	return user, nil
 }
 
-func (h *handler) isMember(user *model.User, organization *model.Organization) (bool, error) {
-	var userOrganizations []model.Organization
+func (h *handler) isMember(user *v1.User, organization *v1.Organization) (bool, error) {
+	var userOrganizations []v1.Organization
 	err := h.db.Model(&user).Association("Organizations").Find(&userOrganizations)
 	if err != nil {
 		return false, err

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +15,7 @@ import (
 
 func (h *handler) Login(c *gin.Context) {
 	// Get email and pass off req body
-	var body model.Login
+	var body v1.Login
 
 	if c.BindJSON(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -25,7 +25,7 @@ func (h *handler) Login(c *gin.Context) {
 	}
 
 	//Look up requested User
-	var user model.User
+	var user v1.User
 	err := h.db.First(&user, "email = ?", body.Email).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

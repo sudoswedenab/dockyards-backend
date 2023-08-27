@@ -8,7 +8,7 @@ import (
 	"path"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"github.com/docker/distribution/reference"
 	"github.com/gin-gonic/gin"
@@ -29,7 +29,7 @@ const (
 	DeploymentTypeHelm
 )
 
-func (h *handler) createDeployment(deployment *model.Deployment) (*appsv1.Deployment, error) {
+func (h *handler) createDeployment(deployment *v1.Deployment) (*appsv1.Deployment, error) {
 	containerPort := 80
 	if deployment.Port != 0 {
 		containerPort = deployment.Port
@@ -80,7 +80,7 @@ func (h *handler) createDeployment(deployment *model.Deployment) (*appsv1.Deploy
 	return &d, nil
 }
 
-func (h *handler) createService(deployment *model.Deployment) (*corev1.Service, error) {
+func (h *handler) createService(deployment *v1.Deployment) (*corev1.Service, error) {
 	service := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -125,7 +125,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		return
 	}
 
-	var deployment model.Deployment
+	var deployment v1.Deployment
 	err := c.BindJSON(&deployment)
 	if err != nil {
 		h.logger.Error("failed to read body", "err", err)
@@ -184,7 +184,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		deployment.Namespace = deployment.Name
 	}
 
-	var existingDeployment model.Deployment
+	var existingDeployment v1.Deployment
 	err = h.db.Take(&existingDeployment, "name = ? AND cluster_id = ?", deployment.Name, deployment.ClusterID).Error
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -338,7 +338,7 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 
 	h.logger.Debug("cluster", "organization", cluster.Organization)
 
-	var deployments []model.Deployment
+	var deployments []v1.Deployment
 	err = h.db.Find(&deployments, "cluster_id = ?", clusterID).Error
 	if err != nil {
 		h.logger.Error("error finding deployments in database", "err", err)
@@ -359,7 +359,7 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 		return
 	}
 
-	var deployment model.Deployment
+	var deployment v1.Deployment
 	err := h.db.Take(&deployment, "id = ?", deploymentID).Error
 	if err != nil {
 		h.logger.Error("error taking deployment from database", "err", err)
@@ -395,7 +395,7 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 func (h *handler) GetDeployment(c *gin.Context) {
 	id := c.Param("deploymentID")
 
-	var deployment model.Deployment
+	var deployment v1.Deployment
 	err := h.db.Take(&deployment, "id = ?", id).Error
 	if err != nil {
 		h.logger.Debug("error taking deployment from database", "id", id, "err", err)

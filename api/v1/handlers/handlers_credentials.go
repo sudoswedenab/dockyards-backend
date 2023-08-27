@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +15,7 @@ func (h *handler) GetCredentials(c *gin.Context) {
 		return
 	}
 
-	var organizations []model.Organization
+	var organizations []v1.Organization
 	err = h.db.Model(&user).Association("Organizations").Find(&organizations)
 	if err != nil {
 		h.logger.Error("error getting organizations from databarse", "err", err)
@@ -28,7 +28,7 @@ func (h *handler) GetCredentials(c *gin.Context) {
 		orgs[organization.Name] = true
 	}
 
-	var credentials []model.Credential
+	var credentials []v1.Credential
 	err = h.db.Select("id", "name", "organization").Find(&credentials).Error
 	if err != nil {
 		h.logger.Error("error finding credentials in database", "err", err)
@@ -36,7 +36,7 @@ func (h *handler) GetCredentials(c *gin.Context) {
 		return
 	}
 
-	filteredCredentials := []model.Credential{}
+	filteredCredentials := []v1.Credential{}
 
 	for _, credential := range credentials {
 		_, isMember := orgs[credential.Organization]
@@ -58,7 +58,7 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 		return
 	}
 
-	var credential model.Credential
+	var credential v1.Credential
 	err := c.BindJSON(&credential)
 	if err != nil {
 		h.logger.Error("error binding request json to credential", "err", err)
@@ -82,7 +82,7 @@ func (h *handler) DeleteOrgCredentials(c *gin.Context) {
 	org := c.Param("org")
 	name := c.Param("credential")
 
-	var credential model.Credential
+	var credential v1.Credential
 	err := h.db.Take(&credential, "organization = ? and name = ?", org, name).Error
 	if err != nil {
 		h.logger.Error("error taking credential from database", "err", err)
@@ -105,7 +105,7 @@ func (h *handler) DeleteOrgCredentials(c *gin.Context) {
 func (h *handler) GetCredentialUUID(c *gin.Context) {
 	id := c.Param("uuid")
 
-	var credential model.Credential
+	var credential v1.Credential
 	err := h.db.Take(&credential, "id = ?", id).Error
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)

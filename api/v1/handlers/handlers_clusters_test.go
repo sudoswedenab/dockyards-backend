@@ -11,11 +11,12 @@ import (
 	"path"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/google/uuid"
@@ -26,34 +27,34 @@ func TestPostOrgClusters(t *testing.T) {
 	tt := []struct {
 		name             string
 		organizationName string
-		user             model.User
-		users            []model.User
-		organizations    []model.Organization
-		clusterOptions   model.ClusterOptions
+		user             v1.User
+		users            []v1.User
+		organizations    []v1.Organization
+		clusterOptions   v1.ClusterOptions
 	}{
 		{
 			name:             "test recommended",
 			organizationName: "test-org",
-			user: model.User{
+			user: v1.User{
 				ID: uuid.MustParse("fec813fc-7938-4cb9-ba12-bb28f6b1f5d9"),
 			},
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:    uuid.MustParse("fec813fc-7938-4cb9-ba12-bb28f6b1f5d9"),
 					Email: "test@dockyards.dev",
 				},
 			},
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					Name: "test-org",
-					Users: []model.User{
+					Users: []v1.User{
 						{
 							ID: uuid.MustParse("fec813fc-7938-4cb9-ba12-bb28f6b1f5d9"),
 						},
 					},
 				},
 			},
-			clusterOptions: model.ClusterOptions{
+			clusterOptions: v1.ClusterOptions{
 				Name: "test",
 			},
 		},
@@ -129,10 +130,10 @@ func TestPostOrgClustersErrors(t *testing.T) {
 	tt := []struct {
 		name               string
 		organizationName   string
-		user               model.User
-		users              []model.User
-		organizations      []model.Organization
-		clusterOptions     model.ClusterOptions
+		user               v1.User
+		users              []v1.User
+		organizations      []v1.Organization
+		clusterOptions     v1.ClusterOptions
 		clustermockOptions []clustermock.MockOption
 		expected           int
 	}{
@@ -144,20 +145,20 @@ func TestPostOrgClustersErrors(t *testing.T) {
 		{
 			name:             "test invalid cluster name",
 			organizationName: "test-org",
-			user: model.User{
+			user: v1.User{
 				ID:    uuid.MustParse("82aaf116-666f-4846-9e10-defa79a4df3d"),
 				Email: "test@dockyards.dev",
 			},
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:    uuid.MustParse("82aaf116-666f-4846-9e10-defa79a4df3d"),
 					Email: "test@dockyards.dev",
 				},
 			},
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					Name: "test-org",
-					Users: []model.User{
+					Users: []v1.User{
 						{
 							ID:    uuid.MustParse("82aaf116-666f-4846-9e10-defa79a4df3d"),
 							Email: "test@dockyards.dev",
@@ -165,7 +166,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					},
 				},
 			},
-			clusterOptions: model.ClusterOptions{
+			clusterOptions: v1.ClusterOptions{
 				Name: "InvalidClusterName",
 			},
 			expected: http.StatusUnprocessableEntity,
@@ -173,54 +174,56 @@ func TestPostOrgClustersErrors(t *testing.T) {
 		{
 			name:             "test invalid node pool name",
 			organizationName: "test-org",
-			user: model.User{
+			user: v1.User{
 				ID: uuid.MustParse("e7282b48-f8b6-4042-8f4c-12ec59fe3a87"),
 			},
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID: uuid.MustParse("e7282b48-f8b6-4042-8f4c-12ec59fe3a87"),
 				},
 			},
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					Name: "test-org",
-					Users: []model.User{
+					Users: []v1.User{
 						{
 							ID: uuid.MustParse("e7282b48-f8b6-4042-8f4c-12ec59fe3a87"),
 						},
 					},
 				},
 			},
-			clusterOptions: model.ClusterOptions{
+			clusterOptions: v1.ClusterOptions{
 				Name: "test-cluster",
-				NodePoolOptions: []model.NodePoolOptions{
+				NodePoolOptions: util.Ptr([]v1.NodePoolOptions{
 					{
 						Name: "InvalidNodePoolName",
 					},
-				},
+				}),
 			},
 			expected: http.StatusUnprocessableEntity,
 		},
 		{
 			name:             "test invalid membership",
 			organizationName: "test-org",
-			user: model.User{
+			user: v1.User{
 				ID: uuid.MustParse("62034914-3f46-4c71-810f-14ab985399bc"),
 			},
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:    uuid.MustParse("62034914-3f46-4c71-810f-14ab985399bc"),
+					Name:  "user1",
 					Email: "user1@dockyards.dev",
 				},
 				{
 					ID:    uuid.MustParse("af510e3e-e667-4500-8a73-12f2163f849e"),
+					Name:  "user2",
 					Email: "user2@dockyards.dev",
 				},
 			},
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					Name: "test-org",
-					Users: []model.User{
+					Users: []v1.User{
 						{
 							ID: uuid.MustParse("af510e3e-e667-4500-8a73-12f2163f849e"),
 						},
@@ -232,29 +235,29 @@ func TestPostOrgClustersErrors(t *testing.T) {
 		{
 			name:             "test existing cluster name",
 			organizationName: "test-org",
-			user: model.User{
+			user: v1.User{
 				ID: uuid.MustParse("c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f"),
 			},
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID: uuid.MustParse("c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f"),
 				},
 			},
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					Name: "test-org",
-					Users: []model.User{
+					Users: []v1.User{
 						{
 							ID: uuid.MustParse("c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f"),
 						},
 					},
 				},
 			},
-			clusterOptions: model.ClusterOptions{
+			clusterOptions: v1.ClusterOptions{
 				Name: "test-cluster",
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]model.Cluster{
+				clustermock.WithClusters(map[string]v1.Cluster{
 					"test-cluster": {
 						Name:         "test-cluster",
 						Organization: "test-org",
@@ -336,27 +339,27 @@ func TestDeleteOrgClusters(t *testing.T) {
 		name               string
 		organizationName   string
 		clusterName        string
-		user               model.User
-		users              []model.User
-		organizations      []model.Organization
+		user               v1.User
+		users              []v1.User
+		organizations      []v1.Organization
 		clustermockOptions []clustermock.MockOption
 	}{
 		{
 			name:             "test simple",
 			organizationName: "test-org",
 			clusterName:      "test-cluster",
-			user: model.User{
+			user: v1.User{
 				ID: uuid.MustParse("7994b631-399a-41e6-9c6c-200391f8f87d"),
 			},
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID: uuid.MustParse("7994b631-399a-41e6-9c6c-200391f8f87d"),
 				},
 			},
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					Name: "test-org",
-					Users: []model.User{
+					Users: []v1.User{
 						{
 							ID: uuid.MustParse("7994b631-399a-41e6-9c6c-200391f8f87d"),
 						},
@@ -364,7 +367,7 @@ func TestDeleteOrgClusters(t *testing.T) {
 				},
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]model.Cluster{
+				clustermock.WithClusters(map[string]v1.Cluster{
 					"test-cluster": {
 						Organization: "test-org",
 						Name:         "test-cluster",
@@ -443,9 +446,9 @@ func TestDeleteOrgClustersErrors(t *testing.T) {
 		name               string
 		organizationName   string
 		clusterName        string
-		user               model.User
-		users              []model.User
-		organizations      []model.Organization
+		user               v1.User
+		users              []v1.User
+		organizations      []v1.Organization
 		clustermockOptions []clustermock.MockOption
 		expected           int
 	}{
@@ -462,7 +465,7 @@ func TestDeleteOrgClustersErrors(t *testing.T) {
 			name:             "test invalid organization",
 			organizationName: "test-org",
 			clusterName:      "test-cluster",
-			user: model.User{
+			user: v1.User{
 				ID: uuid.MustParse("e5cd33c8-cddf-494f-9156-3ddc82b7c2f5"),
 			},
 			expected: http.StatusUnauthorized,
@@ -471,18 +474,18 @@ func TestDeleteOrgClustersErrors(t *testing.T) {
 			name:             "test invalid cluster",
 			organizationName: "test-org",
 			clusterName:      "test-cluster",
-			user: model.User{
+			user: v1.User{
 				ID: uuid.MustParse("f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3"),
 			},
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID: uuid.MustParse("f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3"),
 				},
 			},
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					Name: "test-org",
-					Users: []model.User{
+					Users: []v1.User{
 						{
 							ID: uuid.MustParse("f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3"),
 						},
@@ -495,23 +498,25 @@ func TestDeleteOrgClustersErrors(t *testing.T) {
 			name:             "test invalid organization membership",
 			organizationName: "test-org",
 			clusterName:      "test-cluster",
-			user: model.User{
+			user: v1.User{
 				ID: uuid.MustParse("8ce52ca1-1931-49a1-8ddf-62bf3870a4bf"),
 			},
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:    uuid.MustParse("8ce52ca1-1931-49a1-8ddf-62bf3870a4bf"),
+					Name:  "user1",
 					Email: "user1@dockyards.dev",
 				},
 				{
 					ID:    uuid.MustParse("0b8f6617-eba7-4360-b73a-11dac2286a40"),
+					Name:  "user2",
 					Email: "user2@dockyards.dev",
 				},
 			},
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					Name: "test-org",
-					Users: []model.User{
+					Users: []v1.User{
 						{
 							ID: uuid.MustParse("0b8f6617-eba7-4360-b73a-11dac2286a40"),
 						},
@@ -589,26 +594,26 @@ func TestGetCluster(t *testing.T) {
 	tt := []struct {
 		name               string
 		clusterID          string
-		user               model.User
-		users              []model.User
-		organizations      []model.Organization
+		user               v1.User
+		users              []v1.User
+		organizations      []v1.Organization
 		clustermockOptions []clustermock.MockOption
 	}{
 		{
 			name:      "test simple",
 			clusterID: "cluster-123",
-			user: model.User{
+			user: v1.User{
 				ID: uuid.MustParse("f235721e-8e34-4b57-a6aa-8f6d31162a41"),
 			},
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID: uuid.MustParse("f235721e-8e34-4b57-a6aa-8f6d31162a41"),
 				},
 			},
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					Name: "test-org",
-					Users: []model.User{
+					Users: []v1.User{
 						{
 							ID: uuid.MustParse("f235721e-8e34-4b57-a6aa-8f6d31162a41"),
 						},
@@ -616,7 +621,7 @@ func TestGetCluster(t *testing.T) {
 				},
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]model.Cluster{
+				clustermock.WithClusters(map[string]v1.Cluster{
 					"cluster-123": {
 						Name:         "cluster-123",
 						Organization: "test-org",
@@ -692,9 +697,9 @@ func TestGetClusterErrors(t *testing.T) {
 	tt := []struct {
 		name               string
 		clusterID          string
-		user               model.User
-		users              []model.User
-		organizations      []model.Organization
+		user               v1.User
+		users              []v1.User
+		organizations      []v1.Organization
 		clustermockOptions []clustermock.MockOption
 		expected           int
 	}{
@@ -710,23 +715,25 @@ func TestGetClusterErrors(t *testing.T) {
 		{
 			name:      "test invalid membership",
 			clusterID: "cluster-123",
-			user: model.User{
+			user: v1.User{
 				ID: uuid.MustParse("f6f6531f-ab6c-4237-b1cb-76133674465f"),
 			},
-			users: []model.User{
+			users: []v1.User{
 				{
 					ID:    uuid.MustParse("f6f6531f-ab6c-4237-b1cb-76133674465f"),
+					Name:  "user1",
 					Email: "user1@dockyards.dev",
 				},
 				{
 					ID:    uuid.MustParse("afb03005-d51d-4387-9857-83125ff505d5"),
+					Name:  "user2",
 					Email: "user2@dockyards.dev",
 				},
 			},
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					Name: "test-org",
-					Users: []model.User{
+					Users: []v1.User{
 						{
 							ID: uuid.MustParse("afb03005-d51d-4387-9857-83125ff505d5"),
 						},
@@ -734,7 +741,7 @@ func TestGetClusterErrors(t *testing.T) {
 				},
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]model.Cluster{
+				clustermock.WithClusters(map[string]v1.Cluster{
 					"cluster-123": {
 						Name:         "cluster-123",
 						Organization: "test-org",

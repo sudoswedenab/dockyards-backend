@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ func (h *handler) GetOrgs(c *gin.Context) {
 		return
 	}
 
-	var organizations []model.Organization
+	var organizations []v1.Organization
 	err = h.db.Model(&user).Association("Organizations").Find(&organizations)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -30,7 +30,7 @@ func (h *handler) GetOrgs(c *gin.Context) {
 }
 
 func (h *handler) PostOrgs(c *gin.Context) {
-	var organization model.Organization
+	var organization v1.Organization
 	err := c.BindJSON(&organization)
 	if err != nil {
 		c.Status(http.StatusBadRequest)
@@ -47,7 +47,7 @@ func (h *handler) PostOrgs(c *gin.Context) {
 		return
 	}
 
-	var existingOrganization model.Organization
+	var existingOrganization v1.Organization
 	err = h.db.Where("name = ?", organization.Name).Take(&existingOrganization).Error
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -75,7 +75,7 @@ func (h *handler) PostOrgs(c *gin.Context) {
 
 	// add the current user as the only user of the new organization
 	// discard any users that might be part of the create request
-	organization.Users = []model.User{
+	organization.Users = []v1.User{
 		user,
 	}
 
@@ -109,7 +109,7 @@ func (h *handler) PostOrgs(c *gin.Context) {
 func (h *handler) DeleteOrganization(c *gin.Context) {
 	organizationID := c.Param("org")
 
-	var organization model.Organization
+	var organization v1.Organization
 	err := h.db.Take(&organization, "id = ?", organizationID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -131,7 +131,7 @@ func (h *handler) DeleteOrganization(c *gin.Context) {
 		return
 	}
 
-	organizationClusters := []model.Cluster{}
+	organizationClusters := []v1.Cluster{}
 	for _, cluster := range *allClusters {
 		if cluster.Organization == organization.Name {
 			h.logger.Warn("existing cluster belongs to organization", "organization", organization.ID, "id", cluster.ID)

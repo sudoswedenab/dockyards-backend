@@ -9,7 +9,7 @@ import (
 	"path"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
@@ -23,14 +23,14 @@ func TestDeleteOrganization(t *testing.T) {
 	tt := []struct {
 		name               string
 		organizationID     string
-		organizations      []model.Organization
+		organizations      []v1.Organization
 		cloudmockOptions   []cloudmock.MockOption
 		clustermockOptions []clustermock.MockOption
 	}{
 		{
 			name:           "test simple",
 			organizationID: "8f15221d-2e4c-4d5e-9288-3052a952ac4f",
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					ID:   uuid.MustParse("8f15221d-2e4c-4d5e-9288-3052a952ac4f"),
 					Name: "test",
@@ -42,7 +42,7 @@ func TestDeleteOrganization(t *testing.T) {
 				}),
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]model.Cluster{}),
+				clustermock.WithClusters(map[string]v1.Cluster{}),
 			},
 		},
 	}
@@ -55,7 +55,7 @@ func TestDeleteOrganization(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.Organization{})
+			db.AutoMigrate(&v1.Organization{})
 
 			for _, o := range tc.organizations {
 				err := db.Create(&o).Error
@@ -102,7 +102,7 @@ func TestDeleteOrganizationErrors(t *testing.T) {
 	tt := []struct {
 		name               string
 		organizationID     string
-		organizations      []model.Organization
+		organizations      []v1.Organization
 		cloudmockOptions   []cloudmock.MockOption
 		clustermockOptions []clustermock.MockOption
 		expected           int
@@ -110,21 +110,21 @@ func TestDeleteOrganizationErrors(t *testing.T) {
 		{
 			name:           "test missing organization",
 			organizationID: "d14d89fb-246a-41e4-b73c-edb00924230f",
-			organizations:  []model.Organization{},
+			organizations:  []v1.Organization{},
 			expected:       http.StatusUnauthorized,
 		},
 		{
 			name:           "test organization with clusters",
 			organizationID: "8cbe7a7f-6967-4347-b58e-fd2e5937a563",
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					ID:   uuid.MustParse("8cbe7a7f-6967-4347-b58e-fd2e5937a563"),
 					Name: "still-has-clusters",
 				},
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]model.Cluster{
-					"still-has-clusters": model.Cluster{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"still-has-clusters": v1.Cluster{
 						Name:         "test-123",
 						Organization: "still-has-clusters",
 					},
@@ -135,7 +135,7 @@ func TestDeleteOrganizationErrors(t *testing.T) {
 		{
 			name:           "test organization missing in cloud service",
 			organizationID: "0f479212-3bc3-4219-808e-c327c8e22390",
-			organizations: []model.Organization{
+			organizations: []v1.Organization{
 				{
 					ID: uuid.MustParse("0f479212-3bc3-4219-808e-c327c8e22390"),
 				},
@@ -153,7 +153,7 @@ func TestDeleteOrganizationErrors(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.Organization{})
+			db.AutoMigrate(&v1.Organization{})
 
 			for _, o := range tc.organizations {
 				err := db.Create(&o).Error

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -48,7 +48,7 @@ func (h *handler) PostRefresh(c *gin.Context) {
 		}
 
 		//Find the user with token sub
-		var user model.User
+		var user v1.User
 		err := h.db.First(&user, "id = ?", claims["sub"]).Error
 
 		// replace with jwt response
@@ -68,7 +68,7 @@ func (h *handler) PostRefresh(c *gin.Context) {
 	}
 }
 
-func (h *handler) generateTokenPair(user model.User) (map[string]string, error) {
+func (h *handler) generateTokenPair(user v1.User) (map[string]string, error) {
 	// Create token
 	token := jwt.New(jwt.SigningMethodHS256)
 

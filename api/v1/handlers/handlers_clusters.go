@@ -3,8 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +16,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		return
 	}
 
-	var organization model.Organization
+	var organization v1.Organization
 	err := h.db.Take(&organization, "name = ?", org).Error
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -44,7 +45,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		return
 	}
 
-	var clusterOptions model.ClusterOptions
+	var clusterOptions v1.ClusterOptions
 	if c.BindJSON(&clusterOptions) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
@@ -64,15 +65,17 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		return
 	}
 
-	for _, nodePoolOptions := range clusterOptions.NodePoolOptions {
-		details, validName := names.IsValidName(nodePoolOptions.Name)
-		if !validName {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
-				"error":   "node pool name is not valid",
-				"name":    nodePoolOptions.Name,
-				"details": details,
-			})
-			return
+	if clusterOptions.NodePoolOptions != nil {
+		for _, nodePoolOptions := range *clusterOptions.NodePoolOptions {
+			details, validName := names.IsValidName(nodePoolOptions.Name)
+			if !validName {
+				c.JSON(http.StatusUnprocessableEntity, gin.H{
+					"error":   "node pool name is not valid",
+					"name":    nodePoolOptions.Name,
+					"details": details,
+				})
+				return
+			}
 		}
 	}
 
@@ -96,7 +99,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	h.logger.Debug("forcing no ingress provider")
-	clusterOptions.NoIngressProvider = true
+	clusterOptions.NoIngressProvider = util.Ptr(true)
 
 	cluster, err := h.clusterService.CreateCluster(&organization, &clusterOptions)
 	if err != nil {
@@ -107,27 +110,27 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	nodePoolOptions := clusterOptions.NodePoolOptions
-	if len(nodePoolOptions) == 0 {
+	if nodePoolOptions == nil || len(*nodePoolOptions) == 0 {
 		h.logger.Debug("using recommended node pool options")
 
-		nodePoolOptions = h.getRecommendedNodePools()
+		nodePoolOptions = util.Ptr(h.getRecommendedNodePools())
 	}
 
-	if clusterOptions.SingleNode {
+	if clusterOptions.SingleNode != nil && *clusterOptions.SingleNode {
 		h.logger.Debug("using single node pool")
 
-		nodePoolOptions = []model.NodePoolOptions{
+		nodePoolOptions = util.Ptr([]v1.NodePoolOptions{
 			{
 				Name:         "single-node",
-				Quantity:     1,
-				ControlPlane: true,
-				Etcd:         true,
+				Quantity:     util.Ptr(1),
+				ControlPlane: util.Ptr(true),
+				Etcd:         util.Ptr(true),
 			},
-		}
+		})
 	}
 
 	hasErrors := false
-	for _, nodePoolOption := range nodePoolOptions {
+	for _, nodePoolOption := range *nodePoolOptions {
 		h.logger.Debug("creating cluster node pool", "name", nodePoolOption.Name)
 
 		nodePool, err := h.clusterService.CreateNodePool(&organization, cluster, &nodePoolOption)
@@ -141,7 +144,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		h.logger.Debug("created cluster node pool", "name", nodePool.Name)
 	}
 
-	if !clusterOptions.NoClusterApps {
+	if clusterOptions.NoClusterApps == nil || !*clusterOptions.NoClusterApps {
 		clusterApps, err := h.cloudService.GetClusterDeployments(&organization, cluster)
 		if err != nil {
 			h.logger.Error("error getting cloud service cluster deployments ", "err", err)
@@ -196,7 +199,7 @@ func (h *handler) GetOrgClusterKubeConfig(c *gin.Context) {
 
 	h.logger.Debug("get kubeconfig for cluster", "org", org, "cluster", clusterName)
 
-	cluster := model.Cluster{
+	cluster := v1.Cluster{
 		Organization: org,
 		Name:         clusterName,
 	}
@@ -226,7 +229,7 @@ func (h *handler) DeleteOrgClusters(c *gin.Context) {
 		return
 	}
 
-	var organization model.Organization
+	var organization v1.Organization
 	err := h.db.Take(&organization, "name = ?", org).Error
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -256,7 +259,7 @@ func (h *handler) DeleteOrgClusters(c *gin.Context) {
 		return
 	}
 
-	cluster := model.Cluster{
+	cluster := v1.Cluster{
 		Organization: org,
 		Name:         clusterName,
 	}
@@ -283,7 +286,7 @@ func (h *handler) GetClusters(c *gin.Context) {
 		return
 	}
 
-	var organizations []model.Organization
+	var organizations []v1.Organization
 	err = h.db.Model(&user).Association("Organizations").Find(&organizations)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -306,7 +309,7 @@ func (h *handler) GetClusters(c *gin.Context) {
 		return
 	}
 
-	filteredClusters := []model.Cluster{}
+	filteredClusters := []v1.Cluster{}
 	for _, cluster := range *clusters {
 		_, isMember := orgs[cluster.Organization]
 		h.logger.Debug("checking cluster membership", "organization", cluster.Organization, "is_member", isMember)
@@ -337,7 +340,7 @@ func (h *handler) GetCluster(c *gin.Context) {
 		return
 	}
 
-	var organization model.Organization
+	var organization v1.Organization
 	err = h.db.Take(&organization, "name = ?", cluster.Organization).Error
 	if err != nil {
 		h.logger.Error("error taking organization from database", "err", err)

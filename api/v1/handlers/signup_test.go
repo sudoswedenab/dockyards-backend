@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -18,12 +18,12 @@ func TestSignup(t *testing.T) {
 	tt := []struct {
 		name        string
 		mockCluster types.ClusterService
-		signup      model.Signup
+		signup      v1.Signup
 		expected    int
 	}{
 		{
 			name: "test success",
-			signup: model.Signup{
+			signup: v1.Signup{
 				Name:     "test",
 				Email:    "test@dockyards.io",
 				Password: "hello",
@@ -38,7 +38,7 @@ func TestSignup(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.User{})
+			db.AutoMigrate(&v1.User{})
 
 			h := handler{
 				clusterService: tc.mockCluster,

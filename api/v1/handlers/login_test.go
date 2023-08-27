@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -28,20 +28,20 @@ func TestLogin(t *testing.T) {
 
 	tt := []struct {
 		name        string
-		users       []model.User
-		login       model.Login
+		users       []v1.User
+		login       v1.Login
 		mockCluster types.ClusterService
 		expected    int
 	}{
 		{
 			name: "test valid user",
-			users: []model.User{
+			users: []v1.User{
 				{
 					Email:    "test@dockyards.io",
 					Password: string(hash),
 				},
 			},
-			login: model.Login{
+			login: v1.Login{
 				Email:    "test@dockyards.io",
 				Password: "password",
 			},
@@ -49,13 +49,13 @@ func TestLogin(t *testing.T) {
 		},
 		{
 			name: "test incorrect password",
-			users: []model.User{
+			users: []v1.User{
 				{
 					Email:    "test@dockyards.io",
 					Password: string(hash),
 				},
 			},
-			login: model.Login{
+			login: v1.Login{
 				Email:    "test@dockyards.io",
 				Password: "incorrect",
 			},
@@ -63,7 +63,7 @@ func TestLogin(t *testing.T) {
 		},
 		{
 			name: "test missing user",
-			login: model.Login{
+			login: v1.Login{
 				Email:    "test@dockyards.io",
 				Password: "password",
 			},
@@ -79,7 +79,7 @@ func TestLogin(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.User{})
+			db.AutoMigrate(&v1.User{})
 
 			for _, user := range tc.users {
 				db.Create(&user)

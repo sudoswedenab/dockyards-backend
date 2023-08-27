@@ -3,8 +3,8 @@ package user
 import (
 	"net/http"
 
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +16,7 @@ type handler struct {
 }
 
 func (h *handler) FindAllUsers(c *gin.Context) {
-	var users []model.User
+	var users []v1.User
 
 	h.db.Find(&users)
 
@@ -29,7 +29,7 @@ func (h *handler) FindUserById(c *gin.Context) {
 	//Get Id off url
 	id := c.Param("id")
 	//get the User
-	var userById model.User
+	var userById v1.User
 	h.db.First(&userById, "id = ?", id)
 	//Respond
 	c.JSON(200, gin.H{
@@ -64,10 +64,10 @@ func (h *handler) UpdateUser(c *gin.Context) {
 		return
 	}
 	//find the post were updating
-	var user model.User
+	var user v1.User
 	h.db.First(&user, id)
 	//update it
-	h.db.Model(&user).Updates(model.User{
+	h.db.Model(&user).Updates(v1.User{
 		Name:     User.Name,
 		Email:    User.Email,
 		Password: string(hash),
@@ -82,7 +82,7 @@ func (h *handler) DeleteUser(c *gin.Context) {
 	//Get the id off the url
 	id := c.Param("id")
 	//delete the post
-	h.db.Delete(&model.User{}, "id = ?", id)
+	h.db.Delete(&v1.User{}, "id = ?", id)
 	//respond
 	c.Status(200)
 }

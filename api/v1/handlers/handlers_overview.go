@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +15,7 @@ func (h *handler) GetOverview(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 
-	var organizations []model.Organization
+	var organizations []v1.Organization
 	err = h.db.Joins("join organization_user on organization_user.organization_id = organizations.id").Where("organization_user.user_id = ?", user.ID).Find(&organizations).Error
 	if err != nil {
 		h.logger.Error("error finding organizations in database", "err", err)
@@ -23,7 +23,7 @@ func (h *handler) GetOverview(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 
-	var overview model.Overview
+	var overview v1.Overview
 
 	allClusters, err := h.clusterService.GetAllClusters()
 	if err != nil {
@@ -32,14 +32,14 @@ func (h *handler) GetOverview(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 
-	clustersOverviews := make(map[string][]model.ClusterOverview)
+	clustersOverviews := make(map[string][]v1.ClusterOverview)
 	for _, cluster := range *allClusters {
-		clusterOverview := model.ClusterOverview{
+		clusterOverview := v1.ClusterOverview{
 			Name: cluster.Name,
 			ID:   cluster.ID,
 		}
 
-		var deployments []model.Deployment
+		var deployments []v1.Deployment
 		err := h.db.Find(&deployments, "cluster_id = ?", cluster.ID).Error
 		if err != nil {
 			h.logger.Error("error getting deployments from database", "err", err)
@@ -47,14 +47,18 @@ func (h *handler) GetOverview(c *gin.Context) {
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 
+		deploymentsOverview := []v1.DeploymentOverview{}
+
 		for _, deployment := range deployments {
-			deploymentOverview := model.DeploymentOverview{
+			deploymentOverview := v1.DeploymentOverview{
 				Name: deployment.Name,
-				ID:   deployment.ID,
+				ID:   deployment.ID.String(),
 			}
 
-			clusterOverview.Deployments = append(clusterOverview.Deployments, deploymentOverview)
+			deploymentsOverview = append(deploymentsOverview, deploymentOverview)
 		}
+
+		clusterOverview.Deployments = &deploymentsOverview
 
 		organizationClusters := clustersOverviews[cluster.Organization]
 		organizationClusters = append(organizationClusters, clusterOverview)
@@ -65,13 +69,13 @@ func (h *handler) GetOverview(c *gin.Context) {
 	for _, organization := range organizations {
 		clustersOverview := clustersOverviews[organization.Name]
 
-		organizationOverview := model.OrganizationOverview{
+		organizationOverview := v1.OrganizationOverview{
 			Name:     organization.Name,
-			ID:       organization.ID,
-			Clusters: clustersOverview,
+			ID:       organization.ID.String(),
+			Clusters: &clustersOverview,
 		}
 
-		var users []model.User
+		var users []v1.User
 		err := h.db.Debug().Joins("join organization_user on organization_user.user_id = users.id").Where("organization_user.organization_id = ?", organization.ID).Find(&users).Error
 		if err != nil {
 			h.logger.Error("error finding organization users in database", "err", err)
@@ -79,16 +83,20 @@ func (h *handler) GetOverview(c *gin.Context) {
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 
+		usersOverview := []v1.UserOverview{}
+
 		for _, user := range users {
 			h.logger.Debug("user", "organization", organization.ID, "id", user.ID)
 
-			userOverview := model.UserOverview{
+			userOverview := v1.UserOverview{
 				Email: user.Email,
-				ID:    user.ID,
+				ID:    user.ID.String(),
 			}
 
-			organizationOverview.Users = append(organizationOverview.Users, userOverview)
+			usersOverview = append(usersOverview, userOverview)
 		}
+
+		organizationOverview.Users = &usersOverview
 
 		overview.Organizations = append(overview.Organizations, organizationOverview)
 	}

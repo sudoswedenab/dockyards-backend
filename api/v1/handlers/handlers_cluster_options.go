@@ -3,36 +3,37 @@ package handlers
 import (
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/gin-gonic/gin"
 )
 
-func (h *handler) getRecommendedNodePools() []model.NodePoolOptions {
-	return []model.NodePoolOptions{
+func (h *handler) getRecommendedNodePools() []v1.NodePoolOptions {
+	return []v1.NodePoolOptions{
 		{
 			Name:                       "control-plane",
-			ControlPlane:               true,
-			Etcd:                       true,
-			ControlPlaneComponentsOnly: true,
-			Quantity:                   3,
-			CPUCount:                   2,
-			RAMSizeMB:                  4096,
-			DiskSizeGB:                 100,
+			ControlPlane:               util.Ptr(true),
+			Etcd:                       util.Ptr(true),
+			ControlPlaneComponentsOnly: util.Ptr(true),
+			Quantity:                   util.Ptr(3),
+			CPUCount:                   util.Ptr(2),
+			RAMSizeMb:                  util.Ptr(4096),
+			DiskSizeGb:                 util.Ptr(100),
 		},
 		{
 			Name:         "load-balancer",
-			LoadBalancer: true,
-			Quantity:     2,
-			CPUCount:     2,
-			RAMSizeMB:    4096,
-			DiskSizeGB:   100,
+			LoadBalancer: util.Ptr(true),
+			Quantity:     util.Ptr(2),
+			CPUCount:     util.Ptr(2),
+			RAMSizeMb:    util.Ptr(4096),
+			DiskSizeGb:   util.Ptr(100),
 		},
 		{
 			Name:       "worker",
-			Quantity:   2,
-			CPUCount:   4,
-			RAMSizeMB:  8192,
-			DiskSizeGB: 100,
+			Quantity:   util.Ptr(2),
+			CPUCount:   util.Ptr(4),
+			RAMSizeMb:  util.Ptr(8192),
+			DiskSizeGb: util.Ptr(100),
 		},
 	}
 }
@@ -45,7 +46,7 @@ func (h *handler) GetClusterOptions(c *gin.Context) {
 
 	recommendedNodePools := h.getRecommendedNodePools()
 
-	c.JSON(http.StatusOK, model.Options{
+	c.JSON(http.StatusOK, v1.Options{
 		SingleNode:      false,
 		Version:         supportedVersions,
 		NodePoolOptions: recommendedNodePools,

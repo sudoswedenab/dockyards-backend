@@ -13,7 +13,7 @@ import (
 	"reflect"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"github.com/gin-gonic/gin"
@@ -26,13 +26,13 @@ func TestGetDeployment(t *testing.T) {
 	tt := []struct {
 		name         string
 		deploymentID string
-		deployments  []model.Deployment
-		expected     model.Deployment
+		deployments  []v1.Deployment
+		expected     v1.Deployment
 	}{
 		{
 			name:         "test single",
 			deploymentID: "52b321cb-f9c5-43ba-bd35-ddc909ecfb64",
-			deployments: []model.Deployment{
+			deployments: []v1.Deployment{
 				{
 					ID: uuid.MustParse("52b321cb-f9c5-43ba-bd35-ddc909ecfb64"),
 				},
@@ -48,7 +48,7 @@ func TestGetDeployment(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.Deployment{})
+			db.AutoMigrate(&v1.Deployment{})
 
 			for _, deployment := range tc.deployments {
 				err := db.Create(&deployment).Error
@@ -89,13 +89,13 @@ func TestGetDeploymentErrors(t *testing.T) {
 	tt := []struct {
 		name         string
 		deploymentID string
-		deployments  []model.Deployment
+		deployments  []v1.Deployment
 		expected     int
 	}{
 		{
 			name:         "test missing",
 			deploymentID: "c1e4b45e-cfe3-4fc7-a73a-2a3908524271",
-			deployments: []model.Deployment{
+			deployments: []v1.Deployment{
 				{
 					ID: uuid.MustParse("6c29ac51-2a27-4ab4-a030-77ebdddcf1c8"),
 				},
@@ -115,7 +115,7 @@ func TestGetDeploymentErrors(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.Deployment{})
+			db.AutoMigrate(&v1.Deployment{})
 
 			for _, deployment := range tc.deployments {
 				err := db.Create(&deployment).Error
@@ -154,14 +154,14 @@ func TestGetClusterDeployments(t *testing.T) {
 	tt := []struct {
 		name               string
 		clusterID          string
-		deployments        []model.Deployment
+		deployments        []v1.Deployment
 		clustermockOptions []clustermock.MockOption
-		expected           []model.Deployment
+		expected           []v1.Deployment
 	}{
 		{
 			name:      "test single deployment",
 			clusterID: "cluster-123",
-			deployments: []model.Deployment{
+			deployments: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("115590c5-c5f5-48d3-95b4-5fd6a1d3e77f"),
 					Name:      "test",
@@ -169,7 +169,7 @@ func TestGetClusterDeployments(t *testing.T) {
 				},
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]model.Cluster{
+				clustermock.WithClusters(map[string]v1.Cluster{
 					"cluster-123": {
 						ID:           "cluster-123",
 						Name:         "test",
@@ -177,7 +177,7 @@ func TestGetClusterDeployments(t *testing.T) {
 					},
 				}),
 			},
-			expected: []model.Deployment{
+			expected: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("115590c5-c5f5-48d3-95b4-5fd6a1d3e77f"),
 					Name:      "test",
@@ -188,7 +188,7 @@ func TestGetClusterDeployments(t *testing.T) {
 		{
 			name:      "test multiple deployments",
 			clusterID: "cluster-123",
-			deployments: []model.Deployment{
+			deployments: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("9f5be117-7a87-4b14-8788-42b595cd7679"),
 					Name:      "test1",
@@ -206,7 +206,7 @@ func TestGetClusterDeployments(t *testing.T) {
 				},
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]model.Cluster{
+				clustermock.WithClusters(map[string]v1.Cluster{
 					"cluster-123": {
 						ID:           "cluster-123",
 						Name:         "test",
@@ -214,7 +214,7 @@ func TestGetClusterDeployments(t *testing.T) {
 					},
 				}),
 			},
-			expected: []model.Deployment{
+			expected: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("9f5be117-7a87-4b14-8788-42b595cd7679"),
 					Name:      "test1",
@@ -230,7 +230,7 @@ func TestGetClusterDeployments(t *testing.T) {
 		{
 			name:      "test cluster without deployments",
 			clusterID: "cluster-123",
-			deployments: []model.Deployment{
+			deployments: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("b6cf669a-601f-4543-9a3c-d65da2d176d2"),
 					Name:      "test1",
@@ -248,7 +248,7 @@ func TestGetClusterDeployments(t *testing.T) {
 				},
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]model.Cluster{
+				clustermock.WithClusters(map[string]v1.Cluster{
 					"cluster-123": {
 						ID:           "cluster-123",
 						Name:         "test",
@@ -256,7 +256,7 @@ func TestGetClusterDeployments(t *testing.T) {
 					},
 				}),
 			},
-			expected: []model.Deployment{},
+			expected: []v1.Deployment{},
 		},
 	}
 
@@ -268,7 +268,7 @@ func TestGetClusterDeployments(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.Deployment{})
+			db.AutoMigrate(&v1.Deployment{})
 
 			for _, deployment := range tc.deployments {
 				err := db.Create(&deployment).Error
@@ -310,7 +310,7 @@ func TestGetClusterDeployments(t *testing.T) {
 				t.Fatalf("unexpected error reading response body: %s", err)
 			}
 
-			var actual []model.Deployment
+			var actual []v1.Deployment
 			err = json.Unmarshal(b, &actual)
 			if err != nil {
 				t.Fatalf("expected no error unmarshalling reponse, got %s", err)
@@ -328,12 +328,12 @@ func TestDeleteDeployment(t *testing.T) {
 	tt := []struct {
 		name         string
 		deploymentID string
-		deployments  []model.Deployment
+		deployments  []v1.Deployment
 	}{
 		{
 			name:         "test single",
 			deploymentID: "33de82a0-4133-45dc-b319-ab6a8a1daebc",
-			deployments: []model.Deployment{
+			deployments: []v1.Deployment{
 				{
 					ID:   uuid.MustParse("33de82a0-4133-45dc-b319-ab6a8a1daebc"),
 					Name: "test-123",
@@ -348,7 +348,7 @@ func TestDeleteDeployment(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.Deployment{})
+			db.AutoMigrate(&v1.Deployment{})
 
 			for _, deployment := range tc.deployments {
 				err := db.Create(&deployment).Error
@@ -389,12 +389,12 @@ func TestPostClusterDeployments(t *testing.T) {
 	tt := []struct {
 		name       string
 		clusterID  string
-		deployment model.Deployment
+		deployment v1.Deployment
 	}{
 		{
 			name:      "test helm",
 			clusterID: "cluster-123",
-			deployment: model.Deployment{
+			deployment: v1.Deployment{
 				HelmChart: "test",
 			},
 		},
@@ -409,7 +409,7 @@ func TestPostClusterDeployments(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.Deployment{})
+			db.AutoMigrate(&v1.Deployment{})
 
 			h := handler{
 				db:     db,
@@ -443,14 +443,14 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 	tt := []struct {
 		name       string
 		clusterID  string
-		deployment model.Deployment
-		existing   []model.Deployment
+		deployment v1.Deployment
+		existing   []v1.Deployment
 		expected   int
 	}{
 		{
 			name:      "test invalid name",
 			clusterID: "cluster-123",
-			deployment: model.Deployment{
+			deployment: v1.Deployment{
 				Name: "InvalidName",
 			},
 			expected: http.StatusUnprocessableEntity,
@@ -458,7 +458,7 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 		{
 			name:      "test invalid container image",
 			clusterID: "cluster-123",
-			deployment: model.Deployment{
+			deployment: v1.Deployment{
 				Name:           "test",
 				ContainerImage: "http://localhost:1234/my-image",
 			},
@@ -467,10 +467,10 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 		{
 			name:      "test name already in-use",
 			clusterID: "cluster-123",
-			deployment: model.Deployment{
+			deployment: v1.Deployment{
 				Name: "test",
 			},
-			existing: []model.Deployment{
+			existing: []v1.Deployment{
 				{
 					Name:      "test",
 					ClusterID: "cluster-123",
@@ -489,7 +489,7 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.Deployment{})
+			db.AutoMigrate(&v1.Deployment{})
 
 			for _, existing := range tc.existing {
 				err := db.Create(&existing).Error
@@ -530,19 +530,19 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 	tt := []struct {
 		name       string
 		clusterID  string
-		deployment model.Deployment
+		deployment v1.Deployment
 	}{
 		{
 			name:      "test container image",
 			clusterID: "cluster-123",
-			deployment: model.Deployment{
+			deployment: v1.Deployment{
 				ContainerImage: "test",
 			},
 		},
 		{
 			name:      "test port",
 			clusterID: "cluster-123",
-			deployment: model.Deployment{
+			deployment: v1.Deployment{
 				ContainerImage: "nginx:l.2",
 				Port:           1234,
 			},
@@ -558,7 +558,7 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
-			db.AutoMigrate(&model.Deployment{})
+			db.AutoMigrate(&v1.Deployment{})
 
 			dirTemp, err := os.MkdirTemp("", "dockyards-")
 			if err != nil {
