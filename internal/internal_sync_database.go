@@ -1,27 +1,27 @@
 package internal
 
 import (
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"gorm.io/gorm"
 )
 
 func SyncDataBase(db *gorm.DB) error {
-	err := db.AutoMigrate(&model.User{})
+	err := db.AutoMigrate(&v1.User{})
 	if err != nil {
 		return err
 	}
 
-	err = db.AutoMigrate(&model.Organization{})
+	err = db.AutoMigrate(&v1.Organization{})
 	if err != nil {
 		return err
 	}
 
-	err = db.AutoMigrate(&model.Deployment{})
+	err = db.AutoMigrate(&v1.Deployment{})
 	if err != nil {
 		return err
 	}
 
-	err = db.AutoMigrate(&model.Credential{})
+	err = db.AutoMigrate(&v1.Credential{})
 	if err != nil {
 		return err
 	}
