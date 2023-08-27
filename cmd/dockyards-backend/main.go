@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net/http"
+	"net/http/cgi"
 	"os"
+	"path"
 	"strings"
 	"sync"
 	"time"
 
+	"bitbucket.org/sudosweden/dockyards-backend/api/sudo"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
@@ -17,12 +21,13 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
+	chi "github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -238,7 +243,6 @@ func main() {
 	gin.SetMode(ginMode)
 
 	r := gin.Default()
-	i := gin.Default()
 
 	if corsAllowOrigins != "" {
 		allowOrigins := strings.Split(corsAllowOrigins, ",")
@@ -270,16 +274,61 @@ func main() {
 
 	user.RegisterRoutes(r, db)
 
-	sudoHandlerOptions := []handlers.SudoHandlerOption{
-		handlers.WithSudoClusterService(rancherService),
-		handlers.WithSudoLogger(logger),
-		handlers.WithSudoGormDB(db),
-		handlers.WithSudoPrometheusRegistry(registry),
-		handlers.WithSudoGitProjectRoot(gitProjectRoot),
+	privateRouter := chi.NewRouter()
+
+	sudoOptions := []sudo.SudoOption{
+		sudo.WithLogger(logger),
+		sudo.WithDatabase(db),
+		sudo.WithClusterService(rancherService),
 	}
 
-	handlers.RegisterSudoRoutes(i, sudoHandlerOptions...)
+	sudoAPI, err := sudo.NewSudoAPI(sudoOptions...)
+	if err != nil {
+		logger.Error("error creating new sudo api", "err", err)
 
-	go i.Run(":9001")
+		os.Exit(1)
+	}
+
+	sudoAPIStrictHandler := sudo.NewStrictHandler(sudoAPI, nil)
+
+	sudo.HandlerFromMux(sudoAPIStrictHandler, privateRouter)
+
+	promHandlerOpts := promhttp.HandlerOpts{
+		Registry: registry,
+	}
+	promHandler := promhttp.HandlerFor(registry, promHandlerOpts)
+
+	privateRouter.Handle("/metrics", promHandler)
+	privateRouter.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {})
+
+	cgiHandler := cgi.Handler{
+		Path: "/usr/lib/git-core/git-http-backend",
+		Dir:  gitProjectRoot,
+		Env: []string{
+			"GIT_PROJECT_ROOT=" + gitProjectRoot,
+			"GIT_HTTP_EXPORT_ALL=true",
+		},
+	}
+
+	gitHandleFunc := func(w http.ResponseWriter, r *http.Request) {
+		deploymentID := chi.URLParam(r, "deploymentID")
+		wildcard := chi.URLParam(r, "*")
+
+		newPath := path.Join("/v1/deployments", deploymentID, wildcard)
+		r.URL.Path = newPath
+
+		logger.Debug("git connection", "wildcard", wildcard, "path", newPath)
+		cgiHandler.ServeHTTP(w, r)
+	}
+
+	privateRouter.HandleFunc("/git/{deploymentID}/*", gitHandleFunc)
+
+	privateServer := &http.Server{
+		Handler: privateRouter,
+		Addr:    ":9001",
+	}
+
+	go privateServer.ListenAndServe()
+
 	r.Run(":9000")
 }
