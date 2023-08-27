@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
@@ -52,7 +52,7 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 		}
 
 		//Find the user with token sub
-		var user model.User
+		var user v1.User
 		err := h.DB.First(&user, "id = ?", claims["sub"]).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
