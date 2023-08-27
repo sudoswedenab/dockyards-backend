@@ -173,11 +173,3 @@ func NewRancher(rancherOptions ...RancherOption) (*rancher, error) {
 	}
 	return &r, err
 }
-
-func boolPtr(b bool) *bool {
-	return &b
-}
-
-func int64Ptr(b int64) *int64 {
-	return &b
-}

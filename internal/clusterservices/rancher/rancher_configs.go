@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -44,13 +45,13 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 		Authentication: &managementv3.AuthnConfig{
 			Strategy: "x509",
 		},
-		IgnoreDockerVersion: boolPtr(true),
+		IgnoreDockerVersion: util.Ptr(true),
 		Ingress: &managementv3.IngressConfig{
 			Provider: "none",
 		},
 		Monitoring: &managementv3.MonitoringConfig{
 			Provider: "metrics-server",
-			Replicas: int64Ptr(1),
+			Replicas: util.Ptr(int64(1)),
 		},
 		Network: &managementv3.NetworkConfig{
 			Options: map[string]string{
@@ -62,7 +63,7 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 		Services: &managementv3.RKEConfigServices{
 			Etcd: &managementv3.ETCDService{
 				BackupConfig: &managementv3.BackupConfig{
-					Enabled:       boolPtr(true),
+					Enabled:       util.Ptr(true),
 					IntervalHours: 12,
 					Retention:     6,
 					Timeout:       300,
@@ -84,7 +85,7 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 			MaxUnavailableWorker:       "10%",
 			DrainInput: &managementv3.NodeDrainInput{
 				GracePeriod:      -1,
-				IgnoreDaemonSets: boolPtr(true),
+				IgnoreDaemonSets: util.Ptr(true),
 				Timeout:          120,
 			},
 		},
@@ -92,7 +93,7 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *model.ClusterOptions
 
 	if !clusterOptions.NoIngressProvider {
 		ingressConfig := managementv3.IngressConfig{
-			DefaultIngressClass: boolPtr(true),
+			DefaultIngressClass: util.Ptr(true),
 			Provider:            ingressProvider,
 			NodeSelector: map[string]string{
 				LabelNodeRoleLoadBalancer: "",
