@@ -1,16 +1,18 @@
 package types
 
-import "bitbucket.org/sudosweden/dockyards-backend/api/v1/model"
+import (
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+)
 
 type CloudService interface {
-	PrepareEnvironment(*model.Organization, *model.Cluster, *model.NodePoolOptions) (*CloudConfig, error)
-	CleanEnvironment(*model.Organization, *CloudConfig) error
-	CreateOrganization(*model.Organization) (string, error)
-	GetOrganization(*model.Organization) (string, error)
-	GetClusterDeployments(*model.Organization, *model.Cluster) (*[]model.Deployment, error)
+	PrepareEnvironment(*v1.Organization, *v1.Cluster, *v1.NodePoolOptions) (*CloudConfig, error)
+	CleanEnvironment(*v1.Organization, *CloudConfig) error
+	CreateOrganization(*v1.Organization) (string, error)
+	GetOrganization(*v1.Organization) (string, error)
+	GetClusterDeployments(*v1.Organization, *v1.Cluster) (*[]v1.Deployment, error)
 	DeleteGarbage()
-	GetFlavorNodePool(string) (*model.NodePool, error)
-	DeleteOrganization(*model.Organization) error
+	GetFlavorNodePool(string) (*v1.NodePool, error)
+	DeleteOrganization(*v1.Organization) error
 }
 
 type CloudConfig struct {
