@@ -100,7 +100,7 @@ type NodePoolOptions struct {
 	Etcd                       *bool  `json:"etcd,omitempty"`
 	LoadBalancer               *bool  `json:"load_balancer,omitempty"`
 	Name                       string `json:"name"`
-	Quantity                   *int   `json:"quantity,omitempty"`
+	Quantity                   int    `json:"quantity"`
 	RAMSizeMb                  *int   `json:"ram_size_mb,omitempty"`
 }
 
