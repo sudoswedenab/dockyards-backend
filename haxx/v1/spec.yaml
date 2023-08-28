@@ -563,6 +563,7 @@ components:
           type: integer
       required:
       - name
+      - quantity
     cluster_options:
       properties:
         name:
