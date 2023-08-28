@@ -13,6 +13,23 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// App defines model for app.
+type App struct {
+	AppSteps    []AppStep `json:"app_steps"`
+	Description *string   `json:"description,omitempty"`
+	Icon        *string   `json:"icon,omitempty"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `gorm:"unique; not null" json:"name"`
+}
+
+// AppStep defines model for app_step.
+type AppStep struct {
+	AppID       uuid.UUID    `json:"app_id"`
+	ID          uuid.UUID    `json:"id"`
+	Name        string       `json:"name"`
+	StepOptions []StepOption `json:"step_options"`
+}
+
 // Cluster defines model for cluster.
 type Cluster struct {
 	CreatedAt    time.Time  `json:"created_at"`
@@ -139,6 +156,17 @@ type Signup struct {
 	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
+}
+
+// StepOption defines model for step_option.
+type StepOption struct {
+	AppStepID   uuid.UUID `json:"app_step_id"`
+	Default     *string   `json:"default,omitempty"`
+	DisplayName string    `json:"display_name"`
+	Hidden      *bool     `json:"hidden,omitempty"`
+	JSONPointer string    `json:"json_pointer"`
+	Selection   *[]string `gorm:"serializer:json" json:"selection,omitempty"`
+	Type        *string   `json:"type,omitempty"`
 }
 
 // Tokens defines model for tokens.
