@@ -46,7 +46,7 @@ type ClusterOverview struct {
 // Credential defines model for credential.
 type Credential struct {
 	Data         *CredentialData `json:"data,omitempty"`
-	ID           *string         `json:"id,omitempty"`
+	ID           uuid.UUID       `json:"id"`
 	Name         string          `json:"name"`
 	Organization string          `json:"organization"`
 }
