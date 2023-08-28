@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func (h *handler) GetCredentials(c *gin.Context) {
@@ -66,6 +67,7 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 		return
 	}
 
+	credential.ID = uuid.New()
 	credential.Organization = org
 
 	err = h.db.Create(&credential).Error

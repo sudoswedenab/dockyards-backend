@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -78,6 +79,8 @@ func (h *handler) PostOrgs(c *gin.Context) {
 	organization.Users = []v1.User{
 		user,
 	}
+
+	organization.ID = uuid.New()
 
 	err = h.db.Create(&organization).Error
 	if err != nil {

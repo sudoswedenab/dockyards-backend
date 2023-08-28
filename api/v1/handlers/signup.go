@@ -5,8 +5,8 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
-
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -45,6 +45,7 @@ func (h *handler) Signup(c *gin.Context) {
 
 	//Create the user
 	user := v1.User{
+		ID:       uuid.New(),
 		Name:     body.Name,
 		Email:    body.Email,
 		Password: string(hash),
