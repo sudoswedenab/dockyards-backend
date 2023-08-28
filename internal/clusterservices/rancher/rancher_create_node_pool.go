@@ -60,17 +60,26 @@ func (r *rancher) CreateNodePool(organization *v1.Organization, cluster *v1.Clus
 	hostnamePrefix := cluster.Name + "-" + nodePoolOptions.Name + "-"
 	opts := managementv3.NodePool{
 		ClusterID:               cluster.ID,
-		ControlPlane:            *nodePoolOptions.ControlPlane,
 		DeleteNotReadyAfterSecs: 0,
 		DrainBeforeDelete:       true,
-		Etcd:                    *nodePoolOptions.Etcd,
 		HostnamePrefix:          hostnamePrefix,
 		Name:                    nodePoolOptions.Name,
-		NamespaceId:             "",
 		NodeTaints:              nodeTaints,
 		NodeTemplateID:          createdNodeTemplate.ID,
-		Quantity:                int64(*nodePoolOptions.Quantity),
-		Worker:                  !*nodePoolOptions.ControlPlaneComponentsOnly,
+		Quantity:                int64(nodePoolOptions.Quantity),
+		Worker:                  true,
+	}
+
+	if nodePoolOptions.ControlPlane != nil {
+		opts.ControlPlane = *nodePoolOptions.ControlPlane
+	}
+
+	if nodePoolOptions.Etcd != nil {
+		opts.Etcd = *nodePoolOptions.Etcd
+	}
+
+	if nodePoolOptions.ControlPlaneComponentsOnly != nil {
+		opts.Worker = !*nodePoolOptions.ControlPlaneComponentsOnly
 	}
 
 	createdNodePool, err := r.managementClient.NodePool.Create(&opts)
