@@ -122,7 +122,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		nodePoolOptions = util.Ptr([]v1.NodePoolOptions{
 			{
 				Name:         "single-node",
-				Quantity:     util.Ptr(1),
+				Quantity:     1,
 				ControlPlane: util.Ptr(true),
 				Etcd:         util.Ptr(true),
 			},

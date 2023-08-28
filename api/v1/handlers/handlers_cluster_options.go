@@ -12,25 +12,25 @@ func (h *handler) getRecommendedNodePools() []v1.NodePoolOptions {
 	return []v1.NodePoolOptions{
 		{
 			Name:                       "control-plane",
+			Quantity:                   3,
 			ControlPlane:               util.Ptr(true),
 			Etcd:                       util.Ptr(true),
 			ControlPlaneComponentsOnly: util.Ptr(true),
-			Quantity:                   util.Ptr(3),
 			CPUCount:                   util.Ptr(2),
 			RAMSizeMb:                  util.Ptr(4096),
 			DiskSizeGb:                 util.Ptr(100),
 		},
 		{
 			Name:         "load-balancer",
+			Quantity:     2,
 			LoadBalancer: util.Ptr(true),
-			Quantity:     util.Ptr(2),
 			CPUCount:     util.Ptr(2),
 			RAMSizeMb:    util.Ptr(4096),
 			DiskSizeGb:   util.Ptr(100),
 		},
 		{
 			Name:       "worker",
-			Quantity:   util.Ptr(2),
+			Quantity:   2,
 			CPUCount:   util.Ptr(4),
 			RAMSizeMb:  util.Ptr(8192),
 			DiskSizeGb: util.Ptr(100),
