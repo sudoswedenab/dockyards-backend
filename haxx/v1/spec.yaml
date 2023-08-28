@@ -617,6 +617,9 @@ components:
       properties:
         id:
           type: string
+          x-go-type: uuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
         name:
           type: string
         organization:
@@ -625,6 +628,7 @@ components:
           type: object
           x-go-type: CredentialData
       required:
+      - id
       - name
       - organization
     signup:
