@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"github.com/google/uuid"
 )
 
 func (a *sudoAPI) GetDeployments(ctx context.Context, req GetDeploymentsRequestObject) (GetDeploymentsResponseObject, error) {
@@ -41,4 +42,18 @@ func (a *sudoAPI) CreateDeployment(ctx context.Context, req CreateDeploymentRequ
 	}
 
 	return CreateDeployment200JSONResponse(deployment), nil
+}
+
+func (a *sudoAPI) CreateDeploymentStatus(ctx context.Context, req CreateDeploymentStatusRequestObject) (CreateDeploymentStatusResponseObject, error) {
+	deploymentStatus := *req.Body
+	deploymentStatus.ID = uuid.New()
+
+	err := a.db.Create(&deploymentStatus).Error
+	if err != nil {
+		a.logger.Error("error creating deployment status in database", "err", err)
+
+		return CreateDeploymentStatus500Response{}, nil
+	}
+
+	return CreateDeploymentStatus201Response{}, nil
 }
