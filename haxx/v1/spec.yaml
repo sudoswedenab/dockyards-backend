@@ -505,16 +505,7 @@ components:
           type: integer
       required:
       - id
-      - name
       - cluster_id
-      - namespace
-      - container_image
-      - helm_chart
-      - helm_repository
-      - helm_version
-      - helm_values
-      - credential_id
-      - port
     node_pool:
       properties:
         name:
