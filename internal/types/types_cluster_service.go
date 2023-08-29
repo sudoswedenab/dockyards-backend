@@ -14,4 +14,5 @@ type ClusterService interface {
 	DeleteGarbage()
 	GetCluster(string) (*v1.Cluster, error)
 	CollectMetrics() error
+	GetNodePool(string) (*v1.NodePool, error)
 }
