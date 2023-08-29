@@ -511,6 +511,8 @@ components:
       - status
     node_pool:
       properties:
+        id:
+          type: string
         name:
           type: string
         control_plane:
@@ -529,12 +531,18 @@ components:
           type: integer
         disk_size_gb:
           type: integer
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/node'
       required:
+      - id
       - name
       - quantity
       - cpu_count
       - ram_size_mb
       - disk_size_gb
+      - nodes
     node_pool_options:
       properties:
         name:
@@ -778,6 +786,18 @@ components:
       - id
       - deployment_id
       - created_at
+    node:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        state:
+          type: string
+      required:
+      - id
+      - name
+      - state
   securitySchemas:
     bearerAuth:
       type: http
