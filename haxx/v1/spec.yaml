@@ -503,9 +503,12 @@ components:
           type: string
         port:
           type: integer
+        status:
+          $ref: '#/components/schemas/deployment_status'
       required:
       - id
       - cluster_id
+      - status
     node_pool:
       properties:
         name:
