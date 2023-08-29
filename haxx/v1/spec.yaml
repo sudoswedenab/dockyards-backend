@@ -352,6 +352,53 @@ paths:
         204: {}
         401: {}
         500: {}
+  /v1/clusters/{cluster_id}/node-pools:
+    post:
+      operationId: createNodePool
+      parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/node_pool'
+        401: {}
+        409: {}
+        500: {}
+  /v1/node-pools/{node_pool_id}:
+    get:
+      operationId: getNodePool
+      parameters:
+      - name: node_pool_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/node_pool'
+        401: {}
+        500: {}
+    delete:
+      operationId: deleteNodePool
+      parameters:
+      - name: node_pool_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        204: {}
+        401: {}
+        500: {}
 components:
   schemas:
     overview:
