@@ -13,4 +13,5 @@ type ClusterService interface {
 	GetKubeConfig(*v1.Cluster) (string, error)
 	DeleteGarbage()
 	GetCluster(string) (*v1.Cluster, error)
+	CollectMetrics() error
 }
