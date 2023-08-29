@@ -32,6 +32,9 @@ type ServerInterface interface {
 	// (GET /sudo/deployments/{deployment_id})
 	GetDeployment(w http.ResponseWriter, r *http.Request, deploymentID string)
 
+	// (POST /sudo/deployments/{deployment_id}/status)
+	CreateDeploymentStatus(w http.ResponseWriter, r *http.Request, deploymentID string)
+
 	// (GET /sudo/kubeconfigs/{cluster_id})
 	GetKubeconfig(w http.ResponseWriter, r *http.Request, clusterID string)
 
@@ -65,6 +68,11 @@ func (_ Unimplemented) CreateDeployment(w http.ResponseWriter, r *http.Request) 
 
 // (GET /sudo/deployments/{deployment_id})
 func (_ Unimplemented) GetDeployment(w http.ResponseWriter, r *http.Request, deploymentID string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (POST /sudo/deployments/{deployment_id}/status)
+func (_ Unimplemented) CreateDeploymentStatus(w http.ResponseWriter, r *http.Request, deploymentID string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -175,6 +183,32 @@ func (siw *ServerInterfaceWrapper) GetDeployment(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDeployment(w, r, deploymentID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// CreateDeploymentStatus operation middleware
+func (siw *ServerInterfaceWrapper) CreateDeploymentStatus(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "deployment_id" -------------
+	var deploymentID string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "deployment_id", runtime.ParamLocationPath, chi.URLParam(r, "deployment_id"), &deploymentID)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deployment_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateDeploymentStatus(w, r, deploymentID)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -354,6 +388,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/sudo/deployments/{deployment_id}", wrapper.GetDeployment)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/sudo/deployments/{deployment_id}/status", wrapper.CreateDeploymentStatus)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/sudo/kubeconfigs/{cluster_id}", wrapper.GetKubeconfig)
 	})
 	r.Group(func(r chi.Router) {
@@ -486,6 +523,31 @@ func (response GetDeployment500Response) VisitGetDeploymentResponse(w http.Respo
 	return nil
 }
 
+type CreateDeploymentStatusRequestObject struct {
+	DeploymentID string `json:"deployment_id"`
+	Body         *CreateDeploymentStatusJSONRequestBody
+}
+
+type CreateDeploymentStatusResponseObject interface {
+	VisitCreateDeploymentStatusResponse(w http.ResponseWriter) error
+}
+
+type CreateDeploymentStatus201Response struct {
+}
+
+func (response CreateDeploymentStatus201Response) VisitCreateDeploymentStatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(201)
+	return nil
+}
+
+type CreateDeploymentStatus500Response struct {
+}
+
+func (response CreateDeploymentStatus500Response) VisitCreateDeploymentStatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
 type GetKubeconfigRequestObject struct {
 	ClusterID string `json:"cluster_id"`
 }
@@ -552,6 +614,9 @@ type StrictServerInterface interface {
 
 	// (GET /sudo/deployments/{deployment_id})
 	GetDeployment(ctx context.Context, request GetDeploymentRequestObject) (GetDeploymentResponseObject, error)
+
+	// (POST /sudo/deployments/{deployment_id}/status)
+	CreateDeploymentStatus(ctx context.Context, request CreateDeploymentStatusRequestObject) (CreateDeploymentStatusResponseObject, error)
 
 	// (GET /sudo/kubeconfigs/{cluster_id})
 	GetKubeconfig(ctx context.Context, request GetKubeconfigRequestObject) (GetKubeconfigResponseObject, error)
@@ -713,6 +778,39 @@ func (sh *strictHandler) GetDeployment(w http.ResponseWriter, r *http.Request, d
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetDeploymentResponseObject); ok {
 		if err := validResponse.VisitGetDeploymentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateDeploymentStatus operation middleware
+func (sh *strictHandler) CreateDeploymentStatus(w http.ResponseWriter, r *http.Request, deploymentID string) {
+	var request CreateDeploymentStatusRequestObject
+
+	request.DeploymentID = deploymentID
+
+	var body CreateDeploymentStatusJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateDeploymentStatus(ctx, request.(CreateDeploymentStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateDeploymentStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateDeploymentStatusResponseObject); ok {
+		if err := validResponse.VisitCreateDeploymentStatusResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

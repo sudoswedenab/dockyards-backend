@@ -9,3 +9,6 @@ import (
 
 // CreateDeploymentJSONRequestBody defines body for CreateDeployment for application/json ContentType.
 type CreateDeploymentJSONRequestBody = externalRef0.Deployment
+
+// CreateDeploymentStatusJSONRequestBody defines body for CreateDeploymentStatus for application/json ContentType.
+type CreateDeploymentStatusJSONRequestBody = externalRef0.DeploymentStatus
