@@ -19,6 +19,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
@@ -105,6 +106,7 @@ func main() {
 	var ginMode string
 	var gitProjectRoot string
 	var cloudServiceFlag string
+	var clusterServiceFlag string
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
@@ -113,6 +115,7 @@ func main() {
 	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
 	flag.StringVar(&gitProjectRoot, "git-project-root", "/var/www/git", "git project root")
 	flag.StringVar(&cloudServiceFlag, "cloud-service", "openstack", "cloud service")
+	flag.StringVar(&clusterServiceFlag, "cluster-service", "rancher", "cluster service")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -192,16 +195,26 @@ func main() {
 
 	registry := prometheus.NewRegistry()
 
-	rancherOptions := []rancher.RancherOption{
-		rancher.WithRancherClientOpts(cattleURL, cattleBearerToken, trustInsecure),
-		rancher.WithLogger(logger.With("clusterservice", "rancher")),
-		rancher.WithCloudService(cloudService),
-		rancher.WithPrometheusRegistry(registry),
-	}
+	var clusterService types.ClusterService
+	switch clusterServiceFlag {
+	case "rancher":
+		rancherOptions := []rancher.RancherOption{
+			rancher.WithRancherClientOpts(cattleURL, cattleBearerToken, trustInsecure),
+			rancher.WithLogger(logger.With("clusterservice", "rancher")),
+			rancher.WithCloudService(cloudService),
+			rancher.WithPrometheusRegistry(registry),
+		}
 
-	rancherService, err := rancher.NewRancher(rancherOptions...)
-	if err != nil {
-		log.Fatal(err.Error())
+		clusterService, err = rancher.NewRancher(rancherOptions...)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	case "clustermock":
+		clusterService = clustermock.NewMockClusterService()
+	default:
+		logger.Error("unsupported cluster service", "service", clusterServiceFlag)
+
+		os.Exit(1)
 	}
 
 	go func() {
@@ -213,7 +226,7 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				rancherService.DeleteGarbage()
+				clusterService.DeleteGarbage()
 				cloudService.DeleteGarbage()
 			}
 		}
@@ -239,14 +252,14 @@ func main() {
 		logger.Debug("creating prometheus metrics goroutine", "interval", interval)
 
 		prometheusMetrics.CollectMetrics()
-		rancherService.CollectMetrics()
+		clusterService.CollectMetrics()
 
 		ticker := time.NewTicker(interval)
 		for {
 			select {
 			case <-ticker.C:
 				prometheusMetrics.CollectMetrics()
-				rancherService.CollectMetrics()
+				clusterService.CollectMetrics()
 			}
 		}
 	}()
@@ -275,7 +288,7 @@ func main() {
 	handlerOptions := []handlers.HandlerOption{
 		handlers.WithJWTAccessTokens(jwtAccessTokenSecret, jwtRefreshTokenSecret),
 		handlers.WithCloudService(cloudService),
-		handlers.WithClusterService(rancherService),
+		handlers.WithClusterService(clusterService),
 		handlers.WithGitProjectRoot(gitProjectRoot),
 	}
 
@@ -292,7 +305,7 @@ func main() {
 	sudoOptions := []sudo.SudoOption{
 		sudo.WithLogger(logger),
 		sudo.WithDatabase(db),
-		sudo.WithClusterService(rancherService),
+		sudo.WithClusterService(clusterService),
 	}
 
 	sudoAPI, err := sudo.NewSudoAPI(sudoOptions...)
