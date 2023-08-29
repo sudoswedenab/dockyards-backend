@@ -116,6 +116,13 @@ type Login struct {
 	Password string `json:"password"`
 }
 
+// Node defines model for node.
+type Node struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	State string `json:"state"`
+}
+
 // NodePool defines model for node_pool.
 type NodePool struct {
 	ControlPlane               *bool  `json:"control_plane,omitempty"`
@@ -123,8 +130,10 @@ type NodePool struct {
 	CPUCount                   int    `json:"cpu_count"`
 	DiskSizeGb                 int    `json:"disk_size_gb"`
 	Etcd                       *bool  `json:"etcd,omitempty"`
+	ID                         string `json:"id"`
 	LoadBalancer               *bool  `json:"load_balancer,omitempty"`
 	Name                       string `json:"name"`
+	Nodes                      []Node `json:"nodes"`
 	Quantity                   int    `json:"quantity"`
 	RAMSizeMb                  int    `json:"ram_size_mb"`
 }
