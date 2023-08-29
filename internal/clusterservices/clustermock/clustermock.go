@@ -9,7 +9,8 @@ import (
 
 type MockClusterService struct {
 	types.ClusterService
-	clusters map[string]v1.Cluster
+	clusters  map[string]v1.Cluster
+	nodePools map[string]v1.NodePool
 }
 
 type MockOption func(*MockClusterService)
@@ -75,9 +76,24 @@ func (s *MockClusterService) DeleteGarbage() {
 	return
 }
 
+func (s *MockClusterService) GetNodePool(nodePoolID string) (*v1.NodePool, error) {
+	nodePool, hasNodePool := s.nodePools[nodePoolID]
+	if !hasNodePool {
+		return nil, errors.New("no such node pool")
+	}
+
+	return &nodePool, nil
+}
+
 func WithClusters(clusters map[string]v1.Cluster) MockOption {
 	return func(s *MockClusterService) {
 		s.clusters = clusters
+	}
+}
+
+func WithNodePools(nodePools map[string]v1.NodePool) MockOption {
+	return func(s *MockClusterService) {
+		s.nodePools = nodePools
 	}
 }
 
