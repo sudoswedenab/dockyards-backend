@@ -17,10 +17,12 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -102,6 +104,7 @@ func main() {
 	var collectMetricsInterval int
 	var ginMode string
 	var gitProjectRoot string
+	var cloudServiceFlag string
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
@@ -109,6 +112,7 @@ func main() {
 	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
 	flag.StringVar(&gitProjectRoot, "git-project-root", "/var/www/git", "git project root")
+	flag.StringVar(&cloudServiceFlag, "cloud-service", "openstack", "cloud service")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -164,15 +168,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	openStackOptions := []openstack.OpenStackOption{
-		openstack.WithLogger(logger.With("cloudservice", "openstack")),
-		openstack.WithDatabase(db),
-		openstack.WithCloudsYAML("openstack"),
-	}
+	var cloudService types.CloudService
+	switch cloudServiceFlag {
+	case "openstack":
+		openStackOptions := []openstack.OpenStackOption{
+			openstack.WithLogger(logger.With("cloudservice", "openstack")),
+			openstack.WithDatabase(db),
+			openstack.WithCloudsYAML("openstack"),
+		}
 
-	cloudService, err := openstack.NewOpenStackService(openStackOptions...)
-	if err != nil {
-		logger.Error("error creating new openstack cloud service", "err", err)
+		cloudService, err = openstack.NewOpenStackService(openStackOptions...)
+		if err != nil {
+			logger.Error("error creating new openstack cloud service", "err", err)
+			os.Exit(1)
+		}
+	case "cloudmock":
+		cloudService = cloudmock.NewMockCloudService()
+	default:
+		logger.Error("unsupported cloud service", "service", cloudServiceFlag)
+
 		os.Exit(1)
 	}
 
@@ -203,7 +217,6 @@ func main() {
 				cloudService.DeleteGarbage()
 			}
 		}
-
 	}()
 
 	logger.Info("rancher info", "url", cattleURL)
