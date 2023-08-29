@@ -103,3 +103,21 @@ paths:
              schema: 
                $ref: '../v1/spec.yaml#/components/schemas/deployment'
        500: {}
+  /sudo/deployments/{deployment_id}/status:
+    post:
+      operationId: createDeploymentStatus
+      parameters:
+      - name: deployment_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../v1/spec.yaml#/components/schemas/deployment_status'
+      responses:
+        201: {}
+        500: {}
