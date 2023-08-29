@@ -84,6 +84,7 @@ func (r *rancher) GetCluster(id string) (*v1.Cluster, error) {
 		}
 
 		nodePool := v1.NodePool{
+			ID:         rancherNodePool.ID,
 			Name:       rancherNodePool.Name,
 			Quantity:   int(rancherNodePool.Quantity),
 			CPUCount:   flavorNodePool.CPUCount,

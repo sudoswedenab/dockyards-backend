@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -89,6 +90,38 @@ func (r *rancher) CreateNodePool(organization *v1.Organization, cluster *v1.Clus
 
 	nodePool := v1.NodePool{
 		Name: createdNodePool.Name,
+	}
+
+	return &nodePool, nil
+}
+
+func (r *rancher) GetNodePool(nodePoolID string) (*v1.NodePool, error) {
+	rancherNodePool, err := r.managementClient.NodePool.ByID(nodePoolID)
+	if err != nil {
+		return nil, err
+	}
+
+	nodePool := v1.NodePool{
+		ID:       rancherNodePool.ID,
+		Name:     rancherNodePool.Name,
+		Quantity: int(rancherNodePool.Quantity),
+	}
+
+	listOpts := types.ListOpts{
+		Filters: map[string]interface{}{
+			"nodePoolId": nodePoolID,
+		},
+	}
+
+	rancherNodes, err := r.managementClient.Node.ListAll(&listOpts)
+	for _, rancherNode := range rancherNodes.Data {
+		node := v1.Node{
+			ID:    rancherNode.ID,
+			Name:  rancherNode.Hostname,
+			State: rancherNode.State,
+		}
+
+		nodePool.Nodes = append(nodePool.Nodes, node)
 	}
 
 	return &nodePool, nil
