@@ -10,6 +10,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/docker/distribution/reference"
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"
@@ -326,6 +327,21 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		h.logger.Debug("created commit", "hash", commit.String())
 	}
 
+	deploymentStatus := v1.DeploymentStatus{
+		ID:           uuid.New(),
+		DeploymentID: deployment.ID,
+		State:        util.Ptr("pending"),
+	}
+
+	err = h.db.Create(&deploymentStatus).Error
+	if err != nil {
+		h.logger.Error("error creating deployment status in database", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+
+	}
+
 	err = h.db.Create(&deployment).Error
 	if err != nil {
 		h.logger.Error("error creating deployment in database", "name", deployment.Name, "err", err)
@@ -333,6 +349,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
+
+	deployment.Status = deploymentStatus
 
 	c.JSON(http.StatusCreated, deployment)
 }
@@ -405,16 +423,24 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 }
 
 func (h *handler) GetDeployment(c *gin.Context) {
-	id := c.Param("deploymentID")
+	deploymentID := c.Param("deploymentID")
 
 	var deployment v1.Deployment
-	err := h.db.Take(&deployment, "id = ?", id).Error
+	err := h.db.Take(&deployment, "id = ?", deploymentID).Error
 	if err != nil {
-		h.logger.Debug("error taking deployment from database", "id", id, "err", err)
+		h.logger.Debug("error taking deployment from database", "id", deploymentID, "err", err)
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
+
+	var deploymentStatus v1.DeploymentStatus
+	err = h.db.Order("created_at desc").First(&deploymentStatus, "deployment_id = ?", deploymentID).Error
+	if err != nil {
+		h.logger.Warn("error taking deployment status from database", "id", deploymentID, "err", err)
+	}
+
+	deployment.Status = deploymentStatus
 
 	c.JSON(http.StatusOK, deployment)
 }
