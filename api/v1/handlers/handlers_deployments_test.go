@@ -16,6 +16,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/google/uuid"
@@ -36,6 +37,27 @@ func TestGetDeployment(t *testing.T) {
 				{
 					ID: uuid.MustParse("52b321cb-f9c5-43ba-bd35-ddc909ecfb64"),
 				},
+			},
+			expected: v1.Deployment{
+				ID: uuid.MustParse("52b321cb-f9c5-43ba-bd35-ddc909ecfb64"),
+			},
+		},
+		{
+			name:         "test complex",
+			deploymentID: "9f72e4e6-412c-47a9-b3e8-8704e129db57",
+			deployments: []v1.Deployment{
+				{
+					ID:             uuid.MustParse("9f72e4e6-412c-47a9-b3e8-8704e129db57"),
+					Name:           util.Ptr("test"),
+					ContainerImage: util.Ptr("docker.io/library/nginx:latest"),
+					Port:           util.Ptr(1234),
+				},
+			},
+			expected: v1.Deployment{
+				ID:             uuid.MustParse("9f72e4e6-412c-47a9-b3e8-8704e129db57"),
+				Name:           util.Ptr("test"),
+				ContainerImage: util.Ptr("docker.io/library/nginx:latest"),
+				Port:           util.Ptr(1234),
 			},
 		},
 	}
@@ -80,6 +102,18 @@ func TestGetDeployment(t *testing.T) {
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
 				t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+			}
+
+			b, err := io.ReadAll(w.Result().Body)
+			if err != nil {
+				t.Fatalf("error reading result body: %s", err)
+			}
+
+			var actual v1.Deployment
+			err = json.Unmarshal(b, &actual)
+
+			if !reflect.DeepEqual(actual, tc.expected) {
+				t.Errorf("expected %#v, got %#v", tc.expected, actual)
 			}
 		})
 	}
@@ -164,7 +198,7 @@ func TestGetClusterDeployments(t *testing.T) {
 			deployments: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("115590c5-c5f5-48d3-95b4-5fd6a1d3e77f"),
-					Name:      "test",
+					Name:      util.Ptr("test"),
 					ClusterID: "cluster-123",
 				},
 			},
@@ -180,7 +214,7 @@ func TestGetClusterDeployments(t *testing.T) {
 			expected: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("115590c5-c5f5-48d3-95b4-5fd6a1d3e77f"),
-					Name:      "test",
+					Name:      util.Ptr("test"),
 					ClusterID: "cluster-123",
 				},
 			},
@@ -191,17 +225,17 @@ func TestGetClusterDeployments(t *testing.T) {
 			deployments: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("9f5be117-7a87-4b14-8788-42b595cd7679"),
-					Name:      "test1",
+					Name:      util.Ptr("test1"),
 					ClusterID: "cluster-123",
 				},
 				{
 					ID:        uuid.MustParse("d40c37d3-7465-4bc6-bfbf-19669f05a16a"),
-					Name:      "test2",
+					Name:      util.Ptr("test2"),
 					ClusterID: "cluster-234",
 				},
 				{
 					ID:        uuid.MustParse("a7743bee-d4cc-4342-b7bd-d149fa26f38f"),
-					Name:      "test3",
+					Name:      util.Ptr("test3"),
 					ClusterID: "cluster-123",
 				},
 			},
@@ -217,12 +251,12 @@ func TestGetClusterDeployments(t *testing.T) {
 			expected: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("9f5be117-7a87-4b14-8788-42b595cd7679"),
-					Name:      "test1",
+					Name:      util.Ptr("test1"),
 					ClusterID: "cluster-123",
 				},
 				{
 					ID:        uuid.MustParse("a7743bee-d4cc-4342-b7bd-d149fa26f38f"),
-					Name:      "test3",
+					Name:      util.Ptr("test3"),
 					ClusterID: "cluster-123",
 				},
 			},
@@ -233,17 +267,17 @@ func TestGetClusterDeployments(t *testing.T) {
 			deployments: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("b6cf669a-601f-4543-9a3c-d65da2d176d2"),
-					Name:      "test1",
+					Name:      util.Ptr("test1"),
 					ClusterID: "cluster-234",
 				},
 				{
 					ID:        uuid.MustParse("1748bcf1-92c7-482e-a07c-a808701b2d84"),
-					Name:      "test2",
+					Name:      util.Ptr("test2"),
 					ClusterID: "cluster-345",
 				},
 				{
 					ID:        uuid.MustParse("fd9786ad-6722-4ac4-9e18-6a128472eb60"),
-					Name:      "test3",
+					Name:      util.Ptr("test3"),
 					ClusterID: "cluster-456",
 				},
 			},
@@ -336,7 +370,7 @@ func TestDeleteDeployment(t *testing.T) {
 			deployments: []v1.Deployment{
 				{
 					ID:   uuid.MustParse("33de82a0-4133-45dc-b319-ab6a8a1daebc"),
-					Name: "test-123",
+					Name: util.Ptr("test-123"),
 				},
 			},
 		},
@@ -395,7 +429,7 @@ func TestPostClusterDeployments(t *testing.T) {
 			name:      "test helm",
 			clusterID: "cluster-123",
 			deployment: v1.Deployment{
-				HelmChart: "test",
+				HelmChart: util.Ptr("test"),
 			},
 		},
 	}
@@ -451,7 +485,7 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 			name:      "test invalid name",
 			clusterID: "cluster-123",
 			deployment: v1.Deployment{
-				Name: "InvalidName",
+				Name: util.Ptr("InvalidName"),
 			},
 			expected: http.StatusUnprocessableEntity,
 		},
@@ -459,8 +493,8 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 			name:      "test invalid container image",
 			clusterID: "cluster-123",
 			deployment: v1.Deployment{
-				Name:           "test",
-				ContainerImage: "http://localhost:1234/my-image",
+				Name:           util.Ptr("test"),
+				ContainerImage: util.Ptr("http://localhost:1234/my-image"),
 			},
 			expected: http.StatusUnprocessableEntity,
 		},
@@ -468,11 +502,11 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 			name:      "test name already in-use",
 			clusterID: "cluster-123",
 			deployment: v1.Deployment{
-				Name: "test",
+				Name: util.Ptr("test"),
 			},
 			existing: []v1.Deployment{
 				{
-					Name:      "test",
+					Name:      util.Ptr("test"),
 					ClusterID: "cluster-123",
 				},
 			},
@@ -536,15 +570,15 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 			name:      "test container image",
 			clusterID: "cluster-123",
 			deployment: v1.Deployment{
-				ContainerImage: "test",
+				ContainerImage: util.Ptr("test"),
 			},
 		},
 		{
 			name:      "test port",
 			clusterID: "cluster-123",
 			deployment: v1.Deployment{
-				ContainerImage: "nginx:l.2",
-				Port:           1234,
+				ContainerImage: util.Ptr("nginx:l.2"),
+				Port:           util.Ptr(1234),
 			},
 		},
 	}

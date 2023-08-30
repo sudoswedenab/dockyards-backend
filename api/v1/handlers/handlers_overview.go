@@ -51,7 +51,7 @@ func (h *handler) GetOverview(c *gin.Context) {
 
 		for _, deployment := range deployments {
 			deploymentOverview := v1.DeploymentOverview{
-				Name: deployment.Name,
+				Name: *deployment.Name,
 				ID:   deployment.ID.String(),
 			}
 

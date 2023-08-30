@@ -31,8 +31,16 @@ const (
 
 func (h *handler) createDeployment(deployment *v1.Deployment) (*appsv1.Deployment, error) {
 	containerPort := 80
-	if deployment.Port != 0 {
-		containerPort = deployment.Port
+	if deployment.Port != nil {
+		containerPort = *deployment.Port
+	}
+
+	if deployment.Name == nil {
+		return nil, errors.New("deployment name must not be empty")
+	}
+
+	if deployment.ContainerImage == nil {
+		return nil, errors.New("deployment image must not be empty")
 	}
 
 	containerPorts := []corev1.ContainerPort{
@@ -49,25 +57,25 @@ func (h *handler) createDeployment(deployment *v1.Deployment) (*appsv1.Deploymen
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: deployment.Name,
+			Name: *deployment.Name,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": deployment.Name,
+					"app.kubernetes.io/name": *deployment.Name,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": deployment.Name,
+						"app.kubernetes.io/name": *deployment.Name,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:            deployment.Name,
-							Image:           deployment.ContainerImage,
+							Name:            *deployment.Name,
+							Image:           *deployment.ContainerImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Ports:           containerPorts,
 						},
@@ -81,13 +89,17 @@ func (h *handler) createDeployment(deployment *v1.Deployment) (*appsv1.Deploymen
 }
 
 func (h *handler) createService(deployment *v1.Deployment) (*corev1.Service, error) {
+	if deployment.Name == nil {
+		return nil, errors.New("deployment name must not be empty")
+	}
+
 	service := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: deployment.Name,
+			Name: *deployment.Name,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -99,7 +111,7 @@ func (h *handler) createService(deployment *v1.Deployment) (*corev1.Service, err
 				},
 			},
 			Selector: map[string]string{
-				"app.kubernetes.io/name": deployment.Name,
+				"app.kubernetes.io/name": *deployment.Name,
 			},
 		},
 	}
@@ -138,29 +150,29 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 	var deploymentType DeploymentType
 
-	if deployment.ContainerImage != "" {
-		normalizedName, err := h.parseContainerImage(deployment.ContainerImage)
+	if deployment.ContainerImage != nil {
+		normalizedName, err := h.parseContainerImage(*deployment.ContainerImage)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
 				"error":   "container image is not valid",
-				"name":    deployment.ContainerImage,
+				"name":    *deployment.ContainerImage,
 				"details": err.Error(),
 			})
 		}
 
-		deployment.ContainerImage = normalizedName
+		deployment.ContainerImage = &normalizedName
 
-		if deployment.Name == "" {
-			base := path.Base(deployment.ContainerImage)
-			deployment.Name = base
+		if deployment.Name == nil || (deployment.Name != nil && *deployment.Name == "") {
+			base := path.Base(*deployment.ContainerImage)
+			deployment.Name = &base
 		}
 
 		deploymentType = DeploymentTypeContainer
 	}
 
-	if deployment.HelmChart != "" {
-		if deployment.Name == "" {
-			h.logger.Debug("deployment name empty, using helm chart name", "chart", deployment.HelmChart)
+	if deployment.HelmChart != nil {
+		if deployment.Name == nil || (deployment.Name != nil && *deployment.Name == "") {
+			h.logger.Debug("deployment name empty, using helm chart name", "chart", *deployment.HelmChart)
 
 			deployment.Name = deployment.HelmChart
 		}
@@ -168,7 +180,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		deploymentType = DeploymentTypeHelm
 	}
 
-	details, validName := names.IsValidName(deployment.Name)
+	details, validName := names.IsValidName(*deployment.Name)
 	if !validName {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error":   "name is not valid",
@@ -178,25 +190,25 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		return
 	}
 
-	if deployment.Namespace == "" {
-		h.logger.Debug("deployment namespace empty, using deployment name", "name", deployment.Name)
+	if deployment.Namespace == nil {
+		h.logger.Debug("deployment namespace empty, using deployment name", "name", *deployment.Name)
 
 		deployment.Namespace = deployment.Name
 	}
 
 	var existingDeployment v1.Deployment
-	err = h.db.Take(&existingDeployment, "name = ? AND cluster_id = ?", deployment.Name, deployment.ClusterID).Error
+	err = h.db.Take(&existingDeployment, "name = ? AND cluster_id = ?", *deployment.Name, deployment.ClusterID).Error
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			h.logger.Error("error taking deployment from database", "name", deployment.Name, "err", err)
+			h.logger.Error("error taking deployment from database", "name", *deployment.Name, "err", err)
 
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 	}
 
-	if existingDeployment.Name == deployment.Name && existingDeployment.ClusterID == deployment.ClusterID {
-		h.logger.Debug("deployment name already in-use", "name", deployment.Name, "cluster", deployment.ClusterID)
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		h.logger.Debug("deployment name already in-use", "name", *deployment.Name, "cluster", deployment.ClusterID)
 
 		c.AbortWithStatus(http.StatusConflict)
 		return
