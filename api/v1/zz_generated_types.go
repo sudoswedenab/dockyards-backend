@@ -70,23 +70,33 @@ type Credential struct {
 
 // Deployment defines model for deployment.
 type Deployment struct {
-	ClusterID      string      `json:"cluster_id"`
-	ContainerImage *string     `json:"container_image,omitempty"`
-	CredentialID   *string     `json:"credential_id,omitempty"`
-	HelmChart      *string     `json:"helm_chart,omitempty"`
-	HelmRepository *string     `json:"helm_repository,omitempty"`
-	HelmValues     *HelmValues `json:"helm_values,omitempty"`
-	HelmVersion    *string     `json:"helm_version,omitempty"`
-	ID             uuid.UUID   `json:"id"`
-	Name           *string     `json:"name,omitempty"`
-	Namespace      *string     `json:"namespace,omitempty"`
-	Port           *int        `json:"port,omitempty"`
+	ClusterID      string           `json:"cluster_id"`
+	ContainerImage *string          `json:"container_image,omitempty"`
+	CredentialID   *string          `json:"credential_id,omitempty"`
+	HelmChart      *string          `json:"helm_chart,omitempty"`
+	HelmRepository *string          `json:"helm_repository,omitempty"`
+	HelmValues     *HelmValues      `json:"helm_values,omitempty"`
+	HelmVersion    *string          `json:"helm_version,omitempty"`
+	ID             uuid.UUID        `json:"id"`
+	Name           *string          `json:"name,omitempty"`
+	Namespace      *string          `json:"namespace,omitempty"`
+	Port           *int             `json:"port,omitempty"`
+	Status         DeploymentStatus `json:"status"`
 }
 
 // DeploymentOverview defines model for deployment_overview.
 type DeploymentOverview struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+// DeploymentStatus defines model for deployment_status.
+type DeploymentStatus struct {
+	CreatedAt    time.Time `json:"created_at"`
+	DeploymentID uuid.UUID `json:"deployment_id"`
+	ID           uuid.UUID `json:"id"`
+	State        *string   `json:"state,omitempty"`
+	URLs         *[]string `gorm:"serializer:json" json:"urls,omitempty"`
 }
 
 // Login defines model for login.
