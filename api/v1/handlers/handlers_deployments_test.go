@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"reflect"
 	"testing"
+	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
@@ -19,16 +19,20 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 func TestGetDeployment(t *testing.T) {
+	now := time.Now()
+
 	tt := []struct {
-		name         string
-		deploymentID string
-		deployments  []v1.Deployment
-		expected     v1.Deployment
+		name               string
+		deploymentID       string
+		deployments        []v1.Deployment
+		deploymentStatuses []v1.DeploymentStatus
+		expected           v1.Deployment
 	}{
 		{
 			name:         "test single",
@@ -60,17 +64,86 @@ func TestGetDeployment(t *testing.T) {
 				Port:           util.Ptr(1234),
 			},
 		},
+		{
+			name:         "test deployment with single status",
+			deploymentID: "63f4b165-d9e4-4653-a2a4-92b14ff6153e",
+			deployments: []v1.Deployment{
+				{
+					ID: uuid.MustParse("63f4b165-d9e4-4653-a2a4-92b14ff6153e"),
+				},
+			},
+			deploymentStatuses: []v1.DeploymentStatus{
+				{
+					ID:           uuid.MustParse("5024648b-0222-4b6a-9845-26d051c2613c"),
+					DeploymentID: uuid.MustParse("63f4b165-d9e4-4653-a2a4-92b14ff6153e"),
+					CreatedAt:    now,
+					State:        util.Ptr("testing"),
+				},
+			},
+			expected: v1.Deployment{
+				ID: uuid.MustParse("63f4b165-d9e4-4653-a2a4-92b14ff6153e"),
+				Status: v1.DeploymentStatus{
+					ID:           uuid.MustParse("5024648b-0222-4b6a-9845-26d051c2613c"),
+					DeploymentID: uuid.MustParse("63f4b165-d9e4-4653-a2a4-92b14ff6153e"),
+					CreatedAt:    now,
+					State:        util.Ptr("testing"),
+				},
+			},
+		},
+		{
+			name:         "test deployment with multiple statuses",
+			deploymentID: "f658aec8-0361-4f6c-ab10-1959ad433156",
+			deployments: []v1.Deployment{
+				{
+					ID: uuid.MustParse("f658aec8-0361-4f6c-ab10-1959ad433156"),
+				},
+			},
+			deploymentStatuses: []v1.DeploymentStatus{
+				{
+					ID:           uuid.MustParse("77072d14-81bd-4e7a-b292-98be5ebefaf7"),
+					DeploymentID: uuid.MustParse("f658aec8-0361-4f6c-ab10-1959ad433156"),
+					CreatedAt:    now,
+					State:        util.Ptr("created"),
+				},
+				{
+					ID:           uuid.MustParse("f15929e6-7391-4bcd-9711-f78248390ed3"),
+					DeploymentID: uuid.MustParse("f658aec8-0361-4f6c-ab10-1959ad433156"),
+
+					CreatedAt: now.Add(time.Duration(time.Minute * 3)),
+					State:     util.Ptr("waiting"),
+				},
+				{
+					ID:           uuid.MustParse("5b5be8d6-30b4-47f1-9ae6-7bab79481ced"),
+					DeploymentID: uuid.MustParse("f658aec8-0361-4f6c-ab10-1959ad433156"),
+					CreatedAt:    now.Add(time.Duration(time.Minute * 5)),
+					State:        util.Ptr("running"),
+				},
+			},
+			expected: v1.Deployment{
+				ID: uuid.MustParse("f658aec8-0361-4f6c-ab10-1959ad433156"),
+				Status: v1.DeploymentStatus{
+					ID:           uuid.MustParse("5b5be8d6-30b4-47f1-9ae6-7bab79481ced"),
+					DeploymentID: uuid.MustParse("f658aec8-0361-4f6c-ab10-1959ad433156"),
+					CreatedAt:    now.Add(time.Duration(time.Minute * 5)),
+					State:        util.Ptr("running"),
+				},
+			},
+		},
 	}
 
 	gin.SetMode(gin.TestMode)
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			gormSlogger := loggers.NewGormSlogger(logger)
+
+			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
 			db.AutoMigrate(&v1.Deployment{})
+			db.AutoMigrate(&v1.DeploymentStatus{})
 
 			for _, deployment := range tc.deployments {
 				err := db.Create(&deployment).Error
@@ -78,8 +151,12 @@ func TestGetDeployment(t *testing.T) {
 					t.Fatalf("unexpected error creating deployment in test database: %s", err)
 				}
 			}
-
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			for _, deploymentStatus := range tc.deploymentStatuses {
+				err := db.Create(&deploymentStatus).Error
+				if err != nil {
+					t.Fatalf("unxepected error creating deployment status in test database: %s", err)
+				}
+			}
 
 			h := handler{
 				db:     db,
@@ -112,8 +189,8 @@ func TestGetDeployment(t *testing.T) {
 			var actual v1.Deployment
 			err = json.Unmarshal(b, &actual)
 
-			if !reflect.DeepEqual(actual, tc.expected) {
-				t.Errorf("expected %#v, got %#v", tc.expected, actual)
+			if !cmp.Equal(actual, tc.expected) {
+				t.Errorf("difference between actual and expected: %s", cmp.Diff(tc.expected, actual))
 			}
 		})
 	}
@@ -189,6 +266,7 @@ func TestGetClusterDeployments(t *testing.T) {
 		name               string
 		clusterID          string
 		deployments        []v1.Deployment
+		deploymentStatuses []v1.DeploymentStatus
 		clustermockOptions []clustermock.MockOption
 		expected           []v1.Deployment
 	}{
@@ -292,17 +370,53 @@ func TestGetClusterDeployments(t *testing.T) {
 			},
 			expected: []v1.Deployment{},
 		},
+		{
+			name:      "test with deployment status",
+			clusterID: "cluster-123",
+			deployments: []v1.Deployment{
+				{
+					ID:        uuid.MustParse("2a0d2f6d-e3b1-4021-84cd-5c47918dc99e"),
+					ClusterID: "cluster-123",
+				},
+			},
+			deploymentStatuses: []v1.DeploymentStatus{
+				{
+					ID:           uuid.MustParse("dce9a76b-1a68-4d5d-bcea-fef85a265882"),
+					DeploymentID: uuid.MustParse("fe9c90d4-6c0d-4038-8099-e4075bc1484b"),
+					State:        util.Ptr("testing"),
+				},
+			},
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						ID:           "cluster-123",
+						Name:         "test",
+						Organization: "hello123",
+					},
+				}),
+			},
+			expected: []v1.Deployment{
+				{
+					ID:        uuid.MustParse("2a0d2f6d-e3b1-4021-84cd-5c47918dc99e"),
+					ClusterID: "cluster-123",
+				},
+			},
+		},
 	}
 
 	gin.SetMode(gin.TestMode)
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			gormSlogger := loggers.NewGormSlogger(logger)
+
+			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
 			db.AutoMigrate(&v1.Deployment{})
+			db.AutoMigrate(&v1.DeploymentStatus{})
 
 			for _, deployment := range tc.deployments {
 				err := db.Create(&deployment).Error
@@ -310,8 +424,12 @@ func TestGetClusterDeployments(t *testing.T) {
 					t.Fatalf("unexpected error creating deployment in test database: %s", err)
 				}
 			}
-
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			for _, deploymentStatus := range tc.deploymentStatuses {
+				err := db.Create(&deploymentStatus).Error
+				if err != nil {
+					t.Fatalf("unexpected error creating deployment status in test database: %s", err)
+				}
+			}
 
 			clusterService := clustermock.NewMockClusterService(tc.clustermockOptions...)
 
@@ -350,8 +468,8 @@ func TestGetClusterDeployments(t *testing.T) {
 				t.Fatalf("expected no error unmarshalling reponse, got %s", err)
 			}
 
-			if !reflect.DeepEqual(actual, tc.expected) {
-				t.Errorf("cmp: %#v, %#v", actual, tc.expected)
+			if !cmp.Equal(actual, tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(actual, tc.expected))
 
 			}
 		})
@@ -434,9 +552,11 @@ func TestPostClusterDeployments(t *testing.T) {
 		},
 	}
 
+	gin.SetMode(gin.TestMode)
+
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 			gormSlogger := loggers.NewGormSlogger(logger)
 
 			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
@@ -444,6 +564,7 @@ func TestPostClusterDeployments(t *testing.T) {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
 			db.AutoMigrate(&v1.Deployment{})
+			db.AutoMigrate(&v1.DeploymentStatus{})
 
 			h := handler{
 				db:     db,
@@ -583,9 +704,11 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 		},
 	}
 
+	gin.SetMode(gin.TestMode)
+
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 			gormSlogger := loggers.NewGormSlogger(logger)
 
 			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
@@ -593,6 +716,7 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
 			db.AutoMigrate(&v1.Deployment{})
+			db.AutoMigrate(&v1.DeploymentStatus{})
 
 			dirTemp, err := os.MkdirTemp("", "dockyards-")
 			if err != nil {
