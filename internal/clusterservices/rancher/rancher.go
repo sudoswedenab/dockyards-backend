@@ -106,7 +106,7 @@ func NewRancher(rancherOptions ...RancherOption) (*rancher, error) {
 			return nil, err
 		}
 
-		r.logger.Debug("got token key from kubernetes", "key", tokenKey)
+		r.logger.Debug("got token key from kubernetes", "prefix", tokenKey[:11])
 
 		r.clientOpts.TokenKey = tokenKey
 	}
