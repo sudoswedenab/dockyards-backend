@@ -71,6 +71,10 @@ func (s *MockClusterService) CollectMetrics() error {
 	return nil
 }
 
+func (s *MockClusterService) DeleteGarbage() {
+	return
+}
+
 func WithClusters(clusters map[string]v1.Cluster) MockOption {
 	return func(s *MockClusterService) {
 		s.clusters = clusters
