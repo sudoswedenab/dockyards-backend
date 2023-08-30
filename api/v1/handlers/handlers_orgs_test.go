@@ -47,7 +47,7 @@ func TestDeleteOrganization(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.TestMode)
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

@@ -20,8 +20,6 @@ import (
 )
 
 func TestLogin(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-
 	hash, err := bcrypt.GenerateFromPassword([]byte("password"), 10)
 	if err != nil {
 		t.Fatalf("unexpected error hashing string 'password'")
@@ -71,6 +69,8 @@ func TestLogin(t *testing.T) {
 			expected: http.StatusUnauthorized,
 		},
 	}
+
+	gin.SetMode(gin.TestMode)
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 	gormSlogger := loggers.NewGormSlogger(logger)

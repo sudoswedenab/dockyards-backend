@@ -18,8 +18,6 @@ import (
 )
 
 func TestFindAllUsers(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-
 	now := time.Now()
 
 	tt := []struct {
@@ -62,6 +60,8 @@ func TestFindAllUsers(t *testing.T) {
 	type response struct {
 		Users []v1.User `json:"user"`
 	}
+
+	gin.SetMode(gin.TestMode)
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
@@ -116,8 +116,6 @@ func TestFindAllUsers(t *testing.T) {
 }
 
 func TestFindUserById(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-
 	now := time.Now()
 
 	tt := []struct {
@@ -189,6 +187,8 @@ func TestFindUserById(t *testing.T) {
 		User v1.User `json:"user"`
 	}
 
+	gin.SetMode(gin.TestMode)
+
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
@@ -246,8 +246,6 @@ func TestFindUserById(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-
 	tt := []struct {
 		name     string
 		id       uuid.UUID
@@ -319,6 +317,8 @@ func TestUpdateUser(t *testing.T) {
 		User v1.User `json:"user"`
 	}
 
+	gin.SetMode(gin.TestMode)
+
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
@@ -388,8 +388,6 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	gin.SetMode(gin.ReleaseMode)
-
 	tt := []struct {
 		name  string
 		users []v1.User
@@ -428,6 +426,8 @@ func TestDeleteUser(t *testing.T) {
 			id: uuid.MustParse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
 		},
 	}
+
+	gin.SetMode(gin.TestMode)
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
