@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func (h *handler) PostOrgClusters(c *gin.Context) {
@@ -145,26 +146,43 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	if clusterOptions.NoClusterApps == nil || !*clusterOptions.NoClusterApps {
-		clusterApps, err := h.cloudService.GetClusterDeployments(&organization, cluster)
+		clusterDeployments, err := h.cloudService.GetClusterDeployments(&organization, cluster)
 		if err != nil {
-			h.logger.Error("error getting cloud service cluster deployments ", "err", err)
+			h.logger.Error("error getting cloud service cluster deployments", "err", err)
 
 			hasErrors = true
 		}
 
 		if !hasErrors {
-			for _, clusterApp := range *clusterApps {
-				h.logger.Debug("creating cluster app", "name", clusterApp.Name)
+			for _, clusterDeployment := range *clusterDeployments {
+				h.logger.Debug("creating cluster deployment", "name", *clusterDeployment.Name)
 
-				err := h.db.Create(&clusterApp).Error
+				clusterDeployment.ID = uuid.New()
+
+				err := h.db.Create(&clusterDeployment).Error
 				if err != nil {
-					h.logger.Error("error creating cluster app in database", "name", clusterApp.Name, "err", err)
+					h.logger.Error("error creating cluster deployment in database", "name", *clusterDeployment.Name, "err", err)
 
 					hasErrors = true
 					break
 				}
 
-				h.logger.Debug("created cluster app", "name", clusterApp.Name, "id", clusterApp.ID)
+				h.logger.Debug("created cluster deployment", "name", *clusterDeployment.Name, "id", clusterDeployment.ID)
+
+				deploymentStatus := v1.DeploymentStatus{
+					ID:           uuid.New(),
+					DeploymentID: clusterDeployment.ID,
+					State:        util.Ptr("created"),
+				}
+
+				err = h.db.Create(&deploymentStatus).Error
+				if err != nil {
+					h.logger.Warn("error creating cluster deployment status", "err", err)
+
+					continue
+				}
+
+				h.logger.Debug("created cluster deployment status", "id", deploymentStatus.ID)
 			}
 		}
 	}
