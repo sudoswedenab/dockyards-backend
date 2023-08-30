@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 )
 
 func (s *openStackService) GetClusterDeployments(organization *v1.Organization, cluster *v1.Cluster) (*[]v1.Deployment, error) {
@@ -22,12 +23,12 @@ func (s *openStackService) GetClusterDeployments(organization *v1.Organization, 
 
 	openStackCinderCSIDeployment := v1.Deployment{
 		ClusterID:      cluster.ID,
-		Name:           "openstack-cinder-csi",
-		HelmChart:      "openstack-cinder-csi",
-		HelmRepository: "https://kubernetes.github.io/cloud-provider-openstack",
-		HelmVersion:    "2.28.0-alpha.3",
-		Namespace:      "kube-system",
-		HelmValues: v1.HelmValues{
+		Name:           util.Ptr("openstack-cinder-csi"),
+		HelmChart:      util.Ptr("openstack-cinder-csi"),
+		HelmRepository: util.Ptr("https://kubernetes.github.io/cloud-provider-openstack"),
+		HelmVersion:    util.Ptr("2.28.0-alpha.3"),
+		Namespace:      util.Ptr("kube-system"),
+		HelmValues: util.Ptr(v1.HelmValues{
 			"secret": map[string]any{
 				"enabled":  true,
 				"create":   true,
@@ -43,7 +44,7 @@ func (s *openStackService) GetClusterDeployments(organization *v1.Organization, 
 				},
 			},
 			"clusterID": cluster.Name,
-		},
+		}),
 	}
 
 	clusterApps := []v1.Deployment{
