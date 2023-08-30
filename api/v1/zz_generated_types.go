@@ -70,17 +70,17 @@ type Credential struct {
 
 // Deployment defines model for deployment.
 type Deployment struct {
-	ClusterID      string     `json:"cluster_id"`
-	ContainerImage string     `json:"container_image"`
-	CredentialID   string     `json:"credential_id"`
-	HelmChart      string     `json:"helm_chart"`
-	HelmRepository string     `json:"helm_repository"`
-	HelmValues     HelmValues `json:"helm_values"`
-	HelmVersion    string     `json:"helm_version"`
-	ID             uuid.UUID  `json:"id"`
-	Name           string     `json:"name"`
-	Namespace      string     `json:"namespace"`
-	Port           int        `json:"port"`
+	ClusterID      string      `json:"cluster_id"`
+	ContainerImage *string     `json:"container_image,omitempty"`
+	CredentialID   *string     `json:"credential_id,omitempty"`
+	HelmChart      *string     `json:"helm_chart,omitempty"`
+	HelmRepository *string     `json:"helm_repository,omitempty"`
+	HelmValues     *HelmValues `json:"helm_values,omitempty"`
+	HelmVersion    *string     `json:"helm_version,omitempty"`
+	ID             uuid.UUID   `json:"id"`
+	Name           *string     `json:"name,omitempty"`
+	Namespace      *string     `json:"namespace,omitempty"`
+	Port           *int        `json:"port,omitempty"`
 }
 
 // DeploymentOverview defines model for deployment_overview.
