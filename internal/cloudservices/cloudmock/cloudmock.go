@@ -27,6 +27,10 @@ func (s *MockCloudService) GetFlavorNodePool(flavorID string) (*v1.NodePool, err
 	return nodePool, nil
 }
 
+func (s *MockCloudService) DeleteGarbage() {
+	return
+}
+
 func WithFlavors(flavors map[string]*v1.NodePool) MockOption {
 	return func(s *MockCloudService) {
 		s.flavors = flavors
