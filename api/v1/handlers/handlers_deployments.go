@@ -386,8 +386,31 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 		return
 	}
 
+	var deploymentStatuses []v1.DeploymentStatus
+	err := h.db.Find(&deploymentStatuses, "deployment_id = ?", deploymentID).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		h.logger.Error("error finding deployment statuses in database", "id", deploymentID, "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	for _, deploymentStatus := range deploymentStatuses {
+		h.logger.Error("deleting deployment status from database", "id", deploymentStatus.ID)
+
+		err := h.db.Delete(&deploymentStatus).Error
+		if err != nil {
+			h.logger.Error("error deleting deployment status from database", "id", deploymentStatus.ID, "err", err)
+
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		h.logger.Debug("deleted deployment status from database", "id", deploymentStatus.ID)
+	}
+
 	var deployment v1.Deployment
-	err := h.db.Take(&deployment, "id = ?", deploymentID).Error
+	err = h.db.Take(&deployment, "id = ?", deploymentID).Error
 	if err != nil {
 		h.logger.Error("error taking deployment from database", "err", err)
 
