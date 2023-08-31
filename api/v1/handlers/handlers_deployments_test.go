@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -480,9 +481,10 @@ func TestGetClusterDeployments(t *testing.T) {
 
 func TestDeleteDeployment(t *testing.T) {
 	tt := []struct {
-		name         string
-		deploymentID string
-		deployments  []v1.Deployment
+		name               string
+		deploymentID       string
+		deployments        []v1.Deployment
+		deploymentStatuses []v1.DeploymentStatus
 	}{
 		{
 			name:         "test single",
@@ -494,15 +496,42 @@ func TestDeleteDeployment(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:         "test single with deployment statuses",
+			deploymentID: "4be60902-c107-4485-8223-3179d666570d",
+			deployments: []v1.Deployment{
+				{
+					ID: uuid.MustParse("4be60902-c107-4485-8223-3179d666570d"),
+				},
+			},
+			deploymentStatuses: []v1.DeploymentStatus{
+				{
+					ID:           uuid.MustParse("de700fd4-386e-4384-8efb-47964102c51a"),
+					DeploymentID: uuid.MustParse("4be60902-c107-4485-8223-3179d666570d"),
+				},
+				{
+					ID:           uuid.MustParse("c6a72e21-46b1-46a3-a8eb-c11fc67e7152"),
+					DeploymentID: uuid.MustParse("4be60902-c107-4485-8223-3179d666570d"),
+				},
+				{
+					ID:           uuid.MustParse("1d646caf-3cec-4092-ac73-4badd0e31565"),
+					DeploymentID: uuid.MustParse("4be60902-c107-4485-8223-3179d666570d"),
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			gormSlogger := loggers.NewGormSlogger(logger)
+
+			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
 			db.AutoMigrate(&v1.Deployment{})
+			db.AutoMigrate(&v1.DeploymentStatus{})
 
 			for _, deployment := range tc.deployments {
 				err := db.Create(&deployment).Error
@@ -510,8 +539,12 @@ func TestDeleteDeployment(t *testing.T) {
 					t.Fatalf("unexpected error creating deployment in test database: %s", err)
 				}
 			}
-
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			for _, deploymentStatus := range tc.deploymentStatuses {
+				err := db.Create(&deploymentStatus).Error
+				if err != nil {
+					t.Fatalf("unexpected error creating deployment status in database: %s", err)
+				}
+			}
 
 			h := handler{
 				db:     db,
@@ -534,6 +567,16 @@ func TestDeleteDeployment(t *testing.T) {
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusNoContent {
 				t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
+			}
+
+			var deploymentStatuses []v1.DeploymentStatus
+			err = db.Find(&deploymentStatuses, "deployment_id = ?", tc.deploymentID).Error
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				t.Fatalf("unexpectede error finding deployment statuses in database: %s", err)
+			}
+
+			if len(deploymentStatuses) != 0 {
+				t.Errorf("expected %d deployment statuses after delete, got %d", 0, len(deploymentStatuses))
 			}
 		})
 	}
