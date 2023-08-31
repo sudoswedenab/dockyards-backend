@@ -343,11 +343,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 	err = h.db.Create(&deploymentStatus).Error
 	if err != nil {
-		h.logger.Error("error creating deployment status in database", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-
+		h.logger.Warn("error creating deployment status in database", "err", err)
 	}
 
 	deployment.Status = deploymentStatus
