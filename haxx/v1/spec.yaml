@@ -768,6 +768,12 @@ components:
         created_at:
           type: string
           format: date-time
+        health:
+          type: string
+          enum:
+          - error
+          - warning
+          - healthy
       required:
       - id
       - deployment_id
