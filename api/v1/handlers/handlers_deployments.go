@@ -327,6 +327,14 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		h.logger.Debug("created commit", "hash", commit.String())
 	}
 
+	err = h.db.Create(&deployment).Error
+	if err != nil {
+		h.logger.Error("error creating deployment in database", "name", deployment.Name, "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	deploymentStatus := v1.DeploymentStatus{
 		ID:           uuid.New(),
 		DeploymentID: deployment.ID,
@@ -340,14 +348,6 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 
-	}
-
-	err = h.db.Create(&deployment).Error
-	if err != nil {
-		h.logger.Error("error creating deployment in database", "name", deployment.Name, "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
 	}
 
 	deployment.Status = deploymentStatus
