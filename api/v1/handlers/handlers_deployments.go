@@ -396,7 +396,7 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 	}
 
 	for _, deploymentStatus := range deploymentStatuses {
-		h.logger.Error("deleting deployment status from database", "id", deploymentStatus.ID)
+		h.logger.Debug("deleting deployment status from database", "id", deploymentStatus.ID)
 
 		err := h.db.Delete(&deploymentStatus).Error
 		if err != nil {
