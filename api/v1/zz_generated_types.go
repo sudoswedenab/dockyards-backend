@@ -13,6 +13,13 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for DeploymentStatusHealth.
+const (
+	DeploymentStatusHealthError   DeploymentStatusHealth = "error"
+	DeploymentStatusHealthHealthy DeploymentStatusHealth = "healthy"
+	DeploymentStatusHealthWarning DeploymentStatusHealth = "warning"
+)
+
 // App defines model for app.
 type App struct {
 	AppSteps    []AppStep `json:"app_steps"`
@@ -92,12 +99,16 @@ type DeploymentOverview struct {
 
 // DeploymentStatus defines model for deployment_status.
 type DeploymentStatus struct {
-	CreatedAt    time.Time `json:"created_at"`
-	DeploymentID uuid.UUID `json:"deployment_id"`
-	ID           uuid.UUID `json:"id"`
-	State        *string   `json:"state,omitempty"`
-	URLs         *[]string `gorm:"serializer:json" json:"urls,omitempty"`
+	CreatedAt    time.Time               `json:"created_at"`
+	DeploymentID uuid.UUID               `json:"deployment_id"`
+	Health       *DeploymentStatusHealth `json:"health,omitempty"`
+	ID           uuid.UUID               `json:"id"`
+	State        *string                 `json:"state,omitempty"`
+	URLs         *[]string               `gorm:"serializer:json" json:"urls,omitempty"`
 }
+
+// DeploymentStatusHealth defines model for DeploymentStatus.Health.
+type DeploymentStatusHealth string
 
 // Login defines model for login.
 type Login struct {
