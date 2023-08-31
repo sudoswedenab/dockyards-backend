@@ -78,6 +78,7 @@ func TestGetDeployment(t *testing.T) {
 					DeploymentID: uuid.MustParse("63f4b165-d9e4-4653-a2a4-92b14ff6153e"),
 					CreatedAt:    now,
 					State:        util.Ptr("testing"),
+					Health:       util.Ptr(v1.DeploymentStatusHealthWarning),
 				},
 			},
 			expected: v1.Deployment{
@@ -87,6 +88,7 @@ func TestGetDeployment(t *testing.T) {
 					DeploymentID: uuid.MustParse("63f4b165-d9e4-4653-a2a4-92b14ff6153e"),
 					CreatedAt:    now,
 					State:        util.Ptr("testing"),
+					Health:       util.Ptr(v1.DeploymentStatusHealthWarning),
 				},
 			},
 		},

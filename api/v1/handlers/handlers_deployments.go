@@ -339,6 +339,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		ID:           uuid.New(),
 		DeploymentID: deployment.ID,
 		State:        util.Ptr("pending"),
+		Health:       util.Ptr(v1.DeploymentStatusHealthWarning),
 	}
 
 	err = h.db.Create(&deploymentStatus).Error
