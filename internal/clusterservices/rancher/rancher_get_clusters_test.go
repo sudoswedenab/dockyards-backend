@@ -2,12 +2,12 @@ package rancher
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher/ranchermock"
+	"github.com/google/go-cmp/cmp"
 	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
@@ -61,6 +61,7 @@ func TestGetCluster(t *testing.T) {
 				ID: "cluster-123",
 				NodePools: []v1.NodePool{
 					{
+						ID:         "node-pool-123",
 						CPUCount:   123,
 						RAMSizeMb:  1024,
 						DiskSizeGb: 512,
@@ -84,8 +85,8 @@ func TestGetCluster(t *testing.T) {
 				t.Fatalf("unexpected error: %s", err)
 			}
 
-			if !reflect.DeepEqual(actual, &tc.expected) {
-				t.Errorf("expected\n %#v, got\n %#v", &tc.expected, actual)
+			if !cmp.Equal(actual, &tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(&tc.expected, actual))
 			}
 		})
 	}
@@ -167,8 +168,8 @@ func TestGetAllClusters(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unxepected error getting clusters: %s", err)
 			}
-			if !reflect.DeepEqual(actual, tc.expected) {
-				t.Errorf("expected\n %#v, got\n %#v", tc.expected, actual)
+			if !cmp.Equal(actual, tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
 			}
 		})
 	}
