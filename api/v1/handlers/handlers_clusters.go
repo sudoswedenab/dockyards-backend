@@ -173,6 +173,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 					ID:           uuid.New(),
 					DeploymentID: clusterDeployment.ID,
 					State:        util.Ptr("created"),
+					Health:       util.Ptr(v1.DeploymentStatusHealthWarning),
 				}
 
 				err = h.db.Create(&deploymentStatus).Error

@@ -868,7 +868,8 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 					ClusterID: "cluster-123",
 					Name:      util.Ptr("test"),
 					Status: v1.DeploymentStatus{
-						State: util.Ptr("created"),
+						State:  util.Ptr("created"),
+						Health: util.Ptr(v1.DeploymentStatusHealthWarning),
 					},
 				},
 			},
