@@ -9,17 +9,17 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (string, error) {
+func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (*v1.Config, error) {
 	rancherCluster, err := r.managementClient.Cluster.ByID(clusterID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	r.logger.Debug("generating kubeconfig for cluster", "id", rancherCluster.ID)
 
 	generatedKubeConfig, err := r.managementClient.Cluster.ActionGenerateKubeconfig(rancherCluster)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	r.logger.Debug("generated kubeconfig for cluster", "id", rancherCluster.ID)
@@ -27,7 +27,7 @@ func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (string, er
 	var config v1.Config
 	err = yaml.Unmarshal([]byte(generatedKubeConfig.Config), &config)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	authInfo := config.AuthInfos[0].AuthInfo
@@ -36,7 +36,7 @@ func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (string, er
 
 	unrestrictedToken, err := r.managementClient.Token.ByID(tokenID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	limitedToken := managementv3.Token{
@@ -48,7 +48,7 @@ func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (string, er
 
 	createdToken, err := r.managementClient.Token.Create(&limitedToken)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	r.logger.Debug("created limited token", "id", createdToken.ID, "ttl", ttl)
@@ -66,15 +66,10 @@ func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (string, er
 
 	err = r.managementClient.Token.Delete(unrestrictedToken)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	r.logger.Debug("deleted unrestricted token", "id", unrestrictedToken.ID)
 
-	b, err := yaml.Marshal(config)
-	if err != nil {
-		return "", err
-	}
-
-	return string(b), nil
+	return &config, nil
 }
