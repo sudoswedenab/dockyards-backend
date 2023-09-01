@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	externalRef0 "bitbucket.org/sudosweden/dockyards-backend/api/v1"
@@ -556,13 +557,23 @@ type GetKubeconfigResponseObject interface {
 	VisitGetKubeconfigResponse(w http.ResponseWriter) error
 }
 
-type GetKubeconfig200JSONResponse string
+type GetKubeconfig200TextplainCharsetUTF8Response struct {
+	Body          io.Reader
+	ContentLength int64
+}
 
-func (response GetKubeconfig200JSONResponse) VisitGetKubeconfigResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
+func (response GetKubeconfig200TextplainCharsetUTF8Response) VisitGetKubeconfigResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
 	w.WriteHeader(200)
 
-	return json.NewEncoder(w).Encode(response)
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
 }
 
 type GetKubeconfig500Response struct {
