@@ -5,12 +5,14 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 type MockClusterService struct {
 	types.ClusterService
-	clusters  map[string]v1.Cluster
-	nodePools map[string]v1.NodePool
+	clusters    map[string]v1.Cluster
+	nodePools   map[string]v1.NodePool
+	kubeconfigs map[string]clientcmdv1.Config
 }
 
 type MockOption func(*MockClusterService)
@@ -94,6 +96,12 @@ func WithClusters(clusters map[string]v1.Cluster) MockOption {
 func WithNodePools(nodePools map[string]v1.NodePool) MockOption {
 	return func(s *MockClusterService) {
 		s.nodePools = nodePools
+	}
+}
+
+func WithKubeconfigs(kubeconfigs map[string]clientcmdv1.Config) MockOption {
+	return func(s *MockClusterService) {
+		s.kubeconfigs = kubeconfigs
 	}
 }
 
