@@ -177,8 +177,6 @@ func (h *handler) isMember(user *v1.User, organization *v1.Organization) (bool, 
 		}
 	}
 
-	h.logger.Debug("arst", "orgs", userOrganizations, "user", user, "isMember", isMember)
-
 	return isMember, nil
 
 }

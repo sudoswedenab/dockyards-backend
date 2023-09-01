@@ -41,9 +41,6 @@ func (h *handler) GetCredentials(c *gin.Context) {
 
 	for _, credential := range credentials {
 		_, isMember := orgs[credential.Organization]
-
-		h.logger.Debug("checking credential", "id", credential.ID, "organization", credential.Organization, "member", isMember)
-
 		if isMember {
 			filteredCredentials = append(filteredCredentials, credential)
 		}

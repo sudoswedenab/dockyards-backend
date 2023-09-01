@@ -369,7 +369,6 @@ func (h *handler) GetClusters(c *gin.Context) {
 	filteredClusters := []v1.Cluster{}
 	for _, cluster := range *clusters {
 		_, isMember := orgs[cluster.Organization]
-		h.logger.Debug("checking cluster membership", "organization", cluster.Organization, "is_member", isMember)
 		if isMember {
 			filteredClusters = append(filteredClusters, cluster)
 		}
