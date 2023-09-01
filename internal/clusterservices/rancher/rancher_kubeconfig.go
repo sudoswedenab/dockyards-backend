@@ -1,38 +1,80 @@
 package rancher
 
 import (
-	"errors"
+	"strings"
+	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
-	"github.com/rancher/norman/types"
+	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
+	"k8s.io/client-go/tools/clientcmd/api/v1"
+	"sigs.k8s.io/yaml"
 )
 
-func (r *rancher) GetKubeConfig(cluster *v1.Cluster) (string, error) {
-	encodedName := names.EncodeName(cluster.Organization, cluster.Name)
-
-	listOpts := types.ListOpts{
-		Filters: map[string]interface{}{
-			"name": encodedName,
-		},
-	}
-	clusterCollection, err := r.managementClient.Cluster.List(&listOpts)
+func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (string, error) {
+	rancherCluster, err := r.managementClient.Cluster.ByID(clusterID)
 	if err != nil {
 		return "", err
 	}
 
-	r.logger.Debug("list cluster collection", "len", len(clusterCollection.Data))
+	r.logger.Debug("generating kubeconfig for cluster", "id", rancherCluster.ID)
 
-	for _, data := range clusterCollection.Data {
-		if data.Name == encodedName {
-			r.logger.Debug("cluster to generate kubeconfig for found", "id", data.ID, "name", data.Name)
-			generatedKubeConfig, err := r.managementClient.Cluster.ActionGenerateKubeconfig(&data)
-			if err != nil {
-				return "", err
-			}
-			return generatedKubeConfig.Config, nil
-		}
+	generatedKubeConfig, err := r.managementClient.Cluster.ActionGenerateKubeconfig(rancherCluster)
+	if err != nil {
+		return "", err
 	}
 
-	return "", errors.New("no such cluster")
+	r.logger.Debug("generated kubeconfig for cluster", "id", rancherCluster.ID)
+
+	var config v1.Config
+	err = yaml.Unmarshal([]byte(generatedKubeConfig.Config), &config)
+	if err != nil {
+		return "", err
+	}
+
+	authInfo := config.AuthInfos[0].AuthInfo
+
+	tokenID := authInfo.Token[:strings.Index(authInfo.Token, ":")]
+
+	unrestrictedToken, err := r.managementClient.Token.ByID(tokenID)
+	if err != nil {
+		return "", err
+	}
+
+	limitedToken := managementv3.Token{
+		ClusterID: clusterID,
+		TTLMillis: ttl.Milliseconds(),
+	}
+
+	r.logger.Debug("creating limited token", "ttl", ttl)
+
+	createdToken, err := r.managementClient.Token.Create(&limitedToken)
+	if err != nil {
+		return "", err
+	}
+
+	r.logger.Debug("created limited token", "id", createdToken.ID, "ttl", ttl)
+
+	authInfo.Token = createdToken.Token
+	config.AuthInfos[0].Name = clusterID
+	config.AuthInfos[0].AuthInfo = authInfo
+	config.Clusters[0].Name = clusterID
+	config.Contexts[0].Name = clusterID
+	config.Contexts[0].Context.Cluster = clusterID
+	config.Contexts[0].Context.AuthInfo = clusterID
+	config.CurrentContext = clusterID
+
+	r.logger.Debug("deleting unrestricted token", "id", unrestrictedToken.ID)
+
+	err = r.managementClient.Token.Delete(unrestrictedToken)
+	if err != nil {
+		return "", err
+	}
+
+	r.logger.Debug("deleted unrestricted token", "id", unrestrictedToken.ID)
+
+	b, err := yaml.Marshal(config)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }
