@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
@@ -203,35 +204,25 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	c.JSON(http.StatusCreated, cluster)
 }
 
-func (h *handler) GetOrgClusterKubeConfig(c *gin.Context) {
-	org := c.Param("org")
-	if org == "" {
+func (h *handler) GetClusterKubeconfig(c *gin.Context) {
+	clusterID := c.Param("clusterID")
+	if clusterID == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	clusterName := c.Param("cluster")
-	if clusterName == "" {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
+	h.logger.Debug("getting kubeconfig for cluster", "id", clusterID)
 
-	h.logger.Debug("get kubeconfig for cluster", "org", org, "cluster", clusterName)
-
-	cluster := v1.Cluster{
-		Organization: org,
-		Name:         clusterName,
-	}
-
-	kubeConfig, err := h.clusterService.GetKubeConfig(&cluster)
+	kubeconfig, err := h.clusterService.GetKubeconfig(clusterID, time.Duration(time.Hour))
 	if err != nil {
 		h.logger.Error("unexpected error getting kubeconfig", "err", err)
+
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"kubeconfig": kubeConfig,
+		"kubeconfig": kubeconfig,
 	})
 }
 
