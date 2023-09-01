@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 )
 
@@ -14,5 +16,5 @@ type ClusterService interface {
 	GetCluster(string) (*v1.Cluster, error)
 	CollectMetrics() error
 	GetNodePool(string) (*v1.NodePool, error)
-	GetKubeconfig(string) (string, error)
+	GetKubeconfig(string, time.Duration) (string, error)
 }
