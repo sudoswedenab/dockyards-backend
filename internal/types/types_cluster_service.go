@@ -10,9 +10,9 @@ type ClusterService interface {
 	GetAllClusters() (*[]v1.Cluster, error)
 	DeleteCluster(*v1.Organization, *v1.Cluster) error
 	GetSupportedVersions() ([]string, error)
-	GetKubeConfig(*v1.Cluster) (string, error)
 	DeleteGarbage()
 	GetCluster(string) (*v1.Cluster, error)
 	CollectMetrics() error
 	GetNodePool(string) (*v1.NodePool, error)
+	GetKubeconfig(string) (string, error)
 }
