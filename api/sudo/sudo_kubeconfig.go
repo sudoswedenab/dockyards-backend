@@ -1,7 +1,10 @@
 package sudo
 
 import (
+	"bytes"
 	"context"
+
+	"sigs.k8s.io/yaml"
 )
 
 func (a *sudoAPI) GetKubeconfig(ctx context.Context, req GetKubeconfigRequestObject) (GetKubeconfigResponseObject, error) {
@@ -12,6 +15,15 @@ func (a *sudoAPI) GetKubeconfig(ctx context.Context, req GetKubeconfigRequestObj
 		return GetKubeconfig500Response{}, nil
 	}
 
-	return GetKubeconfig200JSONResponse(kubeconfig), nil
+	b, err := yaml.Marshal(kubeconfig)
+	if err != nil {
+		a.logger.Error("error marshalling kubeconfig to yaml", "err", err)
 
+		return GetKubeconfig500Response{}, nil
+	}
+
+	res := GetKubeconfig200TextplainCharsetUTF8Response{
+		Body: bytes.NewBuffer(b),
+	}
+	return res, nil
 }
