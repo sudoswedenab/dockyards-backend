@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 type ClusterService interface {
@@ -16,5 +17,5 @@ type ClusterService interface {
 	GetCluster(string) (*v1.Cluster, error)
 	CollectMetrics() error
 	GetNodePool(string) (*v1.NodePool, error)
-	GetKubeconfig(string, time.Duration) (string, error)
+	GetKubeconfig(string, time.Duration) (*clientcmdv1.Config, error)
 }
