@@ -8,7 +8,9 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
+	"sigs.k8s.io/yaml"
 )
 
 func (h *handler) PostOrgClusters(c *gin.Context) {
@@ -221,9 +223,15 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"kubeconfig": kubeconfig,
-	})
+	b, err := yaml.Marshal(kubeconfig)
+	if err != nil {
+		h.logger.Error("error marshalling kubeconfig to yaml", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.Data(http.StatusOK, binding.MIMEYAML, b)
 }
 
 func (h *handler) DeleteOrgClusters(c *gin.Context) {
