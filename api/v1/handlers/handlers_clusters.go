@@ -213,13 +213,52 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
+	cluster, err := h.clusterService.GetCluster(clusterID)
+	if err != nil {
+		h.logger.Error("error getting cluster from cluster service", "id", clusterID, "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	var organization v1.Organization
+	err = h.db.Take(&organization, "name = ?", cluster.Organization).Error
+	if err != nil {
+		h.logger.Error("error taking organization from database", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	user, err := h.getUserFromContext(c)
+	if err != nil {
+		h.logger.Error("error fetching user from context", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	isMember, err := h.isMember(&user, &organization)
+	if err != nil {
+		h.logger.Error("error getting user membership", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
+	if !isMember {
+		h.logger.Debug("user is not a member of organization", "user", user.ID, "organization", organization.ID)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	h.logger.Debug("getting kubeconfig for cluster", "id", clusterID)
 
 	kubeconfig, err := h.clusterService.GetKubeconfig(clusterID, time.Duration(time.Hour))
 	if err != nil {
 		h.logger.Error("unexpected error getting kubeconfig", "err", err)
 
-		c.Status(http.StatusInternalServerError)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
