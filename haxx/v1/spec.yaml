@@ -159,16 +159,11 @@ paths:
         202: {}
         401: {}
         500: {}
-  /v1/orgs/{organization_name}/clusters/{cluster_name}/kubeconfig:
+  /v1/clusters/{cluster_id}/kubeconfig:
     get:
       operationId: getKubeconfig
       parameters:
-      - name: organization_name
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cluster_name
+      - name: cluster_id
         in: path
         required: true
         schema:
