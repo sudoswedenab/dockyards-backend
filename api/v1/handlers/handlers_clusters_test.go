@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -24,6 +25,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func TestPostOrgClusters(t *testing.T) {
@@ -953,6 +956,271 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 			ignoreTypes := []any{uuid.UUID{}, time.Time{}}
 			if !cmp.Equal(actual, tc.expected, cmpopts.IgnoreTypes(ignoreTypes...)) {
 				t.Errorf("difference between actual and expected: %s", cmp.Diff(tc.expected, actual, cmpopts.IgnoreTypes(ignoreTypes...)))
+			}
+		})
+	}
+}
+
+func TestGetClusterKubeconfig(t *testing.T) {
+	tt := []struct {
+		name               string
+		clusterID          string
+		user               v1.User
+		users              []v1.User
+		organizations      []v1.Organization
+		clustermockOptions []clustermock.MockOption
+		expected           clientcmdv1.Config
+	}{
+		{
+			name:      "test simple",
+			clusterID: "cluster-123",
+			user: v1.User{
+				ID: uuid.MustParse("9eb06ff5-4299-480c-b957-0b10485d873c"),
+			},
+			users: []v1.User{
+				{
+					ID: uuid.MustParse("9eb06ff5-4299-480c-b957-0b10485d873c"),
+				},
+			},
+			organizations: []v1.Organization{
+				{
+					ID:   uuid.MustParse("984d5796-f1ad-4f77-a678-6763f4e6ebf2"),
+					Name: "test-org",
+					Users: []v1.User{
+						{
+							ID: uuid.MustParse("9eb06ff5-4299-480c-b957-0b10485d873c"),
+						}},
+				},
+			},
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						Name:         "cluster-123",
+						Organization: "test-org",
+					},
+				}),
+				clustermock.WithKubeconfigs(map[string]clientcmdv1.Config{
+					"cluster-123": {
+						CurrentContext: "cluster-123",
+					},
+				}),
+			},
+			expected: clientcmdv1.Config{
+				CurrentContext: "cluster-123",
+			},
+		},
+	}
+
+	gin.SetMode(gin.TestMode)
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			gormSlogger := loggers.NewGormSlogger(logger)
+
+			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
+			if err != nil {
+				t.Fatalf("unexpected error creating db: %s", err)
+			}
+			err = internal.SyncDataBase(db)
+			if err != nil {
+				t.Fatalf("error syncing database")
+			}
+			for _, u := range tc.users {
+				err := db.Create(&u).Error
+				if err != nil {
+					t.Fatalf("error creating user in test database: %s", err)
+				}
+			}
+			for _, o := range tc.organizations {
+				err := db.Create(&o).Error
+				if err != nil {
+					t.Fatalf("error creating organization in test database: %s", err)
+				}
+			}
+
+			h := handler{
+				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:         logger,
+				db:             db,
+			}
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			c.Params = []gin.Param{
+				{Key: "clusterID", Value: tc.clusterID},
+			}
+			c.Set("user", tc.user)
+
+			u := url.URL{
+				Path: path.Join("/v1/clusters", tc.clusterID, "kubeconfig"),
+			}
+
+			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
+			if err != nil {
+				t.Fatalf("unexpected error preparing test request: %s", err)
+			}
+
+			h.GetClusterKubeconfig(c)
+
+			statusCode := w.Result().StatusCode
+			if statusCode != http.StatusOK {
+				t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+			}
+
+			b, err := io.ReadAll(w.Result().Body)
+
+			var actual clientcmdv1.Config
+			err = yaml.Unmarshal(b, &actual)
+			if err != nil {
+				t.Fatalf("error unmarshalling result body yaml: %s", err)
+			}
+		})
+	}
+}
+
+func TestGetClusterKubeconfigErrors(t *testing.T) {
+	tt := []struct {
+		name               string
+		clusterID          string
+		user               v1.User
+		users              []v1.User
+		organizations      []v1.Organization
+		clustermockOptions []clustermock.MockOption
+		expected           int
+	}{
+		{
+			name:     "test empty cluster id",
+			expected: http.StatusBadRequest,
+		},
+		{
+			name:      "test invalid cluster id",
+			clusterID: "cluster-234",
+			user: v1.User{
+				ID: uuid.MustParse("83a44759-56b8-480a-9575-ad0f3519f73a"),
+			},
+			users: []v1.User{
+				{
+					ID: uuid.MustParse("83a44759-56b8-480a-9575-ad0f3519f73a"),
+				},
+			},
+			organizations: []v1.Organization{
+				{
+					ID:   uuid.MustParse("c73aca00-f3af-462a-a8b4-1232cf8166c8"),
+					Name: "test-org",
+					Users: []v1.User{
+						{
+							ID: uuid.MustParse("83a44759-56b8-480a-9575-ad0f3519f73a"),
+						},
+					},
+				},
+			},
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						Organization: "test-org",
+						Name:         "cluster-123",
+					},
+				}),
+			},
+			expected: http.StatusUnauthorized,
+		},
+		{
+			name:      "test invalid organization membership",
+			clusterID: "cluster-123",
+			user: v1.User{
+				ID: uuid.MustParse("ef418237-2fd1-4977-861a-2031094a6ae5"),
+			},
+			users: []v1.User{
+				{
+					ID:    uuid.MustParse("7180bc06-66c1-4494-b53e-e9cc878995a9"),
+					Name:  "user1",
+					Email: "user1@dockyards.dev",
+				},
+				{
+					ID:    uuid.MustParse("ef418237-2fd1-4977-861a-2031094a6ae5"),
+					Name:  "user2",
+					Email: "user2@dockyards.dev",
+				},
+			},
+			organizations: []v1.Organization{
+				{
+					ID:   uuid.MustParse("1985e447-0f7b-4f43-a6a4-ed9e7ac89404"),
+					Name: "test-org",
+					Users: []v1.User{
+						{
+							ID: uuid.MustParse("7180bc06-66c1-4494-b53e-e9cc878995a9"),
+						},
+					},
+				},
+			},
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						Organization: "test-org",
+						Name:         "cluster-123",
+					},
+				}),
+			},
+			expected: http.StatusUnauthorized,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			gormSlogger := loggers.NewGormSlogger(logger)
+
+			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
+			if err != nil {
+				t.Fatalf("unexpected error creating db: %s", err)
+			}
+			err = internal.SyncDataBase(db)
+			if err != nil {
+				t.Fatalf("error syncing database")
+			}
+			for _, u := range tc.users {
+				err := db.Create(&u).Error
+				if err != nil {
+					t.Fatalf("error creating user in test database: %s", err)
+				}
+			}
+			for _, o := range tc.organizations {
+				err := db.Create(&o).Error
+				if err != nil {
+					t.Fatalf("error creating organization in test database: %s", err)
+				}
+			}
+
+			h := handler{
+				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:         logger,
+				db:             db,
+			}
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			c.Params = []gin.Param{
+				{Key: "clusterID", Value: tc.clusterID},
+			}
+			c.Set("user", tc.user)
+
+			u := url.URL{
+				Path: path.Join("/v1/clusters", tc.clusterID, "kubeconfig"),
+			}
+
+			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
+			if err != nil {
+				t.Fatalf("unexpected error preparing test request: %s", err)
+			}
+
+			h.GetClusterKubeconfig(c)
+
+			statusCode := w.Result().StatusCode
+			if statusCode != tc.expected {
+				t.Fatalf("expected status code %d, got %d", tc.expected, statusCode)
 			}
 		})
 	}
