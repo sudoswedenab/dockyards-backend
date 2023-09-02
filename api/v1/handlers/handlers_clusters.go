@@ -102,9 +102,6 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 	}
 
-	h.logger.Debug("forcing no ingress provider")
-	clusterOptions.NoIngressProvider = util.Ptr(true)
-
 	cluster, err := h.clusterService.CreateCluster(&organization, &clusterOptions)
 	if err != nil {
 		h.logger.Error("error creating cluster", "name", clusterOptions.Name, "err", err)

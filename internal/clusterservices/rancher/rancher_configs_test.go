@@ -47,19 +47,6 @@ func TestClusterOptionsToRKEConfig(t *testing.T) {
 			expected: errors.New("unsupported version"),
 		},
 		{
-			name: "test supported ingress provider",
-			clusterOptions: v1.ClusterOptions{
-				IngressProvider: util.Ptr("nginx"),
-			},
-		},
-		{
-			name: "test unsupported ingress provider",
-			clusterOptions: v1.ClusterOptions{
-				IngressProvider: util.Ptr("traefik"),
-			},
-			expected: errors.New("unsupported ingress provider"),
-		},
-		{
 			name: "test versions error",
 			clusterOptions: v1.ClusterOptions{
 				Version: util.Ptr("v1.2.3"),
@@ -70,6 +57,7 @@ func TestClusterOptionsToRKEConfig(t *testing.T) {
 			expected: errors.New("no such setting"),
 		},
 	}
+
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRancherClient := ranchermock.NewMockRancherClient(tc.mockOptions...)

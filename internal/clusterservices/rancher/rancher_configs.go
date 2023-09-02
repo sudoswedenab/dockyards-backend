@@ -8,7 +8,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
-	corev1 "k8s.io/api/core/v1"
 )
 
 func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *v1.ClusterOptions) (*managementv3.RancherKubernetesEngineConfig, error) {
@@ -18,9 +17,6 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *v1.ClusterOptions) (
 	}
 
 	version := supportedVersions[0]
-
-	ingressProvider := "nginx"
-
 	if clusterOptions.Version != nil {
 		versionSupported := false
 		for _, supportedVersion := range supportedVersions {
@@ -33,10 +29,6 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *v1.ClusterOptions) (
 		if !versionSupported {
 			return nil, errors.New("unsupported version")
 		}
-	}
-
-	if clusterOptions.IngressProvider != nil && *clusterOptions.IngressProvider != "nginx" {
-		return nil, errors.New("unsupported ingress provider")
 	}
 
 	rancherKubernetesEngineConfig := managementv3.RancherKubernetesEngineConfig{
@@ -59,7 +51,6 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *v1.ClusterOptions) (
 			},
 			Plugin: "flannel",
 		},
-
 		Services: &managementv3.RKEConfigServices{
 			Etcd: &managementv3.ETCDService{
 				BackupConfig: &managementv3.BackupConfig{
@@ -79,7 +70,6 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *v1.ClusterOptions) (
 				ServiceNodePortRange: "30000-32767",
 			},
 		},
-
 		UpgradeStrategy: &managementv3.NodeUpgradeStrategy{
 			MaxUnavailableControlplane: "1",
 			MaxUnavailableWorker:       "10%",
@@ -89,24 +79,6 @@ func (r *rancher) clusterOptionsToRKEConfig(clusterOptions *v1.ClusterOptions) (
 				Timeout:          120,
 			},
 		},
-	}
-
-	if clusterOptions.NoIngressProvider != nil {
-		ingressConfig := managementv3.IngressConfig{
-			DefaultIngressClass: util.Ptr(true),
-			Provider:            ingressProvider,
-			NodeSelector: map[string]string{
-				LabelNodeRoleLoadBalancer: "",
-			},
-			Tolerations: []managementv3.Toleration{
-				{
-					Effect: string(corev1.TaintEffectNoSchedule),
-					Key:    TaintNodeRoleLoadBalancer,
-				},
-			},
-		}
-
-		rancherKubernetesEngineConfig.Ingress = &ingressConfig
 	}
 
 	return &rancherKubernetesEngineConfig, nil
