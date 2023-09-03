@@ -26,9 +26,9 @@ func (s *openStackService) GetClusterDeployments(organization *v1.Organization, 
 		Name:           util.Ptr("openstack-cinder-csi"),
 		HelmChart:      util.Ptr("openstack-cinder-csi"),
 		HelmRepository: util.Ptr("https://kubernetes.github.io/cloud-provider-openstack"),
-		HelmVersion:    util.Ptr("2.28.0-alpha.3"),
+		HelmVersion:    util.Ptr("2.28.0"),
 		Namespace:      util.Ptr("kube-system"),
-		HelmValues: util.Ptr(v1.HelmValues{
+		HelmValues: util.Ptr(map[string]any{
 			"secret": map[string]any{
 				"enabled":  true,
 				"create":   true,
