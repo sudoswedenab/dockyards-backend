@@ -69,26 +69,26 @@ type ClusterOverview struct {
 
 // Credential defines model for credential.
 type Credential struct {
-	Data         *CredentialData `json:"data,omitempty"`
-	ID           uuid.UUID       `json:"id"`
-	Name         string          `json:"name"`
-	Organization string          `json:"organization"`
+	Data         *map[string]interface{} `gorm:"serializer:json" json:"data,omitempty"`
+	ID           uuid.UUID               `json:"id"`
+	Name         string                  `json:"name"`
+	Organization string                  `json:"organization"`
 }
 
 // Deployment defines model for deployment.
 type Deployment struct {
-	ClusterID      string           `json:"cluster_id"`
-	ContainerImage *string          `json:"container_image,omitempty"`
-	CredentialID   *string          `json:"credential_id,omitempty"`
-	HelmChart      *string          `json:"helm_chart,omitempty"`
-	HelmRepository *string          `json:"helm_repository,omitempty"`
-	HelmValues     *HelmValues      `json:"helm_values,omitempty"`
-	HelmVersion    *string          `json:"helm_version,omitempty"`
-	ID             uuid.UUID        `json:"id"`
-	Name           *string          `json:"name,omitempty"`
-	Namespace      *string          `json:"namespace,omitempty"`
-	Port           *int             `json:"port,omitempty"`
-	Status         DeploymentStatus `json:"status"`
+	ClusterID      string                  `json:"cluster_id"`
+	ContainerImage *string                 `json:"container_image,omitempty"`
+	CredentialID   *string                 `json:"credential_id,omitempty"`
+	HelmChart      *string                 `json:"helm_chart,omitempty"`
+	HelmRepository *string                 `json:"helm_repository,omitempty"`
+	HelmValues     *map[string]interface{} `gorm:"serializer:json" json:"helm_values,omitempty"`
+	HelmVersion    *string                 `json:"helm_version,omitempty"`
+	ID             uuid.UUID               `json:"id"`
+	Name           *string                 `json:"name,omitempty"`
+	Namespace      *string                 `json:"namespace,omitempty"`
+	Port           *int                    `json:"port,omitempty"`
+	Status         DeploymentStatus        `json:"status"`
 }
 
 // DeploymentOverview defines model for deployment_overview.
