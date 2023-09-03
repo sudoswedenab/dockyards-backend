@@ -48,7 +48,7 @@ func TestGetDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:         "test complex",
+			name:         "test container image",
 			deploymentID: "9f72e4e6-412c-47a9-b3e8-8704e129db57",
 			deployments: []v1.Deployment{
 				{
@@ -63,6 +63,34 @@ func TestGetDeployment(t *testing.T) {
 				Name:           util.Ptr("test"),
 				ContainerImage: util.Ptr("docker.io/library/nginx:latest"),
 				Port:           util.Ptr(1234),
+			},
+		},
+		{
+			name:         "test helm chart with values",
+			deploymentID: "5621d3b0-0d4e-4265-9d92-56a580bcdd74",
+			deployments: []v1.Deployment{
+				{
+					ID:             uuid.MustParse("5621d3b0-0d4e-4265-9d92-56a580bcdd74"),
+					Name:           util.Ptr("test"),
+					HelmChart:      util.Ptr("test-chart"),
+					HelmRepository: util.Ptr("http://localhost"),
+					HelmVersion:    util.Ptr("v1.2.3"),
+					HelmValues: util.Ptr(map[string]any{
+						"testing": true,
+						"count":   123,
+					}),
+				},
+			},
+			expected: v1.Deployment{
+				ID:             uuid.MustParse("5621d3b0-0d4e-4265-9d92-56a580bcdd74"),
+				Name:           util.Ptr("test"),
+				HelmChart:      util.Ptr("test-chart"),
+				HelmRepository: util.Ptr("http://localhost"),
+				HelmVersion:    util.Ptr("v1.2.3"),
+				HelmValues: util.Ptr(map[string]any{
+					"testing": true,
+					"count":   float64(123),
+				}),
 			},
 		},
 		{
