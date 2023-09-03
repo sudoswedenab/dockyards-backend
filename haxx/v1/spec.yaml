@@ -540,7 +540,8 @@ components:
           type: string
         helm_values:
           type: object
-          x-go-type: HelmValues
+          x-oapi-codegen-extra-tags:
+            gorm: serializer:json
         credential_id:
           type: string
         port:
