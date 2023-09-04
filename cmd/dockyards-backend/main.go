@@ -113,6 +113,7 @@ func main() {
 	var gitProjectRoot string
 	var cloudServiceFlag string
 	var clusterServiceFlag string
+	var gitCGIPath string
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
@@ -122,6 +123,7 @@ func main() {
 	flag.StringVar(&gitProjectRoot, "git-project-root", "/var/www/git", "git project root")
 	flag.StringVar(&cloudServiceFlag, "cloud-service", "openstack", "cloud service")
 	flag.StringVar(&clusterServiceFlag, "cluster-service", "rancher", "cluster service")
+	flag.StringVar(&gitCGIPath, "git-cgi-path", "/usr/libexec/git-core/git-http-backend", "git-cgi-path")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -334,7 +336,7 @@ func main() {
 	privateRouter.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {})
 
 	cgiHandler := cgi.Handler{
-		Path: "/usr/lib/git-core/git-http-backend",
+		Path: gitCGIPath,
 		Dir:  gitProjectRoot,
 		Env: []string{
 			"GIT_PROJECT_ROOT=" + gitProjectRoot,
