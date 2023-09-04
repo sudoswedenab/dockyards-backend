@@ -13,6 +13,13 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for DeploymentType.
+const (
+	DeploymentTypeContainerImage DeploymentType = "container_image"
+	DeploymentTypeHelm           DeploymentType = "helm"
+	DeploymentTypeKustomize      DeploymentType = "kustomize"
+)
+
 // Defines values for DeploymentStatusHealth.
 const (
 	DeploymentStatusHealthError   DeploymentStatusHealth = "error"
@@ -85,11 +92,16 @@ type Deployment struct {
 	HelmValues     *map[string]interface{} `gorm:"serializer:json" json:"helm_values,omitempty"`
 	HelmVersion    *string                 `json:"helm_version,omitempty"`
 	ID             uuid.UUID               `json:"id"`
+	Kustomize      *map[string][]byte      `gorm:"serializer:json" json:"kustomize,omitempty"`
 	Name           *string                 `json:"name,omitempty"`
 	Namespace      *string                 `json:"namespace,omitempty"`
 	Port           *int                    `json:"port,omitempty"`
 	Status         DeploymentStatus        `json:"status"`
+	Type           DeploymentType          `json:"type"`
 }
+
+// DeploymentType defines model for Deployment.Type.
+type DeploymentType string
 
 // DeploymentOverview defines model for deployment_overview.
 type DeploymentOverview struct {
