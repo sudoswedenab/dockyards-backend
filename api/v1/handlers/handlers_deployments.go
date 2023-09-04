@@ -174,6 +174,10 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		deploymentType = v1.DeploymentTypeHelm
 	}
 
+	if deployment.Kustomize != nil {
+		deploymentType = v1.DeploymentTypeKustomize
+	}
+
 	details, validName := names.IsValidName(*deployment.Name)
 	if !validName {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -320,6 +324,74 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		h.logger.Debug("created commit", "hash", commit.String())
 	}
 
+	if deploymentType == v1.DeploymentTypeKustomize {
+		kustomize := *deployment.Kustomize
+
+		_, hasKustomization := kustomize["kustomization.yaml"]
+		if !hasKustomization {
+			h.logger.Error("deployment type is kustomized but no kustomization file provided")
+
+			c.AbortWithStatus(http.StatusUnprocessableEntity)
+		}
+
+		repoPath := path.Join(h.gitProjectRoot, "/v1/deployments", deployment.ID.String())
+
+		repo, err := git.PlainInit(repoPath, false)
+		if err != nil {
+			h.logger.Error("error creating git repository", "path", repoPath, "err", err)
+
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		worktree, err := repo.Worktree()
+		if err != nil {
+			h.logger.Error("error getting default worktree", "err", err)
+
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		for filename, content := range kustomize {
+			filepath := path.Join(repoPath, filename)
+			file, err := os.Create(filepath)
+			if err != nil {
+				h.logger.Error("error create kustomize file", "filepath", filepath, "err", err)
+
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+
+			_, err = file.Write(content)
+			if err != nil {
+				h.logger.Error("error writing kustomize file", "filepath", filepath, "err", err)
+
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+
+			file.Close()
+
+			worktree.Add(filename)
+		}
+
+		commit, err := worktree.Commit("Add kustomize", &git.CommitOptions{
+			Author: &object.Signature{
+				Name:  "dockyards",
+				Email: "git@dockyards.io",
+				When:  time.Now(),
+			},
+		})
+
+		if err != nil {
+			h.logger.Error("error creating commit", "err", err)
+
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		h.logger.Error("created git commit", "commit", commit)
+	}
 
 	deployment.Type = deploymentType
 
