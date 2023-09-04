@@ -23,13 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-type DeploymentType int
-
-const (
-	DeploymentTypeContainer = iota
-	DeploymentTypeHelm
-)
-
 func (h *handler) createDeployment(deployment *v1.Deployment) (*appsv1.Deployment, error) {
 	containerPort := 80
 	if deployment.Port != nil {
@@ -149,7 +142,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 	deployment.ClusterID = clusterID
 
-	var deploymentType DeploymentType
+	var deploymentType v1.DeploymentType
 
 	if deployment.ContainerImage != nil {
 		normalizedName, err := h.parseContainerImage(*deployment.ContainerImage)
@@ -168,7 +161,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			deployment.Name = &base
 		}
 
-		deploymentType = DeploymentTypeContainer
+		deploymentType = v1.DeploymentTypeContainerImage
 	}
 
 	if deployment.HelmChart != nil {
@@ -178,7 +171,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			deployment.Name = deployment.HelmChart
 		}
 
-		deploymentType = DeploymentTypeHelm
+		deploymentType = v1.DeploymentTypeHelm
 	}
 
 	details, validName := names.IsValidName(*deployment.Name)
@@ -217,7 +210,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 	deployment.ID = uuid.New()
 
-	if deploymentType == DeploymentTypeContainer {
+	if deploymentType == v1.DeploymentTypeContainerImage {
 		h.logger.Debug("deployment type is container, creating git repository")
 
 		appsv1Deployment, err := h.createDeployment(&deployment)
@@ -326,6 +319,9 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 		h.logger.Debug("created commit", "hash", commit.String())
 	}
+
+
+	deployment.Type = deploymentType
 
 	err = h.db.Create(&deployment).Error
 	if err != nil {
