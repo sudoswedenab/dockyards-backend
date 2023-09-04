@@ -21,6 +21,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -158,6 +159,28 @@ func TestGetDeployment(t *testing.T) {
 					CreatedAt:    now.Add(time.Duration(time.Minute * 5)),
 					State:        util.Ptr("running"),
 				},
+			},
+		},
+		{
+			name:         "test kustomize",
+			deploymentID: "c12c2313-662c-4895-86c2-49837c845086",
+			deployments: []v1.Deployment{
+				{
+					ID:   uuid.MustParse("c12c2313-662c-4895-86c2-49837c845086"),
+					Name: util.Ptr("test"),
+					Kustomize: util.Ptr(map[string][]byte{
+						"kustomization.yaml": []byte("kustomize"),
+						"test.yaml":          []byte("hello"),
+					}),
+				},
+			},
+			expected: v1.Deployment{
+				ID:   uuid.MustParse("c12c2313-662c-4895-86c2-49837c845086"),
+				Name: util.Ptr("test"),
+				Kustomize: util.Ptr(map[string][]byte{
+					"kustomization.yaml": []byte("kustomize"),
+					"test.yaml":          []byte("hello"),
+				}),
 			},
 		},
 	}
@@ -615,12 +638,65 @@ func TestPostClusterDeployments(t *testing.T) {
 		name       string
 		clusterID  string
 		deployment v1.Deployment
+		expected   v1.Deployment
 	}{
 		{
 			name:      "test helm",
 			clusterID: "cluster-123",
 			deployment: v1.Deployment{
 				HelmChart: util.Ptr("test"),
+			},
+			expected: v1.Deployment{
+				Type:      v1.DeploymentTypeHelm,
+				ClusterID: "cluster-123",
+				Name:      util.Ptr("test"),
+				Namespace: util.Ptr("test"),
+				HelmChart: util.Ptr("test"),
+				Status: v1.DeploymentStatus{
+					Health: util.Ptr(v1.DeploymentStatusHealthWarning),
+					State:  util.Ptr("pending"),
+				},
+			},
+		},
+		{
+			name:      "test container image",
+			clusterID: "cluster-123",
+			deployment: v1.Deployment{
+				ContainerImage: util.Ptr("test"),
+			},
+			expected: v1.Deployment{
+				Type:           v1.DeploymentTypeContainerImage,
+				ClusterID:      "cluster-123",
+				Name:           util.Ptr("test"),
+				Namespace:      util.Ptr("test"),
+				ContainerImage: util.Ptr("docker.io/library/test"),
+				Status: v1.DeploymentStatus{
+					Health: util.Ptr(v1.DeploymentStatusHealthWarning),
+					State:  util.Ptr("pending"),
+				},
+			},
+		},
+		{
+			name:      "test kustomize",
+			clusterID: "cluster-123",
+			deployment: v1.Deployment{
+				Name: util.Ptr("test"),
+				Kustomize: util.Ptr(map[string][]byte{
+					"kustomization.yaml": []byte("testing"),
+				}),
+			},
+			expected: v1.Deployment{
+				Type:      v1.DeploymentTypeKustomize,
+				ClusterID: "cluster-123",
+				Name:      util.Ptr("test"),
+				Namespace: util.Ptr("test"),
+				Kustomize: util.Ptr(map[string][]byte{
+					"kustomization.yaml": []byte("testing"),
+				}),
+				Status: v1.DeploymentStatus{
+					Health: util.Ptr(v1.DeploymentStatusHealthWarning),
+					State:  util.Ptr("pending"),
+				},
 			},
 		},
 	}
@@ -639,9 +715,15 @@ func TestPostClusterDeployments(t *testing.T) {
 			db.AutoMigrate(&v1.Deployment{})
 			db.AutoMigrate(&v1.DeploymentStatus{})
 
+			dirTemp, err := os.MkdirTemp("", "dockyards-")
+			if err != nil {
+				t.Fatalf("error creating temporary directory: %s", err)
+			}
+
 			h := handler{
-				db:     db,
-				logger: logger,
+				db:             db,
+				logger:         logger,
+				gitProjectRoot: dirTemp,
 			}
 
 			w := httptest.NewRecorder()
@@ -662,6 +744,22 @@ func TestPostClusterDeployments(t *testing.T) {
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusCreated {
 				t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+			}
+
+			b, err = io.ReadAll(w.Result().Body)
+			if err != nil {
+				t.Fatalf("error reading result body: %s", err)
+			}
+
+			var actual v1.Deployment
+			err = json.Unmarshal(b, &actual)
+			if err != nil {
+				t.Fatalf("error unmarshalling result body json: %s", err)
+			}
+
+			ignoreTypes := []any{uuid.UUID{}, time.Time{}}
+			if !cmp.Equal(actual, tc.expected, cmpopts.IgnoreTypes(ignoreTypes...)) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual, cmpopts.IgnoreTypes(ignoreTypes...)))
 			}
 		})
 	}
@@ -773,6 +871,16 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 			deployment: v1.Deployment{
 				ContainerImage: util.Ptr("nginx:l.2"),
 				Port:           util.Ptr(1234),
+			},
+		},
+		{
+			name:      "test kustomize",
+			clusterID: "cluster-123",
+			deployment: v1.Deployment{
+				Name: util.Ptr("kustomize"),
+				Kustomize: util.Ptr(map[string][]byte{
+					"kustomization.yaml": []byte("hello"),
+				}),
 			},
 		},
 	}
