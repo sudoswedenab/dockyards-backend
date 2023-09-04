@@ -548,10 +548,24 @@ components:
           type: integer
         status:
           $ref: '#/components/schemas/deployment_status'
+        kustomize:
+          type: object
+          additionalProperties:
+            type: string
+            format: byte
+          x-oapi-codegen-extra-tags:
+            gorm: serializer:json
+        type:
+          type: string
+          enum:
+          - container_image
+          - helm
+          - kustomize
       required:
       - id
       - cluster_id
       - status
+      - type
     node_pool:
       properties:
         id:
