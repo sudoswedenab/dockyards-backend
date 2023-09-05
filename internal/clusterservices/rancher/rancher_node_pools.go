@@ -103,9 +103,10 @@ func (r *rancher) GetNodePool(nodePoolID string) (*v1.NodePool, error) {
 	}
 
 	nodePool := v1.NodePool{
-		ID:       rancherNodePool.ID,
-		Name:     rancherNodePool.Name,
-		Quantity: int(rancherNodePool.Quantity),
+		ID:        rancherNodePool.ID,
+		ClusterID: rancherNodePool.ClusterID,
+		Name:      rancherNodePool.Name,
+		Quantity:  int(rancherNodePool.Quantity),
 	}
 
 	listOpts := types.ListOpts{
