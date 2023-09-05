@@ -67,6 +67,15 @@ func WithAPIBaseClient(resources map[string]any) MockOption {
 	}
 }
 
+func WithNodes(nodes map[string]managementv3.Node) MockOption {
+	mockNode := MockNode{
+		nodes: nodes,
+	}
+	return func(c *managementv3.Client) {
+		c.Node = &mockNode
+	}
+}
+
 func NewMockRancherClient(mockOptions ...MockOption) *managementv3.Client {
 	c := managementv3.Client{}
 
