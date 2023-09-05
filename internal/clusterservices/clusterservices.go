@@ -18,4 +18,5 @@ type ClusterService interface {
 	CollectMetrics() error
 	GetNodePool(string) (*v1.NodePool, error)
 	GetKubeconfig(string, time.Duration) (*clientcmdv1.Config, error)
+	DeleteNodePool(*v1.Organization, string) error
 }
