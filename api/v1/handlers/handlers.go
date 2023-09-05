@@ -147,6 +147,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	g.GET("/apps/:appID", h.GetApp)
 
 	g.GET("/node-pools/:nodePoolID", h.GetNodePool)
+	g.DELETE("/node-pools/:nodePoolID", h.DeleteNodePool)
 
 	return nil
 }
