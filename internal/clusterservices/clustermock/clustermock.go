@@ -44,7 +44,24 @@ func (s *MockClusterService) CreateCluster(organization *v1.Organization, cluste
 
 func (s *MockClusterService) CreateNodePool(organization *v1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1.NodePool, error) {
 	nodePool := v1.NodePool{
-		Name: nodePoolOptions.Name,
+		Name:                       nodePoolOptions.Name,
+		Quantity:                   nodePoolOptions.Quantity,
+		ControlPlane:               nodePoolOptions.ControlPlane,
+		ControlPlaneComponentsOnly: nodePoolOptions.ControlPlaneComponentsOnly,
+		Etcd:                       nodePoolOptions.Etcd,
+		LoadBalancer:               nodePoolOptions.LoadBalancer,
+	}
+
+	if nodePoolOptions.RAMSizeMb != nil {
+		nodePool.RAMSizeMb = *nodePoolOptions.RAMSizeMb
+	}
+
+	if nodePoolOptions.DiskSizeGb != nil {
+		nodePool.DiskSizeGb = *nodePoolOptions.DiskSizeGb
+	}
+
+	if nodePoolOptions.CPUCount != nil {
+		nodePool.CPUCount = *nodePoolOptions.CPUCount
 	}
 
 	return &nodePool, nil
