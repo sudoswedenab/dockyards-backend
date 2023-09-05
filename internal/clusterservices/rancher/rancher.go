@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"sync"
 
+	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rancher/norman/clientbase"
@@ -20,7 +21,7 @@ type rancher struct {
 	logger             *slog.Logger
 	garbageMutex       *sync.Mutex
 	garbageObjects     map[string]*normanTypes.Resource
-	cloudService       types.CloudService
+	cloudService       cloudservices.CloudService
 	prometheusRegistry *prometheus.Registry
 	clusterMetric      *prometheus.GaugeVec
 	controllerClient   client.Client
@@ -46,7 +47,7 @@ func WithRancherClientOpts(url, tokenKey string, insecure bool) RancherOption {
 	}
 }
 
-func WithCloudService(cloudService types.CloudService) RancherOption {
+func WithCloudService(cloudService cloudservices.CloudService) RancherOption {
 	return func(r *rancher) {
 		r.cloudService = cloudService
 	}

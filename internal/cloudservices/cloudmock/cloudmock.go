@@ -4,17 +4,17 @@ import (
 	"errors"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 )
 
 type MockCloudService struct {
-	types.CloudService
+	cloudservices.CloudService
 	flavors       map[string]*v1.NodePool
 	organizations map[string]bool
 	deployments   map[string]*v1.Deployment
 }
 
-var _ types.CloudService = &MockCloudService{}
+var _ cloudservices.CloudService = &MockCloudService{}
 
 type MockOption func(*MockCloudService)
 

@@ -1,4 +1,4 @@
-package types
+package cloudservices
 
 import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"

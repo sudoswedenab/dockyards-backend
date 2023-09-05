@@ -10,6 +10,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 
 	"github.com/gin-gonic/gin"
@@ -34,13 +35,13 @@ type handler struct {
 	logger                *slog.Logger
 	jwtAccessTokenSecret  string
 	jwtRefreshTokenSecret string
-	cloudService          types.CloudService
+	cloudService          cloudservices.CloudService
 	gitProjectRoot        string
 }
 
 type HandlerOption func(*handler)
 
-func WithCloudService(cloudService types.CloudService) HandlerOption {
+func WithCloudService(cloudService cloudservices.CloudService) HandlerOption {
 	return func(h *handler) {
 		h.cloudService = cloudService
 	}

@@ -5,8 +5,8 @@ import (
 	"math"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
@@ -18,7 +18,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 )
 
-func (s *openStackService) PrepareEnvironment(organization *v1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*types.CloudConfig, error) {
+func (s *openStackService) PrepareEnvironment(organization *v1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*cloudservices.CloudConfig, error) {
 	logger := s.logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name, "organization", organization.Name)
 
 	openStackOrganization, err := s.getOpenStackOrganization(organization)
@@ -188,7 +188,7 @@ func (s *openStackService) PrepareEnvironment(organization *v1.Organization, clu
 		logger.Debug("created security group rule", "id", rule.ID)
 	}
 
-	config := types.CloudConfig{
+	config := cloudservices.CloudConfig{
 		AuthURL:                     s.authOptions.IdentityEndpoint,
 		ApplicationCredentialID:     openStackOrganization.ApplicationCredentialID,
 		ApplicationCredentialSecret: openStackOrganization.ApplicationCredentialSecret,
@@ -205,7 +205,7 @@ func (s *openStackService) PrepareEnvironment(organization *v1.Organization, clu
 	return &config, nil
 }
 
-func (s *openStackService) CleanEnvironment(organization *v1.Organization, config *types.CloudConfig) error {
+func (s *openStackService) CleanEnvironment(organization *v1.Organization, config *cloudservices.CloudConfig) error {
 	openStackOrganization, err := s.getOpenStackOrganization(organization)
 	if err != nil {
 		s.logger.Error("error getting openstack organization", "err", err)

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"github.com/google/uuid"
 	"github.com/gophercloud/gophercloud"
 	"gorm.io/gorm"
@@ -22,7 +22,7 @@ type openStackService struct {
 	garbageMutex   *sync.Mutex
 }
 
-var _ types.CloudService = &openStackService{}
+var _ cloudservices.CloudService = &openStackService{}
 
 type OpenStackOption func(*openStackService)
 

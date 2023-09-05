@@ -18,6 +18,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
@@ -179,7 +180,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var cloudService types.CloudService
+	var cloudService cloudservices.CloudService
 	switch cloudServiceFlag {
 	case "openstack":
 		openStackOptions := []openstack.OpenStackOption{

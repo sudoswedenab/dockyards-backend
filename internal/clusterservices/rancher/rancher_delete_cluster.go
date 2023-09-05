@@ -5,16 +5,16 @@ import (
 	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
-	normanTypes "github.com/rancher/norman/types"
+	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
 func (r *rancher) DeleteCluster(organization *v1.Organization, cluster *v1.Cluster) error {
 	encodedName := names.EncodeName(cluster.Organization, cluster.Name)
 
-	listOpts := normanTypes.ListOpts{
+	listOpts := types.ListOpts{
 		Filters: map[string]interface{}{
 			"name": encodedName,
 		},
@@ -62,7 +62,7 @@ func (r *rancher) DeleteCluster(organization *v1.Organization, cluster *v1.Clust
 }
 
 func (r *rancher) deleteNodePools(organization *v1.Organization, clusterID string) error {
-	listOpts := normanTypes.ListOpts{
+	listOpts := types.ListOpts{
 		Filters: map[string]interface{}{
 			"clusterId": clusterID,
 		},
@@ -89,7 +89,7 @@ func (r *rancher) deleteNodePools(organization *v1.Organization, clusterID strin
 
 		securityGroups := strings.Split(customNodeTemplate.OpenstackConfig.SecGroups, ",")
 
-		cloudConfig := types.CloudConfig{
+		cloudConfig := cloudservices.CloudConfig{
 			KeypairName:    customNodeTemplate.OpenstackConfig.KeypairName,
 			SecurityGroups: securityGroups,
 		}
