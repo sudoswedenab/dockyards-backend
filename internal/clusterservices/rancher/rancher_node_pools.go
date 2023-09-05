@@ -116,6 +116,11 @@ func (r *rancher) GetNodePool(nodePoolID string) (*v1.NodePool, error) {
 	}
 
 	rancherNodes, err := r.managementClient.Node.ListAll(&listOpts)
+	if err != nil {
+		return nil, err
+
+	}
+
 	for _, rancherNode := range rancherNodes.Data {
 		node := v1.Node{
 			ID:    rancherNode.ID,
