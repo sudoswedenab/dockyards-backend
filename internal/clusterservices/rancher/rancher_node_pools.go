@@ -90,8 +90,9 @@ func (r *rancher) CreateNodePool(organization *v1.Organization, cluster *v1.Clus
 	}
 
 	nodePool := v1.NodePool{
-		ID:   createdNodePool.ID,
-		Name: createdNodePool.Name,
+		ID:        createdNodePool.ID,
+		ClusterID: createdNodePool.ClusterID,
+		Name:      createdNodePool.Name,
 	}
 
 	return &nodePool, nil
