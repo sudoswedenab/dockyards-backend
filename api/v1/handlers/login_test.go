@@ -12,7 +12,6 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"golang.org/x/crypto/bcrypt"
@@ -26,11 +25,10 @@ func TestLogin(t *testing.T) {
 	}
 
 	tt := []struct {
-		name        string
-		users       []v1.User
-		login       v1.Login
-		mockCluster types.ClusterService
-		expected    int
+		name     string
+		users    []v1.User
+		login    v1.Login
+		expected int
 	}{
 		{
 			name: "test valid user",
@@ -88,9 +86,8 @@ func TestLogin(t *testing.T) {
 			}
 
 			h := handler{
-				clusterService: tc.mockCluster,
-				db:             db,
-				logger:         logger,
+				db:     db,
+				logger: logger,
 			}
 
 			r := gin.New()

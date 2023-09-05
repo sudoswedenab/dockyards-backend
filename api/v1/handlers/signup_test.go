@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -16,10 +15,9 @@ import (
 
 func TestSignup(t *testing.T) {
 	tt := []struct {
-		name        string
-		mockCluster types.ClusterService
-		signup      v1.Signup
-		expected    int
+		name     string
+		signup   v1.Signup
+		expected int
 	}{
 		{
 			name: "test success",
@@ -41,8 +39,7 @@ func TestSignup(t *testing.T) {
 			db.AutoMigrate(&v1.User{})
 
 			h := handler{
-				clusterService: tc.mockCluster,
-				db:             db,
+				db: db,
 			}
 
 			r := gin.New()

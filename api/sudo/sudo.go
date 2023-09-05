@@ -3,14 +3,14 @@ package sudo
 import (
 	"log/slog"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"gorm.io/gorm"
 )
 
 type sudoAPI struct {
 	logger         *slog.Logger
 	db             *gorm.DB
-	clusterService types.ClusterService
+	clusterService clusterservices.ClusterService
 }
 
 type SudoOption func(*sudoAPI)
@@ -27,7 +27,7 @@ func WithDatabase(db *gorm.DB) SudoOption {
 	}
 }
 
-func WithClusterService(clusterService types.ClusterService) SudoOption {
+func WithClusterService(clusterService clusterservices.ClusterService) SudoOption {
 	return func(a *sudoAPI) {
 		a.clusterService = clusterService
 	}

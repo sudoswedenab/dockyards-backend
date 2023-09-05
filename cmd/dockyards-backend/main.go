@@ -21,12 +21,12 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -204,7 +204,7 @@ func main() {
 
 	registry := prometheus.NewRegistry()
 
-	var clusterService types.ClusterService
+	var clusterService clusterservices.ClusterService
 	switch clusterServiceFlag {
 	case "rancher":
 		rancherOptions := []rancher.RancherOption{

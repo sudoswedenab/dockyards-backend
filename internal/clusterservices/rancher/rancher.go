@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rancher/norman/clientbase"
-	normanTypes "github.com/rancher/norman/types"
+	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -20,14 +20,14 @@ type rancher struct {
 	clientOpts         *clientbase.ClientOpts
 	logger             *slog.Logger
 	garbageMutex       *sync.Mutex
-	garbageObjects     map[string]*normanTypes.Resource
+	garbageObjects     map[string]*types.Resource
 	cloudService       cloudservices.CloudService
 	prometheusRegistry *prometheus.Registry
 	clusterMetric      *prometheus.GaugeVec
 	controllerClient   client.Client
 }
 
-var _ types.ClusterService = &rancher{}
+var _ clusterservices.ClusterService = &rancher{}
 
 type RancherOption func(*rancher)
 
@@ -62,7 +62,7 @@ func WithPrometheusRegistry(registry *prometheus.Registry) RancherOption {
 func NewRancher(rancherOptions ...RancherOption) (*rancher, error) {
 	r := rancher{
 		garbageMutex:   &sync.Mutex{},
-		garbageObjects: make(map[string]*normanTypes.Resource),
+		garbageObjects: make(map[string]*types.Resource),
 	}
 
 	for _, rancherOption := range rancherOptions {

@@ -11,7 +11,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/types"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -29,7 +29,7 @@ const (
 
 type handler struct {
 	db                    *gorm.DB
-	clusterService        types.ClusterService
+	clusterService        clusterservices.ClusterService
 	accessTokenName       string
 	refreshTokenName      string
 	logger                *slog.Logger
@@ -54,7 +54,7 @@ func WithJWTAccessTokens(accessToken, refreshToken string) HandlerOption {
 	}
 }
 
-func WithClusterService(clusterService types.ClusterService) HandlerOption {
+func WithClusterService(clusterService clusterservices.ClusterService) HandlerOption {
 	return func(h *handler) {
 		h.clusterService = clusterService
 	}
