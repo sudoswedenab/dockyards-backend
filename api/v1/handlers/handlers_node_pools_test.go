@@ -28,15 +28,26 @@ func TestGetNodePool(t *testing.T) {
 		name               string
 		nodePoolID         string
 		clustermockOptions []clustermock.MockOption
+		user               v1.User
+		users              []v1.User
+		organizations      []v1.Organization
 		expected           v1.NodePool
 	}{
 		{
 			name:       "test single node",
 			nodePoolID: "node-pool-123",
 			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						Name:         "cluster-123",
+						Organization: "test-org",
+					},
+				}),
 				clustermock.WithNodePools(map[string]v1.NodePool{
 					"node-pool-123": {
-						Name: "test-pool",
+						ID:        "node-pool-123",
+						ClusterID: "cluster-123",
+						Name:      "test-pool",
 						Nodes: []v1.Node{
 							{
 								ID:   "node-123",
@@ -46,8 +57,29 @@ func TestGetNodePool(t *testing.T) {
 					},
 				}),
 			},
+			user: v1.User{
+				ID: uuid.MustParse("74eab97f-f635-4ec9-99b1-40f37fde690d"),
+			},
+			users: []v1.User{
+				{
+					ID: uuid.MustParse("74eab97f-f635-4ec9-99b1-40f37fde690d"),
+				},
+			},
+			organizations: []v1.Organization{
+				{
+					ID:   uuid.MustParse("845e9322-8dbe-4eed-bda2-5efe2b54dc71"),
+					Name: "test-org",
+					Users: []v1.User{
+						{
+							ID: uuid.MustParse("74eab97f-f635-4ec9-99b1-40f37fde690d"),
+						},
+					},
+				},
+			},
 			expected: v1.NodePool{
-				Name: "test-pool",
+				ID:        "node-pool-123",
+				ClusterID: "cluster-123",
+				Name:      "test-pool",
 				Nodes: []v1.Node{
 					{
 						ID:   "node-123",
@@ -69,6 +101,13 @@ func TestGetNodePool(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
+			db.AutoMigrate(&v1.Organization{})
+			for _, organization := range tc.organizations {
+				err := db.Create(&organization).Error
+				if err != nil {
+					t.Fatalf("unexpected error creating organization in test database: %s", err)
+				}
+			}
 
 			h := handler{
 				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
@@ -77,9 +116,9 @@ func TestGetNodePool(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(w)
-			r.GET("/v1/node-pools/:nodePoolID", h.GetNodePool)
+			c, _ := gin.CreateTestContext(w)
 
+			c.Set("user", tc.user)
 			c.Params = []gin.Param{
 				{Key: "nodePoolID", Value: tc.nodePoolID},
 			}
@@ -90,7 +129,7 @@ func TestGetNodePool(t *testing.T) {
 				},
 			}
 
-			r.ServeHTTP(w, c.Request)
+			h.GetNodePool(c)
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
@@ -110,6 +149,161 @@ func TestGetNodePool(t *testing.T) {
 
 			if !cmp.Equal(tc.expected, actual) {
 				t.Errorf("diff: %s", cmp.Diff(actual, tc.expected))
+			}
+		})
+	}
+}
+
+func TestGetNodePoolErrors(t *testing.T) {
+	tt := []struct {
+		name               string
+		nodePoolID         string
+		clustermockOptions []clustermock.MockOption
+		user               v1.User
+		users              []v1.User
+		organizations      []v1.Organization
+		expected           int
+	}{
+		{
+			name:       "test invalid node pool",
+			nodePoolID: "node-pool-123",
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithNodePools(map[string]v1.NodePool{
+					"node-pool-234": {
+						Name: "test",
+					},
+				}),
+			},
+			expected: http.StatusUnauthorized,
+		},
+		{
+			name:       "test invalid cluster",
+			nodePoolID: "node-pool-123",
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithNodePools(map[string]v1.NodePool{
+					"node-pool-123": {
+						ID:        "node-pool-123",
+						ClusterID: "cluster-123",
+					},
+				}),
+			},
+			expected: http.StatusUnauthorized,
+		},
+		{
+			name:       "test invalid organization",
+			nodePoolID: "node-pool-123",
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithNodePools(map[string]v1.NodePool{
+					"node-pool-123": {
+						ID:        "node-pool-123",
+						ClusterID: "cluster-123",
+					},
+				}),
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						ID:           "cluster-123",
+						Organization: "test-org",
+					},
+				}),
+			},
+			expected: http.StatusUnauthorized,
+		},
+		{
+			name:       "test invalid membership",
+			nodePoolID: "node-pool-123",
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithNodePools(map[string]v1.NodePool{
+					"node-pool-123": {
+						ID:        "node-pool-123",
+						ClusterID: "cluster-123",
+					},
+				}),
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						ID:           "cluster-123",
+						Organization: "test-org",
+					},
+				}),
+			},
+			user: v1.User{
+				ID: uuid.MustParse("e33dbae7-d222-43be-afc2-23e52654a7d3"),
+			},
+			users: []v1.User{
+				{
+					ID:    uuid.MustParse("5125130c-a4af-40b6-8b36-b8be8f4d2fdb"),
+					Name:  "user1",
+					Email: "user1@dockyards.dev",
+				},
+				{
+					ID:    uuid.MustParse("e33dbae7-d222-43be-afc2-23e52654a7d3"),
+					Name:  "user2",
+					Email: "user2@dockyards.dev",
+				},
+			},
+			organizations: []v1.Organization{
+				{
+					ID:   uuid.MustParse("57397656-64f6-459a-ba4c-fea8345d6490"),
+					Name: "test-org",
+					Users: []v1.User{
+						{
+							ID: uuid.MustParse("5125130c-a4af-40b6-8b36-b8be8f4d2fdb"),
+						},
+					},
+				},
+			},
+			expected: http.StatusUnauthorized,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			gormSlogger := loggers.NewGormSlogger(logger)
+
+			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
+			if err != nil {
+				t.Fatalf("unexpected error creating db: %s", err)
+			}
+			db.AutoMigrate(v1.User{})
+			db.AutoMigrate(v1.Organization{})
+			for _, user := range tc.users {
+				err := db.Create(&user).Error
+				if err != nil {
+					t.Fatalf("unexpected error creating user in test database: %s", err)
+				}
+			}
+			for _, organization := range tc.organizations {
+				err := db.Create(&organization).Error
+				if err != nil {
+					t.Fatalf("unexpected error creating organization in test database: %s", err)
+				}
+			}
+
+			h := handler{
+				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
+				db:             db,
+				logger:         logger,
+			}
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			c.Set("user", tc.user)
+			c.Params = []gin.Param{
+				{Key: "nodePoolID", Value: tc.nodePoolID},
+			}
+
+			u := url.URL{
+				Path: path.Join("/v1/node-pools", tc.nodePoolID),
+			}
+
+			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
+
+			h.GetNodePool(c)
+
+			statusCode := w.Result().StatusCode
+			if statusCode != tc.expected {
+				t.Errorf("expected status code %d, got %d", tc.expected, statusCode)
 			}
 		})
 	}
