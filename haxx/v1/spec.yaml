@@ -576,6 +576,8 @@ components:
       properties:
         id:
           type: string
+        cluster_id:
+          type: string
         name:
           type: string
         control_plane:
@@ -600,6 +602,7 @@ components:
             $ref: '#/components/schemas/node'
       required:
       - id
+      - cluster_id
       - name
       - quantity
       - cpu_count
