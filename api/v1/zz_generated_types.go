@@ -137,6 +137,7 @@ type Node struct {
 
 // NodePool defines model for node_pool.
 type NodePool struct {
+	ClusterID                  string `json:"cluster_id"`
 	ControlPlane               *bool  `json:"control_plane,omitempty"`
 	ControlPlaneComponentsOnly *bool  `json:"control_plane_components_only,omitempty"`
 	CPUCount                   int    `json:"cpu_count"`
@@ -236,6 +237,9 @@ type UserOverview struct {
 
 // CreateDeploymentJSONRequestBody defines body for CreateDeployment for application/json ContentType.
 type CreateDeploymentJSONRequestBody = Deployment
+
+// CreateNodePoolJSONRequestBody defines body for CreateNodePool for application/json ContentType.
+type CreateNodePoolJSONRequestBody = NodePoolOptions
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = Login
