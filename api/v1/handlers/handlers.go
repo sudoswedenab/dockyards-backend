@@ -127,6 +127,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	g.GET("/clusters/:clusterID/deployments", h.GetClusterDeployments)
 	g.POST("/clusters/:clusterID/deployments", h.PostClusterDeployments)
 	g.GET("/clusters/:clusterID/kubeconfig", h.GetClusterKubeconfig)
+	g.POST("/clusters/:clusterID/node-pools", h.PostClusterNodePools)
 
 	g.GET("/deployments/:deploymentID", h.GetDeployment)
 	g.DELETE("/deployments/:deploymentID", h.DeleteDeployment)
