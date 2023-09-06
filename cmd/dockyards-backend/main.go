@@ -32,6 +32,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	chi "github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -310,6 +311,7 @@ func main() {
 	user.RegisterRoutes(r, db)
 
 	privateRouter := chi.NewRouter()
+	privateRouter.Use(middleware.Logger)
 
 	sudoOptions := []sudo.SudoOption{
 		sudo.WithLogger(logger),
