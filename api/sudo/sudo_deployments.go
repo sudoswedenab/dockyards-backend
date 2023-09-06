@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	utildeployment "bitbucket.org/sudosweden/dockyards-backend/pkg/util/deployment"
 	"github.com/google/uuid"
 )
 
@@ -33,8 +34,16 @@ func (a *sudoAPI) GetDeployment(ctx context.Context, req GetDeploymentRequestObj
 
 func (a *sudoAPI) CreateDeployment(ctx context.Context, req CreateDeploymentRequestObject) (CreateDeploymentResponseObject, error) {
 	deployment := *req.Body
+	deployment.ID = uuid.New()
 
-	err := a.db.Create(&deployment).Error
+	err := utildeployment.CreateRepository(&deployment, a.gitProjectRoot)
+	if err != nil {
+		a.logger.Error("error creating repository for deployment", "err", err)
+
+		return CreateDeployment500Response{}, nil
+	}
+
+	err = a.db.Create(&deployment).Error
 	if err != nil {
 		a.logger.Error("error creating deployment in database", "err", err)
 
