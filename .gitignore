@@ -1,6 +1,6 @@
 #ignore env file
 .env
 # ignore main binary
-dockyards-backend
+/dockyards-backend
 # ignore coverprofiles
 *.out
