@@ -315,6 +315,7 @@ func main() {
 		sudo.WithLogger(logger),
 		sudo.WithDatabase(db),
 		sudo.WithClusterService(clusterService),
+		sudo.WithGitProjectRoot(gitProjectRoot),
 	}
 
 	sudoAPI, err := sudo.NewSudoAPI(sudoOptions...)

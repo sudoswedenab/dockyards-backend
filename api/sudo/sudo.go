@@ -11,6 +11,7 @@ type sudoAPI struct {
 	logger         *slog.Logger
 	db             *gorm.DB
 	clusterService clusterservices.ClusterService
+	gitProjectRoot string
 }
 
 type SudoOption func(*sudoAPI)
@@ -30,6 +31,12 @@ func WithDatabase(db *gorm.DB) SudoOption {
 func WithClusterService(clusterService clusterservices.ClusterService) SudoOption {
 	return func(a *sudoAPI) {
 		a.clusterService = clusterService
+	}
+}
+
+func WithGitProjectRoot(gitProjectRoot string) SudoOption {
+	return func(a *sudoAPI) {
+		a.gitProjectRoot = gitProjectRoot
 	}
 }
 
