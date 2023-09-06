@@ -24,6 +24,7 @@ func (s *openStackService) GetClusterDeployments(organization *v1.Organization, 
 	openStackCinderCSIDeployment := v1.Deployment{
 		ClusterID:      cluster.ID,
 		Name:           util.Ptr("openstack-cinder-csi"),
+		Type:           v1.DeploymentTypeHelm,
 		HelmChart:      util.Ptr("openstack-cinder-csi"),
 		HelmRepository: util.Ptr("https://kubernetes.github.io/cloud-provider-openstack"),
 		HelmVersion:    util.Ptr("2.28.0"),
