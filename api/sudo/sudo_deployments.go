@@ -57,7 +57,15 @@ func (a *sudoAPI) CreateDeploymentStatus(ctx context.Context, req CreateDeployme
 	deploymentStatus := *req.Body
 	deploymentStatus.ID = uuid.New()
 
-	err := a.db.Create(&deploymentStatus).Error
+	var lastDeploymentStatus v1.DeploymentStatus
+	err := a.db.Order("created_at desc").First(&lastDeploymentStatus, "deployment_id = ?", deploymentStatus.DeploymentID).Error
+	if *lastDeploymentStatus.State == *deploymentStatus.State && *lastDeploymentStatus.Health == *deploymentStatus.Health {
+		a.logger.Error("deployment status same as last")
+
+		return CreateDeploymentStatus208Response{}, nil
+	}
+
+	err = a.db.Create(&deploymentStatus).Error
 	if err != nil {
 		a.logger.Error("error creating deployment status in database", "err", err)
 
