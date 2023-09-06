@@ -120,4 +120,5 @@ paths:
               $ref: '../v1/spec.yaml#/components/schemas/deployment_status'
       responses:
         201: {}
+        208: {}
         500: {}
