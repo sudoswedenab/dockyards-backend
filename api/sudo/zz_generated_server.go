@@ -541,6 +541,14 @@ func (response CreateDeploymentStatus201Response) VisitCreateDeploymentStatusRes
 	return nil
 }
 
+type CreateDeploymentStatus208Response struct {
+}
+
+func (response CreateDeploymentStatus208Response) VisitCreateDeploymentStatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(208)
+	return nil
+}
+
 type CreateDeploymentStatus500Response struct {
 }
 
