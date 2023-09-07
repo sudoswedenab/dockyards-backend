@@ -80,6 +80,17 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 				})
 				return
 			}
+
+			if nodePoolOptions.Quantity > 9 {
+				h.logger.Debug("quantity too large", "quantity", nodePoolOptions.Quantity)
+
+				c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
+					"error":    "node pool quota exceeded",
+					"quantity": nodePoolOptions.Quantity,
+					"details":  "quantity must be lower than 9",
+				})
+				return
+			}
 		}
 	}
 
