@@ -212,7 +212,10 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 	err = h.clusterService.DeleteNodePool(&organization, nodePoolID)
 	if err != nil {
 		h.logger.Error("error deleting node pool", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
-	c.Status(http.StatusNoContent)
+	c.JSON(http.StatusNoContent, nil)
 }
