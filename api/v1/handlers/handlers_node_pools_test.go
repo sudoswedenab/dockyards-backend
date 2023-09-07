@@ -593,6 +593,49 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 			},
 			expected: http.StatusUnauthorized,
 		},
+		{
+			name:      "test high quantity",
+			clusterID: "cluster-123",
+			nodePoolOptions: v1.NodePoolOptions{
+				Name:     "test",
+				Quantity: 50,
+			},
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						Name:         "cluster-123",
+						Organization: "test-org",
+					},
+				}),
+			},
+			user: v1.User{
+				ID: uuid.MustParse("44946295-97bc-4c24-8887-69d3f0ca0dad"),
+			},
+			users: []v1.User{
+				{
+					ID:    uuid.MustParse("44946295-97bc-4c24-8887-69d3f0ca0dad"),
+					Name:  "user1",
+					Email: "user1@dockyards.dev",
+				},
+				{
+					ID:    uuid.MustParse("bbc144d1-0f5f-4f8b-8b8b-54d0619395bc"),
+					Name:  "user2",
+					Email: "user2@dockyards.dev",
+				},
+			},
+			organizations: []v1.Organization{
+				{
+					ID:   uuid.MustParse("d3570450-a7e1-4201-a16f-b913ad6c7f11"),
+					Name: "test-org",
+					Users: []v1.User{
+						{
+							ID: uuid.MustParse("bbc144d1-0f5f-4f8b-8b8b-54d0619395bc"),
+						},
+					},
+				},
+			},
+			expected: http.StatusUnprocessableEntity,
+		},
 	}
 
 	gin.SetMode(gin.TestMode)
@@ -655,4 +698,7 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDeleteNodePool(t *testing.T) {
 }

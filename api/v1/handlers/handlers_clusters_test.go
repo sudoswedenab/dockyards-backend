@@ -272,6 +272,46 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			},
 			expected: http.StatusConflict,
 		},
+		{
+			name:             "test node pool with high quantity",
+			organizationName: "test-org",
+			user: v1.User{
+				ID: uuid.MustParse("7a7d8423-c9e7-46f3-958a-e68fb97b4417"),
+			},
+			users: []v1.User{
+				{
+					ID: uuid.MustParse("7a7d8423-c9e7-46f3-958a-e68fb97b4417"),
+				},
+			},
+			organizations: []v1.Organization{
+				{
+					Name: "test-org",
+					Users: []v1.User{
+						{
+							ID: uuid.MustParse("7a7d8423-c9e7-46f3-958a-e68fb97b4417"),
+						},
+					},
+				},
+			},
+			clusterOptions: v1.ClusterOptions{
+				Name: "test-cluster",
+				NodePoolOptions: util.Ptr([]v1.NodePoolOptions{
+					{
+						Name:     "test",
+						Quantity: 123,
+					},
+				}),
+			},
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"test-cluster": {
+						Name:         "test-cluster",
+						Organization: "test-org",
+					},
+				}),
+			},
+			expected: http.StatusUnprocessableEntity,
+		},
 	}
 
 	gin.SetMode(gin.TestMode)
