@@ -104,6 +104,15 @@ func (s *MockClusterService) GetNodePool(nodePoolID string) (*v1.NodePool, error
 	return &nodePool, nil
 }
 
+func (s *MockClusterService) DeleteNodePool(organization *v1.Organization, nodePoolID string) error {
+	_, hasNodePool := s.nodePools[nodePoolID]
+	if !hasNodePool {
+		return errors.New("no such node pool")
+	}
+
+	return nil
+}
+
 func WithClusters(clusters map[string]v1.Cluster) MockOption {
 	return func(s *MockClusterService) {
 		s.clusters = clusters
