@@ -1,7 +1,6 @@
 package deployment
 
 import (
-	"encoding/json"
 	"errors"
 	"path"
 	"time"
@@ -21,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -172,7 +172,7 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 			return err
 		}
 
-		deploymentJson, err := json.Marshal(appsv1Deployment)
+		deploymentYAML, err := yaml.Marshal(appsv1Deployment)
 		if err != nil {
 			// h.logger.Error("error marshalling deployment as json", "err", err)
 
@@ -186,7 +186,7 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 			return err
 		}
 
-		serviceJson, err := json.Marshal(service)
+		serviceYAML, err := yaml.Marshal(service)
 		if err != nil {
 			// h.logger.Error("error mashalling service as json", "err", err)
 
@@ -216,14 +216,14 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 			return err
 		}
 
-		file, err := mfs.Create("deployment.json")
+		file, err := mfs.Create("deployment.yaml")
 		if err != nil {
 			// h.logger.Error("error creating deployment file", "filename", filename, "err", err)
 
 			return err
 		}
 
-		_, err = file.Write(deploymentJson)
+		_, err = file.Write(deploymentYAML)
 		if err != nil {
 			// h.logger.Error("error writing to file", "err", err)
 
@@ -231,16 +231,16 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 		}
 
 		file.Close()
-		worktree.Add("deployment.json")
+		worktree.Add("deployment.yaml")
 
-		file, err = mfs.Create("service.json")
+		file, err = mfs.Create("service.yaml")
 		if err != nil {
 			// h.logger.Error("error creating service file", "filename", filename, "err", err)
 
 			return err
 		}
 
-		_, err = file.Write(serviceJson)
+		_, err = file.Write(serviceYAML)
 		if err != nil {
 			// h.logger.Error("error writing service json to file", "err", err)
 
@@ -248,7 +248,7 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 		}
 
 		file.Close()
-		worktree.Add("service.json")
+		worktree.Add("service.yaml")
 
 		_, err = worktree.Commit("Add deployment", &git.CommitOptions{
 			Author: &object.Signature{
