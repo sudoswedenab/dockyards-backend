@@ -71,11 +71,13 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		return
 	}
 
-	err = utildeployment.CreateRepository(&deployment, h.gitProjectRoot)
-	if err != nil {
-		h.logger.Error("error creating deployment", "err", err)
+	if deployment.Type == v1.DeploymentTypeContainerImage || deployment.Type == v1.DeploymentTypeKustomize {
+		err = utildeployment.CreateRepository(&deployment, h.gitProjectRoot)
+		if err != nil {
+			h.logger.Error("error creating deployment", "err", err)
 
-		c.AbortWithStatus(http.StatusInternalServerError)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
 	}
 
 	err = h.db.Create(&deployment).Error
