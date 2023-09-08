@@ -19,6 +19,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var (
+	ErrUnknownDeploymentType          = errors.New("unsupported deployment type")
+	ErrDeploymentNameEmpty            = errors.New("deployment name must not be empty")
+	ErrDeploymentImageEmpty           = errors.New("deployment image must not be empty")
+	ErrDeploymentKustomizationMissing = errors.New("no kustomization.yaml file provided")
+)
+
 func createDeployment(deployment *v1.Deployment) (*appsv1.Deployment, error) {
 	containerPort := 80
 	if deployment.Port != nil {
@@ -26,11 +33,11 @@ func createDeployment(deployment *v1.Deployment) (*appsv1.Deployment, error) {
 	}
 
 	if deployment.Name == nil {
-		return nil, errors.New("deployment name must not be empty")
+		return nil, ErrDeploymentNameEmpty
 	}
 
 	if deployment.ContainerImage == nil {
-		return nil, errors.New("deployment image must not be empty")
+		return nil, ErrDeploymentImageEmpty
 	}
 
 	containerPorts := []corev1.ContainerPort{
@@ -80,7 +87,7 @@ func createDeployment(deployment *v1.Deployment) (*appsv1.Deployment, error) {
 
 func createService(deployment *v1.Deployment) (*corev1.Service, error) {
 	if deployment.Name == nil {
-		return nil, errors.New("deployment name must not be empty")
+		return nil, ErrDeploymentNameEmpty
 	}
 
 	service := corev1.Service{
@@ -311,6 +318,8 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 		}
 
 		// h.logger.Error("created git commit", "commit", commit)
+	default:
+		return ErrUnknownDeploymentType
 	}
 
 	return nil
