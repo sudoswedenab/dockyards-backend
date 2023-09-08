@@ -109,26 +109,17 @@ func createService(deployment *v1.Deployment) (*corev1.Service, error) {
 	return &service, nil
 }
 
-func parseContainerImage(ref string) (string, error) {
-	named, err := reference.ParseDockerRef(ref)
-	if err != nil {
-		return "", err
-	}
-
-	return named.Name(), nil
-}
-
 func AddNormalizedName(deployment *v1.Deployment) error {
 	if deployment.ContainerImage != nil {
-		normalizedName, err := parseContainerImage(*deployment.ContainerImage)
+		named, err := reference.ParseNormalizedNamed(*deployment.ContainerImage)
 		if err != nil {
 			return err
 		}
 
-		deployment.ContainerImage = &normalizedName
+		deployment.ContainerImage = util.Ptr(named.String())
 
 		if deployment.Name == nil || (deployment.Name != nil && *deployment.Name == "") {
-			base := path.Base(*deployment.ContainerImage)
+			base := path.Base(named.Name())
 			deployment.Name = &base
 		}
 
