@@ -3,15 +3,19 @@ package deployment
 import (
 	"encoding/json"
 	"errors"
-	"os"
 	"path"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/containers/image/v5/docker/reference"
+	"github.com/go-git/go-billy/v5/memfs"
+	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/storage/filesystem"
 	"github.com/google/uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -191,7 +195,14 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 
 		repoPath := path.Join(gitProjectRoot, "/v1/deployments", deployment.ID.String())
 
-		repo, err := git.PlainInit(repoPath, false)
+		fs := osfs.New(repoPath)
+		storage := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())
+		initOptions := git.InitOptions{
+			DefaultBranch: plumbing.Main,
+		}
+		mfs := memfs.New()
+
+		repo, err := git.InitWithOptions(storage, mfs, initOptions)
 		if err != nil {
 			// h.logger.Error("error creating git repository", "path", repoPath, "err", err)
 
@@ -205,8 +216,7 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 			return err
 		}
 
-		filename := path.Join(repoPath, "deployment.json")
-		file, err := os.Create(filename)
+		file, err := mfs.Create("deployment.json")
 		if err != nil {
 			// h.logger.Error("error creating deployment file", "filename", filename, "err", err)
 
@@ -223,8 +233,7 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 		file.Close()
 		worktree.Add("deployment.json")
 
-		filename = path.Join(repoPath, "service.json")
-		file, err = os.Create(filename)
+		file, err = mfs.Create("service.json")
 		if err != nil {
 			// h.logger.Error("error creating service file", "filename", filename, "err", err)
 
@@ -263,12 +272,19 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 		if !hasKustomization {
 			// h.logger.Error("deployment type is kustomized but no kustomization file provided")
 
-			return errors.New("deployment type is kustomize but not kustomization file provided")
+			return ErrDeploymentKustomizationMissing
 		}
 
 		repoPath := path.Join(gitProjectRoot, "/v1/deployments", deployment.ID.String())
 
-		repo, err := git.PlainInit(repoPath, false)
+		fs := osfs.New(repoPath)
+		storage := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())
+		initOptions := git.InitOptions{
+			DefaultBranch: plumbing.Main,
+		}
+		mfs := memfs.New()
+
+		repo, err := git.InitWithOptions(storage, mfs, initOptions)
 		if err != nil {
 			// h.logger.Error("error creating git repository", "path", repoPath, "err", err)
 
@@ -283,8 +299,8 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 		}
 
 		for filename, content := range kustomize {
-			filepath := path.Join(repoPath, filename)
-			file, err := os.Create(filepath)
+			//filepath := path.Join(repoPath, filename)
+			file, err := mfs.Create(filename)
 			if err != nil {
 				// h.logger.Error("error create kustomize file", "filepath", filepath, "err", err)
 
