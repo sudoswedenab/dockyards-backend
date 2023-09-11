@@ -7,6 +7,10 @@ import (
 )
 
 func (s *openStackService) GetFlavorNodePool(flavorID string) (*v1.NodePool, error) {
+	if s.insecureLogging {
+		s.logger.Warn("creating compute service client", "token", s.providerClient.Token(), "func", s.providerClient.ReauthFunc)
+	}
+
 	computev2, err := openstack.NewComputeV2(s.providerClient, s.endpointOpts)
 	if err != nil {
 		return nil, err

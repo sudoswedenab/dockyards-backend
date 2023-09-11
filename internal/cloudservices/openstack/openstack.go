@@ -50,6 +50,12 @@ func WithCloudsYAML(cloud string) OpenStackOption {
 	}
 }
 
+func WithInsecureLogging(insecureLogging bool) OpenStackOption {
+	return func(s *openStackService) {
+		s.insecureLogging = insecureLogging
+	}
+}
+
 func SyncDatabase(db *gorm.DB) error {
 	err := db.AutoMigrate(&OpenStackProject{})
 	if err != nil {
@@ -92,6 +98,10 @@ func NewOpenStackService(openStackOptions ...OpenStackOption) (*openStackService
 	}
 
 	s.providerClient = providerClient
+
+	if s.insecureLogging {
+		s.logger.Warn("insecure logging allowed")
+	}
 
 	return &s, nil
 }

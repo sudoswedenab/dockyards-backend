@@ -51,5 +51,9 @@ func (s *openStackService) getScopedClient(projectID string) (*gophercloud.Provi
 
 	s.logger.Debug("returning scoped provider client", "id", projectID, "client", fmt.Sprintf("%p", scopedClient))
 
+	if s.insecureLogging {
+		s.logger.Warn("sensitive scoped client", "token", scopedClient.Token(), "func", scopedClient.ReauthFunc)
+	}
+
 	return scopedClient, nil
 }
