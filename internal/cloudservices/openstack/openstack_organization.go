@@ -127,7 +127,7 @@ func (s *openStackService) DeleteOrganization(organization *v1.Organization) err
 
 	s.logger.Debug("deleting application credential", "user", user.ID, "id", openStackOrganization.ApplicationCredentialID)
 
-	identityv3, err := openstack.NewIdentityV3(scopedClient, gophercloud.EndpointOpts{Region: s.region})
+	identityv3, err := openstack.NewIdentityV3(scopedClient, s.endpointOpts)
 	if err != nil {
 		return err
 	}

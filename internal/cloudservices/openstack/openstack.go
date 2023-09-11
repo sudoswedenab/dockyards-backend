@@ -18,8 +18,12 @@ func WithLogger(logger *slog.Logger) OpenStackOption {
 }
 
 func WithRegion(region string) OpenStackOption {
+	endpointOpts := gophercloud.EndpointOpts{
+		Region: region,
+	}
+
 	return func(s *openStackService) {
-		s.region = region
+		s.endpointOpts = endpointOpts
 	}
 }
 
@@ -74,9 +78,10 @@ func NewOpenStackService(openStackOptions ...OpenStackOption) (*openStackService
 		s.logger.Info("no logger was provided, using default")
 	}
 
-	if s.region == "" {
-		s.region = "sto1"
-		s.logger.Debug("using default region", "region", s.region)
+	if s.endpointOpts.Region == "" {
+		s.logger.Debug("using default region", "region", "sto1")
+
+		s.endpointOpts.Region = "sto1"
 	}
 
 	providerClient, err := openstack.AuthenticatedClient(*s.authOptions)

@@ -8,7 +8,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
-	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/networks"
@@ -34,12 +33,12 @@ func (s *openStackService) PrepareEnvironment(organization *v1.Organization, clu
 		return nil, err
 	}
 
-	computev2, err := openstack.NewComputeV2(scopedClient, gophercloud.EndpointOpts{Region: s.region})
+	computev2, err := openstack.NewComputeV2(scopedClient, s.endpointOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	networkv2, err := openstack.NewNetworkV2(scopedClient, gophercloud.EndpointOpts{Region: s.region})
+	networkv2, err := openstack.NewNetworkV2(scopedClient, s.endpointOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +216,7 @@ func (s *openStackService) CleanEnvironment(organization *v1.Organization, confi
 
 	scopedClient, err := s.getScopedClient(openStackOrganization.OpenStackProject.OpenStackID)
 
-	computev2, err := openstack.NewComputeV2(scopedClient, gophercloud.EndpointOpts{Region: s.region})
+	computev2, err := openstack.NewComputeV2(scopedClient, s.endpointOpts)
 	if err != nil {
 		s.logger.Error("error creating compute service client", "err", err)
 

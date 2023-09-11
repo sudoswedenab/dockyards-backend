@@ -15,11 +15,11 @@ type openStackService struct {
 	authOptions    *gophercloud.AuthOptions
 	providerClient *gophercloud.ProviderClient
 	logger         *slog.Logger
-	region         string
 	db             *gorm.DB
 	scopedClients  map[string]*gophercloud.ProviderClient
 	garbageObjects map[string]any
 	garbageMutex   *sync.Mutex
+	endpointOpts   gophercloud.EndpointOpts
 }
 
 var _ cloudservices.CloudService = &openStackService{}

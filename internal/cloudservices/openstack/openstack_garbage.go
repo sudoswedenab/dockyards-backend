@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/secgroups"
 )
@@ -41,11 +40,7 @@ func (s *openStackService) DeleteGarbage() {
 				break
 			}
 
-			endpointOpts := gophercloud.EndpointOpts{
-				Region: s.region,
-			}
-
-			computev2, err := openstack.NewComputeV2(scopedClient, endpointOpts)
+			computev2, err := openstack.NewComputeV2(scopedClient, s.endpointOpts)
 			if err != nil {
 				logger.Warn("error creating compute service client", "err", err)
 
