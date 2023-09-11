@@ -43,6 +43,8 @@ func WithCloudsYAML(cloud string) OpenStackOption {
 		panic(err)
 	}
 
+	authOptions.AllowReauth = true
+
 	return func(s *openStackService) {
 		s.authOptions = authOptions
 	}
