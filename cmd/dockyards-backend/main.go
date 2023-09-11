@@ -116,6 +116,7 @@ func main() {
 	var cloudServiceFlag string
 	var clusterServiceFlag string
 	var gitCGIPath string
+	var insecureLogging bool
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
@@ -126,6 +127,7 @@ func main() {
 	flag.StringVar(&cloudServiceFlag, "cloud-service", "openstack", "cloud service")
 	flag.StringVar(&clusterServiceFlag, "cluster-service", "rancher", "cluster service")
 	flag.StringVar(&gitCGIPath, "git-cgi-path", "/usr/libexec/git-core/git-http-backend", "git-cgi-path")
+	flag.BoolVar(&insecureLogging, "insecure-logging", false, "insecure logging")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -188,6 +190,7 @@ func main() {
 			openstack.WithLogger(logger.With("cloudservice", "openstack")),
 			openstack.WithDatabase(db),
 			openstack.WithCloudsYAML("openstack"),
+			openstack.WithInsecureLogging(insecureLogging),
 		}
 
 		cloudService, err = openstack.NewOpenStackService(openStackOptions...)
