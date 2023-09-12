@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
@@ -8,61 +9,66 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func (h *handler) Signup(c *gin.Context) {
-	var body v1.Signup
-
-	if c.BindJSON(&body) != nil {
+	var signup v1.Signup
+	err := c.BindJSON(&signup)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
 		})
 		return
 	}
 
-	details, validName := names.IsValidName(body.Name)
+	details, validName := names.IsValidName(signup.Name)
 	if !validName {
-		h.logger.Error("invalid name in signup request", "name", body.Name, "details", details)
+		h.logger.Error("invalid name in signup request", "name", signup.Name, "details", details)
 
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error":   "singnup name is not valid",
-			"name":    body.Name,
+			"error":   "signup name is not valid",
+			"name":    signup.Name,
 			"details": details,
 		})
-
 		return
 	}
 
-	// Hash the password
-	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
-
+	hash, err := bcrypt.GenerateFromPassword([]byte(signup.Password), 10)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		h.logger.Error("error hashing password", "err", err)
+
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": "failed to hash password",
 		})
 		return
 	}
 
-	//Create the user
 	user := v1.User{
 		ID:       uuid.New(),
-		Name:     body.Name,
-		Email:    body.Email,
+		Name:     signup.Name,
+		Email:    signup.Email,
 		Password: string(hash),
 	}
-	result := h.db.Create(&user)
 
-	if result.Error != nil {
+	err = h.db.Create(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			c.AbortWithStatusJSON(http.StatusConflict, gin.H{
+				"error": "email or name is already in-use, reserved or forbidden",
+				"name":  signup.Name,
+				"email": signup.Email,
+			})
+			return
+		}
+
 		h.logger.Error("error creating user in database", "err", err)
 
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "failed to create User",
-		})
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	//respond
-	c.JSON(http.StatusCreated, gin.H{
-		"status": "You have now created your account",
-	})
+	user.Password = ""
+
+	c.JSON(http.StatusCreated, user)
 }
