@@ -23,6 +23,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/user'
         400: {}
+        409: {}
+        422: {}
+        500: {}
   /v1/login:
     post:
       operationId: login
