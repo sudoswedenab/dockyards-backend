@@ -143,7 +143,8 @@ func main() {
 
 	gormLogger := loggers.NewGormSlogger(logger.With("orm", "gorm"))
 	gormConfig := gorm.Config{
-		Logger: gormLogger,
+		Logger:         gormLogger,
+		TranslateError: true,
 	}
 
 	if useInmemDb {
