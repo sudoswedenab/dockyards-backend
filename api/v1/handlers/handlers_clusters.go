@@ -154,6 +154,8 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 
 		h.logger.Debug("created cluster node pool", "name", nodePool.Name)
+
+		cluster.NodePools = append(cluster.NodePools, *nodePool)
 	}
 
 	if clusterOptions.NoClusterApps == nil || !*clusterOptions.NoClusterApps {
