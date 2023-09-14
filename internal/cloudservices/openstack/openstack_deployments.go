@@ -189,9 +189,10 @@ func (s *openStackService) createMetalLBDeployment(network *networksv2.Network, 
 	return &metalLBDeployment, nil
 }
 
-func (s *openStackService) createIngressNginxDeployment() *v1.Deployment {
+func (s *openStackService) createIngressNginxDeployment(cluster *v1.Cluster) *v1.Deployment {
 	ingressNginxDeployment := v1.Deployment{
 		Type:           v1.DeploymentTypeHelm,
+		ClusterID:      cluster.ID,
 		Name:           util.Ptr("ingress-nginx"),
 		Namespace:      util.Ptr("ingress-nginx"),
 		HelmChart:      util.Ptr("ingress-nginx"),
@@ -308,7 +309,7 @@ func (s *openStackService) GetClusterDeployments(organization *v1.Organization, 
 			return nil, err
 		}
 
-		ingressNginxDeployment := s.createIngressNginxDeployment()
+		ingressNginxDeployment := s.createIngressNginxDeployment(cluster)
 
 		clusterDeployments = append(clusterDeployments, *metalLBDeployment, *ingressNginxDeployment)
 	}
