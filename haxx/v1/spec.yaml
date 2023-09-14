@@ -93,6 +93,18 @@ paths:
                 $ref: '#/components/schemas/cluster'
         401: {}
         500: {}
+    delete:
+      operationId: deleteCluster
+      parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        202: {}
+        401: {}
+        500: {}
   /v1/orgs:
     get:
       operationId: getOrganizations
@@ -143,24 +155,6 @@ paths:
                 $ref: '#/components/schemas/cluster'
         401: {}
         422: {}
-        500: {}
-  /v1/orgs/{organization_name}/clusters/{cluster_name}:
-    delete:
-      operationId: deleteCluster
-      parameters:
-      - name: organization_name
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cluster_name
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        202: {}
-        401: {}
         500: {}
   /v1/clusters/{cluster_id}/kubeconfig:
     get:

@@ -296,21 +296,24 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	c.Data(http.StatusOK, binding.MIMEYAML, b)
 }
 
-func (h *handler) DeleteOrgClusters(c *gin.Context) {
-	org := c.Param("org")
-	if org == "" {
+func (h *handler) DeleteCluster(c *gin.Context) {
+	clusterID := c.Param("clusterID")
+	if clusterID == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
+
 		return
 	}
 
-	clusterName := c.Param("cluster")
-	if clusterName == "" {
-		c.AbortWithStatus(http.StatusBadRequest)
+	cluster, err := h.clusterService.GetCluster(clusterID)
+	if err != nil {
+		h.logger.Error("error getting cluster from cluster service", "id", clusterID, "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
 	var organization v1.Organization
-	err := h.db.Take(&organization, "name = ?", org).Error
+	err = h.db.Take(&organization, "name = ?", cluster.Organization).Error
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 
@@ -339,21 +342,15 @@ func (h *handler) DeleteOrgClusters(c *gin.Context) {
 		return
 	}
 
-	cluster := v1.Cluster{
-		Organization: org,
-		Name:         clusterName,
-	}
-
-	err = h.clusterService.DeleteCluster(&organization, &cluster)
+	err = h.clusterService.DeleteCluster(&organization, cluster)
 	if err != nil {
 		h.logger.Error("unexpected error deleting cluster", "err", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Debug("successfully deleted cluster", "organization", org, "name", clusterName)
+	h.logger.Debug("successfully deleted cluster", "id", cluster.ID)
 
 	c.JSON(http.StatusAccepted, gin.H{})
 }
