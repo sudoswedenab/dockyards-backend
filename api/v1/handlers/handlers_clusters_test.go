@@ -380,20 +380,18 @@ func TestPostOrgClustersErrors(t *testing.T) {
 	}
 }
 
-func TestDeleteOrgClusters(t *testing.T) {
+func TestDeleteCluster(t *testing.T) {
 	tt := []struct {
 		name               string
-		organizationName   string
-		clusterName        string
+		clusterID          string
 		user               v1.User
 		users              []v1.User
 		organizations      []v1.Organization
 		clustermockOptions []clustermock.MockOption
 	}{
 		{
-			name:             "test simple",
-			organizationName: "test-org",
-			clusterName:      "test-cluster",
+			name:      "test simple",
+			clusterID: "cluster-123",
 			user: v1.User{
 				ID: uuid.MustParse("7994b631-399a-41e6-9c6c-200391f8f87d"),
 			},
@@ -414,7 +412,8 @@ func TestDeleteOrgClusters(t *testing.T) {
 			},
 			clustermockOptions: []clustermock.MockOption{
 				clustermock.WithClusters(map[string]v1.Cluster{
-					"test-cluster": {
+					"cluster-123": {
+						ID:           "cluster-123",
 						Organization: "test-org",
 						Name:         "test-cluster",
 					},
@@ -462,21 +461,20 @@ func TestDeleteOrgClusters(t *testing.T) {
 			c, _ := gin.CreateTestContext(w)
 
 			c.Params = []gin.Param{
-				{Key: "org", Value: tc.organizationName},
-				{Key: "cluster", Value: tc.clusterName},
+				{Key: "clusterID", Value: tc.clusterID},
 			}
 			c.Set("user", tc.user)
 
 			u := url.URL{
-				Path: path.Join("/v1/orgs", tc.organizationName, "clusters", tc.clusterName),
+				Path: path.Join("/v1/clusters", tc.clusterID),
 			}
 
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
+			c.Request, err = http.NewRequest(http.MethodDelete, u.String(), nil)
 			if err != nil {
 				t.Fatalf("unexpected error preparing test request: %s", err)
 			}
 
-			h.DeleteOrgClusters(c)
+			h.DeleteCluster(c)
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusAccepted {
@@ -487,11 +485,10 @@ func TestDeleteOrgClusters(t *testing.T) {
 
 }
 
-func TestDeleteOrgClustersErrors(t *testing.T) {
+func TestDeleteClusterErrors(t *testing.T) {
 	tt := []struct {
 		name               string
-		organizationName   string
-		clusterName        string
+		clusterID          string
 		user               v1.User
 		users              []v1.User
 		organizations      []v1.Organization
@@ -503,23 +500,8 @@ func TestDeleteOrgClustersErrors(t *testing.T) {
 			expected: http.StatusBadRequest,
 		},
 		{
-			name:             "test empty cluster name",
-			organizationName: "test-org",
-			expected:         http.StatusBadRequest,
-		},
-		{
-			name:             "test invalid organization",
-			organizationName: "test-org",
-			clusterName:      "test-cluster",
-			user: v1.User{
-				ID: uuid.MustParse("e5cd33c8-cddf-494f-9156-3ddc82b7c2f5"),
-			},
-			expected: http.StatusUnauthorized,
-		},
-		{
-			name:             "test invalid cluster",
-			organizationName: "test-org",
-			clusterName:      "test-cluster",
+			name:      "test invalid cluster",
+			clusterID: "cluster-123",
 			user: v1.User{
 				ID: uuid.MustParse("f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3"),
 			},
@@ -538,12 +520,11 @@ func TestDeleteOrgClustersErrors(t *testing.T) {
 					},
 				},
 			},
-			expected: http.StatusInternalServerError,
+			expected: http.StatusUnauthorized,
 		},
 		{
-			name:             "test invalid organization membership",
-			organizationName: "test-org",
-			clusterName:      "test-cluster",
+			name:      "test invalid organization membership",
+			clusterID: "cluster-123",
 			user: v1.User{
 				ID: uuid.MustParse("8ce52ca1-1931-49a1-8ddf-62bf3870a4bf"),
 			},
@@ -568,6 +549,14 @@ func TestDeleteOrgClustersErrors(t *testing.T) {
 						},
 					},
 				},
+			},
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						ID:           "cluster-123",
+						Organization: "test-org",
+					},
+				}),
 			},
 			expected: http.StatusUnauthorized,
 		},
@@ -612,13 +601,12 @@ func TestDeleteOrgClustersErrors(t *testing.T) {
 			c, _ := gin.CreateTestContext(w)
 
 			c.Params = []gin.Param{
-				{Key: "org", Value: tc.organizationName},
-				{Key: "cluster", Value: tc.clusterName},
+				{Key: "clusterID", Value: tc.clusterID},
 			}
 			c.Set("user", tc.user)
 
 			u := url.URL{
-				Path: path.Join("/v1/orgs", tc.organizationName, "clusters", tc.clusterName),
+				Path: path.Join("/v1/clusters", tc.clusterID),
 			}
 
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
@@ -626,7 +614,7 @@ func TestDeleteOrgClustersErrors(t *testing.T) {
 				t.Fatalf("unexpected error preparing test request: %s", err)
 			}
 
-			h.DeleteOrgClusters(c)
+			h.DeleteCluster(c)
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
