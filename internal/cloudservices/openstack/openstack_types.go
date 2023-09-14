@@ -6,6 +6,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/ipam"
 	"github.com/google/uuid"
 	"github.com/gophercloud/gophercloud"
 	"gorm.io/gorm"
@@ -21,6 +22,7 @@ type openStackService struct {
 	garbageMutex    *sync.Mutex
 	endpointOpts    gophercloud.EndpointOpts
 	insecureLogging bool
+	ipManager       ipam.IPManager
 }
 
 var _ cloudservices.CloudService = &openStackService{}

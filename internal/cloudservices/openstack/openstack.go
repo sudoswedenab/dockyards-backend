@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/ipam"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/utils/openstack/clientconfig"
@@ -98,6 +99,17 @@ func NewOpenStackService(openStackOptions ...OpenStackOption) (*openStackService
 	}
 
 	s.providerClient = providerClient
+
+	ipManagerOptions := []ipam.ManagerOption{
+		ipam.WithLogger(s.logger),
+		ipam.WithDB(s.db),
+	}
+
+	ipManager, err := ipam.NewIPManager(ipManagerOptions...)
+	if err != nil {
+		return nil, err
+	}
+	s.ipManager = ipManager
 
 	if s.insecureLogging {
 		s.logger.Warn("insecure logging allowed")
