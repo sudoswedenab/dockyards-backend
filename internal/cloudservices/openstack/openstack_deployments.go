@@ -189,6 +189,40 @@ func (s *openStackService) createMetalLBDeployment(network *networksv2.Network, 
 	return &metalLBDeployment, nil
 }
 
+func (s *openStackService) createIngressNginxDeployment() *v1.Deployment {
+	ingressNginxDeployment := v1.Deployment{
+		Type:           v1.DeploymentTypeHelm,
+		Name:           util.Ptr("ingress-nginx"),
+		Namespace:      util.Ptr("ingress-nginx"),
+		HelmChart:      util.Ptr("ingress-nginx"),
+		HelmRepository: util.Ptr("https://kubernetes.github.io/ingress-nginx"),
+		HelmVersion:    util.Ptr("4.7.2"),
+		HelmValues: &map[string]any{
+			"controller": map[string]any{
+				"kind": "DaemonSet",
+				"hostPort": map[string]any{
+					"enabled": true,
+				},
+				"ingressClassResource": map[string]any{
+					"default": true,
+				},
+				"nodeSelector": map[string]any{
+					"node-role.dockyards.io/load-balancer": "",
+				},
+				"tolerations": []map[string]any{
+					{
+						"key":      "node-role.dockyards.io/load-balancer",
+						"operator": "Exists",
+						"effect":   "NoSchedule",
+					},
+				},
+			},
+		},
+	}
+
+	return &ingressNginxDeployment
+}
+
 func (s *openStackService) GetClusterDeployments(organization *v1.Organization, cluster *v1.Cluster) (*[]v1.Deployment, error) {
 	openStackOrganization, err := s.getOpenStackOrganization(organization)
 	if err != nil {
@@ -274,7 +308,9 @@ func (s *openStackService) GetClusterDeployments(organization *v1.Organization, 
 			return nil, err
 		}
 
-		clusterDeployments = append(clusterDeployments, *metalLBDeployment)
+		ingressNginxDeployment := s.createIngressNginxDeployment()
+
+		clusterDeployments = append(clusterDeployments, *metalLBDeployment, *ingressNginxDeployment)
 	}
 
 	return &clusterDeployments, nil
