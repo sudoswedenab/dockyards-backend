@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/deployment"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
@@ -171,6 +172,18 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 				h.logger.Debug("creating cluster deployment", "name", *clusterDeployment.Name)
 
 				clusterDeployment.ID = uuid.New()
+
+				if clusterDeployment.Type == v1.DeploymentTypeContainerImage || clusterDeployment.Type == v1.DeploymentTypeKustomize {
+					h.logger.Debug("creating repository for cluster deployment")
+
+					err := deployment.CreateRepository(&clusterDeployment, h.gitProjectRoot)
+					if err != nil {
+						h.logger.Error("error creating repository for cluster deployment")
+
+						hasErrors = true
+						break
+					}
+				}
 
 				err := h.db.Create(&clusterDeployment).Error
 				if err != nil {
