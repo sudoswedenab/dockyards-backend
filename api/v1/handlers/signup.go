@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -22,7 +22,7 @@ func (h *handler) Signup(c *gin.Context) {
 		return
 	}
 
-	details, validName := names.IsValidName(signup.Name)
+	details, validName := name.IsValidName(signup.Name)
 	if !validName {
 		h.logger.Error("invalid name in signup request", "name", signup.Name, "details", details)
 

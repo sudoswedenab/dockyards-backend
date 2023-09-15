@@ -6,8 +6,8 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/networks"
@@ -118,7 +118,7 @@ func (s *openStackService) PrepareEnvironment(organization *v1.Organization, clu
 		return nil, errors.New("unable to find suitable network")
 	}
 
-	keypairName := names.EncodeName(organization.Name, names.EncodeName(cluster.Name, nodePoolOptions.Name))
+	keypairName := name.EncodeName(organization.Name, name.EncodeName(cluster.Name, nodePoolOptions.Name))
 	createOpts := keypairs.CreateOpts{
 		Name: keypairName,
 	}

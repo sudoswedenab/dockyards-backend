@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 )
 
@@ -76,7 +76,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		return
 	}
 
-	details, isValidName := names.IsValidName(nodePoolOptions.Name)
+	details, isValidName := name.IsValidName(nodePoolOptions.Name)
 	if !isValidName {
 		h.logger.Error("node pool has invalid name", "name", nodePoolOptions.Name)
 

@@ -7,9 +7,9 @@ import (
 	"path"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	utildeployment "bitbucket.org/sudosweden/dockyards-backend/pkg/util/deployment"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -43,7 +43,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		return
 	}
 
-	details, validName := names.IsValidName(*deployment.Name)
+	details, validName := name.IsValidName(*deployment.Name)
 	if !validName {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error":   "name is not valid",

@@ -2,12 +2,12 @@ package rancher
 
 import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
 func (r *rancher) CreateCluster(organization *v1.Organization, clusterOptions *v1.ClusterOptions) (*v1.Cluster, error) {
-	clusterTemplateName := names.EncodeName(organization.Name, clusterOptions.Name)
+	clusterTemplateName := name.EncodeName(organization.Name, clusterOptions.Name)
 	clusterTemplate := managementv3.ClusterTemplate{
 		Name: clusterTemplateName,
 	}
@@ -36,7 +36,7 @@ func (r *rancher) CreateCluster(organization *v1.Organization, clusterOptions *v
 		return nil, err
 	}
 
-	clusterName := names.EncodeName(organization.Name, clusterOptions.Name)
+	clusterName := name.EncodeName(organization.Name, clusterOptions.Name)
 
 	opts := managementv3.Cluster{
 		Name:                      clusterName,
@@ -49,10 +49,10 @@ func (r *rancher) CreateCluster(organization *v1.Organization, clusterOptions *v
 		return nil, err
 	}
 
-	clusterOrg, clusterName := names.DecodeName(createdCluster.Name)
+	clusterOrganization, clusterName := name.DecodeName(createdCluster.Name)
 
 	cluster := v1.Cluster{
-		Organization: clusterOrg,
+		Organization: clusterOrganization,
 		Name:         clusterName,
 		ID:           createdCluster.ID,
 	}

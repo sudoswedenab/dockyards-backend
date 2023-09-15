@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/deployment"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
@@ -60,7 +60,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 	h.logger.Debug("create cluster", "organization", organization.Name, "name", clusterOptions.Name, "version", clusterOptions.Version)
 
-	details, validName := names.IsValidName(clusterOptions.Name)
+	details, validName := name.IsValidName(clusterOptions.Name)
 	if !validName {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error":   "name is not valid",
@@ -72,7 +72,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 	if clusterOptions.NodePoolOptions != nil {
 		for _, nodePoolOptions := range *clusterOptions.NodePoolOptions {
-			details, validName := names.IsValidName(nodePoolOptions.Name)
+			details, validName := name.IsValidName(nodePoolOptions.Name)
 			if !validName {
 				c.JSON(http.StatusUnprocessableEntity, gin.H{
 					"error":   "node pool name is not valid",

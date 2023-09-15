@@ -4,12 +4,12 @@ import (
 	"errors"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/rancher/norman/types"
 )
 
 func (r *rancher) DeleteCluster(organization *v1.Organization, cluster *v1.Cluster) error {
-	encodedName := names.EncodeName(cluster.Organization, cluster.Name)
+	encodedName := name.EncodeName(cluster.Organization, cluster.Name)
 
 	listOpts := types.ListOpts{
 		Filters: map[string]interface{}{

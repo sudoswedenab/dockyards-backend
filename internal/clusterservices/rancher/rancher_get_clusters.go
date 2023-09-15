@@ -4,15 +4,15 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
 func (r *rancher) clusterToModel(cluster *managementv3.Cluster) v1.Cluster {
 	createdAt, _ := time.Parse(time.RFC3339, cluster.Created)
-	organization, name := names.DecodeName(cluster.Name)
+	organization, name := name.DecodeName(cluster.Name)
 
 	c := v1.Cluster{
 		Organization: organization,

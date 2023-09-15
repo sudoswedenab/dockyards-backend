@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/names"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -38,7 +38,7 @@ func (h *handler) PostOrgs(c *gin.Context) {
 		return
 	}
 
-	details, validName := names.IsValidName(organization.Name)
+	details, validName := name.IsValidName(organization.Name)
 	if !validName {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "name is not valid",
