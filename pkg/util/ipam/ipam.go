@@ -8,7 +8,7 @@ import (
 )
 
 type IPManager interface {
-	AllocateAddr(netip.Prefix) (netip.Addr, error)
+	AllocateAddr(netip.Prefix, string) (netip.Addr, error)
 	ReleaseAddr(netip.Addr) error
 }
 

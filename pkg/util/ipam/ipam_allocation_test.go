@@ -17,6 +17,7 @@ func TestAllocateAddr(t *testing.T) {
 	tt := []struct {
 		name        string
 		prefix      netip.Prefix
+		tag         string
 		allocations []ipamAllocation
 		expected    netip.Addr
 	}{
@@ -55,6 +56,12 @@ func TestAllocateAddr(t *testing.T) {
 			},
 			expected: netip.MustParseAddr("1.2.3.5"),
 		},
+		{
+			name:     "test with tag",
+			prefix:   netip.MustParsePrefix("1.2.3.4/32"),
+			tag:      "test",
+			expected: netip.MustParseAddr("1.2.3.4"),
+		},
 	}
 
 	for _, tc := range tt {
@@ -78,7 +85,7 @@ func TestAllocateAddr(t *testing.T) {
 				logger: logger,
 				db:     db,
 			}
-			actual, err := m.AllocateAddr(tc.prefix)
+			actual, err := m.AllocateAddr(tc.prefix, tc.tag)
 			if err != nil {
 				t.Fatalf("error allocating address from prefix: %s", err)
 			}
@@ -94,6 +101,7 @@ func TestAllocateIPErrors(t *testing.T) {
 	tt := []struct {
 		name        string
 		prefix      netip.Prefix
+		tag         string
 		allocations []ipamAllocation
 		expected    error
 	}{
@@ -135,7 +143,7 @@ func TestAllocateIPErrors(t *testing.T) {
 				logger: logger,
 				db:     db,
 			}
-			_, err = m.AllocateAddr(tc.prefix)
+			_, err = m.AllocateAddr(tc.prefix, tc.tag)
 			if !errors.Is(err, tc.expected) {
 				t.Errorf("expected error '%s', got '%s'", tc.expected, err)
 			}

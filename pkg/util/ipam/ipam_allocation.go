@@ -16,12 +16,15 @@ var (
 type ipamAllocation struct {
 	ID   uuid.UUID  `gorm:"id"`
 	Addr netip.Addr `gorm:"unique;serializer:json"`
+	Tag  string     `gorm:"tag"`
 }
 
-func (m *ipManager) AllocateAddr(prefix netip.Prefix) (netip.Addr, error) {
+func (m *ipManager) AllocateAddr(prefix netip.Prefix, tag string) (netip.Addr, error) {
 	addr := prefix.Addr()
+
 	for prefix.Contains(addr) {
 		var allocation ipamAllocation
+
 		err := m.db.Where(ipamAllocation{Addr: addr}).Take(&allocation).Error
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return netip.Addr{}, err
@@ -31,6 +34,7 @@ func (m *ipManager) AllocateAddr(prefix netip.Prefix) (netip.Addr, error) {
 			allocation := ipamAllocation{
 				ID:   uuid.New(),
 				Addr: addr,
+				Tag:  tag,
 			}
 
 			err = m.db.Create(&allocation).Error
