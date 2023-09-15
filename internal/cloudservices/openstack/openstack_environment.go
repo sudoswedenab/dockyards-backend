@@ -241,6 +241,15 @@ func (s *openStackService) CleanEnvironment(organization *v1.Organization, confi
 		s.addGarbage(&securityGroup)
 	}
 
+	if config.NetID != "" {
+		s.logger.Debug("releasing any allocations from ip manager", "tag", config.NetID)
+
+		err := s.ipManager.ReleaseTag(config.NetID)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
