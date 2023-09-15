@@ -162,6 +162,7 @@ func (r *rancher) DeleteNodePool(organization *v1.Organization, nodePoolID strin
 	cloudConfig := cloudservices.CloudConfig{
 		KeypairName:    customNodeTemplate.OpenstackConfig.KeypairName,
 		SecurityGroups: securityGroups,
+		NetID:          customNodeTemplate.OpenstackConfig.NetID,
 	}
 
 	err = r.cloudService.CleanEnvironment(organization, &cloudConfig)
