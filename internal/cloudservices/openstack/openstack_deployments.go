@@ -53,7 +53,7 @@ func (s *openStackService) createMetalLBDeployment(network *networksv2.Network, 
 				return nil, err
 			}
 
-			addr, err := s.ipManager.AllocateAddr(prefix)
+			addr, err := s.ipManager.AllocateAddr(prefix, network.ID)
 			if err != nil {
 				s.logger.Error("error allocating address", "err", err)
 

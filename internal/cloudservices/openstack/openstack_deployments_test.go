@@ -155,6 +155,7 @@ func TestCreateClusterMetalLBDeploymentErrors(t *testing.T) {
 		network     networks.Network
 		cluster     v1.Cluster
 		prefix      netip.Prefix
+		tag         string
 		allocations int
 		expected    error
 	}{
@@ -283,7 +284,7 @@ func TestCreateClusterMetalLBDeploymentErrors(t *testing.T) {
 				t.Fatalf("unexpected error creating test ip manager: %s", err)
 			}
 			for i := 0; i < tc.allocations; i++ {
-				_, err := ipManager.AllocateAddr(tc.prefix)
+				_, err := ipManager.AllocateAddr(tc.prefix, tc.tag)
 				if err != nil {
 					t.Fatalf("unexpected error allocting addr from test ip manager: %s", err)
 				}
