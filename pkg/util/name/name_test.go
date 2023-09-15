@@ -48,6 +48,23 @@ func TestIsValidName(t *testing.T) {
 			expectedDetail: detailInvalidCharacters,
 			expected:       false,
 		},
+		{
+			name:           "test with quotes",
+			test:           "\"test'",
+			expectedDetail: detailInvalidCharacters,
+			expected:       false,
+		},
+		{
+			name:           "test with semicolon",
+			test:           "test;",
+			expectedDetail: detailInvalidCharacters,
+			expected:       false,
+		},
+		{
+			name:     "test with number",
+			test:     "test123",
+			expected: true,
+		},
 	}
 
 	for _, tc := range tt {
