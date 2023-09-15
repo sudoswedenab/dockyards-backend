@@ -242,3 +242,102 @@ func TestReleaseAddrErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestReleaseTag(t *testing.T) {
+	tt := []struct {
+		name        string
+		tag         string
+		allocations []ipamAllocation
+		expected    []ipamAllocation
+	}{
+		{
+			name: "test simple",
+			tag:  "test",
+			allocations: []ipamAllocation{
+				{
+					ID:   uuid.MustParse("a234bd6c-53fd-4a6b-8151-1434673f935c"),
+					Addr: netip.MustParseAddr("1.2.3.4"),
+					Tag:  "test",
+				},
+				{
+					ID:   uuid.MustParse("ed7c6662-2177-48db-8c54-e13edee43612"),
+					Addr: netip.MustParseAddr("123::4"),
+					Tag:  "test",
+				},
+			},
+			expected: []ipamAllocation{},
+		},
+		{
+			name: "test release with remainders",
+			tag:  "test",
+			allocations: []ipamAllocation{
+				{
+					ID:   uuid.MustParse("36beb989-c039-4de4-9ad8-e17ee9c9dc00"),
+					Addr: netip.MustParseAddr("1.2.3.4"),
+					Tag:  "arst",
+				},
+				{
+					ID:   uuid.MustParse("8c7536a5-e525-4747-843b-3809f6c691f3"),
+					Addr: netip.MustParseAddr("1.2.3.5"),
+					Tag:  "test",
+				},
+				{
+					ID:   uuid.MustParse("ad1530df-1211-4cb6-9eb5-34caeb2b1473"),
+					Addr: netip.MustParseAddr("123::4"),
+					Tag:  "arst",
+				},
+			},
+			expected: []ipamAllocation{
+				{
+					ID:   uuid.MustParse("36beb989-c039-4de4-9ad8-e17ee9c9dc00"),
+					Addr: netip.MustParseAddr("1.2.3.4"),
+					Tag:  "arst",
+				},
+				{
+					ID:   uuid.MustParse("ad1530df-1211-4cb6-9eb5-34caeb2b1473"),
+					Addr: netip.MustParseAddr("123::4"),
+					Tag:  "arst",
+				},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			gormSlogger := loggers.NewGormSlogger(logger)
+
+			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger, TranslateError: true})
+			if err != nil {
+				t.Fatalf("unexpected error creating test database: %s", err)
+			}
+			db.AutoMigrate(&ipamAllocation{})
+			for _, allocation := range tc.allocations {
+				err := db.Create(&allocation).Error
+				if err != nil {
+					t.Fatalf("unexpected error creating allocation in test database: %s", err)
+				}
+			}
+
+			m := ipManager{
+				logger: logger,
+				db:     db,
+			}
+
+			err = m.ReleaseTag(tc.tag)
+			if err != nil {
+				t.Fatalf("error releasing tag: %s", err)
+			}
+
+			var actual []ipamAllocation
+			err = db.Find(&actual).Error
+			if err != nil {
+				t.Fatalf("unexpected error finding allocations in test database: %s", err)
+			}
+
+			if len(actual) != len(tc.expected) {
+				t.Errorf("expected %d remaining allocations, got %d", len(tc.expected), len(actual))
+			}
+		})
+	}
+}

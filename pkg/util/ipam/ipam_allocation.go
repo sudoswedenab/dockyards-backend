@@ -74,3 +74,12 @@ func (m *ipManager) ReleaseAddr(addr netip.Addr) error {
 
 	return nil
 }
+
+func (m *ipManager) ReleaseTag(tag string) error {
+	err := m.db.Where("tag = ?", tag).Delete(&ipamAllocation{}).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

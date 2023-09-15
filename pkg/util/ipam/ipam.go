@@ -10,6 +10,7 @@ import (
 type IPManager interface {
 	AllocateAddr(netip.Prefix, string) (netip.Addr, error)
 	ReleaseAddr(netip.Addr) error
+	ReleaseTag(string) error
 }
 
 type ipManager struct {
