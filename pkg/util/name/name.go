@@ -2,7 +2,6 @@ package name
 
 import (
 	"strings"
-	"unicode"
 )
 
 const (
@@ -13,8 +12,20 @@ const (
 	detailInvalidCharacters = "name must contain only lowercase alphanumeric characters and the '-' character"
 )
 
-func isUpper(r rune) bool {
-	return unicode.IsUpper(r)
+func isInvalid(r rune) bool {
+	if r == '-' {
+		return false
+	}
+
+	if r >= '0' && r <= '9' {
+		return false
+	}
+
+	if r >= 'a' && r <= 'z' {
+		return false
+	}
+
+	return true
 }
 
 func IsValidName(name string) (string, bool) {
@@ -34,7 +45,7 @@ func IsValidName(name string) (string, bool) {
 		return detailDashSuffix, false
 	}
 
-	if strings.IndexFunc(name, isUpper) != -1 {
+	if strings.IndexFunc(name, isInvalid) != -1 {
 		return detailInvalidCharacters, false
 	}
 
