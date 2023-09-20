@@ -31,9 +31,14 @@ definitions:
   - step: &push
       name: push
       image: docker.io/amazon/aws-cli:2.11.8
+      oidc: true
       script:
       - source env.sh
-      - aws ecr get-login-password | docker login --username "AWS" --password-stdin "075899289117.dkr.ecr.eu-north-1.amazonaws.com"
+      - echo $BITBUCKET_STEP_OIDC_TOKEN > /tmp/web-identity-token
+      - aws configure --profile bitbucket set region eu-north-1
+      - aws configure --profile bitbucket set role_arn arn:aws:iam::075899289117:role/BitbucketPipelinesBackend
+      - aws configure --profile bitbucket set web_identity_token_file /tmp/web-identity-token
+      - aws ecr get-login-password --profile bitbucket | docker login --username "AWS" --password-stdin "075899289117.dkr.ecr.eu-north-1.amazonaws.com"
       - docker load --input "${IMAGE_NAME}.tar"
       - docker tag "${IMAGE_NAME}" "${IMAGE}:${VERSION}"
       - docker push "${IMAGE}:${VERSION}"
