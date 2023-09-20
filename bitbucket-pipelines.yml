@@ -1,10 +1,9 @@
-image: atlassian/default-image:3
+image: docker.io/library/golang:1.21
 
 definitions:
   steps:
   - step: &environment
       name: environment
-      image: docker.io/library/golang:1.21
       script:
       - git fetch --tags
       - echo "export IMAGE_NAME=$BITBUCKET_REPO_SLUG" >> env.sh
@@ -15,7 +14,6 @@ definitions:
       - env.sh
   - step: &test
       name: test
-      image: docker.io/library/golang:1.21
       script:
       - go test ./... -v
   - step: &build
