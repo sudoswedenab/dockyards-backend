@@ -19,7 +19,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
@@ -37,6 +36,7 @@ type handler struct {
 	jwtRefreshTokenSecret string
 	cloudService          cloudservices.CloudService
 	gitProjectRoot        string
+	controllerClient      client.Client
 }
 
 type HandlerOption func(*handler)
@@ -63,6 +63,12 @@ func WithClusterService(clusterService clusterservices.ClusterService) HandlerOp
 func WithGitProjectRoot(gitProjectRoot string) HandlerOption {
 	return func(h *handler) {
 		h.gitProjectRoot = gitProjectRoot
+	}
+}
+
+func WithControllerClient(controllerClient client.Client) HandlerOption {
+	return func(h *handler) {
+		h.controllerClient = controllerClient
 	}
 }
 
@@ -187,23 +193,13 @@ func (h *handler) isMember(user *v1.User, organization *v1.Organization) (bool, 
 func (h *handler) setOrGenerateTokens() error {
 	ctx := context.Background()
 
-	kubeconfig, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
-
-	controllerClient, err := client.New(kubeconfig, client.Options{})
-	if err != nil {
-		return err
-	}
-
 	objectKey := client.ObjectKey{
 		Namespace: defaultDockyardsNamespace,
 		Name:      defaultJWTSecretName,
 	}
 
 	var secret corev1.Secret
-	err = controllerClient.Get(ctx, objectKey, &secret)
+	err := h.controllerClient.Get(ctx, objectKey, &secret)
 	if client.IgnoreNotFound(err) != nil {
 		return err
 	}
@@ -240,7 +236,7 @@ func (h *handler) setOrGenerateTokens() error {
 			},
 		}
 
-		err = controllerClient.Create(ctx, &secret)
+		err = h.controllerClient.Create(ctx, &secret)
 		if err != nil {
 			return err
 		}
