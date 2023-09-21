@@ -194,13 +194,6 @@ type Overview struct {
 	Organizations []OrganizationOverview `json:"organizations"`
 }
 
-// Signup defines model for signup.
-type Signup struct {
-	Email    string `json:"email"`
-	Name     string `json:"name"`
-	Password string `json:"password"`
-}
-
 // StepOption defines model for step_option.
 type StepOption struct {
 	AppStepID   uuid.UUID `json:"app_step_id"`
@@ -252,6 +245,3 @@ type CreateClusterJSONRequestBody = ClusterOptions
 
 // CreateCredentialJSONRequestBody defines body for CreateCredential for application/json ContentType.
 type CreateCredentialJSONRequestBody = Credential
-
-// SignupJSONRequestBody defines body for Signup for application/json ContentType.
-type SignupJSONRequestBody = Signup
