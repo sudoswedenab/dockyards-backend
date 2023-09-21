@@ -1,0 +1,44 @@
+package v1alpha1
+
+import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	UserKind = "User"
+)
+
+type UserSpec struct {
+	Email           string                  `json:"email"`
+	Password        string                  `json:"password"`
+	VerificationRef *corev1.ObjectReference `json:"verificationRef,omitempty"`
+}
+
+type UserStatus struct {
+	Verified bool `json:"verified,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name=Age,type=date,JSONPath=.metadata.creationTimestamp
+// +kubebuilder:printcolumn:name=Verified,type=boolean,JSONPath=.status.verified
+type User struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   UserSpec   `json:"spec,omitempty"`
+	Status UserStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+type UserList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []User `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&User{}, &UserList{})
+}
