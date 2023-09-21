@@ -1,87 +1,100 @@
 package handlers
 
 import (
-	"errors"
+	"context"
 	"net/http"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"gorm.io/gorm"
-
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (h *handler) Login(c *gin.Context) {
-	// Get email and pass off req body
-	var body v1.Login
+	ctx := context.Background()
 
+	var body v1.Login
 	if c.BindJSON(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to read Body",
-		})
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	//Look up requested User
-	var user v1.User
-	err := h.db.First(&user, "email = ?", body.Email).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			h.logger.Debug("no user found", "email", body.Email)
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
+	matchingFields := client.MatchingFields{
+		"spec.email": body.Email,
+	}
 
-		h.logger.Debug("error fetching user from db", "email", body.Email, "err", err)
+	var userList v1alpha1.UserList
+	err := h.controllerClient.List(ctx, &userList, matchingFields)
+	if err != nil {
+		h.logger.Error("error getting user from kubernetes", "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	if len(userList.Items) != 1 {
+		h.logger.Error("expected exactly one user from kubernetes", "users", len(userList.Items))
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	user := userList.Items[0]
+
+	if !user.Status.Verified {
+		h.logger.Error("user has not been verified")
+
+		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 
 	//Compare sent in pass with saved user pass hash
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Spec.Password), []byte(body.Password))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Bad hash or encryption",
-		})
+		h.logger.Error("error comparing password", "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
 	//Generate a jwt token
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 	claims := accessToken.Claims.(jwt.MapClaims)
-	claims["sub"] = user.ID
-	claims["name"] = user.Name
-	claims["admin"] = false
+	claims["sub"] = user.UID
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
 	// Sign and get the complete encoded token as a string using the secret
 	at, err := accessToken.SignedString([]byte(h.jwtAccessTokenSecret))
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "failed to create Token",
-		})
+		h.logger.Error("error signing access token", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
 
 	rtClaims := refreshToken.Claims.(jwt.MapClaims)
-	rtClaims["sub"] = user.ID
+	rtClaims["sub"] = user.UID
 	rtClaims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 
-	rt, rerr := refreshToken.SignedString([]byte(h.jwtRefreshTokenSecret))
+	rt, err := refreshToken.SignedString([]byte(h.jwtRefreshTokenSecret))
 
-	if rerr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "failed to create Token",
-		})
+	if err != nil {
+		h.logger.Error("error signing refresh token", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		h.accessTokenName:  at,
-		h.refreshTokenName: rt,
-	})
+	tokens := v1.Tokens{
+		AccessToken:  at,
+		RefreshToken: rt,
+	}
+
+	c.JSON(http.StatusOK, tokens)
 }
