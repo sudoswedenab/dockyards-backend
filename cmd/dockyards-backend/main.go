@@ -16,7 +16,6 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/sudo"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers/user"
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
@@ -329,8 +328,6 @@ func main() {
 		logger.Error("error registering handler routes", "err", err)
 		os.Exit(1)
 	}
-
-	user.RegisterRoutes(r, db)
 
 	privateRouter := chi.NewRouter()
 	privateRouter.Use(middleware.Logger)
