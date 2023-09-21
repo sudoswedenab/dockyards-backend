@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -11,11 +10,15 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
 	"github.com/gin-gonic/gin"
-	"github.com/glebarez/sqlite"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestLogin(t *testing.T) {
@@ -25,69 +28,111 @@ func TestLogin(t *testing.T) {
 	}
 
 	tt := []struct {
-		name     string
-		users    []v1.User
-		login    v1.Login
-		expected int
+		name  string
+		lists []client.ObjectList
+		login v1.Login
 	}{
 		{
 			name: "test valid user",
-			users: []v1.User{
-				{
-					Email:    "test@dockyards.io",
-					Password: string(hash),
+			lists: []client.ObjectList{
+				&v1alpha1.UserList{
+					Items: []v1alpha1.User{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+							},
+							Spec: v1alpha1.UserSpec{
+								Email:    "test@dockyards.dev",
+								Password: string(hash),
+								VerificationRef: &corev1.ObjectReference{
+									Kind: "testing",
+								},
+							},
+							Status: v1alpha1.UserStatus{
+								Verified: true,
+							},
+						},
+					},
 				},
 			},
 			login: v1.Login{
-				Email:    "test@dockyards.io",
+				Email:    "test@dockyards.dev",
 				Password: "password",
 			},
-			expected: http.StatusOK,
 		},
 		{
-			name: "test incorrect password",
-			users: []v1.User{
-				{
-					Email:    "test@dockyards.io",
-					Password: string(hash),
+			name: "test multiple users",
+			lists: []client.ObjectList{
+				&v1alpha1.UserList{
+					Items: []v1alpha1.User{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test1",
+							},
+							Spec: v1alpha1.UserSpec{
+								Email:    "test1@dockyards.dev",
+								Password: string(hash),
+								VerificationRef: &corev1.ObjectReference{
+									Kind: "testing",
+								},
+							},
+							Status: v1alpha1.UserStatus{
+								Verified: true,
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test2",
+							},
+							Spec: v1alpha1.UserSpec{
+								Email:    "test2@dockyards.dev",
+								Password: string(hash),
+								VerificationRef: &corev1.ObjectReference{
+									Kind: "testing",
+								},
+							},
+							Status: v1alpha1.UserStatus{
+								Verified: true,
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test3",
+							},
+							Spec: v1alpha1.UserSpec{
+								Email:    "test3@dockyards.dev",
+								Password: string(hash),
+								VerificationRef: &corev1.ObjectReference{
+									Kind: "testing",
+								},
+							},
+							Status: v1alpha1.UserStatus{
+								Verified: true,
+							},
+						},
+					},
 				},
 			},
 			login: v1.Login{
-				Email:    "test@dockyards.io",
-				Password: "incorrect",
-			},
-			expected: http.StatusBadRequest,
-		},
-		{
-			name: "test missing user",
-			login: v1.Login{
-				Email:    "test@dockyards.io",
+				Email:    "test3@dockyards.dev",
 				Password: "password",
 			},
-			expected: http.StatusUnauthorized,
 		},
 	}
 
 	gin.SetMode(gin.TestMode)
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-	gormSlogger := loggers.NewGormSlogger(logger)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			db.AutoMigrate(&v1.User{})
-
-			for _, user := range tc.users {
-				db.Create(&user)
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, "spec.email", index.EmailIndexer).Build()
 
 			h := handler{
-				db:     db,
-				logger: logger,
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			r := gin.New()
@@ -107,14 +152,122 @@ func TestLogin(t *testing.T) {
 
 			r.ServeHTTP(w, req)
 
-			body, err := io.ReadAll(w.Body)
-			if err != nil {
-				t.Fatalf("unexpected error reading response body: %s", err)
+			if w.Code != http.StatusOK {
+				t.Errorf("expected code %d, got %d", http.StatusOK, w.Code)
 			}
+		})
+	}
+}
+
+func TestLoginErrors(t *testing.T) {
+	hash, err := bcrypt.GenerateFromPassword([]byte("password"), 10)
+	if err != nil {
+		t.Fatalf("unexpected error hashing string 'password'")
+	}
+
+	tt := []struct {
+		name     string
+		lists    []client.ObjectList
+		login    v1.Login
+		expected int
+	}{
+		{
+			name: "test incorrect password",
+			lists: []client.ObjectList{
+				&v1alpha1.UserList{
+					Items: []v1alpha1.User{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+							},
+							Spec: v1alpha1.UserSpec{
+								Email:    "test@dockyards.dev",
+								Password: string(hash),
+								VerificationRef: &corev1.ObjectReference{
+									Kind: "testing",
+								},
+							},
+							Status: v1alpha1.UserStatus{
+								Verified: true,
+							},
+						},
+					},
+				},
+			},
+			login: v1.Login{
+				Email:    "test@dockyards.dev",
+				Password: "incorrect",
+			},
+			expected: http.StatusUnauthorized,
+		},
+		{
+			name: "test missing user",
+			login: v1.Login{
+				Email:    "test@dockyards.dev",
+				Password: "password",
+			},
+			expected: http.StatusUnauthorized,
+		},
+		{
+			name: "test unverified user",
+			lists: []client.ObjectList{
+				&v1alpha1.UserList{
+					Items: []v1alpha1.User{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+							},
+							Spec: v1alpha1.UserSpec{
+								Email:    "test@dockyards.dev",
+								Password: string(hash),
+							},
+							Status: v1alpha1.UserStatus{},
+						},
+					},
+				},
+			},
+			login: v1.Login{
+				Email:    "test@dockyards.dev",
+				Password: "password",
+			},
+			expected: http.StatusForbidden,
+		},
+	}
+
+	gin.SetMode(gin.TestMode)
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, "spec.email", index.EmailIndexer).Build()
+
+			h := handler{
+				logger:           logger,
+				controllerClient: fakeClient,
+			}
+
+			r := gin.New()
+			r.POST("/test", h.Login)
+
+			b, err := json.Marshal(tc.login)
+			if err != nil {
+				t.Fatalf("unexpected error marshalling: %s", err)
+			}
+
+			w := httptest.NewRecorder()
+			req, err := http.NewRequest("POST", "/test", bytes.NewBuffer(b))
+			if err != nil {
+				t.Fatalf("unexpected error preparing request: %s", err)
+			}
+			req.Header.Add("content-type", "application/json")
+
+			r.ServeHTTP(w, req)
 
 			if w.Code != tc.expected {
 				t.Errorf("expected code %d, got %d", tc.expected, w.Code)
-				t.Log("body:", string(body))
 			}
 		})
 	}
