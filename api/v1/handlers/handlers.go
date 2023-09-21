@@ -112,7 +112,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 		h.gitProjectRoot = "/var/www/git"
 	}
 
-	r.POST("/v1/signup", h.Signup)
 	r.POST("/v1/login", h.Login)
 	r.POST("/v1/refresh", h.PostRefresh)
 
