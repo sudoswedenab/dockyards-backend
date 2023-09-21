@@ -39,7 +39,6 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -246,12 +245,30 @@ func main() {
 		}
 	}()
 
-	logger.Info("rancher info", "url", cattleURL)
+	kubeconfig, err := config.GetConfig()
+	if err != nil {
+		logger.Error("error getting kubeconfig", "err", err)
+
+		os.Exit(1)
+	}
+
+	manager, err := ctrl.NewManager(kubeconfig, ctrl.Options{})
+	if err != nil {
+		os.Exit(123)
+	}
+
+	scheme := manager.GetScheme()
+	v1alpha1.AddToScheme(scheme)
+
+	ctx := context.Background()
+
+	controllerClient := manager.GetClient()
 
 	prometheusMetricsOptions := []metrics.PrometheusMetricsOption{
 		metrics.WithLogger(logger),
 		metrics.WithDatabase(db),
 		metrics.WithPrometheusRegistry(registry),
+		metrics.WithControllerClient(controllerClient),
 	}
 
 	prometheusMetrics, err := metrics.NewPrometheusMetrics(prometheusMetricsOptions...)
@@ -304,6 +321,7 @@ func main() {
 		handlers.WithCloudService(cloudService),
 		handlers.WithClusterService(clusterService),
 		handlers.WithGitProjectRoot(gitProjectRoot),
+		handlers.WithControllerClient(controllerClient),
 	}
 
 	err = handlers.RegisterRoutes(r, db, logger, handlerOptions...)
@@ -372,27 +390,6 @@ func main() {
 
 	go privateServer.ListenAndServe()
 	go r.Run(":9000")
-
-	kubeconfig, err := config.GetConfig()
-	if err != nil {
-		logger.Error("error getting kubeconfig", "err", err)
-
-		os.Exit(1)
-	}
-
-	controllerClient, err := client.New(kubeconfig, client.Options{})
-	if err != nil {
-		logger.Error("error creating controller client", "err", err)
-
-		os.Exit(1)
-	}
-
-	scheme := controllerClient.Scheme()
-	v1alpha1.AddToScheme(scheme)
-
-	manager, err := ctrl.NewManager(kubeconfig, ctrl.Options{
-		Scheme: scheme,
-	})
 
 	appControllerOptions := []controller.ControllerOption{
 		controller.WithLogger(logger.With("controller", "app")),
