@@ -1,14 +1,10 @@
 package middleware
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
-
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -47,30 +43,18 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 		//Check the exp
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
 			h.Logger.Debug("jwt token expired", "exp", claims["exp"])
+
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-		//Find the user with token sub
-		var user v1.User
-		err := h.DB.First(&user, "id = ?", claims["sub"]).Error
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				h.Logger.Debug("no user found", "sub", claims["sub"])
-				c.AbortWithStatus(http.StatusUnauthorized)
-				return
-			}
-
-			h.Logger.Debug("error fetching user from db", "sub", claims["sub"], "err", err)
-			return
-		}
-
 		//Attach to req
-		c.Set("user", user)
+		c.Set("sub", claims["sub"])
 		//Continue
 		c.Next()
 	} else {
 		h.Logger.Debug("invalid token", "token", token)
+
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 }
