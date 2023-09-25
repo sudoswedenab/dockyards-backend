@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"gorm.io/gorm"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,7 +44,9 @@ func WithPrometheusRegistry(registry *prometheus.Registry) PrometheusMetricsOpti
 	}
 }
 
-func WithControllerClient(controllerClient client.Client) PrometheusMetricsOption {
+func WithManager(manager ctrl.Manager) PrometheusMetricsOption {
+	controllerClient := manager.GetClient()
+
 	return func(m *prometheusMetrics) {
 		m.controllerClient = controllerClient
 	}
