@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"sync"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/ipam"
 	"github.com/google/uuid"
@@ -42,8 +41,7 @@ type OpenStackOrganization struct {
 	ID                          uuid.UUID `gorm:"primaryKey"`
 	OpenStackProjectID          uuid.UUID `gorm:"column:openstack_project_id"`
 	OpenStackProject            OpenStackProject
-	OrganizationID              uuid.UUID
-	Organization                v1.Organization
+	OrganizationID              string
 	ApplicationCredentialID     string
 	ApplicationCredentialSecret string
 }
