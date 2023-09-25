@@ -8,11 +8,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
-
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
@@ -154,36 +153,28 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	return nil
 }
 
-func (h *handler) getUserFromContext(c *gin.Context) (v1.User, error) {
-	u, exists := c.Get("user")
+func (h *handler) getSubjectFromContext(c *gin.Context) (string, error) {
+	v, exists := c.Get("sub")
 	if !exists {
-		return v1.User{}, errors.New("error fecthing user from context")
+		return "", errors.New("error fecthing subject from context")
 	}
 
-	user, ok := u.(v1.User)
+	sub, ok := v.(string)
 	if !ok {
-		return v1.User{}, errors.New("error during user type conversion")
+		return "", errors.New("error during type conversion")
 	}
 
-	return user, nil
+	return sub, nil
 }
 
-func (h *handler) isMember(user *v1.User, organization *v1.Organization) (bool, error) {
-	var userOrganizations []v1.Organization
-	err := h.db.Model(&user).Association("Organizations").Find(&userOrganizations)
-	if err != nil {
-		return false, err
-	}
-
-	isMember := false
-	for _, userOrganization := range userOrganizations {
-		if userOrganization.ID == organization.ID {
-			isMember = true
+func (h *handler) isMember(subject string, organization *v1alpha1.Organization) bool {
+	for _, memberRef := range organization.Spec.MemberRefs {
+		if string(memberRef.UID) == subject && memberRef.Kind == v1alpha1.UserKind {
+			return true
 		}
 	}
 
-	return isMember, nil
-
+	return false
 }
 
 func (h *handler) setOrGenerateTokens() error {
