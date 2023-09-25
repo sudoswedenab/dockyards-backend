@@ -28,6 +28,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -46,11 +47,9 @@ import (
 )
 
 var (
-	jwtAccessTokenSecret  string
-	jwtRefreshTokenSecret string
-	cattleURL             string
-	cattleBearerToken     string
-	corsAllowOrigins      string
+	cattleURL         string
+	cattleBearerToken string
+	corsAllowOrigins  string
 )
 
 func init() {
@@ -100,8 +99,6 @@ func loadEnvVariables() {
 		log.Println("could not load .env file")
 	}
 
-	jwtAccessTokenSecret = os.Getenv("JWT_ACCESS_TOKEN_SECRET")
-	jwtRefreshTokenSecret = os.Getenv("JWT_REFRESH_TOKEN_SECRET")
 	cattleURL = os.Getenv("CATTLE_URL")
 	cattleBearerToken = os.Getenv("CATTLE_BEARER_TOKEN")
 	corsAllowOrigins = os.Getenv("CORS_ALLOW_ORIGINS")
@@ -341,6 +338,13 @@ func main() {
 			AllowCredentials: true,
 			MaxAge:           12 * time.Hour,
 		}))
+	}
+
+	jwtAccessTokenSecret, jwtRefreshTokenSecret, err := jwt.GetOrGenerateTokens(ctx, controllerClient, logger.With("util", "jwt"))
+	if err != nil {
+		logger.Error("error getting jwt secret tokens", "err", err)
+
+		os.Exit(1)
 	}
 
 	handlerOptions := []handlers.HandlerOption{
