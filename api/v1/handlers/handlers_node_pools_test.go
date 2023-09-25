@@ -14,13 +14,15 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
-	"github.com/glebarez/sqlite"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/uuid"
-	"gorm.io/gorm"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestGetNodePool(t *testing.T) {
@@ -28,9 +30,8 @@ func TestGetNodePool(t *testing.T) {
 		name               string
 		nodePoolID         string
 		clustermockOptions []clustermock.MockOption
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		expected           v1.NodePool
 	}{
 		{
@@ -57,21 +58,25 @@ func TestGetNodePool(t *testing.T) {
 					},
 				}),
 			},
-			user: v1.User{
-				ID: uuid.MustParse("74eab97f-f635-4ec9-99b1-40f37fde690d"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("74eab97f-f635-4ec9-99b1-40f37fde690d"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("845e9322-8dbe-4eed-bda2-5efe2b54dc71"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub: "74eab97f-f635-4ec9-99b1-40f37fde690d",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("74eab97f-f635-4ec9-99b1-40f37fde690d"),
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "845e9322-8dbe-4eed-bda2-5efe2b54dc71",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "74eab97f-f635-4ec9-99b1-40f37fde690d",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -95,30 +100,21 @@ func TestGetNodePool(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			db.AutoMigrate(&v1.Organization{})
-			for _, organization := range tc.organizations {
-				err := db.Create(&organization).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				db:             db,
-				logger:         logger,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 			c.Params = []gin.Param{
 				{Key: "nodePoolID", Value: tc.nodePoolID},
 			}
@@ -159,9 +155,8 @@ func TestGetNodePoolErrors(t *testing.T) {
 		name               string
 		nodePoolID         string
 		clustermockOptions []clustermock.MockOption
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		expected           int
 	}{
 		{
@@ -225,28 +220,25 @@ func TestGetNodePoolErrors(t *testing.T) {
 					},
 				}),
 			},
-			user: v1.User{
-				ID: uuid.MustParse("e33dbae7-d222-43be-afc2-23e52654a7d3"),
-			},
-			users: []v1.User{
-				{
-					ID:    uuid.MustParse("5125130c-a4af-40b6-8b36-b8be8f4d2fdb"),
-					Name:  "user1",
-					Email: "user1@dockyards.dev",
-				},
-				{
-					ID:    uuid.MustParse("e33dbae7-d222-43be-afc2-23e52654a7d3"),
-					Name:  "user2",
-					Email: "user2@dockyards.dev",
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("57397656-64f6-459a-ba4c-fea8345d6490"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub: "e33dbae7-d222-43be-afc2-23e52654a7d3",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("5125130c-a4af-40b6-8b36-b8be8f4d2fdb"),
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "57397656-64f6-459a-ba4c-fea8345d6490",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "5125130c-a4af-40b6-8b36-b8be8f4d2fdb",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -258,37 +250,21 @@ func TestGetNodePoolErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			db.AutoMigrate(v1.User{})
-			db.AutoMigrate(v1.Organization{})
-			for _, user := range tc.users {
-				err := db.Create(&user).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating user in test database: %s", err)
-				}
-			}
-			for _, organization := range tc.organizations {
-				err := db.Create(&organization).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				db:             db,
-				logger:         logger,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 			c.Params = []gin.Param{
 				{Key: "nodePoolID", Value: tc.nodePoolID},
 			}
@@ -297,7 +273,11 @@ func TestGetNodePoolErrors(t *testing.T) {
 				Path: path.Join("/v1/node-pools", tc.nodePoolID),
 			}
 
+			var err error
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
+			if err != nil {
+				t.Fatalf("unexpected error creating test request: %s", err)
+			}
 
 			h.GetNodePool(c)
 
@@ -315,9 +295,8 @@ func TestPostClusterNodePools(t *testing.T) {
 		clusterID          string
 		nodePoolOptions    v1.NodePoolOptions
 		clustermockOptions []clustermock.MockOption
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		expected           v1.NodePool
 	}{
 		{
@@ -334,21 +313,25 @@ func TestPostClusterNodePools(t *testing.T) {
 					},
 				}),
 			},
-			user: v1.User{
-				ID: uuid.MustParse("d80ff784-20fe-4bcc-b52f-e57764111c9a"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("d80ff784-20fe-4bcc-b52f-e57764111c9a"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("3928f445-d53c-4a23-9663-77382a361d17"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("d80ff784-20fe-4bcc-b52f-e57764111c9a"),
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "3928f445-d53c-4a23-9663-77382a361d17",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -377,21 +360,25 @@ func TestPostClusterNodePools(t *testing.T) {
 					},
 				}),
 			},
-			user: v1.User{
-				ID: uuid.MustParse("940b43ee-39d3-4ecb-a6bd-be25245d7eca"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("940b43ee-39d3-4ecb-a6bd-be25245d7eca"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("a86dd064-4fa5-489f-ab29-6f49f92a38eb"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub: "940b43ee-39d3-4ecb-a6bd-be25245d7eca",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("940b43ee-39d3-4ecb-a6bd-be25245d7eca"),
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "a86dd064-4fa5-489f-ab29-6f49f92a38eb",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "940b43ee-39d3-4ecb-a6bd-be25245d7eca",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -411,30 +398,21 @@ func TestPostClusterNodePools(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			db.AutoMigrate(v1.Organization{})
-			for _, organization := range tc.organizations {
-				err := db.Create(&organization).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				db:             db,
-				logger:         logger,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 			c.Params = []gin.Param{
 				{Key: "clusterID", Value: tc.clusterID},
 			}
@@ -450,6 +428,9 @@ func TestPostClusterNodePools(t *testing.T) {
 			}
 
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), buf)
+			if err != nil {
+				t.Fatalf("unxepected error creating test request: %s", err)
+			}
 
 			h.PostClusterNodePools(c)
 
@@ -483,9 +464,8 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 		clusterID          string
 		nodePoolOptions    v1.NodePoolOptions
 		clustermockOptions []clustermock.MockOption
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		expected           int
 	}{
 		{
@@ -531,22 +511,27 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 					},
 				}),
 			},
-			user: v1.User{
-				ID: uuid.MustParse("df24c8f4-27f3-485a-ae7a-92546b3fb925"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("df24c8f4-27f3-485a-ae7a-92546b3fb925"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("ae19c385-6254-4d73-a2fa-53c29796ee91"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub: "df24c8f4-27f3-485a-ae7a-92546b3fb925",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("df24c8f4-27f3-485a-ae7a-92546b3fb925"),
-						}},
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "ae19c385-6254-4d73-a2fa-53c29796ee91",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "df24c8f4-27f3-485a-ae7a-92546b3fb925",
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 			expected: http.StatusConflict,
@@ -565,28 +550,25 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 					},
 				}),
 			},
-			user: v1.User{
-				ID: uuid.MustParse("44946295-97bc-4c24-8887-69d3f0ca0dad"),
-			},
-			users: []v1.User{
-				{
-					ID:    uuid.MustParse("44946295-97bc-4c24-8887-69d3f0ca0dad"),
-					Name:  "user1",
-					Email: "user1@dockyards.dev",
-				},
-				{
-					ID:    uuid.MustParse("bbc144d1-0f5f-4f8b-8b8b-54d0619395bc"),
-					Name:  "user2",
-					Email: "user2@dockyards.dev",
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("d3570450-a7e1-4201-a16f-b913ad6c7f11"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub: "44946295-97bc-4c24-8887-69d3f0ca0dad",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("bbc144d1-0f5f-4f8b-8b8b-54d0619395bc"),
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "d3570450-a7e1-4201-a16f-b913ad6c7f11",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "bbc144d1-0f5f-4f8b-8b8b-54d0619395bc",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -608,28 +590,25 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 					},
 				}),
 			},
-			user: v1.User{
-				ID: uuid.MustParse("44946295-97bc-4c24-8887-69d3f0ca0dad"),
-			},
-			users: []v1.User{
-				{
-					ID:    uuid.MustParse("44946295-97bc-4c24-8887-69d3f0ca0dad"),
-					Name:  "user1",
-					Email: "user1@dockyards.dev",
-				},
-				{
-					ID:    uuid.MustParse("bbc144d1-0f5f-4f8b-8b8b-54d0619395bc"),
-					Name:  "user2",
-					Email: "user2@dockyards.dev",
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("d3570450-a7e1-4201-a16f-b913ad6c7f11"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub: "44946295-97bc-4c24-8887-69d3f0ca0dad",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("bbc144d1-0f5f-4f8b-8b8b-54d0619395bc"),
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "d3570450-a7e1-4201-a16f-b913ad6c7f11",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "bbc144d1-0f5f-4f8b-8b8b-54d0619395bc",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -643,37 +622,21 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			db.AutoMigrate(v1.User{})
-			db.AutoMigrate(v1.Organization{})
-			for _, user := range tc.users {
-				err := db.Create(&user).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating user in test database: %s", err)
-				}
-			}
-			for _, organization := range tc.organizations {
-				err := db.Create(&organization).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				db:             db,
-				logger:         logger,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 			c.Params = []gin.Param{
 				{Key: "clusterID", Value: tc.clusterID},
 			}
@@ -689,6 +652,9 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 			}
 
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), buf)
+			if err != nil {
+				t.Fatalf("unexpected error creating test request: %s", err)
+			}
 
 			h.PostClusterNodePools(c)
 
@@ -705,9 +671,8 @@ func TestDeleteNodePool(t *testing.T) {
 		name               string
 		nodePoolID         string
 		clustermockOptions []clustermock.MockOption
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		expected           int
 	}{
 		{
@@ -729,21 +694,25 @@ func TestDeleteNodePool(t *testing.T) {
 					},
 				}),
 			},
-			user: v1.User{
-				ID: uuid.MustParse("3be51320-a001-4c81-88fd-68e6b0f29a88"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("3be51320-a001-4c81-88fd-68e6b0f29a88"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("ed44e536-2387-490d-937f-e415d2246daa"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub: "3be51320-a001-4c81-88fd-68e6b0f29a88",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("3be51320-a001-4c81-88fd-68e6b0f29a88"),
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "ed44e536-2387-490d-937f-e415d2246daa",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "3be51320-a001-4c81-88fd-68e6b0f29a88",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -755,37 +724,21 @@ func TestDeleteNodePool(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			db.AutoMigrate(v1.User{})
-			db.AutoMigrate(v1.Organization{})
-			for _, user := range tc.users {
-				err := db.Create(&user).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating user in test database: %s", err)
-				}
-			}
-			for _, organization := range tc.organizations {
-				err := db.Create(&organization).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				db:             db,
-				logger:         logger,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 			c.Params = []gin.Param{
 				{Key: "nodePoolID", Value: tc.nodePoolID},
 			}
@@ -794,7 +747,11 @@ func TestDeleteNodePool(t *testing.T) {
 				Path: path.Join("/v1/node-pools", tc.nodePoolID),
 			}
 
+			var err error
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
+			if err != nil {
+				t.Fatalf("unexpected error creating test request: %s", err)
+			}
 
 			h.DeleteNodePool(c)
 
@@ -810,9 +767,8 @@ func TestDeleteNodePoolErrors(t *testing.T) {
 	tt := []struct {
 		name               string
 		nodePoolID         string
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		clustermockOptions []clustermock.MockOption
 		expected           int
 	}{
@@ -884,18 +840,18 @@ func TestDeleteNodePoolErrors(t *testing.T) {
 					},
 				}),
 			},
-			user: v1.User{
-				ID: uuid.MustParse("3df06ce8-2806-4807-beec-89e7f6199b6e"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("3df06ce8-2806-4807-beec-89e7f6199b6e"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("f4731789-5462-44b5-aa77-18dbf855d2fa"),
-					Name: "test-org",
+			sub: "3df06ce8-2806-4807-beec-89e7f6199b6e",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "f4731789-5462-44b5-aa77-18dbf855d2fa",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{},
+						},
+					},
 				},
 			},
 			expected: http.StatusUnauthorized,
@@ -905,37 +861,21 @@ func TestDeleteNodePoolErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			db.AutoMigrate(v1.User{})
-			db.AutoMigrate(v1.Organization{})
-			for _, user := range tc.users {
-				err := db.Create(&user).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating user in test database: %s", err)
-				}
-			}
-			for _, organization := range tc.organizations {
-				err := db.Create(&organization).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				db:             db,
-				logger:         logger,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 			c.Params = []gin.Param{
 				{Key: "nodePoolID", Value: tc.nodePoolID},
 			}
@@ -944,7 +884,11 @@ func TestDeleteNodePoolErrors(t *testing.T) {
 				Path: path.Join("/v1/node-pools", tc.nodePoolID),
 			}
 
+			var err error
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
+			if err != nil {
+				t.Fatalf("unexpected error creating test request: %s", err)
+			}
 
 			h.DeleteNodePool(c)
 

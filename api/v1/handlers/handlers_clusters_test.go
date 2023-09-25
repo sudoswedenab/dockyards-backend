@@ -19,13 +19,19 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/yaml"
 )
 
@@ -33,29 +39,31 @@ func TestPostOrgClusters(t *testing.T) {
 	tt := []struct {
 		name             string
 		organizationName string
-		user             v1.User
-		users            []v1.User
-		organizations    []v1.Organization
+		sub              string
+		lists            []client.ObjectList
 		clusterOptions   v1.ClusterOptions
 	}{
 		{
 			name:             "test recommended",
 			organizationName: "test-org",
-			user: v1.User{
-				ID: uuid.MustParse("fec813fc-7938-4cb9-ba12-bb28f6b1f5d9"),
-			},
-			users: []v1.User{
-				{
-					ID:    uuid.MustParse("fec813fc-7938-4cb9-ba12-bb28f6b1f5d9"),
-					Email: "test@dockyards.dev",
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:              "fec813fc-7938-4cb9-ba12-bb28f6b1f5d9",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("fec813fc-7938-4cb9-ba12-bb28f6b1f5d9"),
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "fec813fc-7938-4cb9-ba12-bb28f6b1f5d9",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -71,34 +79,16 @@ func TestPostOrgClusters(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			err = internal.SyncDataBase(db)
-			if err != nil {
-				t.Fatalf("error syncing database")
-			}
-			for _, u := range tc.users {
-				err := db.Create(&u).Error
-				if err != nil {
-					t.Fatalf("error creating user in test database: %s", err)
-				}
-			}
-			for _, o := range tc.organizations {
-				err := db.Create(&o).Error
-				if err != nil {
-					t.Fatalf("error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(),
-				cloudService:   cloudmock.NewMockCloudService(),
-				logger:         logger,
-				db:             db,
+				clusterService:   clustermock.NewMockClusterService(),
+				cloudService:     cloudmock.NewMockCloudService(),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -112,7 +102,7 @@ func TestPostOrgClusters(t *testing.T) {
 			c.Params = []gin.Param{
 				{Key: "org", Value: tc.organizationName},
 			}
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/orgs", tc.organizationName, "clusters"),
@@ -136,9 +126,8 @@ func TestPostOrgClustersErrors(t *testing.T) {
 	tt := []struct {
 		name               string
 		organizationName   string
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		clusterOptions     v1.ClusterOptions
 		clustermockOptions []clustermock.MockOption
 		expected           int
@@ -151,23 +140,24 @@ func TestPostOrgClustersErrors(t *testing.T) {
 		{
 			name:             "test invalid cluster name",
 			organizationName: "test-org",
-			user: v1.User{
-				ID:    uuid.MustParse("82aaf116-666f-4846-9e10-defa79a4df3d"),
-				Email: "test@dockyards.dev",
-			},
-			users: []v1.User{
-				{
-					ID:    uuid.MustParse("82aaf116-666f-4846-9e10-defa79a4df3d"),
-					Email: "test@dockyards.dev",
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:              "82aaf116-666f-4846-9e10-defa79a4df3d",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID:    uuid.MustParse("82aaf116-666f-4846-9e10-defa79a4df3d"),
-							Email: "test@dockyards.dev",
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "82aaf116-666f-4846-9e10-defa79a4df3d",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -180,20 +170,24 @@ func TestPostOrgClustersErrors(t *testing.T) {
 		{
 			name:             "test invalid node pool name",
 			organizationName: "test-org",
-			user: v1.User{
-				ID: uuid.MustParse("e7282b48-f8b6-4042-8f4c-12ec59fe3a87"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("e7282b48-f8b6-4042-8f4c-12ec59fe3a87"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:              "e7282b48-f8b6-4042-8f4c-12ec59fe3a87",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("e7282b48-f8b6-4042-8f4c-12ec59fe3a87"),
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "e7282b48-f8b6-4042-8f4c-12ec59fe3a87",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -211,27 +205,24 @@ func TestPostOrgClustersErrors(t *testing.T) {
 		{
 			name:             "test invalid membership",
 			organizationName: "test-org",
-			user: v1.User{
-				ID: uuid.MustParse("62034914-3f46-4c71-810f-14ab985399bc"),
-			},
-			users: []v1.User{
-				{
-					ID:    uuid.MustParse("62034914-3f46-4c71-810f-14ab985399bc"),
-					Name:  "user1",
-					Email: "user1@dockyards.dev",
-				},
-				{
-					ID:    uuid.MustParse("af510e3e-e667-4500-8a73-12f2163f849e"),
-					Name:  "user2",
-					Email: "user2@dockyards.dev",
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:              "62034914-3f46-4c71-810f-14ab985399bc",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("af510e3e-e667-4500-8a73-12f2163f849e"),
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "af510e3e-e667-4500-8a73-12f2163f849e",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -241,20 +232,24 @@ func TestPostOrgClustersErrors(t *testing.T) {
 		{
 			name:             "test existing cluster name",
 			organizationName: "test-org",
-			user: v1.User{
-				ID: uuid.MustParse("c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:              "c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f"),
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -275,20 +270,24 @@ func TestPostOrgClustersErrors(t *testing.T) {
 		{
 			name:             "test node pool with high quantity",
 			organizationName: "test-org",
-			user: v1.User{
-				ID: uuid.MustParse("7a7d8423-c9e7-46f3-958a-e68fb97b4417"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("7a7d8423-c9e7-46f3-958a-e68fb97b4417"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:              "7a7d8423-c9e7-46f3-958a-e68fb97b4417",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("7a7d8423-c9e7-46f3-958a-e68fb97b4417"),
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "7a7d8423-c9e7-46f3-958a-e68fb97b4417",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -319,34 +318,16 @@ func TestPostOrgClustersErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			err = internal.SyncDataBase(db)
-			if err != nil {
-				t.Fatalf("error syncing database")
-			}
-			for _, u := range tc.users {
-				err := db.Create(&u).Error
-				if err != nil {
-					t.Fatalf("error creating user in test database: %s", err)
-				}
-			}
-			for _, o := range tc.organizations {
-				err := db.Create(&o).Error
-				if err != nil {
-					t.Fatalf("error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				cloudService:   cloudmock.NewMockCloudService(),
-				logger:         logger,
-				db:             db,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				cloudService:     cloudmock.NewMockCloudService(),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -360,7 +341,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			c.Params = []gin.Param{
 				{Key: "org", Value: tc.organizationName},
 			}
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/orgs", tc.organizationName, "clusters"),
@@ -384,28 +365,31 @@ func TestDeleteCluster(t *testing.T) {
 	tt := []struct {
 		name               string
 		clusterID          string
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		clustermockOptions []clustermock.MockOption
 	}{
 		{
 			name:      "test simple",
 			clusterID: "cluster-123",
-			user: v1.User{
-				ID: uuid.MustParse("7994b631-399a-41e6-9c6c-200391f8f87d"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("7994b631-399a-41e6-9c6c-200391f8f87d"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:       "7994b631-399a-41e6-9c6c-200391f8f87d",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("7994b631-399a-41e6-9c6c-200391f8f87d"),
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "7994b631-399a-41e6-9c6c-200391f8f87d",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -427,34 +411,16 @@ func TestDeleteCluster(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			err = internal.SyncDataBase(db)
-			if err != nil {
-				t.Fatalf("error syncing database")
-			}
-			for _, u := range tc.users {
-				err := db.Create(&u).Error
-				if err != nil {
-					t.Fatalf("error creating user in test database: %s", err)
-				}
-			}
-			for _, o := range tc.organizations {
-				err := db.Create(&o).Error
-				if err != nil {
-					t.Fatalf("error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				cloudService:   cloudmock.NewMockCloudService(),
-				logger:         logger,
-				db:             db,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				cloudService:     cloudmock.NewMockCloudService(),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -463,12 +429,13 @@ func TestDeleteCluster(t *testing.T) {
 			c.Params = []gin.Param{
 				{Key: "clusterID", Value: tc.clusterID},
 			}
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID),
 			}
 
+			var err error
 			c.Request, err = http.NewRequest(http.MethodDelete, u.String(), nil)
 			if err != nil {
 				t.Fatalf("unexpected error preparing test request: %s", err)
@@ -489,9 +456,8 @@ func TestDeleteClusterErrors(t *testing.T) {
 	tt := []struct {
 		name               string
 		clusterID          string
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		clustermockOptions []clustermock.MockOption
 		expected           int
 	}{
@@ -502,20 +468,24 @@ func TestDeleteClusterErrors(t *testing.T) {
 		{
 			name:      "test invalid cluster",
 			clusterID: "cluster-123",
-			user: v1.User{
-				ID: uuid.MustParse("f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:       "f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3"),
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -525,27 +495,24 @@ func TestDeleteClusterErrors(t *testing.T) {
 		{
 			name:      "test invalid organization membership",
 			clusterID: "cluster-123",
-			user: v1.User{
-				ID: uuid.MustParse("8ce52ca1-1931-49a1-8ddf-62bf3870a4bf"),
-			},
-			users: []v1.User{
-				{
-					ID:    uuid.MustParse("8ce52ca1-1931-49a1-8ddf-62bf3870a4bf"),
-					Name:  "user1",
-					Email: "user1@dockyards.dev",
-				},
-				{
-					ID:    uuid.MustParse("0b8f6617-eba7-4360-b73a-11dac2286a40"),
-					Name:  "user2",
-					Email: "user2@dockyards.dev",
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:       "8ce52ca1-1931-49a1-8ddf-62bf3870a4bf",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("0b8f6617-eba7-4360-b73a-11dac2286a40"),
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "0b8f6617-eba7-4360-b73a-11dac2286a40",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -567,34 +534,16 @@ func TestDeleteClusterErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			err = internal.SyncDataBase(db)
-			if err != nil {
-				t.Fatalf("error syncing database")
-			}
-			for _, u := range tc.users {
-				err := db.Create(&u).Error
-				if err != nil {
-					t.Fatalf("error creating user in test database: %s", err)
-				}
-			}
-			for _, o := range tc.organizations {
-				err := db.Create(&o).Error
-				if err != nil {
-					t.Fatalf("error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				cloudService:   cloudmock.NewMockCloudService(),
-				logger:         logger,
-				db:             db,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				cloudService:     cloudmock.NewMockCloudService(),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -603,12 +552,13 @@ func TestDeleteClusterErrors(t *testing.T) {
 			c.Params = []gin.Param{
 				{Key: "clusterID", Value: tc.clusterID},
 			}
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID),
 			}
 
+			var err error
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
 			if err != nil {
 				t.Fatalf("unexpected error preparing test request: %s", err)
@@ -628,28 +578,31 @@ func TestGetCluster(t *testing.T) {
 	tt := []struct {
 		name               string
 		clusterID          string
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		clustermockOptions []clustermock.MockOption
 	}{
 		{
 			name:      "test simple",
 			clusterID: "cluster-123",
-			user: v1.User{
-				ID: uuid.MustParse("f235721e-8e34-4b57-a6aa-8f6d31162a41"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("f235721e-8e34-4b57-a6aa-8f6d31162a41"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:       "f235721e-8e34-4b57-a6aa-8f6d31162a41",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("f235721e-8e34-4b57-a6aa-8f6d31162a41"),
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "f235721e-8e34-4b57-a6aa-8f6d31162a41",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -670,34 +623,16 @@ func TestGetCluster(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			err = internal.SyncDataBase(db)
-			if err != nil {
-				t.Fatalf("error syncing database")
-			}
-			for _, u := range tc.users {
-				err := db.Create(&u).Error
-				if err != nil {
-					t.Fatalf("error creating user in test database: %s", err)
-				}
-			}
-			for _, o := range tc.organizations {
-				err := db.Create(&o).Error
-				if err != nil {
-					t.Fatalf("error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				cloudService:   cloudmock.NewMockCloudService(),
-				logger:         logger,
-				db:             db,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				cloudService:     cloudmock.NewMockCloudService(),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -706,12 +641,13 @@ func TestGetCluster(t *testing.T) {
 			c.Params = []gin.Param{
 				{Key: "clusterID", Value: tc.clusterID},
 			}
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID),
 			}
 
+			var err error
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
 			if err != nil {
 				t.Fatalf("unexpected error preparing test request: %s", err)
@@ -731,9 +667,8 @@ func TestGetClusterErrors(t *testing.T) {
 	tt := []struct {
 		name               string
 		clusterID          string
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		clustermockOptions []clustermock.MockOption
 		expected           int
 	}{
@@ -749,27 +684,24 @@ func TestGetClusterErrors(t *testing.T) {
 		{
 			name:      "test invalid membership",
 			clusterID: "cluster-123",
-			user: v1.User{
-				ID: uuid.MustParse("f6f6531f-ab6c-4237-b1cb-76133674465f"),
-			},
-			users: []v1.User{
-				{
-					ID:    uuid.MustParse("f6f6531f-ab6c-4237-b1cb-76133674465f"),
-					Name:  "user1",
-					Email: "user1@dockyards.dev",
-				},
-				{
-					ID:    uuid.MustParse("afb03005-d51d-4387-9857-83125ff505d5"),
-					Name:  "user2",
-					Email: "user2@dockyards.dev",
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					Name: "test-org",
-					Users: []v1.User{
+			sub:       "f6f6531f-ab6c-4237-b1cb-76133674465f",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("afb03005-d51d-4387-9857-83125ff505d5"),
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "afb03005-d51d-4387-9857-83125ff505d5",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -791,34 +723,16 @@ func TestGetClusterErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			err = internal.SyncDataBase(db)
-			if err != nil {
-				t.Fatalf("error syncing database")
-			}
-			for _, u := range tc.users {
-				err := db.Create(&u).Error
-				if err != nil {
-					t.Fatalf("error creating user in test database: %s", err)
-				}
-			}
-			for _, o := range tc.organizations {
-				err := db.Create(&o).Error
-				if err != nil {
-					t.Fatalf("error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				cloudService:   cloudmock.NewMockCloudService(),
-				logger:         logger,
-				db:             db,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				cloudService:     cloudmock.NewMockCloudService(),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -827,12 +741,13 @@ func TestGetClusterErrors(t *testing.T) {
 			c.Params = []gin.Param{
 				{Key: "clusterID", Value: tc.clusterID},
 			}
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID),
 			}
 
+			var err error
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
 			if err != nil {
 				t.Fatalf("unexpected error preparing test request: %s", err)
@@ -852,9 +767,8 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 	tt := []struct {
 		name               string
 		organizationName   string
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		clusterOptions     v1.ClusterOptions
 		clustermockOptions []clustermock.MockOption
 		cloudmockOptions   []cloudmock.MockOption
@@ -863,21 +777,25 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 		{
 			name:             "test cluster with cloud cluster deployments",
 			organizationName: "test-org",
-			user: v1.User{
-				ID: uuid.MustParse("f9b8f6b0-5fc6-4f9c-b264-a08da850b991"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("f9b8f6b0-5fc6-4f9c-b264-a08da850b991"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("7a11a699-fd6f-4d7f-838a-266c1d33a0b8"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub:              "f9b8f6b0-5fc6-4f9c-b264-a08da850b991",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("f9b8f6b0-5fc6-4f9c-b264-a08da850b991"),
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "f9b8f6b0-5fc6-4f9c-b264-a08da850b991",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -922,18 +840,17 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error syncing database: %s", err)
 			}
-			for _, organization := range tc.organizations {
-				err := db.Create(&organization).Error
-				if err != nil {
-					t.Fatalf("unexpected error creating organization in test database: %s", err)
-				}
-			}
+
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				cloudService:   cloudmock.NewMockCloudService(tc.cloudmockOptions...),
-				logger:         logger,
-				db:             db,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				cloudService:     cloudmock.NewMockCloudService(tc.cloudmockOptions...),
+				logger:           logger,
+				db:               db,
+				controllerClient: fakeClient,
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -947,7 +864,7 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 			c.Params = []gin.Param{
 				{Key: "org", Value: tc.organizationName},
 			}
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/orgs", tc.organizationName, "clusters"),
@@ -993,31 +910,35 @@ func TestGetClusterKubeconfig(t *testing.T) {
 	tt := []struct {
 		name               string
 		clusterID          string
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		clustermockOptions []clustermock.MockOption
 		expected           clientcmdv1.Config
 	}{
 		{
 			name:      "test simple",
 			clusterID: "cluster-123",
-			user: v1.User{
-				ID: uuid.MustParse("9eb06ff5-4299-480c-b957-0b10485d873c"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("9eb06ff5-4299-480c-b957-0b10485d873c"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("984d5796-f1ad-4f77-a678-6763f4e6ebf2"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub:       "9eb06ff5-4299-480c-b957-0b10485d873c",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("9eb06ff5-4299-480c-b957-0b10485d873c"),
-						}},
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "9eb06ff5-4299-480c-b957-0b10485d873c",
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 			clustermockOptions: []clustermock.MockOption{
@@ -1044,33 +965,15 @@ func TestGetClusterKubeconfig(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			err = internal.SyncDataBase(db)
-			if err != nil {
-				t.Fatalf("error syncing database")
-			}
-			for _, u := range tc.users {
-				err := db.Create(&u).Error
-				if err != nil {
-					t.Fatalf("error creating user in test database: %s", err)
-				}
-			}
-			for _, o := range tc.organizations {
-				err := db.Create(&o).Error
-				if err != nil {
-					t.Fatalf("error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				logger:         logger,
-				db:             db,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -1079,12 +982,13 @@ func TestGetClusterKubeconfig(t *testing.T) {
 			c.Params = []gin.Param{
 				{Key: "clusterID", Value: tc.clusterID},
 			}
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID, "kubeconfig"),
 			}
 
+			var err error
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
 			if err != nil {
 				t.Fatalf("unexpected error preparing test request: %s", err)
@@ -1112,9 +1016,8 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 	tt := []struct {
 		name               string
 		clusterID          string
-		user               v1.User
-		users              []v1.User
-		organizations      []v1.Organization
+		sub                string
+		lists              []client.ObjectList
 		clustermockOptions []clustermock.MockOption
 		expected           int
 	}{
@@ -1125,21 +1028,25 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 		{
 			name:      "test invalid cluster id",
 			clusterID: "cluster-234",
-			user: v1.User{
-				ID: uuid.MustParse("83a44759-56b8-480a-9575-ad0f3519f73a"),
-			},
-			users: []v1.User{
-				{
-					ID: uuid.MustParse("83a44759-56b8-480a-9575-ad0f3519f73a"),
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("c73aca00-f3af-462a-a8b4-1232cf8166c8"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub:       "83a44759-56b8-480a-9575-ad0f3519f73a",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("83a44759-56b8-480a-9575-ad0f3519f73a"),
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "83a44759-56b8-480a-9575-ad0f3519f73a",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -1157,28 +1064,25 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 		{
 			name:      "test invalid organization membership",
 			clusterID: "cluster-123",
-			user: v1.User{
-				ID: uuid.MustParse("ef418237-2fd1-4977-861a-2031094a6ae5"),
-			},
-			users: []v1.User{
-				{
-					ID:    uuid.MustParse("7180bc06-66c1-4494-b53e-e9cc878995a9"),
-					Name:  "user1",
-					Email: "user1@dockyards.dev",
-				},
-				{
-					ID:    uuid.MustParse("ef418237-2fd1-4977-861a-2031094a6ae5"),
-					Name:  "user2",
-					Email: "user2@dockyards.dev",
-				},
-			},
-			organizations: []v1.Organization{
-				{
-					ID:   uuid.MustParse("1985e447-0f7b-4f43-a6a4-ed9e7ac89404"),
-					Name: "test-org",
-					Users: []v1.User{
+			sub:       "ef418237-2fd1-4977-861a-2031094a6ae5",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
 						{
-							ID: uuid.MustParse("7180bc06-66c1-4494-b53e-e9cc878995a9"),
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "7180bc06-66c1-4494-b53e-e9cc878995a9",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -1198,33 +1102,15 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
 
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			err = internal.SyncDataBase(db)
-			if err != nil {
-				t.Fatalf("error syncing database")
-			}
-			for _, u := range tc.users {
-				err := db.Create(&u).Error
-				if err != nil {
-					t.Fatalf("error creating user in test database: %s", err)
-				}
-			}
-			for _, o := range tc.organizations {
-				err := db.Create(&o).Error
-				if err != nil {
-					t.Fatalf("error creating organization in test database: %s", err)
-				}
-			}
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService: clustermock.NewMockClusterService(tc.clustermockOptions...),
-				logger:         logger,
-				db:             db,
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -1233,12 +1119,13 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 			c.Params = []gin.Param{
 				{Key: "clusterID", Value: tc.clusterID},
 			}
-			c.Set("user", tc.user)
+			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID, "kubeconfig"),
 			}
 
+			var err error
 			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
 			if err != nil {
 				t.Fatalf("unexpected error preparing test request: %s", err)
