@@ -1,9 +1,6 @@
 package handlers
 
 import (
-	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -14,15 +11,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	defaultDockyardsNamespace = "dockyards"
-	defaultJWTSecretName      = "jwt-tokens"
 )
 
 type handler struct {
@@ -88,12 +77,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	}
 
 	if h.jwtAccessTokenSecret == "" || h.jwtRefreshTokenSecret == "" {
-		logger.Info("using jwt private secrets from kubernetes")
-
-		err := h.setOrGenerateTokens()
-		if err != nil {
-			return err
-		}
+		logger.Warn("using empty jwt tokens")
 	}
 
 	middlewareHandler := middleware.Handler{
@@ -175,74 +159,4 @@ func (h *handler) isMember(subject string, organization *v1alpha1.Organization) 
 	}
 
 	return false
-}
-
-func (h *handler) setOrGenerateTokens() error {
-	ctx := context.Background()
-
-	objectKey := client.ObjectKey{
-		Namespace: defaultDockyardsNamespace,
-		Name:      defaultJWTSecretName,
-	}
-
-	var secret corev1.Secret
-	err := h.controllerClient.Get(ctx, objectKey, &secret)
-	if client.IgnoreNotFound(err) != nil {
-		return err
-	}
-
-	if apierrors.IsNotFound(err) {
-		h.logger.Debug("generating private secrets")
-
-		b := make([]byte, 32)
-		_, err := rand.Read(b)
-		if err != nil {
-			return err
-		}
-		accessToken := base64.StdEncoding.EncodeToString(b)
-
-		h.logger.Debug("generated access token")
-
-		b = make([]byte, 32)
-		_, err = rand.Read(b)
-		if err != nil {
-			return err
-		}
-		refreshToken := base64.StdEncoding.EncodeToString(b)
-
-		h.logger.Debug("generated refresh token")
-
-		secret = corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: defaultDockyardsNamespace,
-				Name:      defaultJWTSecretName,
-			},
-			StringData: map[string]string{
-				"accessToken":  accessToken,
-				"refreshToken": refreshToken,
-			},
-		}
-
-		err = h.controllerClient.Create(ctx, &secret)
-		if err != nil {
-			return err
-		}
-
-		h.logger.Debug("created jwt tokens secret in kubernetes", "uid", secret.UID)
-	}
-
-	accessToken, hasToken := secret.Data["accessToken"]
-	if !hasToken {
-		return errors.New("jwt tokens secret has no access token in data")
-	}
-
-	refreshToken, hasToken := secret.Data["refreshToken"]
-	if !hasToken {
-		return errors.New("jwt tokens secret has no refresh token in data")
-	}
-
-	h.jwtAccessTokenSecret = string(accessToken)
-	h.jwtRefreshTokenSecret = string(refreshToken)
-
-	return nil
 }
