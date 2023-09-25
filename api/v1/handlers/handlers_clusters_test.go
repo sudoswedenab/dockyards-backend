@@ -1140,3 +1140,143 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestGetClusters(t *testing.T) {
+	tt := []struct {
+		name               string
+		sub                string
+		lists              []client.ObjectList
+		clustermockOptions []clustermock.MockOption
+		expected           []v1.Cluster
+	}{
+		{
+			name: "test single cluster",
+			sub:  "7945098c-e2ef-451b-8cbf-d9674bddd031",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "e7f0fc59-5cae-4208-a97b-a8e46c999821",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "7945098c-e2ef-451b-8cbf-d9674bddd031"},
+								},
+							},
+						},
+					},
+				},
+			},
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						ID:           "cluster-123",
+						Name:         "test-cluster",
+						Organization: "test-org",
+					},
+				}),
+			},
+			expected: []v1.Cluster{
+				{
+					ID:           "cluster-123",
+					Name:         "test-cluster",
+					Organization: "test-org",
+				},
+			},
+		},
+		{
+			name: "test cluster without organization",
+			sub:  "9142a815-562b-4b1e-b5fd-2163845cced5",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "391aa7e8-999d-4f41-9815-29bd39e94c41",
+								Name: "test-org",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []corev1.ObjectReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.UserKind,
+										Name:       "test",
+										UID:        "9142a815-562b-4b1e-b5fd-2163845cced5",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			clustermockOptions: []clustermock.MockOption{
+				clustermock.WithClusters(map[string]v1.Cluster{
+					"cluster-123": {
+						ID:   "cluster-123",
+						Name: "test-cluster",
+					},
+				}),
+			},
+			expected: []v1.Cluster{},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+
+			h := handler{
+				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
+				logger:           logger,
+				controllerClient: fakeClient,
+			}
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			c.Set("sub", tc.sub)
+
+			u := url.URL{
+				Path: path.Join("/v1/clusters"),
+			}
+
+			var err error
+			c.Request, err = http.NewRequest(http.MethodGet, u.String(), nil)
+			if err != nil {
+				t.Fatalf("unexpected error preparing test request: %s", err)
+			}
+
+			h.GetClusters(c)
+
+			statusCode := w.Result().StatusCode
+			if statusCode != http.StatusOK {
+				t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+			}
+
+			b, err := io.ReadAll(w.Result().Body)
+			if err != nil {
+				t.Fatalf("error reading result body: %s", err)
+			}
+
+			var actual []v1.Cluster
+			err = json.Unmarshal(b, &actual)
+			if err != nil {
+				t.Fatalf("error unmarshalling result body: %s", err)
+			}
+
+			if !cmp.Equal(actual, tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
