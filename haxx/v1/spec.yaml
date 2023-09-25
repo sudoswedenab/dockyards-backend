@@ -96,22 +96,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/organization'
-    post:
-      operationId: createOrganization
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/organization'
-      responses:
-        201:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/organization'
-        409: {}
-        500: {}
   /v1/orgs/{organization_name}/clusters:
     post:
       operationId: createCluster
@@ -311,19 +295,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/user'
-  /v1/orgs/{organization_id}:
-    delete:
-      operationId: deleteOrganization
-      parameters:
-      - name: organization_id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        204: {}
-        401: {}
-        500: {}
   /v1/clusters/{cluster_id}/node-pools:
     post:
       operationId: createNodePool
