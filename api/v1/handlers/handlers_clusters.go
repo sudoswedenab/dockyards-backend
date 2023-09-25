@@ -404,6 +404,10 @@ func (h *handler) GetClusters(c *gin.Context) {
 
 	filteredClusters := []v1.Cluster{}
 	for _, cluster := range *clusters {
+		if cluster.Organization == "" {
+			continue
+		}
+
 		isMember := h.isMember(subject, orgs[cluster.Organization])
 		if isMember {
 			filteredClusters = append(filteredClusters, cluster)
