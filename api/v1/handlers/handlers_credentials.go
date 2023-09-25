@@ -1,32 +1,38 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 func (h *handler) GetCredentials(c *gin.Context) {
-	user, err := h.getUserFromContext(c)
+	ctx := context.Background()
+
+	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
-		h.logger.Error("error fetching user from context", "err", err)
+		h.logger.Error("error getting subject from context", "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	var organizations []v1.Organization
-	err = h.db.Model(&user).Association("Organizations").Find(&organizations)
+	var organizationList v1alpha1.OrganizationList
+	err = h.controllerClient.List(ctx, &organizationList)
 	if err != nil {
-		h.logger.Error("error getting organizations from databarse", "err", err)
+		h.logger.Error("error getting organizations from kubernetes", "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	orgs := make(map[string]bool)
-	for _, organization := range organizations {
-		orgs[organization.Name] = true
+	orgs := make(map[string]*v1alpha1.Organization)
+	for i, organization := range organizationList.Items {
+		orgs[organization.Name] = &organizationList.Items[i]
 	}
 
 	var credentials []v1.Credential
@@ -40,7 +46,7 @@ func (h *handler) GetCredentials(c *gin.Context) {
 	filteredCredentials := []v1.Credential{}
 
 	for _, credential := range credentials {
-		_, isMember := orgs[credential.Organization]
+		isMember := h.isMember(subject, orgs[credential.Organization])
 		if isMember {
 			filteredCredentials = append(filteredCredentials, credential)
 		}

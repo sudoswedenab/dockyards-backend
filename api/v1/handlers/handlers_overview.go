@@ -1,26 +1,33 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (h *handler) GetOverview(c *gin.Context) {
-	user, err := h.getUserFromContext(c)
+	ctx := context.Background()
+
+	/*sub, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error getting user from context", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
-	}
+		return
+	}*/
 
-	var organizations []v1.Organization
-	err = h.db.Joins("join organization_user on organization_user.organization_id = organizations.id").Where("organization_user.user_id = ?", user.ID).Find(&organizations).Error
+	var organizationList v1alpha1.OrganizationList
+	err := h.controllerClient.List(ctx, &organizationList)
 	if err != nil {
-		h.logger.Error("error finding organizations in database", "err", err)
+		h.logger.Error("error listing organizations in kubernetes", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
 	var overview v1.Overview
@@ -30,6 +37,7 @@ func (h *handler) GetOverview(c *gin.Context) {
 		h.logger.Error("error getting all clusters", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
 	clustersOverviews := make(map[string][]v1.ClusterOverview)
@@ -66,31 +74,36 @@ func (h *handler) GetOverview(c *gin.Context) {
 
 	}
 
-	for _, organization := range organizations {
+	for _, organization := range organizationList.Items {
 		clustersOverview := clustersOverviews[organization.Name]
 
 		organizationOverview := v1.OrganizationOverview{
 			Name:     organization.Name,
-			ID:       organization.ID.String(),
+			ID:       string(organization.UID),
 			Clusters: &clustersOverview,
-		}
-
-		var users []v1.User
-		err := h.db.Debug().Joins("join organization_user on organization_user.user_id = users.id").Where("organization_user.organization_id = ?", organization.ID).Find(&users).Error
-		if err != nil {
-			h.logger.Error("error finding organization users in database", "err", err)
-
-			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 
 		usersOverview := []v1.UserOverview{}
 
-		for _, user := range users {
-			h.logger.Debug("user", "organization", organization.ID, "id", user.ID)
+		for _, memberRef := range organization.Spec.MemberRefs {
+			h.logger.Debug("member", "name", memberRef.Name)
+
+			objectKey := client.ObjectKey{
+				Name:      memberRef.Name,
+				Namespace: organization.Namespace,
+			}
+
+			var user v1alpha1.User
+			err := h.controllerClient.Get(ctx, objectKey, &user)
+			if err != nil {
+				h.logger.Warn("error getting user from kubernetes", "err", err)
+
+				continue
+			}
 
 			userOverview := v1.UserOverview{
-				Email: user.Email,
-				ID:    user.ID.String(),
+				ID:    string(user.UID),
+				Email: user.Spec.Email,
 			}
 
 			usersOverview = append(usersOverview, userOverview)

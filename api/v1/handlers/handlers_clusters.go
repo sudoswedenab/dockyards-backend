@@ -1,50 +1,55 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/deployment"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
 func (h *handler) PostOrgClusters(c *gin.Context) {
+	ctx := context.Background()
+
 	org := c.Param("org")
 	if org == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	var organization v1.Organization
-	err := h.db.Take(&organization, "name = ?", org).Error
+	objectKey := client.ObjectKey{
+		Name: org,
+	}
+
+	var organization v1alpha1.Organization
+	err := h.controllerClient.Get(ctx, objectKey, &organization)
 	if err != nil {
+		h.logger.Error("error getting organization from kubernetes", "err", err)
+
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	user, err := h.getUserFromContext(c)
+	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
-		h.logger.Debug("error fetching user from context", "err", err)
+		h.logger.Debug("error fetching subject from context", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	isMember, err := h.isMember(&user, &organization)
-	if err != nil {
-		h.logger.Error("error getting user membership", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-	}
-
+	isMember := h.isMember(subject, &organization)
 	if !isMember {
-		h.logger.Debug("user is not a member of organization", "user", user.ID, "organization", organization.ID)
+		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
@@ -114,7 +119,12 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 	}
 
-	cluster, err := h.clusterService.CreateCluster(&organization, &clusterOptions)
+	v1Organization := v1.Organization{
+		ID:   string(organization.UID),
+		Name: organization.Name,
+	}
+
+	cluster, err := h.clusterService.CreateCluster(&v1Organization, &clusterOptions)
 	if err != nil {
 		h.logger.Error("error creating cluster", "name", clusterOptions.Name, "err", err)
 
@@ -146,7 +156,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	for _, nodePoolOption := range *nodePoolOptions {
 		h.logger.Debug("creating cluster node pool", "name", nodePoolOption.Name)
 
-		nodePool, err := h.clusterService.CreateNodePool(&organization, cluster, &nodePoolOption)
+		nodePool, err := h.clusterService.CreateNodePool(&v1Organization, cluster, &nodePoolOption)
 		if err != nil {
 			h.logger.Error("error creating node pool", "name", nodePoolOption.Name, "err", err)
 
@@ -160,7 +170,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	if clusterOptions.NoClusterApps == nil || !*clusterOptions.NoClusterApps {
-		clusterDeployments, err := h.cloudService.GetClusterDeployments(&organization, cluster)
+		clusterDeployments, err := h.cloudService.GetClusterDeployments(&v1Organization, cluster)
 		if err != nil {
 			h.logger.Error("error getting cloud service cluster deployments", "err", err)
 
@@ -217,7 +227,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	if hasErrors {
 		h.logger.Error("deleting cluster", "id", cluster.ID)
 
-		err := h.clusterService.DeleteCluster(&organization, cluster)
+		err := h.clusterService.DeleteCluster(&v1Organization, cluster)
 		if err != nil {
 			h.logger.Warn("unexpected error deleting cluster", "err", err)
 		}
@@ -230,6 +240,8 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 }
 
 func (h *handler) GetClusterKubeconfig(c *gin.Context) {
+	ctx := context.Background()
+
 	clusterID := c.Param("clusterID")
 	if clusterID == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -244,16 +256,20 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
-	var organization v1.Organization
-	err = h.db.Take(&organization, "name = ?", cluster.Organization).Error
-	if err != nil {
-		h.logger.Error("error taking organization from database", "err", err)
+	objectKey := client.ObjectKey{
+		Name: cluster.Organization,
+	}
 
-		c.AbortWithStatus(http.StatusInternalServerError)
+	var organization v1alpha1.Organization
+	err = h.controllerClient.Get(ctx, objectKey, &organization)
+	if err != nil {
+		h.logger.Error("error getting organization from kubernetes", "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	user, err := h.getUserFromContext(c)
+	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error fetching user from context", "err", err)
 
@@ -261,15 +277,9 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
-	isMember, err := h.isMember(&user, &organization)
-	if err != nil {
-		h.logger.Error("error getting user membership", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-	}
-
+	isMember := h.isMember(subject, &organization)
 	if !isMember {
-		h.logger.Debug("user is not a member of organization", "user", user.ID, "organization", organization.ID)
+		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
@@ -297,6 +307,8 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 }
 
 func (h *handler) DeleteCluster(c *gin.Context) {
+	ctx := context.Background()
+
 	clusterID := c.Param("clusterID")
 	if clusterID == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -312,15 +324,20 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 		return
 	}
 
-	var organization v1.Organization
-	err = h.db.Take(&organization, "name = ?", cluster.Organization).Error
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
+	objectKey := client.ObjectKey{
+		Name: cluster.Organization,
+	}
 
+	var organization v1alpha1.Organization
+	err = h.controllerClient.Get(ctx, objectKey, &organization)
+	if err != nil {
+		h.logger.Error("error getting organization from kubernetes", "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	user, err := h.getUserFromContext(c)
+	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Debug("error fetching user from context", "err", err)
 
@@ -328,21 +345,20 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 		return
 	}
 
-	isMember, err := h.isMember(&user, &organization)
-	if err != nil {
-		h.logger.Error("error getting user membership", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-	}
-
+	isMember := h.isMember(subject, &organization)
 	if !isMember {
-		h.logger.Debug("user is not a member of organization", "user", user.ID, "organization", organization.ID)
+		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	err = h.clusterService.DeleteCluster(&organization, cluster)
+	v1Organization := v1.Organization{
+		ID:   string(organization.UID),
+		Name: organization.Name,
+	}
+
+	err = h.clusterService.DeleteCluster(&v1Organization, cluster)
 	if err != nil {
 		h.logger.Error("unexpected error deleting cluster", "err", err)
 
@@ -356,50 +372,50 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 }
 
 func (h *handler) GetClusters(c *gin.Context) {
-	user, err := h.getUserFromContext(c)
+	ctx := context.Background()
+
+	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
-		h.logger.Debug("error fetching user from context", "err", err)
+		h.logger.Debug("error getting subject from context", "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	var organizations []v1.Organization
-	err = h.db.Model(&user).Association("Organizations").Find(&organizations)
+	var organizationList v1alpha1.OrganizationList
+	err = h.controllerClient.List(ctx, &organizationList)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
-	// create a map with organization names for quick lookup
-	// the map using bools has no functional use, bool is the smallest datatype
-	orgs := make(map[string]bool)
-	for _, organization := range organizations {
-		orgs[organization.Name] = true
+	orgs := make(map[string]*v1alpha1.Organization)
+	for i, organization := range organizationList.Items {
+		orgs[organization.Name] = &organizationList.Items[i]
 	}
 
 	clusters, err := h.clusterService.GetAllClusters()
 	if err != nil {
 		h.logger.Error("unexpected error when getting clusters", "err", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"Error": err.Error(),
-		})
+
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
 	filteredClusters := []v1.Cluster{}
 	for _, cluster := range *clusters {
-		_, isMember := orgs[cluster.Organization]
+		isMember := h.isMember(subject, orgs[cluster.Organization])
 		if isMember {
 			filteredClusters = append(filteredClusters, cluster)
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"clusters": filteredClusters,
-	})
+	c.JSON(http.StatusOK, filteredClusters)
 }
 
 func (h *handler) GetCluster(c *gin.Context) {
+	ctx := context.Background()
+
 	id := c.Param("clusterID")
 	if id == "" {
 		h.logger.Error("empty cluster id")
@@ -416,16 +432,20 @@ func (h *handler) GetCluster(c *gin.Context) {
 		return
 	}
 
-	var organization v1.Organization
-	err = h.db.Take(&organization, "name = ?", cluster.Organization).Error
-	if err != nil {
-		h.logger.Error("error taking organization from database", "err", err)
+	objectKey := client.ObjectKey{
+		Name: cluster.Organization,
+	}
 
-		c.AbortWithStatus(http.StatusInternalServerError)
+	var organization v1alpha1.Organization
+	err = h.controllerClient.Get(ctx, objectKey, &organization)
+	if err != nil {
+		h.logger.Error("error getting organization from kubernetes", "err", err)
+
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	user, err := h.getUserFromContext(c)
+	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error fetching user from context", "err", err)
 
@@ -433,15 +453,9 @@ func (h *handler) GetCluster(c *gin.Context) {
 		return
 	}
 
-	isMember, err := h.isMember(&user, &organization)
-	if err != nil {
-		h.logger.Error("error getting user membership", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-	}
-
+	isMember := h.isMember(subject, &organization)
 	if !isMember {
-		h.logger.Debug("user is not a member of organization", "user", user.ID, "organization", organization.ID)
+		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return

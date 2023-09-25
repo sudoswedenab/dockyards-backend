@@ -1,14 +1,19 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (h *handler) GetNodePool(c *gin.Context) {
+	ctx := context.Background()
+
 	nodePoolID := c.Param("nodePoolID")
 
 	nodePool, err := h.clusterService.GetNodePool(nodePoolID)
@@ -27,8 +32,12 @@ func (h *handler) GetNodePool(c *gin.Context) {
 		return
 	}
 
-	var organization v1.Organization
-	err = h.db.Take(&organization, "name = ?", cluster.Organization).Error
+	objectKey := client.ObjectKey{
+		Name: cluster.Organization,
+	}
+
+	var organization v1alpha1.Organization
+	err = h.controllerClient.Get(ctx, objectKey, &organization)
 	if err != nil {
 		h.logger.Error("error getting node pool organization", "name", cluster.Organization, "err", err)
 
@@ -36,22 +45,15 @@ func (h *handler) GetNodePool(c *gin.Context) {
 		return
 	}
 
-	user, err := h.getUserFromContext(c)
+	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
-		h.logger.Error("error getting user from context", "err", err)
+		h.logger.Error("error getting subject from context", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	isMember, err := h.isMember(&user, &organization)
-	if err != nil {
-		h.logger.Error("error verifying user membership", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
+	isMember := h.isMember(subject, &organization)
 	if !isMember {
 		h.logger.Debug("user is not a member of organization")
 
@@ -63,6 +65,8 @@ func (h *handler) GetNodePool(c *gin.Context) {
 }
 
 func (h *handler) PostClusterNodePools(c *gin.Context) {
+	ctx := context.Background()
+
 	clusterID := c.Param("clusterID")
 
 	h.logger.Debug("param", "id", clusterID)
@@ -107,33 +111,30 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 
 	h.logger.Debug("got cluster from cluster service", "organization", cluster.Organization)
 
-	var organization v1.Organization
-	err = h.db.Take(&organization, "name = ?", cluster.Organization).Error
+	objectKey := client.ObjectKey{
+		Name: cluster.Organization,
+	}
+
+	var organization v1alpha1.Organization
+	err = h.controllerClient.Get(ctx, objectKey, &organization)
 	if err != nil {
-		h.logger.Error("error taking organization from database", "name", cluster.Organization, "err", err)
+		h.logger.Error("error getting organization from kubernetes", "name", cluster.Organization, "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	user, err := h.getUserFromContext(c)
+	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
-		h.logger.Error("error getting user from context", "err", err)
+		h.logger.Error("error getting subject from context", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	isMember, err := h.isMember(&user, &organization)
-	if err != nil {
-		h.logger.Error("error getting user membership", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
+	isMember := h.isMember(subject, &organization)
 	if !isMember {
-		h.logger.Error("user is not a member of organization")
+		h.logger.Error("subject is not a member of organization")
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
@@ -148,7 +149,12 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		}
 	}
 
-	nodePool, err := h.clusterService.CreateNodePool(&organization, cluster, &nodePoolOptions)
+	v1Organization := v1.Organization{
+		ID:   string(organization.UID),
+		Name: organization.Name,
+	}
+
+	nodePool, err := h.clusterService.CreateNodePool(&v1Organization, cluster, &nodePoolOptions)
 	if err != nil {
 		h.logger.Error("error creating node pool in cluster service", "err", err)
 
@@ -159,6 +165,8 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 }
 
 func (h *handler) DeleteNodePool(c *gin.Context) {
+	ctx := context.Background()
+
 	nodePoolID := c.Param("nodePoolID")
 
 	nodePool, err := h.clusterService.GetNodePool(nodePoolID)
@@ -177,8 +185,12 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 		return
 	}
 
-	var organization v1.Organization
-	err = h.db.Take(&organization, "name = ?", cluster.Organization).Error
+	objectKey := client.ObjectKey{
+		Name: cluster.Organization,
+	}
+
+	var organization v1alpha1.Organization
+	err = h.controllerClient.Get(ctx, objectKey, &organization)
 	if err != nil {
 		h.logger.Error("error getting node pool organization", "name", cluster.Organization, "err", err)
 
@@ -186,30 +198,28 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 		return
 	}
 
-	user, err := h.getUserFromContext(c)
+	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
-		h.logger.Error("error getting user from context", "err", err)
+		h.logger.Error("error getting subject from context", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	isMember, err := h.isMember(&user, &organization)
-	if err != nil {
-		h.logger.Error("error verifying user membership", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
+	isMember := h.isMember(subject, &organization)
 	if !isMember {
-		h.logger.Debug("user is not a member of organization")
+		h.logger.Debug("subject is not a member of organization")
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	err = h.clusterService.DeleteNodePool(&organization, nodePoolID)
+	v1Organization := v1.Organization{
+		ID:   string(organization.UID),
+		Name: organization.Name,
+	}
+
+	err = h.clusterService.DeleteNodePool(&v1Organization, nodePoolID)
 	if err != nil {
 		h.logger.Error("error deleting node pool", "err", err)
 
