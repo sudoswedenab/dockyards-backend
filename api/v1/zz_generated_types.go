@@ -175,10 +175,9 @@ type Options struct {
 type Organization struct {
 	CreatedAt   time.Time `json:"created_at"`
 	DisplayName *string   `json:"display_name,omitempty"`
-	ID          uuid.UUID `json:"id"`
-	Name        string    `gorm:"unique; not null" json:"name"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	Users       []User    `gorm:"many2many:organization_user" json:"users"`
 }
 
 // OrganizationOverview defines model for organization_overview.
@@ -213,13 +212,12 @@ type Tokens struct {
 
 // User defines model for user.
 type User struct {
-	CreatedAt     *time.Time      `json:"created_at,omitempty"`
-	Email         string          `gorm:"unique; not null" json:"email"`
-	ID            uuid.UUID       `json:"id"`
-	Name          string          `gorm:"unique; not null" json:"name"`
-	Organizations *[]Organization `gorm:"many2many:organization_user" json:"organizations,omitempty"`
-	Password      string          `json:"password"`
-	UpdatedAt     *time.Time      `json:"updated_at,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	Email     string     `json:"email"`
+	ID        string     `json:"id"`
+	Name      string     `json:"name"`
+	Password  *string    `json:"password,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
 // UserOverview defines model for user_overview.
@@ -236,9 +234,6 @@ type CreateNodePoolJSONRequestBody = NodePoolOptions
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = Login
-
-// CreateOrganizationJSONRequestBody defines body for CreateOrganization for application/json ContentType.
-type CreateOrganizationJSONRequestBody = Organization
 
 // CreateClusterJSONRequestBody defines body for CreateCluster for application/json ContentType.
 type CreateClusterJSONRequestBody = ClusterOptions
