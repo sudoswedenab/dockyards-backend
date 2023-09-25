@@ -1,12 +1,15 @@
 package metrics
 
 import (
+	"context"
 	"log/slog"
 	"runtime/debug"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus"
 	"gorm.io/gorm"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type prometheusMetrics struct {
@@ -17,6 +20,7 @@ type prometheusMetrics struct {
 	userMetric         *prometheus.GaugeVec
 	deploymentMetric   *prometheus.GaugeVec
 	credentialMetric   *prometheus.GaugeVec
+	controllerClient   client.Client
 }
 
 type PrometheusMetricsOption func(*prometheusMetrics)
@@ -39,8 +43,13 @@ func WithPrometheusRegistry(registry *prometheus.Registry) PrometheusMetricsOpti
 	}
 }
 
-func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (*prometheusMetrics, error) {
+func WithControllerClient(controllerClient client.Client) PrometheusMetricsOption {
+	return func(m *prometheusMetrics) {
+		m.controllerClient = controllerClient
+	}
+}
 
+func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (*prometheusMetrics, error) {
 	organizationMetric := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "dockyards_backend_organization",
@@ -128,18 +137,21 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 }
 
 func (m *prometheusMetrics) CollectMetrics() error {
-	m.logger.Debug("collecting prometheus metrics from database")
+	ctx := context.Background()
 
-	var organizations []v1.Organization
-	err := m.db.Find(&organizations).Error
+	m.logger.Debug("collecting prometheus metrics")
+
+	var organizationList v1alpha1.OrganizationList
+	err := m.controllerClient.List(ctx, &organizationList)
 	if err != nil {
-		m.logger.Error("error finding organizations in database", "err", err)
+		m.logger.Error("error listing organizations in kubernetes", "err", err)
+
 		return err
 	}
 
 	m.organizationMetric.Reset()
 
-	for _, organization := range organizations {
+	for _, organization := range organizationList.Items {
 		labels := prometheus.Labels{
 			"name": organization.Name,
 		}
@@ -149,14 +161,15 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 	m.userMetric.Reset()
 
-	var users []v1.User
-	err = m.db.Find(&users).Error
+	var userList v1alpha1.UserList
+	err = m.controllerClient.List(ctx, &userList)
 	if err != nil {
-		m.logger.Error("error finding users in database", "err", err)
+		m.logger.Error("error finding users in kubernetes", "err", err)
+
 		return err
 	}
 
-	for _, user := range users {
+	for _, user := range userList.Items {
 		labels := prometheus.Labels{
 			"name": user.Name,
 		}
