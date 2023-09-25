@@ -11,4 +11,5 @@ const (
 	ClusterReadyReason         string = "ClusterReady"
 	NodePoolReadyReason        string = "NodePoolReady"
 	NodeReadyReason            string = "NodeReady"
+	DeploymentReadyReason      string = "DeploymentReady"
 )

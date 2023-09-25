@@ -16,3 +16,10 @@ type UserReference struct {
 	Name string    `json:"name"`
 	UID  types.UID `json:"uid"`
 }
+
+type DeploymentReference struct {
+	APIVersion string    `json:"apiVersion,omitempty"`
+	Kind       string    `json:"kind,omitempty"`
+	Name       string    `json:"name"`
+	UID        types.UID `json:"uid"`
+}
