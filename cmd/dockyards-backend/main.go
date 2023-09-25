@@ -38,7 +38,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -252,13 +254,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	manager, err := ctrl.NewManager(kubeconfig, ctrl.Options{})
-	if err != nil {
-		os.Exit(123)
-	}
-
-	scheme := manager.GetScheme()
+	scheme := runtime.NewScheme()
 	v1alpha1.AddToScheme(scheme)
+
+	manager, err := ctrl.NewManager(kubeconfig, ctrl.Options{
+		Scheme: scheme,
+		Client: client.Options{
+			Cache: &client.CacheOptions{
+				DisableFor: []client.Object{&v1alpha1.User{}, &v1alpha1.Organization{}},
+			},
+		},
+	})
+	if err != nil {
+		logger.Error("error creating manager", "err", err)
+
+		os.Exit(1)
+	}
 
 	ctx := context.Background()
 
