@@ -124,7 +124,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	g.DELETE("/clusters/:clusterID", h.DeleteCluster)
 
 	g.GET("/orgs", h.GetOrgs)
-	g.POST("/orgs", h.PostOrgs)
 	g.PUT("/orgs", methodNotAllowed)
 	g.DELETE("/orgs", methodNotAllowed)
 
@@ -145,8 +144,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 
 	g.GET("/overview", h.GetOverview)
 	g.GET("/whoami", h.GetWhoami)
-
-	g.DELETE("/orgs/:org", h.DeleteOrganization)
 
 	g.GET("/apps", h.GetApps)
 	g.GET("/apps/:appID", h.GetApp)
