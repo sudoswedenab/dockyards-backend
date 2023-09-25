@@ -27,6 +27,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -260,6 +261,20 @@ func main() {
 	v1alpha1.AddToScheme(scheme)
 
 	ctx := context.Background()
+
+	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, "spec.email", index.EmailIndexer)
+	if err != nil {
+		logger.Error("error adding emailindexer to manager", "err", err)
+
+		os.Exit(1)
+	}
+
+	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, "metadata.uid", index.UIDIndexer)
+	if err != nil {
+		logger.Error("error adding emailindexer to manager", "err", err)
+
+		os.Exit(1)
+	}
 
 	controllerClient := manager.GetClient()
 
