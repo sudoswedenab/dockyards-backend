@@ -38,9 +38,6 @@ type ServerInterface interface {
 
 	// (GET /sudo/kubeconfigs/{cluster_id})
 	GetKubeconfig(w http.ResponseWriter, r *http.Request, clusterID string)
-
-	// (GET /sudo/organizations)
-	GetOrganizations(w http.ResponseWriter, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -79,11 +76,6 @@ func (_ Unimplemented) CreateDeploymentStatus(w http.ResponseWriter, r *http.Req
 
 // (GET /sudo/kubeconfigs/{cluster_id})
 func (_ Unimplemented) GetKubeconfig(w http.ResponseWriter, r *http.Request, clusterID string) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// (GET /sudo/organizations)
-func (_ Unimplemented) GetOrganizations(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -245,21 +237,6 @@ func (siw *ServerInterfaceWrapper) GetKubeconfig(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// GetOrganizations operation middleware
-func (siw *ServerInterfaceWrapper) GetOrganizations(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetOrganizations(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -393,9 +370,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/sudo/kubeconfigs/{cluster_id}", wrapper.GetKubeconfig)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/sudo/organizations", wrapper.GetOrganizations)
 	})
 
 	return r
@@ -592,30 +566,6 @@ func (response GetKubeconfig500Response) VisitGetKubeconfigResponse(w http.Respo
 	return nil
 }
 
-type GetOrganizationsRequestObject struct {
-}
-
-type GetOrganizationsResponseObject interface {
-	VisitGetOrganizationsResponse(w http.ResponseWriter) error
-}
-
-type GetOrganizations200JSONResponse []externalRef0.Organization
-
-func (response GetOrganizations200JSONResponse) VisitGetOrganizationsResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetOrganizations500Response struct {
-}
-
-func (response GetOrganizations500Response) VisitGetOrganizationsResponse(w http.ResponseWriter) error {
-	w.WriteHeader(500)
-	return nil
-}
-
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
@@ -639,9 +589,6 @@ type StrictServerInterface interface {
 
 	// (GET /sudo/kubeconfigs/{cluster_id})
 	GetKubeconfig(ctx context.Context, request GetKubeconfigRequestObject) (GetKubeconfigResponseObject, error)
-
-	// (GET /sudo/organizations)
-	GetOrganizations(ctx context.Context, request GetOrganizationsRequestObject) (GetOrganizationsResponseObject, error)
 }
 
 type StrictHandlerFunc = runtime.StrictHttpHandlerFunc
@@ -856,30 +803,6 @@ func (sh *strictHandler) GetKubeconfig(w http.ResponseWriter, r *http.Request, c
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetKubeconfigResponseObject); ok {
 		if err := validResponse.VisitGetKubeconfigResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetOrganizations operation middleware
-func (sh *strictHandler) GetOrganizations(w http.ResponseWriter, r *http.Request) {
-	var request GetOrganizationsRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetOrganizations(ctx, request.(GetOrganizationsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetOrganizations")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetOrganizationsResponseObject); ok {
-		if err := validResponse.VisitGetOrganizationsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

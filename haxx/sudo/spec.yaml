@@ -75,18 +75,6 @@ paths:
               schema:
                 $ref: '../v1/spec.yaml#/components/schemas/credential'
         500: {}
-  /sudo/organizations:
-    get:
-      operationId: getOrganizations
-      responses:
-        200:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '../v1/spec.yaml#/components/schemas/organization'
-        500: {}
   /sudo/deployments/{deployment_id}:
     get:
       operationId: getDeployment
