@@ -39,7 +39,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -254,16 +254,21 @@ func main() {
 
 	scheme := runtime.NewScheme()
 	v1alpha1.AddToScheme(scheme)
-	v1.AddToScheme(scheme)
+	corev1.AddToScheme(scheme)
 
-	manager, err := ctrl.NewManager(kubeconfig, ctrl.Options{
+	controllerClient, err := client.New(kubeconfig, client.Options{Scheme: scheme})
+	if err != nil {
+		logger.Error("error creating new controller client", "err", err)
+
+		os.Exit(1)
+	}
+
+	managerOptions := ctrl.Options{
 		Scheme: scheme,
-		Client: client.Options{
-			Cache: &client.CacheOptions{
-				DisableFor: []client.Object{&v1alpha1.User{}, &v1alpha1.Organization{}, &v1.Secret{}},
-			},
-		},
-	})
+		Client: client.Options{},
+	}
+
+	manager, err := ctrl.NewManager(kubeconfig, managerOptions)
 	if err != nil {
 		logger.Error("error creating manager", "err", err)
 
@@ -274,25 +279,23 @@ func main() {
 
 	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, "spec.email", index.EmailIndexer)
 	if err != nil {
-		logger.Error("error adding emailindexer to manager", "err", err)
+		logger.Error("error adding email indexer to manager", "err", err)
 
 		os.Exit(1)
 	}
 
 	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, "metadata.uid", index.UIDIndexer)
 	if err != nil {
-		logger.Error("error adding emailindexer to manager", "err", err)
+		logger.Error("error adding uid indexer to manager", "err", err)
 
 		os.Exit(1)
 	}
-
-	controllerClient := manager.GetClient()
 
 	prometheusMetricsOptions := []metrics.PrometheusMetricsOption{
 		metrics.WithLogger(logger),
 		metrics.WithDatabase(db),
 		metrics.WithPrometheusRegistry(registry),
-		metrics.WithControllerClient(controllerClient),
+		metrics.WithManager(manager),
 	}
 
 	prometheusMetrics, err := metrics.NewPrometheusMetrics(prometheusMetricsOptions...)
@@ -352,7 +355,7 @@ func main() {
 		handlers.WithCloudService(cloudService),
 		handlers.WithClusterService(clusterService),
 		handlers.WithGitProjectRoot(gitProjectRoot),
-		handlers.WithControllerClient(controllerClient),
+		handlers.WithManager(manager),
 	}
 
 	err = handlers.RegisterRoutes(r, db, logger, handlerOptions...)
