@@ -11,6 +11,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,7 +55,8 @@ func WithGitProjectRoot(gitProjectRoot string) HandlerOption {
 	}
 }
 
-func WithControllerClient(controllerClient client.Client) HandlerOption {
+func WithManager(manager ctrl.Manager) HandlerOption {
+	controllerClient := manager.GetClient()
 	return func(h *handler) {
 		h.controllerClient = controllerClient
 	}
