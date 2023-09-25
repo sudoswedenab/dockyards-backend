@@ -124,7 +124,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		Name: organization.Name,
 	}
 
-	cluster, err := h.clusterService.CreateCluster(&v1Organization, &clusterOptions)
+	cluster, err := h.clusterService.CreateCluster(&organization, &clusterOptions)
 	if err != nil {
 		h.logger.Error("error creating cluster", "name", clusterOptions.Name, "err", err)
 

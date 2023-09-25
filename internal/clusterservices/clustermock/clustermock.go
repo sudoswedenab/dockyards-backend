@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
@@ -27,7 +28,7 @@ func (s *MockClusterService) GetAllClusters() (*[]v1.Cluster, error) {
 	return &clusters, nil
 }
 
-func (s *MockClusterService) CreateCluster(organization *v1.Organization, clusterOptions *v1.ClusterOptions) (*v1.Cluster, error) {
+func (s *MockClusterService) CreateCluster(organization *v1alpha1.Organization, clusterOptions *v1.ClusterOptions) (*v1.Cluster, error) {
 	_, hasCluster := s.clusters[clusterOptions.Name]
 	if hasCluster {
 		return nil, errors.New("cluster name in-use")
