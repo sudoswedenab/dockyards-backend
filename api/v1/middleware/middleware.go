@@ -11,6 +11,4 @@ type Handler struct {
 	Logger             *slog.Logger
 	AccessTokenSecret  string
 	RefreshTokenSecret string
-	AccessTokenName    string
-	RefreshTokenName   string
 }

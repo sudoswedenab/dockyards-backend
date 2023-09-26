@@ -18,8 +18,6 @@ import (
 type handler struct {
 	db                    *gorm.DB
 	clusterService        clusterservices.ClusterService
-	accessTokenName       string
-	refreshTokenName      string
 	logger                *slog.Logger
 	jwtAccessTokenSecret  string
 	jwtRefreshTokenSecret string
@@ -75,10 +73,8 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	}
 
 	h := handler{
-		db:               db,
-		accessTokenName:  "AccessToken",
-		refreshTokenName: "RefreshToken",
-		logger:           logger,
+		db:     db,
+		logger: logger,
 	}
 
 	for _, handlerOption := range handlerOptions {
@@ -98,8 +94,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 		Logger:             logger,
 		AccessTokenSecret:  h.jwtAccessTokenSecret,
 		RefreshTokenSecret: h.jwtRefreshTokenSecret,
-		AccessTokenName:    "AccessToken",
-		RefreshTokenName:   "RefreshToken",
 	}
 
 	if h.gitProjectRoot == "" {
