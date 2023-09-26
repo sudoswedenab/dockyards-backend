@@ -64,8 +64,9 @@ func TestGetNodePool(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "845e9322-8dbe-4eed-bda2-5efe2b54dc71",
-								Name: "test-org",
+								UID:       "845e9322-8dbe-4eed-bda2-5efe2b54dc71",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -109,6 +110,7 @@ func TestGetNodePool(t *testing.T) {
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -226,8 +228,9 @@ func TestGetNodePoolErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "57397656-64f6-459a-ba4c-fea8345d6490",
-								Name: "test-org",
+								UID:       "57397656-64f6-459a-ba4c-fea8345d6490",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -259,6 +262,7 @@ func TestGetNodePoolErrors(t *testing.T) {
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -319,8 +323,9 @@ func TestPostClusterNodePools(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "3928f445-d53c-4a23-9663-77382a361d17",
-								Name: "test-org",
+								UID:       "3928f445-d53c-4a23-9663-77382a361d17",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -366,8 +371,9 @@ func TestPostClusterNodePools(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "a86dd064-4fa5-489f-ab29-6f49f92a38eb",
-								Name: "test-org",
+								UID:       "a86dd064-4fa5-489f-ab29-6f49f92a38eb",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -407,6 +413,7 @@ func TestPostClusterNodePools(t *testing.T) {
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -517,8 +524,9 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "ae19c385-6254-4d73-a2fa-53c29796ee91",
-								Name: "test-org",
+								UID:       "ae19c385-6254-4d73-a2fa-53c29796ee91",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -556,8 +564,9 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "d3570450-a7e1-4201-a16f-b913ad6c7f11",
-								Name: "test-org",
+								UID:       "d3570450-a7e1-4201-a16f-b913ad6c7f11",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -596,8 +605,9 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "d3570450-a7e1-4201-a16f-b913ad6c7f11",
-								Name: "test-org",
+								UID:       "d3570450-a7e1-4201-a16f-b913ad6c7f11",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -631,6 +641,7 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -700,8 +711,9 @@ func TestDeleteNodePool(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "ed44e536-2387-490d-937f-e415d2246daa",
-								Name: "test-org",
+								UID:       "ed44e536-2387-490d-937f-e415d2246daa",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -733,6 +745,7 @@ func TestDeleteNodePool(t *testing.T) {
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -846,8 +859,9 @@ func TestDeleteNodePoolErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "f4731789-5462-44b5-aa77-18dbf855d2fa",
-								Name: "test-org",
+								UID:       "f4731789-5462-44b5-aa77-18dbf855d2fa",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{},
 						},
@@ -870,6 +884,7 @@ func TestDeleteNodePoolErrors(t *testing.T) {
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
