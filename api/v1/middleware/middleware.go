@@ -9,6 +9,6 @@ import (
 type Handler struct {
 	DB                 *gorm.DB
 	Logger             *slog.Logger
-	AccessTokenSecret  string
-	RefreshTokenSecret string
+	AccessTokenSecret  []byte
+	RefreshTokenSecret []byte
 }

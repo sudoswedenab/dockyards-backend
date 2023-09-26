@@ -27,8 +27,10 @@ func TestRegisterRoutes(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error creating db: %s", err)
 			}
+
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			tokens := WithJWTAccessTokens("access123", "refresh123")
+			tokens := WithJWTAccessTokens([]byte("access123"), []byte("refresh123"))
+
 			actual := RegisterRoutes(r, db, logger, tokens)
 			if actual != tc.expected {
 				t.Errorf("expected error %s, got %s", tc.expected, actual)

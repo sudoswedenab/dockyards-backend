@@ -18,7 +18,9 @@ const (
 	defaultJWTSecretName      = "jwt-tokens"
 )
 
-func GetOrGenerateTokens(ctx context.Context, controllerClient client.Client, logger *slog.Logger) (string, string, error) {
+func GetOrGenerateTokens(ctx context.Context, controllerClient client.Client, logger *slog.Logger) ([]byte, []byte, error) {
+	empty := []byte{}
+
 	objectKey := client.ObjectKey{
 		Namespace: defaultDockyardsNamespace,
 		Name:      defaultJWTSecretName,
@@ -27,7 +29,7 @@ func GetOrGenerateTokens(ctx context.Context, controllerClient client.Client, lo
 	var secret corev1.Secret
 	err := controllerClient.Get(ctx, objectKey, &secret)
 	if client.IgnoreNotFound(err) != nil {
-		return "", "", err
+		return empty, empty, err
 	}
 
 	if apierrors.IsNotFound(err) {
@@ -36,7 +38,7 @@ func GetOrGenerateTokens(ctx context.Context, controllerClient client.Client, lo
 		b := make([]byte, 32)
 		_, err := rand.Read(b)
 		if err != nil {
-			return "", "", err
+			return empty, empty, err
 		}
 		accessToken := base64.StdEncoding.EncodeToString(b)
 
@@ -45,7 +47,7 @@ func GetOrGenerateTokens(ctx context.Context, controllerClient client.Client, lo
 		b = make([]byte, 32)
 		_, err = rand.Read(b)
 		if err != nil {
-			return "", "", err
+			return empty, empty, err
 		}
 		refreshToken := base64.StdEncoding.EncodeToString(b)
 
@@ -64,7 +66,7 @@ func GetOrGenerateTokens(ctx context.Context, controllerClient client.Client, lo
 
 		err = controllerClient.Create(ctx, &secret)
 		if err != nil {
-			return "", "", err
+			return empty, empty, err
 		}
 
 		logger.Debug("created jwt tokens secret in kubernetes", "uid", secret.UID)
@@ -72,13 +74,13 @@ func GetOrGenerateTokens(ctx context.Context, controllerClient client.Client, lo
 
 	accessToken, hasToken := secret.Data["accessToken"]
 	if !hasToken {
-		return "", "", errors.New("jwt tokens secret has no access token in data")
+		return empty, empty, errors.New("jwt tokens secret has no access token in data")
 	}
 
 	refreshToken, hasToken := secret.Data["refreshToken"]
 	if !hasToken {
-		return "", "", errors.New("jwt tokens secret has no refresh token in data")
+		return empty, empty, errors.New("jwt tokens secret has no refresh token in data")
 	}
 
-	return string(accessToken), string(refreshToken), nil
+	return accessToken, refreshToken, nil
 }

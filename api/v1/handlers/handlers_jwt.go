@@ -33,8 +33,7 @@ func (h *handler) PostRefresh(c *gin.Context) {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		// hmacSampleSecret is a []byte containing your incl secret key
-		return []byte(h.jwtRefreshTokenSecret), nil
+		return h.jwtRefreshTokenSecret, nil
 	})
 	if err != nil {
 		h.logger.Error("error parsing token with claims", "err", err)
@@ -99,7 +98,7 @@ func (h *handler) generateTokens(user v1alpha1.User) (*v1.Tokens, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedAccessToken, err := token.SignedString([]byte(h.jwtAccessTokenSecret))
+	signedAccessToken, err := token.SignedString(h.jwtAccessTokenSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +109,7 @@ func (h *handler) generateTokens(user v1alpha1.User) (*v1.Tokens, error) {
 	}
 
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)
-	signedRefreshToken, err := refreshToken.SignedString([]byte(h.jwtRefreshTokenSecret))
+	signedRefreshToken, err := refreshToken.SignedString(h.jwtRefreshTokenSecret)
 	if err != nil {
 		return nil, err
 	}

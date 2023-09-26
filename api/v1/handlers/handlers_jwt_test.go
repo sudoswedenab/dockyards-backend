@@ -53,15 +53,15 @@ func TestPostRefresh(t *testing.T) {
 		},
 	}
 
-	accessTokenSecret := "testing-access"
-	refreshTokenSecret := "testing-refresh"
+	accessTokenSecret := []byte("testing-access")
+	refreshTokenSecret := []byte("testing-refresh")
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, tc.claims)
-			signedRefreshToken, err := refreshToken.SignedString([]byte(refreshTokenSecret))
+			signedRefreshToken, err := refreshToken.SignedString(refreshTokenSecret)
 			if err != nil {
 				t.Fatalf("unexpected error signing refresh token: %s", err)
 			}
@@ -147,15 +147,15 @@ func TestPostRefreshErrors(t *testing.T) {
 		},
 	}
 
-	accessTokenSecret := "test-access-errors"
-	refreshTokenSecret := "test-refresh-errors"
+	accessTokenSecret := []byte("test-access-errors")
+	refreshTokenSecret := []byte("test-refresh-errors")
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, tc.claims)
-			signedRefreshToken, err := refreshToken.SignedString([]byte(refreshTokenSecret))
+			signedRefreshToken, err := refreshToken.SignedString(refreshTokenSecret)
 			if err != nil {
 				t.Fatalf("unexpected error signing refresh token: %s", err)
 			}

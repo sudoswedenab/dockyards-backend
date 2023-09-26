@@ -19,8 +19,8 @@ type handler struct {
 	db                    *gorm.DB
 	clusterService        clusterservices.ClusterService
 	logger                *slog.Logger
-	jwtAccessTokenSecret  string
-	jwtRefreshTokenSecret string
+	jwtAccessTokenSecret  []byte
+	jwtRefreshTokenSecret []byte
 	cloudService          cloudservices.CloudService
 	gitProjectRoot        string
 	controllerClient      client.Client
@@ -35,7 +35,7 @@ func WithCloudService(cloudService cloudservices.CloudService) HandlerOption {
 	}
 }
 
-func WithJWTAccessTokens(accessToken, refreshToken string) HandlerOption {
+func WithJWTAccessTokens(accessToken, refreshToken []byte) HandlerOption {
 	return func(h *handler) {
 		h.jwtAccessTokenSecret = accessToken
 		h.jwtRefreshTokenSecret = refreshToken
@@ -81,7 +81,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 		handlerOption(&h)
 	}
 
-	if h.jwtAccessTokenSecret == "" || h.jwtRefreshTokenSecret == "" {
+	if len(h.jwtAccessTokenSecret) == 0 || len(h.jwtRefreshTokenSecret) == 0 {
 		logger.Warn("using empty jwt tokens")
 	}
 
