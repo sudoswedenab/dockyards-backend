@@ -33,7 +33,8 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	}
 
 	objectKey := client.ObjectKey{
-		Name: cluster.Organization,
+		Name:      cluster.Organization,
+		Namespace: h.namespace,
 	}
 
 	var organization v1alpha1.Organization
@@ -112,7 +113,8 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	h.logger.Debug("got cluster from cluster service", "organization", cluster.Organization)
 
 	objectKey := client.ObjectKey{
-		Name: cluster.Organization,
+		Name:      cluster.Organization,
+		Namespace: h.namespace,
 	}
 
 	var organization v1alpha1.Organization
@@ -186,7 +188,8 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 	}
 
 	objectKey := client.ObjectKey{
-		Name: cluster.Organization,
+		Name:      cluster.Organization,
+		Namespace: h.namespace,
 	}
 
 	var organization v1alpha1.Organization
