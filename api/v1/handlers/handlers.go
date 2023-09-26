@@ -106,7 +106,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	r.POST("/v1/refresh", h.PostRefresh)
 
 	g := r.Group("/v1", middlewareHandler.RequireAuth)
-	g.POST("/logout", h.Logout)
 	g.GET("/cluster-options", h.GetClusterOptions)
 
 	g.GET("/clusters", h.GetClusters)
