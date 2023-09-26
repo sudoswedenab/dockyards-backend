@@ -52,7 +52,8 @@ func TestPostOrgClusters(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -89,6 +90,7 @@ func TestPostOrgClusters(t *testing.T) {
 				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -146,7 +148,8 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -176,7 +179,8 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -211,7 +215,8 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -238,7 +243,8 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -276,7 +282,8 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -328,6 +335,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -378,7 +386,8 @@ func TestDeleteCluster(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -421,6 +430,7 @@ func TestDeleteCluster(t *testing.T) {
 				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -474,7 +484,8 @@ func TestDeleteClusterErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -501,7 +512,8 @@ func TestDeleteClusterErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -544,6 +556,7 @@ func TestDeleteClusterErrors(t *testing.T) {
 				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -591,7 +604,8 @@ func TestGetCluster(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -633,6 +647,7 @@ func TestGetCluster(t *testing.T) {
 				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -690,7 +705,8 @@ func TestGetClusterErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -733,6 +749,7 @@ func TestGetClusterErrors(t *testing.T) {
 				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -783,8 +800,9 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
-								Name: "test-org",
+								UID:       "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -851,6 +869,7 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 				logger:           logger,
 				db:               db,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -924,8 +943,9 @@ func TestGetClusterKubeconfig(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
-								Name: "test-org",
+								UID:       "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -974,6 +994,7 @@ func TestGetClusterKubeconfig(t *testing.T) {
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -1034,8 +1055,9 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
-								Name: "test-org",
+								UID:       "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -1070,8 +1092,9 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
-								Name: "test-org",
+								UID:       "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -1111,6 +1134,7 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -1157,8 +1181,9 @@ func TestGetClusters(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "e7f0fc59-5cae-4208-a97b-a8e46c999821",
-								Name: "test-org",
+								UID:       "e7f0fc59-5cae-4208-a97b-a8e46c999821",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -1198,8 +1223,9 @@ func TestGetClusters(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:  "391aa7e8-999d-4f41-9815-29bd39e94c41",
-								Name: "test-org",
+								UID:       "391aa7e8-999d-4f41-9815-29bd39e94c41",
+								Name:      "test-org",
+								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []corev1.ObjectReference{
@@ -1239,6 +1265,7 @@ func TestGetClusters(t *testing.T) {
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
+				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
