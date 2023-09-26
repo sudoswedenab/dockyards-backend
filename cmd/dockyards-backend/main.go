@@ -356,6 +356,7 @@ func main() {
 		handlers.WithClusterService(clusterService),
 		handlers.WithGitProjectRoot(gitProjectRoot),
 		handlers.WithManager(manager),
+		handlers.WithNamespace("dockyards"),
 	}
 
 	err = handlers.RegisterRoutes(r, db, logger, handlerOptions...)

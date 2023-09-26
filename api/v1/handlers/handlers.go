@@ -26,6 +26,7 @@ type handler struct {
 	cloudService          cloudservices.CloudService
 	gitProjectRoot        string
 	controllerClient      client.Client
+	namespace             string
 }
 
 type HandlerOption func(*handler)
@@ -62,6 +63,12 @@ func WithManager(manager ctrl.Manager) HandlerOption {
 	}
 }
 
+func WithNamespace(namespace string) HandlerOption {
+	return func(h *handler) {
+		h.namespace = namespace
+	}
+}
+
 func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOptions ...HandlerOption) error {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
@@ -80,6 +87,10 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 
 	if h.jwtAccessTokenSecret == "" || h.jwtRefreshTokenSecret == "" {
 		logger.Warn("using empty jwt tokens")
+	}
+
+	if h.namespace == "" {
+		logger.Warn("using empty namespace")
 	}
 
 	middlewareHandler := middleware.Handler{
