@@ -27,7 +27,8 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	objectKey := client.ObjectKey{
-		Name: org,
+		Name:      org,
+		Namespace: h.namespace,
 	}
 
 	var organization v1alpha1.Organization
@@ -257,7 +258,8 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	}
 
 	objectKey := client.ObjectKey{
-		Name: cluster.Organization,
+		Name:      cluster.Organization,
+		Namespace: h.namespace,
 	}
 
 	var organization v1alpha1.Organization
@@ -325,7 +327,8 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	}
 
 	objectKey := client.ObjectKey{
-		Name: cluster.Organization,
+		Name:      cluster.Organization,
+		Namespace: h.namespace,
 	}
 
 	var organization v1alpha1.Organization
@@ -437,7 +440,8 @@ func (h *handler) GetCluster(c *gin.Context) {
 	}
 
 	objectKey := client.ObjectKey{
-		Name: cluster.Organization,
+		Name:      cluster.Organization,
+		Namespace: h.namespace,
 	}
 
 	var organization v1alpha1.Organization
