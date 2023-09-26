@@ -3,12 +3,10 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -60,40 +58,12 @@ func (h *handler) Login(c *gin.Context) {
 		return
 	}
 
-	//Generate a jwt token
-	accessToken := jwt.New(jwt.SigningMethodHS256)
-	claims := accessToken.Claims.(jwt.MapClaims)
-	claims["sub"] = user.UID
-	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
-
-	// Sign and get the complete encoded token as a string using the secret
-	at, err := accessToken.SignedString([]byte(h.jwtAccessTokenSecret))
-
+	tokens, err := h.generateTokens(user)
 	if err != nil {
-		h.logger.Error("error signing access token", "err", err)
+		h.logger.Error("error generating tokens", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
-	}
-
-	refreshToken := jwt.New(jwt.SigningMethodHS256)
-
-	rtClaims := refreshToken.Claims.(jwt.MapClaims)
-	rtClaims["sub"] = user.UID
-	rtClaims["exp"] = time.Now().Add(time.Hour * 1).Unix()
-
-	rt, err := refreshToken.SignedString([]byte(h.jwtRefreshTokenSecret))
-
-	if err != nil {
-		h.logger.Error("error signing refresh token", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	tokens := v1.Tokens{
-		AccessToken:  at,
-		RefreshToken: rt,
 	}
 
 	c.JSON(http.StatusOK, tokens)
