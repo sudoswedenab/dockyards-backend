@@ -152,7 +152,7 @@ func TestPostRefreshErrors(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
 			refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, tc.claims)
 			signedRefreshToken, err := refreshToken.SignedString(refreshTokenSecret)
