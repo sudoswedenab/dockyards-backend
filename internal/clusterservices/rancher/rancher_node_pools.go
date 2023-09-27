@@ -5,12 +5,13 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (r *rancher) CreateNodePool(organization *v1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1.NodePool, error) {
+func (r *rancher) CreateNodePool(organization *v1alpha1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1.NodePool, error) {
 	cloudConfig, err := r.cloudService.PrepareEnvironment(organization, cluster, nodePoolOptions)
 	if err != nil {
 		return nil, err
@@ -141,7 +142,7 @@ func (r *rancher) GetNodePool(nodePoolID string) (*v1.NodePool, error) {
 	return &nodePool, nil
 }
 
-func (r *rancher) DeleteNodePool(organization *v1.Organization, nodePoolID string) error {
+func (r *rancher) DeleteNodePool(organization *v1alpha1.Organization, nodePoolID string) error {
 	nodePool, err := r.managementClient.NodePool.ByID(nodePoolID)
 	if err != nil {
 		return err
