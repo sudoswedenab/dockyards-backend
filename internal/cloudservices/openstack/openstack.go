@@ -57,20 +57,6 @@ func WithInsecureLogging(insecureLogging bool) OpenStackOption {
 	}
 }
 
-func SyncDatabase(db *gorm.DB) error {
-	err := db.AutoMigrate(&OpenStackProject{})
-	if err != nil {
-		return err
-	}
-
-	err = db.AutoMigrate(&OpenStackOrganization{})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func NewOpenStackService(openStackOptions ...OpenStackOption) (*openStackService, error) {
 	s := openStackService{
 		garbageObjects: make(map[string]any),

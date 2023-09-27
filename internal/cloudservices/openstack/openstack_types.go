@@ -6,7 +6,6 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/ipam"
-	"github.com/google/uuid"
 	"github.com/gophercloud/gophercloud"
 	"gorm.io/gorm"
 )
@@ -27,25 +26,3 @@ type openStackService struct {
 var _ cloudservices.CloudService = &openStackService{}
 
 type OpenStackOption func(*openStackService)
-
-type OpenStackProject struct {
-	ID          uuid.UUID `gorm:"primaryKey"`
-	OpenStackID string    `gorm:"column:openstack_id"`
-}
-
-func (p *OpenStackProject) TableName() string {
-	return "openstack_projects"
-}
-
-type OpenStackOrganization struct {
-	ID                          uuid.UUID `gorm:"primaryKey"`
-	OpenStackProjectID          uuid.UUID `gorm:"column:openstack_project_id"`
-	OpenStackProject            OpenStackProject
-	OrganizationID              string
-	ApplicationCredentialID     string
-	ApplicationCredentialSecret string
-}
-
-func (o *OpenStackOrganization) TableName() string {
-	return "openstack_organizations"
-}
