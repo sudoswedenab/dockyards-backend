@@ -44,10 +44,17 @@ definitions:
       - docker push "${IMAGE}:${VERSION}"
       services:
       - docker
+  - step: &vendor
+      name: vendor
+      script:
+      - go mod vendor
+      artifacts:
+      - vendor/**
 
 pipelines:
   default:
   - step: *environment
+  - step: *vendor
   - step: *test
   - step: *build
   - step: *push
