@@ -13,6 +13,7 @@ type OrganizationSpec struct {
 	DisplayName string                   `json:"displayName,omitempty"`
 	MemberRefs  []corev1.ObjectReference `json:"memberRefs"`
 	BillingRef  *corev1.ObjectReference  `json:"billingRef,omitempty"`
+	CloudRef    *corev1.ObjectReference  `json:"cloudRef,omitempty"`
 }
 
 // +kubebuilder:object:root=true
