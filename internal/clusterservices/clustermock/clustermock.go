@@ -43,7 +43,7 @@ func (s *MockClusterService) CreateCluster(organization *v1alpha1.Organization, 
 	return &cluster, nil
 }
 
-func (s *MockClusterService) CreateNodePool(organization *v1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1.NodePool, error) {
+func (s *MockClusterService) CreateNodePool(organization *v1alpha1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1.NodePool, error) {
 	nodePool := v1.NodePool{
 		Name:                       nodePoolOptions.Name,
 		Quantity:                   nodePoolOptions.Quantity,
@@ -68,7 +68,7 @@ func (s *MockClusterService) CreateNodePool(organization *v1.Organization, clust
 	return &nodePool, nil
 }
 
-func (s *MockClusterService) DeleteCluster(organization *v1.Organization, cluster *v1.Cluster) error {
+func (s *MockClusterService) DeleteCluster(organization *v1alpha1.Organization, cluster *v1.Cluster) error {
 	for _, c := range s.clusters {
 		if c.Organization == organization.Name && c.Name == cluster.Name {
 			return nil
@@ -105,7 +105,7 @@ func (s *MockClusterService) GetNodePool(nodePoolID string) (*v1.NodePool, error
 	return &nodePool, nil
 }
 
-func (s *MockClusterService) DeleteNodePool(organization *v1.Organization, nodePoolID string) error {
+func (s *MockClusterService) DeleteNodePool(organization *v1alpha1.Organization, nodePoolID string) error {
 	_, hasNodePool := s.nodePools[nodePoolID]
 	if !hasNodePool {
 		return errors.New("no such node pool")
