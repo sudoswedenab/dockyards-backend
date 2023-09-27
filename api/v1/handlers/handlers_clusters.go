@@ -120,11 +120,6 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 	}
 
-	v1Organization := v1.Organization{
-		ID:   string(organization.UID),
-		Name: organization.Name,
-	}
-
 	cluster, err := h.clusterService.CreateCluster(&organization, &clusterOptions)
 	if err != nil {
 		h.logger.Error("error creating cluster", "name", clusterOptions.Name, "err", err)
@@ -157,7 +152,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	for _, nodePoolOption := range *nodePoolOptions {
 		h.logger.Debug("creating cluster node pool", "name", nodePoolOption.Name)
 
-		nodePool, err := h.clusterService.CreateNodePool(&v1Organization, cluster, &nodePoolOption)
+		nodePool, err := h.clusterService.CreateNodePool(&organization, cluster, &nodePoolOption)
 		if err != nil {
 			h.logger.Error("error creating node pool", "name", nodePoolOption.Name, "err", err)
 
@@ -171,7 +166,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	if clusterOptions.NoClusterApps == nil || !*clusterOptions.NoClusterApps {
-		clusterDeployments, err := h.cloudService.GetClusterDeployments(&v1Organization, cluster)
+		clusterDeployments, err := h.cloudService.GetClusterDeployments(&organization, cluster)
 		if err != nil {
 			h.logger.Error("error getting cloud service cluster deployments", "err", err)
 
@@ -228,7 +223,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	if hasErrors {
 		h.logger.Error("deleting cluster", "id", cluster.ID)
 
-		err := h.clusterService.DeleteCluster(&v1Organization, cluster)
+		err := h.clusterService.DeleteCluster(&organization, cluster)
 		if err != nil {
 			h.logger.Warn("unexpected error deleting cluster", "err", err)
 		}
@@ -356,12 +351,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 		return
 	}
 
-	v1Organization := v1.Organization{
-		ID:   string(organization.UID),
-		Name: organization.Name,
-	}
-
-	err = h.clusterService.DeleteCluster(&v1Organization, cluster)
+	err = h.clusterService.DeleteCluster(&organization, cluster)
 	if err != nil {
 		h.logger.Error("unexpected error deleting cluster", "err", err)
 

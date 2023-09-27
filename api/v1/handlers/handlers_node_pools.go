@@ -151,12 +151,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		}
 	}
 
-	v1Organization := v1.Organization{
-		ID:   string(organization.UID),
-		Name: organization.Name,
-	}
-
-	nodePool, err := h.clusterService.CreateNodePool(&v1Organization, cluster, &nodePoolOptions)
+	nodePool, err := h.clusterService.CreateNodePool(&organization, cluster, &nodePoolOptions)
 	if err != nil {
 		h.logger.Error("error creating node pool in cluster service", "err", err)
 
@@ -217,12 +212,7 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 		return
 	}
 
-	v1Organization := v1.Organization{
-		ID:   string(organization.UID),
-		Name: organization.Name,
-	}
-
-	err = h.clusterService.DeleteNodePool(&v1Organization, nodePoolID)
+	err = h.clusterService.DeleteNodePool(&organization, nodePoolID)
 	if err != nil {
 		h.logger.Error("error deleting node pool", "err", err)
 
