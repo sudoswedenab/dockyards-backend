@@ -177,6 +177,52 @@ func main() {
 		os.Exit(1)
 	}
 
+	kubeconfig, err := config.GetConfig()
+	if err != nil {
+		logger.Error("error getting kubeconfig", "err", err)
+
+		os.Exit(1)
+	}
+
+	scheme := runtime.NewScheme()
+	v1alpha1.AddToScheme(scheme)
+	corev1.AddToScheme(scheme)
+
+	controllerClient, err := client.New(kubeconfig, client.Options{Scheme: scheme})
+	if err != nil {
+		logger.Error("error creating new controller client", "err", err)
+
+		os.Exit(1)
+	}
+
+	managerOptions := ctrl.Options{
+		Scheme: scheme,
+		Client: client.Options{},
+	}
+
+	manager, err := ctrl.NewManager(kubeconfig, managerOptions)
+	if err != nil {
+		logger.Error("error creating manager", "err", err)
+
+		os.Exit(1)
+	}
+
+	ctx := context.Background()
+
+	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, "spec.email", index.EmailIndexer)
+	if err != nil {
+		logger.Error("error adding email indexer to manager", "err", err)
+
+		os.Exit(1)
+	}
+
+	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, "metadata.uid", index.UIDIndexer)
+	if err != nil {
+		logger.Error("error adding uid indexer to manager", "err", err)
+
+		os.Exit(1)
+	}
+
 	var cloudService cloudservices.CloudService
 	switch cloudServiceFlag {
 	case "openstack":
@@ -185,6 +231,7 @@ func main() {
 			openstack.WithDatabase(db),
 			openstack.WithCloudsYAML("openstack"),
 			openstack.WithInsecureLogging(insecureLogging),
+			openstack.WithManager(manager),
 		}
 
 		cloudService, err = openstack.NewOpenStackService(openStackOptions...)
@@ -238,52 +285,6 @@ func main() {
 			}
 		}
 	}()
-
-	kubeconfig, err := config.GetConfig()
-	if err != nil {
-		logger.Error("error getting kubeconfig", "err", err)
-
-		os.Exit(1)
-	}
-
-	scheme := runtime.NewScheme()
-	v1alpha1.AddToScheme(scheme)
-	corev1.AddToScheme(scheme)
-
-	controllerClient, err := client.New(kubeconfig, client.Options{Scheme: scheme})
-	if err != nil {
-		logger.Error("error creating new controller client", "err", err)
-
-		os.Exit(1)
-	}
-
-	managerOptions := ctrl.Options{
-		Scheme: scheme,
-		Client: client.Options{},
-	}
-
-	manager, err := ctrl.NewManager(kubeconfig, managerOptions)
-	if err != nil {
-		logger.Error("error creating manager", "err", err)
-
-		os.Exit(1)
-	}
-
-	ctx := context.Background()
-
-	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, "spec.email", index.EmailIndexer)
-	if err != nil {
-		logger.Error("error adding email indexer to manager", "err", err)
-
-		os.Exit(1)
-	}
-
-	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, "metadata.uid", index.UIDIndexer)
-	if err != nil {
-		logger.Error("error adding uid indexer to manager", "err", err)
-
-		os.Exit(1)
-	}
 
 	prometheusMetricsOptions := []metrics.PrometheusMetricsOption{
 		metrics.WithLogger(logger),
