@@ -13,16 +13,16 @@ import (
 func (h *handler) GetOverview(c *gin.Context) {
 	ctx := context.Background()
 
-	/*sub, err := h.getSubjectFromContext(c)
+	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
-		h.logger.Error("error getting user from context", "err", err)
+		h.logger.Error("error getting subject from context", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
-	}*/
+	}
 
 	var organizationList v1alpha1.OrganizationList
-	err := h.controllerClient.List(ctx, &organizationList)
+	err = h.controllerClient.List(ctx, &organizationList)
 	if err != nil {
 		h.logger.Error("error listing organizations in kubernetes", "err", err)
 
@@ -75,6 +75,10 @@ func (h *handler) GetOverview(c *gin.Context) {
 	}
 
 	for _, organization := range organizationList.Items {
+		if !h.isMember(subject, &organization) {
+			continue
+		}
+
 		clustersOverview := clustersOverviews[organization.Name]
 
 		organizationOverview := v1.OrganizationOverview{
