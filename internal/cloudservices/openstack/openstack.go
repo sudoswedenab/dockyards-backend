@@ -10,6 +10,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/utils/openstack/clientconfig"
 	"gorm.io/gorm"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func WithLogger(logger *slog.Logger) OpenStackOption {
@@ -54,6 +55,13 @@ func WithCloudsYAML(cloud string) OpenStackOption {
 func WithInsecureLogging(insecureLogging bool) OpenStackOption {
 	return func(s *openStackService) {
 		s.insecureLogging = insecureLogging
+	}
+}
+
+func WithManager(manager ctrl.Manager) OpenStackOption {
+	controllerClient := manager.GetClient()
+	return func(s *openStackService) {
+		s.controllerClient = controllerClient
 	}
 }
 
