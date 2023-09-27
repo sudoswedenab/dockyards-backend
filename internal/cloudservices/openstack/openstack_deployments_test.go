@@ -12,11 +12,18 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/ipam"
+	openstackv1alpha1 "bitbucket.org/sudosweden/dockyards-openstack/api/v1alpha1"
 	"github.com/glebarez/sqlite"
 	"github.com/google/go-cmp/cmp"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"gorm.io/gorm"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCreateMetalLBDeployment(t *testing.T) {
@@ -303,6 +310,90 @@ func TestCreateClusterMetalLBDeploymentErrors(t *testing.T) {
 
 			if err == nil {
 				t.Errorf("expected error, got nil")
+			}
+		})
+	}
+}
+
+func TestGetClusterDeployments(t *testing.T) {
+	tt := []struct {
+		name         string
+		organization v1alpha1.Organization
+		cluster      v1.Cluster
+		lists        []client.ObjectList
+	}{
+		{
+			name: "test without loadbalancer",
+			organization: v1alpha1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "testing",
+					UID:       "9da90bc2-f0bd-42ed-9409-9dd3f5da0c66",
+				},
+				Spec: v1alpha1.OrganizationSpec{
+					CloudRef: &corev1.ObjectReference{
+						APIVersion: openstackv1alpha1.GroupVersion.String(),
+						Kind:       openstackv1alpha1.OpenstackProjectKind,
+						Name:       "project",
+						UID:        "9852c3cf-d455-4d29-9aa9-d6586f681f1f",
+					},
+				},
+			},
+			lists: []client.ObjectList{
+				&openstackv1alpha1.OpenstackProjectList{
+					Items: []openstackv1alpha1.OpenstackProject{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "project",
+								Namespace: "testing",
+								UID:       "9852c3cf-d455-4d29-9aa9-d6586f681f1f",
+							},
+							Spec: openstackv1alpha1.OpenstackProjectSpec{
+								IdentityEndpoint: "http://localhost:5000/v3",
+								ProjectID:        "0e0a09b79e277bc0a8262cc2b4a7b688",
+								SecretRef: &corev1.ObjectReference{
+									APIVersion: "v1",
+									Kind:       "Secret",
+									Name:       "project",
+									UID:        "41e492df-3933-467b-a598-50e3a067f9b8",
+								},
+							},
+						},
+					},
+				},
+				&corev1.SecretList{
+					Items: []corev1.Secret{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "project",
+								Namespace: "testing",
+								UID:       "41e492df-3933-467b-a598-50e3a067f9b8",
+							},
+							Data: map[string][]byte{},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			openstackv1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+
+			s := openStackService{
+				logger:           logger,
+				controllerClient: fakeClient,
+			}
+
+			_, err := s.GetClusterDeployments(&tc.organization, &tc.cluster)
+			if err != nil {
+				t.Errorf("error getting cluster deployments: %s", err)
 			}
 		})
 	}

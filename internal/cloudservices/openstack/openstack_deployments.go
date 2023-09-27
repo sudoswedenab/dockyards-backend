@@ -8,6 +8,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gophercloud/gophercloud/openstack"
 	networksv2 "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"sigs.k8s.io/yaml"
@@ -224,18 +225,24 @@ func (s *openStackService) createIngressNginxDeployment(cluster *v1.Cluster) *v1
 	return &ingressNginxDeployment
 }
 
-func (s *openStackService) GetClusterDeployments(organization *v1.Organization, cluster *v1.Cluster) (*[]v1.Deployment, error) {
-	openStackOrganization, err := s.getOpenStackOrganization(organization)
+func (s *openStackService) GetClusterDeployments(organization *v1alpha1.Organization, cluster *v1.Cluster) (*[]v1.Deployment, error) {
+	openstackProject, err := s.getOpenstackProject(organization)
 	if err != nil {
-		s.logger.Error("error getting openstack organization", "name", organization.Name, "err", err)
 		return nil, err
 	}
 
+	secret, err := s.getOpenstackSecret(openstackProject)
+	if err != nil {
+		return nil, err
+	}
+
+	applicationCredentialID := secret.Data["applicationCredentialID"]
+	applicationCredentialSecret := secret.Data["applicationCredentialSecret"]
 	cloudConf := []string{
 		"[Global]",
-		"auth-url=" + s.authOptions.IdentityEndpoint,
-		"application-credential-id=" + openStackOrganization.ApplicationCredentialID,
-		"application-credential-secret=" + openStackOrganization.ApplicationCredentialSecret,
+		"auth-url=" + openstackProject.Spec.IdentityEndpoint,
+		"application-credential-id=" + string(applicationCredentialID),
+		"application-credential-secret=" + string(applicationCredentialSecret),
 	}
 
 	openStackCinderCSIDeployment := v1.Deployment{
@@ -280,7 +287,7 @@ func (s *openStackService) GetClusterDeployments(organization *v1.Organization, 
 	}
 
 	if needsLoadBalancer {
-		scopedClient, err := s.getScopedClient(openStackOrganization.OpenStackProject.OpenStackID)
+		scopedClient, err := s.getScopedClient(openstackProject.Spec.ProjectID)
 		if err != nil {
 			return nil, err
 		}

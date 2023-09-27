@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
@@ -17,18 +18,26 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 )
 
-func (s *openStackService) PrepareEnvironment(organization *v1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*cloudservices.CloudConfig, error) {
+func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*cloudservices.CloudConfig, error) {
 	logger := s.logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name, "organization", organization.Name)
 
-	openStackOrganization, err := s.getOpenStackOrganization(organization)
+	openstackProject, err := s.getOpenstackProject(organization)
 	if err != nil {
 		logger.Error("error getting openstack organization", "err", err)
+
 		return nil, err
 	}
 
-	logger.Debug("got openstack organization", "id", openStackOrganization.ID, "project", openStackOrganization.OpenStackProject.OpenStackID)
+	secret, err := s.getOpenstackSecret(openstackProject)
+	if err != nil {
+		logger.Error("error getting openstack secret", "err", err)
 
-	scopedClient, err := s.getScopedClient(openStackOrganization.OpenStackProject.OpenStackID)
+		return nil, err
+	}
+
+	logger.Debug("got openstack project", "uid", openstackProject.UID, "project", openstackProject.Spec.ProjectID)
+
+	scopedClient, err := s.getScopedClient(openstackProject.Spec.ProjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -187,10 +196,13 @@ func (s *openStackService) PrepareEnvironment(organization *v1.Organization, clu
 		logger.Debug("created security group rule", "id", rule.ID)
 	}
 
+	applicationCredentialID := secret.Data["applicationCredentialID"]
+	applicationCredentialSecret := secret.Data["applicationCredentialSecret"]
+
 	config := cloudservices.CloudConfig{
 		AuthURL:                     s.authOptions.IdentityEndpoint,
-		ApplicationCredentialID:     openStackOrganization.ApplicationCredentialID,
-		ApplicationCredentialSecret: openStackOrganization.ApplicationCredentialSecret,
+		ApplicationCredentialID:     string(applicationCredentialID),
+		ApplicationCredentialSecret: string(applicationCredentialSecret),
 		FlavorID:                    flavorID,
 		ImageID:                     imageID,
 		KeypairName:                 keypair.Name,
@@ -204,17 +216,17 @@ func (s *openStackService) PrepareEnvironment(organization *v1.Organization, clu
 	return &config, nil
 }
 
-func (s *openStackService) CleanEnvironment(organization *v1.Organization, config *cloudservices.CloudConfig) error {
-	openStackOrganization, err := s.getOpenStackOrganization(organization)
+func (s *openStackService) CleanEnvironment(organization *v1alpha1.Organization, config *cloudservices.CloudConfig) error {
+	openstackProject, err := s.getOpenstackProject(organization)
 	if err != nil {
 		s.logger.Error("error getting openstack organization", "err", err)
 
 		return err
 	}
 
-	s.logger.Debug("cleaning environment", "id", openStackOrganization.ID, "project", openStackOrganization.OpenStackProject.OpenStackID)
+	s.logger.Debug("cleaning environment", "project", openstackProject.Spec.ProjectID)
 
-	scopedClient, err := s.getScopedClient(openStackOrganization.OpenStackProject.OpenStackID)
+	scopedClient, err := s.getScopedClient(openstackProject.Spec.ProjectID)
 
 	computev2, err := openstack.NewComputeV2(scopedClient, s.endpointOpts)
 	if err != nil {
@@ -235,7 +247,7 @@ func (s *openStackService) CleanEnvironment(organization *v1.Organization, confi
 
 		securityGroup := secgroups.SecurityGroup{
 			ID:       securityGroupID,
-			TenantID: openStackOrganization.OpenStackProject.OpenStackID,
+			TenantID: openstackProject.Spec.ProjectID,
 		}
 
 		s.addGarbage(&securityGroup)
