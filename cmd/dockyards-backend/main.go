@@ -43,6 +43,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -200,6 +201,11 @@ func main() {
 	managerOptions := ctrl.Options{
 		Scheme: scheme,
 		Client: client.Options{},
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				"dockyards": {},
+			},
+		},
 	}
 
 	manager, err := ctrl.NewManager(kubeconfig, managerOptions)
