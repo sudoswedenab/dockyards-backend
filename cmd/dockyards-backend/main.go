@@ -29,6 +29,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
+	openstackv1alpha1 "bitbucket.org/sudosweden/dockyards-openstack/api/v1alpha1"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -187,6 +188,7 @@ func main() {
 	scheme := runtime.NewScheme()
 	v1alpha1.AddToScheme(scheme)
 	corev1.AddToScheme(scheme)
+	openstackv1alpha1.AddToScheme(scheme)
 
 	controllerClient, err := client.New(kubeconfig, client.Options{Scheme: scheme})
 	if err != nil {
