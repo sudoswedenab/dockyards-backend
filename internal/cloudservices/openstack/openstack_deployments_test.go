@@ -331,11 +331,11 @@ func TestGetClusterDeployments(t *testing.T) {
 					UID:       "9da90bc2-f0bd-42ed-9409-9dd3f5da0c66",
 				},
 				Spec: v1alpha1.OrganizationSpec{
-					CloudRef: &corev1.ObjectReference{
+					CloudRef: &v1alpha1.CloudReference{
 						APIVersion: openstackv1alpha1.GroupVersion.String(),
 						Kind:       openstackv1alpha1.OpenstackProjectKind,
 						Name:       "project",
-						UID:        "9852c3cf-d455-4d29-9aa9-d6586f681f1f",
+						SecretRef:  "project",
 					},
 				},
 			},

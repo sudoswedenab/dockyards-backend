@@ -96,6 +96,19 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              cloudRef:
+                properties:
+                  apiVersion:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    type: string
+                  secretRef:
+                    type: string
+                required:
+                - name
+                type: object
               displayName:
                 type: string
               memberRefs:

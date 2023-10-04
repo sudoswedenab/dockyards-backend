@@ -9,7 +9,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	openstackv1alpha1 "bitbucket.org/sudosweden/dockyards-openstack/api/v1alpha1"
 	"github.com/google/go-cmp/cmp"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,11 +31,10 @@ func TestGetOpenstackProject(t *testing.T) {
 					UID:       "9bdaf261-659c-4786-bd07-d6a8a8e04243",
 				},
 				Spec: v1alpha1.OrganizationSpec{
-					CloudRef: &corev1.ObjectReference{
+					CloudRef: &v1alpha1.CloudReference{
 						APIVersion: openstackv1alpha1.GroupVersion.String(),
 						Kind:       openstackv1alpha1.OpenstackProjectKind,
 						Name:       "project1",
-						UID:        "4d16ce9a-f5ba-44c3-80c1-e11186ee8c52",
 					},
 				},
 			},
@@ -128,11 +126,10 @@ func TestGetOpenstackProjectErrors(t *testing.T) {
 					UID:       "ea48801a-7448-42db-b5de-31aa9c9bd23e",
 				},
 				Spec: v1alpha1.OrganizationSpec{
-					CloudRef: &corev1.ObjectReference{
+					CloudRef: &v1alpha1.CloudReference{
 						APIVersion: "cloud.dockyards.io/v1alpha1",
 						Kind:       "NoCloudProject",
 						Name:       "test",
-						UID:        "ad3f6035-fbd9-4aa3-bbcc-ee6cce3adf65",
 					},
 				},
 			},
