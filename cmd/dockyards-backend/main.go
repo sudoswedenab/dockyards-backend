@@ -430,7 +430,14 @@ func main() {
 
 	err = controller.NewOrganizationController(manager, logger.With("controller", "organization"))
 	if err != nil {
-		logger.Error("error creating new organization controller")
+		logger.Error("error creating new organization controller", "err", err)
+
+		os.Exit(1)
+	}
+
+	err = controller.NewClusterController(manager, clusterService, logger.With("controller", "cluster"))
+	if err != nil {
+		logger.Error("error creating new cluster controller", "err", err)
 
 		os.Exit(1)
 	}
