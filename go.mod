@@ -4,7 +4,7 @@ go 1.21.1
 
 require (
 	bitbucket.org/sudosweden/dockyards-backend/pkg/api v1.2.3
-	bitbucket.org/sudosweden/dockyards-openstack v0.0.0-20230927111852-c8f5bb0a6617
+	bitbucket.org/sudosweden/dockyards-openstack v0.0.0-20231004131042-eb0a79bfbd85
 	github.com/containers/image/v5 v5.27.0
 	github.com/deepmap/oapi-codegen v1.13.4
 	github.com/gin-contrib/cors v1.4.0
@@ -16,7 +16,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
-	github.com/gophercloud/gophercloud v1.6.0
+	github.com/gophercloud/gophercloud v1.7.0
 	github.com/gophercloud/utils v0.0.0-20230523080330-de873b9cf00d
 	github.com/joho/godotenv v1.4.0
 	github.com/prometheus/client_golang v1.16.0

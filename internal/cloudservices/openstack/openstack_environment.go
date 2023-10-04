@@ -28,7 +28,7 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organizatio
 		return nil, err
 	}
 
-	secret, err := s.getOpenstackSecret(openstackProject)
+	secret, err := s.getOpenstackSecret(organization)
 	if err != nil {
 		logger.Error("error getting openstack secret", "err", err)
 

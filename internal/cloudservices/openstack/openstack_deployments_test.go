@@ -17,6 +17,7 @@ import (
 	openstackv1alpha1 "bitbucket.org/sudosweden/dockyards-openstack/api/v1alpha1"
 	"github.com/glebarez/sqlite"
 	"github.com/google/go-cmp/cmp"
+	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
@@ -349,14 +350,7 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "9852c3cf-d455-4d29-9aa9-d6586f681f1f",
 							},
 							Spec: openstackv1alpha1.OpenstackProjectSpec{
-								IdentityEndpoint: "http://localhost:5000/v3",
-								ProjectID:        "0e0a09b79e277bc0a8262cc2b4a7b688",
-								SecretRef: &corev1.ObjectReference{
-									APIVersion: "v1",
-									Kind:       "Secret",
-									Name:       "project",
-									UID:        "41e492df-3933-467b-a598-50e3a067f9b8",
-								},
+								ProjectID: "0e0a09b79e277bc0a8262cc2b4a7b688",
 							},
 						},
 					},
@@ -389,6 +383,9 @@ func TestGetClusterDeployments(t *testing.T) {
 			s := openStackService{
 				logger:           logger,
 				controllerClient: fakeClient,
+				authOptions: &gophercloud.AuthOptions{
+					IdentityEndpoint: "http://localhost:5000/v3/",
+				},
 			}
 
 			_, err := s.GetClusterDeployments(&tc.organization, &tc.cluster)

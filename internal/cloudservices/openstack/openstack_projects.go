@@ -41,16 +41,16 @@ func (s *openStackService) getOpenstackProject(organization *v1alpha1.Organizati
 	return &openstackProject, nil
 }
 
-func (s *openStackService) getOpenstackSecret(openstackProject *openstackv1alpha1.OpenstackProject) (*corev1.Secret, error) {
-	if openstackProject.Spec.SecretRef == nil {
+func (s *openStackService) getOpenstackSecret(organization *v1alpha1.Organization) (*corev1.Secret, error) {
+	if organization.Spec.CloudRef.SecretRef == "" {
 		return nil, ErrNoSecretReference
 	}
 
 	ctx := context.Background()
 
 	objectKey := client.ObjectKey{
-		Name:      openstackProject.Spec.SecretRef.Name,
-		Namespace: openstackProject.Namespace,
+		Name:      organization.Spec.CloudRef.SecretRef,
+		Namespace: organization.Namespace,
 	}
 
 	var secret corev1.Secret

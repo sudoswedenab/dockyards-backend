@@ -231,7 +231,7 @@ func (s *openStackService) GetClusterDeployments(organization *v1alpha1.Organiza
 		return nil, err
 	}
 
-	secret, err := s.getOpenstackSecret(openstackProject)
+	secret, err := s.getOpenstackSecret(organization)
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func (s *openStackService) GetClusterDeployments(organization *v1alpha1.Organiza
 	applicationCredentialSecret := secret.Data["applicationCredentialSecret"]
 	cloudConf := []string{
 		"[Global]",
-		"auth-url=" + openstackProject.Spec.IdentityEndpoint,
+		"auth-url=" + s.authOptions.IdentityEndpoint,
 		"application-credential-id=" + string(applicationCredentialID),
 		"application-credential-secret=" + string(applicationCredentialSecret),
 	}
