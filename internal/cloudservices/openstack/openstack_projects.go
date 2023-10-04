@@ -13,7 +13,7 @@ import (
 var (
 	ErrNoCloudReference  = errors.New("organization has no cloud reference")
 	ErrNoOpenstackKind   = errors.New("organization does not have openstack kind")
-	ErrNoSecretReference = errors.New("project has no secret reference")
+	ErrNoSecretReference = errors.New("organization has no secret reference")
 )
 
 func (s *openStackService) getOpenstackProject(organization *v1alpha1.Organization) (*openstackv1alpha1.OpenstackProject, error) {
