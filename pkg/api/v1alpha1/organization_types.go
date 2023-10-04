@@ -10,10 +10,13 @@ const (
 )
 
 type OrganizationSpec struct {
-	DisplayName string                   `json:"displayName,omitempty"`
-	MemberRefs  []corev1.ObjectReference `json:"memberRefs"`
-	BillingRef  *corev1.ObjectReference  `json:"billingRef,omitempty"`
-	CloudRef    *CloudReference          `json:"cloudRef,omitempty"`
+	DisplayName string `json:"displayName,omitempty"`
+
+	// +kubebuilder:validation:MinItems=1
+	MemberRefs []corev1.ObjectReference `json:"memberRefs"`
+
+	BillingRef *corev1.ObjectReference `json:"billingRef,omitempty"`
+	CloudRef   *CloudReference         `json:"cloudRef,omitempty"`
 }
 
 type OrganizationStatus struct {
@@ -27,7 +30,7 @@ type Organization struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   OrganizationSpec   `json:"spec,omitempty"`
+	Spec   OrganizationSpec   `json:"spec"`
 	Status OrganizationStatus `json:"status,omitempty"`
 }
 
