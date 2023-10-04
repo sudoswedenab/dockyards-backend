@@ -16,13 +16,19 @@ type OrganizationSpec struct {
 	CloudRef    *corev1.ObjectReference  `json:"cloudRef,omitempty"`
 }
 
+type OrganizationStatus struct {
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 type Organization struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec OrganizationSpec `json:"spec,omitempty"`
+	Spec   OrganizationSpec   `json:"spec,omitempty"`
+	Status OrganizationStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
