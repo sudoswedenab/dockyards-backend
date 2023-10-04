@@ -8,4 +8,5 @@ const (
 const (
 	CloudProjectAssignedReason string = "CloudProjectAssigned"
 	UserVerifiedReason         string = "UserVerified"
+	ClusterReadyReason         string = "ClusterReady"
 )
