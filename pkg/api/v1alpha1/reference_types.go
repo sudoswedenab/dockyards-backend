@@ -8,6 +8,7 @@ type CloudReference struct {
 	APIVersion string `json:"apiVersion,omitempty"`
 	Kind       string `json:"kind,omitempty"`
 	Name       string `json:"name"`
+	Namespace  string `json:"namespace,omitempty"`
 	SecretRef  string `json:"secretRef,omitempty"`
 }
 

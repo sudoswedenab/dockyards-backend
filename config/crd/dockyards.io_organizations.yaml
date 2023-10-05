@@ -104,6 +104,8 @@ spec:
                     type: string
                   name:
                     type: string
+                  namespace:
+                    type: string
                   secretRef:
                     type: string
                 required:
