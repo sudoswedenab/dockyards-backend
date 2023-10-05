@@ -26,7 +26,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
@@ -56,12 +55,10 @@ func TestPostOrgClusters(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "fec813fc-7938-4cb9-ba12-bb28f6b1f5d9",
+										Name: "test",
+										UID:  "fec813fc-7938-4cb9-ba12-bb28f6b1f5d9",
 									},
 								},
 							},
@@ -152,12 +149,10 @@ func TestPostOrgClustersErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "82aaf116-666f-4846-9e10-defa79a4df3d",
+										Name: "test",
+										UID:  "82aaf116-666f-4846-9e10-defa79a4df3d",
 									},
 								},
 							},
@@ -183,12 +178,10 @@ func TestPostOrgClustersErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "e7282b48-f8b6-4042-8f4c-12ec59fe3a87",
+										Name: "test",
+										UID:  "e7282b48-f8b6-4042-8f4c-12ec59fe3a87",
 									},
 								},
 							},
@@ -219,12 +212,10 @@ func TestPostOrgClustersErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "af510e3e-e667-4500-8a73-12f2163f849e",
+										Name: "test",
+										UID:  "af510e3e-e667-4500-8a73-12f2163f849e",
 									},
 								},
 							},
@@ -247,12 +238,10 @@ func TestPostOrgClustersErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f",
+										Name: "test",
+										UID:  "c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f",
 									},
 								},
 							},
@@ -286,12 +275,10 @@ func TestPostOrgClustersErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "7a7d8423-c9e7-46f3-958a-e68fb97b4417",
+										Name: "test",
+										UID:  "7a7d8423-c9e7-46f3-958a-e68fb97b4417",
 									},
 								},
 							},
@@ -390,12 +377,10 @@ func TestDeleteCluster(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "7994b631-399a-41e6-9c6c-200391f8f87d",
+										Name: "test",
+										UID:  "7994b631-399a-41e6-9c6c-200391f8f87d",
 									},
 								},
 							},
@@ -488,12 +473,10 @@ func TestDeleteClusterErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3",
+										Name: "test",
+										UID:  "f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3",
 									},
 								},
 							},
@@ -516,12 +499,10 @@ func TestDeleteClusterErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "0b8f6617-eba7-4360-b73a-11dac2286a40",
+										Name: "test",
+										UID:  "0b8f6617-eba7-4360-b73a-11dac2286a40",
 									},
 								},
 							},
@@ -608,12 +589,10 @@ func TestGetCluster(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "f235721e-8e34-4b57-a6aa-8f6d31162a41",
+										Name: "test",
+										UID:  "f235721e-8e34-4b57-a6aa-8f6d31162a41",
 									},
 								},
 							},
@@ -709,12 +688,10 @@ func TestGetClusterErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "afb03005-d51d-4387-9857-83125ff505d5",
+										Name: "test",
+										UID:  "afb03005-d51d-4387-9857-83125ff505d5",
 									},
 								},
 							},
@@ -805,12 +782,10 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "f9b8f6b0-5fc6-4f9c-b264-a08da850b991",
+										Name: "test",
+										UID:  "f9b8f6b0-5fc6-4f9c-b264-a08da850b991",
 									},
 								},
 							},
@@ -948,12 +923,10 @@ func TestGetClusterKubeconfig(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "9eb06ff5-4299-480c-b957-0b10485d873c",
+										Name: "test",
+										UID:  "9eb06ff5-4299-480c-b957-0b10485d873c",
 									},
 								},
 							},
@@ -1060,12 +1033,10 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "83a44759-56b8-480a-9575-ad0f3519f73a",
+										Name: "test",
+										UID:  "83a44759-56b8-480a-9575-ad0f3519f73a",
 									},
 								},
 							},
@@ -1097,12 +1068,10 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "7180bc06-66c1-4494-b53e-e9cc878995a9",
+										Name: "test",
+										UID:  "7180bc06-66c1-4494-b53e-e9cc878995a9",
 									},
 								},
 							},
@@ -1186,12 +1155,11 @@ func TestGetClusters(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "7945098c-e2ef-451b-8cbf-d9674bddd031"},
+										Name: "test",
+										UID:  "7945098c-e2ef-451b-8cbf-d9674bddd031",
+									},
 								},
 							},
 						},
@@ -1228,12 +1196,10 @@ func TestGetClusters(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "9142a815-562b-4b1e-b5fd-2163845cced5",
+										Name: "test",
+										UID:  "9142a815-562b-4b1e-b5fd-2163845cced5",
 									},
 								},
 							},

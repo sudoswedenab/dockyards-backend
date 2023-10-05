@@ -13,7 +13,7 @@ type OrganizationSpec struct {
 	DisplayName string `json:"displayName,omitempty"`
 
 	// +kubebuilder:validation:MinItems=1
-	MemberRefs []corev1.ObjectReference `json:"memberRefs"`
+	MemberRefs []UserReference `json:"memberRefs"`
 
 	BillingRef *corev1.ObjectReference `json:"billingRef,omitempty"`
 	CloudRef   *CloudReference         `json:"cloudRef,omitempty"`

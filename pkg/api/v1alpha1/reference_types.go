@@ -1,5 +1,9 @@
 package v1alpha1
 
+import (
+	"k8s.io/apimachinery/pkg/types"
+)
+
 type CloudReference struct {
 	APIVersion string `json:"apiVersion,omitempty"`
 	Kind       string `json:"kind,omitempty"`
@@ -8,6 +12,6 @@ type CloudReference struct {
 }
 
 type UserReference struct {
-	Kind string `json:"kind,omitempty"`
-	Name string `json:"name,omitempty"`
+	Name string    `json:"name"`
+	UID  types.UID `json:"uid"`
 }

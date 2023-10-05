@@ -15,7 +15,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,12 +39,10 @@ func TestGetOrgs(t *testing.T) {
 								UID:  "03582042-318e-4c1e-9728-755c5eaf4267",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "89a3e0aa-7744-49af-ae7e-1461004c1598",
+										Name: "test",
+										UID:  "89a3e0aa-7744-49af-ae7e-1461004c1598",
 									},
 								},
 							},

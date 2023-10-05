@@ -11,6 +11,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -159,7 +160,7 @@ func (h *handler) getSubjectFromContext(c *gin.Context) (string, error) {
 
 func (h *handler) isMember(subject string, organization *v1alpha1.Organization) bool {
 	for _, memberRef := range organization.Spec.MemberRefs {
-		if string(memberRef.UID) == subject && memberRef.Kind == v1alpha1.UserKind {
+		if memberRef.UID == types.UID(subject) {
 			return true
 		}
 	}

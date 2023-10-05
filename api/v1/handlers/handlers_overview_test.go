@@ -16,7 +16,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,12 +61,10 @@ func TestGetOverview(t *testing.T) {
 								UID:       "01cdc762-a115-43c6-9770-6587087d6fb8",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "23aa679e-e3c8-47f8-bad6-2284b92b83e7",
+										Name: "test",
+										UID:  "23aa679e-e3c8-47f8-bad6-2284b92b83e7",
 									},
 								},
 							},
@@ -117,12 +114,10 @@ func TestGetOverview(t *testing.T) {
 								UID:       "8d2c74e5-efee-4b70-8f9d-e3535ba2d1f9",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "user1",
-										UID:        "e27df599-93cd-4e30-93f1-98399e3e7237",
+										Name: "user1",
+										UID:  "e27df599-93cd-4e30-93f1-98399e3e7237",
 									},
 								},
 							},
@@ -134,12 +129,10 @@ func TestGetOverview(t *testing.T) {
 								UID:       "522941b7-2883-4a9f-83a3-04f32b033334",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "user2",
-										UID:        "e9f13deb-de5e-4737-94e6-b3e1a7dd7b1b",
+										Name: "user2",
+										UID:  "e9f13deb-de5e-4737-94e6-b3e1a7dd7b1b",
 									},
 								},
 							},

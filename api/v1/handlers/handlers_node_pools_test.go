@@ -18,7 +18,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,12 +68,10 @@ func TestGetNodePool(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "74eab97f-f635-4ec9-99b1-40f37fde690d",
+										Name: "test",
+										UID:  "74eab97f-f635-4ec9-99b1-40f37fde690d",
 									},
 								},
 							},
@@ -233,12 +230,10 @@ func TestGetNodePoolErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "5125130c-a4af-40b6-8b36-b8be8f4d2fdb",
+										Name: "test",
+										UID:  "5125130c-a4af-40b6-8b36-b8be8f4d2fdb",
 									},
 								},
 							},
@@ -328,12 +323,10 @@ func TestPostClusterNodePools(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+										Name: "test",
+										UID:  "d80ff784-20fe-4bcc-b52f-e57764111c9a",
 									},
 								},
 							},
@@ -376,12 +369,10 @@ func TestPostClusterNodePools(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "940b43ee-39d3-4ecb-a6bd-be25245d7eca",
+										Name: "test",
+										UID:  "940b43ee-39d3-4ecb-a6bd-be25245d7eca",
 									},
 								},
 							},
@@ -529,12 +520,10 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "df24c8f4-27f3-485a-ae7a-92546b3fb925",
+										Name: "test",
+										UID:  "df24c8f4-27f3-485a-ae7a-92546b3fb925",
 									},
 								},
 							},
@@ -569,12 +558,10 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "bbc144d1-0f5f-4f8b-8b8b-54d0619395bc",
+										Name: "test",
+										UID:  "bbc144d1-0f5f-4f8b-8b8b-54d0619395bc",
 									},
 								},
 							},
@@ -610,12 +597,10 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "bbc144d1-0f5f-4f8b-8b8b-54d0619395bc",
+										Name: "test",
+										UID:  "bbc144d1-0f5f-4f8b-8b8b-54d0619395bc",
 									},
 								},
 							},
@@ -716,12 +701,10 @@ func TestDeleteNodePool(t *testing.T) {
 								Namespace: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []corev1.ObjectReference{
+								MemberRefs: []v1alpha1.UserReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.UserKind,
-										Name:       "test",
-										UID:        "3be51320-a001-4c81-88fd-68e6b0f29a88",
+										Name: "test",
+										UID:  "3be51320-a001-4c81-88fd-68e6b0f29a88",
 									},
 								},
 							},
