@@ -336,8 +336,12 @@ func TestGetClusterDeployments(t *testing.T) {
 						APIVersion: openstackv1alpha1.GroupVersion.String(),
 						Kind:       openstackv1alpha1.OpenstackProjectKind,
 						Name:       "project",
+						Namespace:  "testing",
 						SecretRef:  "project",
 					},
+				},
+				Status: v1alpha1.OrganizationStatus{
+					NamespaceRef: "testing-123",
 				},
 			},
 			lists: []client.ObjectList{
@@ -360,7 +364,7 @@ func TestGetClusterDeployments(t *testing.T) {
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "project",
-								Namespace: "testing",
+								Namespace: "testing-123",
 								UID:       "41e492df-3933-467b-a598-50e3a067f9b8",
 							},
 							Data: map[string][]byte{},

@@ -29,7 +29,7 @@ func (s *openStackService) getOpenstackProject(organization *v1alpha1.Organizati
 
 	objectKey := client.ObjectKey{
 		Name:      organization.Spec.CloudRef.Name,
-		Namespace: organization.Namespace,
+		Namespace: organization.Spec.CloudRef.Namespace,
 	}
 
 	var openstackProject openstackv1alpha1.OpenstackProject
@@ -50,7 +50,7 @@ func (s *openStackService) getOpenstackSecret(organization *v1alpha1.Organizatio
 
 	objectKey := client.ObjectKey{
 		Name:      organization.Spec.CloudRef.SecretRef,
-		Namespace: organization.Namespace,
+		Namespace: organization.Status.NamespaceRef,
 	}
 
 	var secret corev1.Secret

@@ -26,16 +26,19 @@ func TestGetOpenstackProject(t *testing.T) {
 			name: "test single project",
 			organization: v1alpha1.Organization{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "testing",
-					UID:       "9bdaf261-659c-4786-bd07-d6a8a8e04243",
+					Name: "test",
+					UID:  "9bdaf261-659c-4786-bd07-d6a8a8e04243",
 				},
 				Spec: v1alpha1.OrganizationSpec{
 					CloudRef: &v1alpha1.CloudReference{
 						APIVersion: openstackv1alpha1.GroupVersion.String(),
 						Kind:       openstackv1alpha1.OpenstackProjectKind,
 						Name:       "project1",
+						Namespace:  "testing",
 					},
+				},
+				Status: v1alpha1.OrganizationStatus{
+					NamespaceRef: "testing-123",
 				},
 			},
 			lists: []client.ObjectList{
