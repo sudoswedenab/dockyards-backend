@@ -427,13 +427,6 @@ func main() {
 	go privateServer.ListenAndServe()
 	go r.Run(":9000")
 
-	appControllerOptions := []controller.ControllerOption{
-		controller.WithLogger(logger.With("controller", "app")),
-		controller.WithManager(manager),
-		controller.WithDatabase(db),
-	}
-
-	err = controller.NewAppController(appControllerOptions...)
 
 	err = manager.Start(context.Background())
 	if err != nil {
