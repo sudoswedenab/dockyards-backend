@@ -20,7 +20,8 @@ type OrganizationSpec struct {
 }
 
 type OrganizationStatus struct {
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	Conditions   []metav1.Condition `json:"conditions,omitempty"`
+	NamespaceRef string             `json:"namespaceRef,omitempty"`
 }
 
 // +kubebuilder:object:root=true

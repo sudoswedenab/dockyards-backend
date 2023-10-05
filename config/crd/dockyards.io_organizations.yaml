@@ -201,6 +201,8 @@ spec:
                   - type
                   type: object
                 type: array
+              namespaceRef:
+                type: string
             type: object
         required:
         - spec
