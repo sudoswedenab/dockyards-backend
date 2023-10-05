@@ -6,3 +6,8 @@ type CloudReference struct {
 	Name       string `json:"name"`
 	SecretRef  string `json:"secretRef,omitempty"`
 }
+
+type UserReference struct {
+	Kind string `json:"kind,omitempty"`
+	Name string `json:"name,omitempty"`
+}
