@@ -427,6 +427,12 @@ func main() {
 	go privateServer.ListenAndServe()
 	go r.Run(":9000")
 
+	err = controller.NewOrganizationController(manager, logger.With("controller", "organization"))
+	if err != nil {
+		logger.Error("error creating new organization controller")
+
+		os.Exit(1)
+	}
 
 	err = manager.Start(context.Background())
 	if err != nil {
