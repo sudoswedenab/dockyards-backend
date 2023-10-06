@@ -14,7 +14,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,9 +43,6 @@ func TestLogin(t *testing.T) {
 							Spec: v1alpha1.UserSpec{
 								Email:    "test@dockyards.dev",
 								Password: string(hash),
-								VerificationRef: &corev1.ObjectReference{
-									Kind: "testing",
-								},
 							},
 							Status: v1alpha1.UserStatus{
 								Conditions: []metav1.Condition{
@@ -78,9 +74,6 @@ func TestLogin(t *testing.T) {
 							Spec: v1alpha1.UserSpec{
 								Email:    "test1@dockyards.dev",
 								Password: string(hash),
-								VerificationRef: &corev1.ObjectReference{
-									Kind: "testing",
-								},
 							},
 							Status: v1alpha1.UserStatus{
 								Conditions: []metav1.Condition{
@@ -99,9 +92,6 @@ func TestLogin(t *testing.T) {
 							Spec: v1alpha1.UserSpec{
 								Email:    "test2@dockyards.dev",
 								Password: string(hash),
-								VerificationRef: &corev1.ObjectReference{
-									Kind: "testing",
-								},
 							},
 							Status: v1alpha1.UserStatus{
 								Conditions: []metav1.Condition{
@@ -120,9 +110,6 @@ func TestLogin(t *testing.T) {
 							Spec: v1alpha1.UserSpec{
 								Email:    "test3@dockyards.dev",
 								Password: string(hash),
-								VerificationRef: &corev1.ObjectReference{
-									Kind: "testing",
-								},
 							},
 							Status: v1alpha1.UserStatus{
 								Conditions: []metav1.Condition{
@@ -207,9 +194,6 @@ func TestLoginErrors(t *testing.T) {
 							Spec: v1alpha1.UserSpec{
 								Email:    "test@dockyards.dev",
 								Password: string(hash),
-								VerificationRef: &corev1.ObjectReference{
-									Kind: "testing",
-								},
 							},
 							Status: v1alpha1.UserStatus{
 								Conditions: []metav1.Condition{

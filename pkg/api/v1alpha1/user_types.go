@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -10,9 +9,8 @@ const (
 )
 
 type UserSpec struct {
-	Email           string                  `json:"email"`
-	Password        string                  `json:"password"`
-	VerificationRef *corev1.ObjectReference `json:"verificationRef,omitempty"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type UserStatus struct {
