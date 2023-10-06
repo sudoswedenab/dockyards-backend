@@ -225,6 +225,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.Organization{}, "spec.memberRefs", index.MemberRefsIndexer)
+	if err != nil {
+		logger.Error("error adding member refs indexer to manager", "err", err)
+
+		os.Exit(1)
+	}
+
 	var cloudService cloudservices.CloudService
 	switch cloudServiceFlag {
 	case "openstack":

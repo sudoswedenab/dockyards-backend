@@ -16,3 +16,14 @@ func UIDIndexer(object client.Object) []string {
 		string(object.(*v1alpha1.User).UID),
 	}
 }
+
+func MemberRefsIndexer(object client.Object) []string {
+	organization := object.(*v1alpha1.Organization)
+
+	memberUIDs := make([]string, len(organization.Spec.MemberRefs))
+	for i, memberRef := range organization.Spec.MemberRefs {
+		memberUIDs[i] = string(memberRef.UID)
+	}
+
+	return memberUIDs
+}
