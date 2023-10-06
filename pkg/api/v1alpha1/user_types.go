@@ -9,7 +9,9 @@ const (
 )
 
 type UserSpec struct {
-	Email    string `json:"email"`
+	Email string `json:"email"`
+
+	// +kubebuilder:validation:Pattern="^\\$2a\\$10\\$[\\.\\/A-Za-z0-9]{53}$"
 	Password string `json:"password"`
 }
 
