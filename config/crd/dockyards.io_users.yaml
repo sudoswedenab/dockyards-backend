@@ -12,7 +12,7 @@ spec:
     listKind: UserList
     plural: users
     singular: user
-  scope: Namespaced
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
