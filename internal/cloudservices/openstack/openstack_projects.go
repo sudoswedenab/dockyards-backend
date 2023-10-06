@@ -11,7 +11,7 @@ import (
 )
 
 // +kubebuilder:rbac:groups=cloud.dockyards.io,resources=openstackprojects,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=secrets,verbs=get
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
 var (
 	ErrNoCloudReference  = errors.New("organization has no cloud reference")
