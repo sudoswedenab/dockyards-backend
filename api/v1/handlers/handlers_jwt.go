@@ -14,6 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=dockyards.io,resources=users,verbs=get;list;watch
+
 func (h *handler) PostRefresh(c *gin.Context) {
 	ctx := context.Background()
 

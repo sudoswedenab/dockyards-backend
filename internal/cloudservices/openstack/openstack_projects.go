@@ -10,6 +10,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=cloud.dockyards.io,resources=openstackprojects,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get
+
 var (
 	ErrNoCloudReference  = errors.New("organization has no cloud reference")
 	ErrNoOpenstackKind   = errors.New("organization does not have openstack kind")

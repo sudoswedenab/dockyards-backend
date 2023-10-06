@@ -17,6 +17,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
+
 func (h *handler) PostOrgClusters(c *gin.Context) {
 	ctx := context.Background()
 
