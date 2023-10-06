@@ -44,7 +44,13 @@ func TestPostRefresh(t *testing.T) {
 								Email: "test@dockyards.dev",
 							},
 							Status: v1alpha1.UserStatus{
-								Verified: true,
+								Conditions: []metav1.Condition{
+									{
+										Type:   v1alpha1.VerifiedCondition,
+										Status: metav1.ConditionTrue,
+										Reason: v1alpha1.UserVerifiedReason,
+									},
+								},
 							},
 						},
 					},
@@ -137,7 +143,13 @@ func TestPostRefreshErrors(t *testing.T) {
 								Email: "test@dockyards.dev",
 							},
 							Status: v1alpha1.UserStatus{
-								Verified: true,
+								Conditions: []metav1.Condition{
+									{
+										Type:   v1alpha1.VerifiedCondition,
+										Status: metav1.ConditionTrue,
+										Reason: v1alpha1.UserVerifiedReason,
+									},
+								},
 							},
 						},
 					},

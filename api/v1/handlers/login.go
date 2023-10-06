@@ -8,6 +8,8 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,8 +44,9 @@ func (h *handler) Login(c *gin.Context) {
 
 	user := userList.Items[0]
 
-	if !user.Status.Verified {
-		h.logger.Error("user has not been verified")
+	condition := meta.FindStatusCondition(user.Status.Conditions, v1alpha1.VerifiedCondition)
+	if condition == nil || condition.Status != metav1.ConditionTrue {
+		h.logger.Error("user is not verified")
 
 		c.AbortWithStatus(http.StatusForbidden)
 		return

@@ -49,7 +49,13 @@ func TestLogin(t *testing.T) {
 								},
 							},
 							Status: v1alpha1.UserStatus{
-								Verified: true,
+								Conditions: []metav1.Condition{
+									{
+										Type:   v1alpha1.VerifiedCondition,
+										Status: metav1.ConditionTrue,
+										Reason: v1alpha1.UserVerifiedReason,
+									},
+								},
 							},
 						},
 					},
@@ -77,7 +83,13 @@ func TestLogin(t *testing.T) {
 								},
 							},
 							Status: v1alpha1.UserStatus{
-								Verified: true,
+								Conditions: []metav1.Condition{
+									{
+										Type:   v1alpha1.VerifiedCondition,
+										Status: metav1.ConditionTrue,
+										Reason: v1alpha1.UserVerifiedReason,
+									},
+								},
 							},
 						},
 						{
@@ -92,7 +104,13 @@ func TestLogin(t *testing.T) {
 								},
 							},
 							Status: v1alpha1.UserStatus{
-								Verified: true,
+								Conditions: []metav1.Condition{
+									{
+										Type:   v1alpha1.VerifiedCondition,
+										Status: metav1.ConditionTrue,
+										Reason: v1alpha1.UserVerifiedReason,
+									},
+								},
 							},
 						},
 						{
@@ -107,7 +125,13 @@ func TestLogin(t *testing.T) {
 								},
 							},
 							Status: v1alpha1.UserStatus{
-								Verified: true,
+								Conditions: []metav1.Condition{
+									{
+										Type:   v1alpha1.VerifiedCondition,
+										Status: metav1.ConditionTrue,
+										Reason: v1alpha1.UserVerifiedReason,
+									},
+								},
 							},
 						},
 					},
@@ -188,7 +212,13 @@ func TestLoginErrors(t *testing.T) {
 								},
 							},
 							Status: v1alpha1.UserStatus{
-								Verified: true,
+								Conditions: []metav1.Condition{
+									{
+										Type:   v1alpha1.VerifiedCondition,
+										Status: metav1.ConditionTrue,
+										Reason: v1alpha1.UserVerifiedReason,
+									},
+								},
 							},
 						},
 					},
