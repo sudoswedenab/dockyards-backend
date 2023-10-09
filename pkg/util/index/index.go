@@ -13,7 +13,7 @@ func EmailIndexer(object client.Object) []string {
 
 func UIDIndexer(object client.Object) []string {
 	return []string{
-		string(object.(*v1alpha1.User).UID),
+		string(object.GetUID()),
 	}
 }
 
