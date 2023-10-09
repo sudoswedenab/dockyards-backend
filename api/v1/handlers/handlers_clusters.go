@@ -22,12 +22,21 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;watch
 
-func (h *handler) toV1Cluster(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster) *v1.Cluster {
+func (h *handler) toV1Cluster(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePoolList *v1alpha1.NodePoolList) *v1.Cluster {
 	v1Cluster := v1.Cluster{
 		ID:           string(cluster.UID),
 		Name:         cluster.Name,
 		Organization: organization.Name,
 		CreatedAt:    cluster.CreationTimestamp.Time,
+	}
+
+	if nodePoolList != nil && len(nodePoolList.Items) > 0 {
+		nodePools := make([]v1.NodePool, len(nodePoolList.Items))
+		for i, nodePool := range nodePoolList.Items {
+			nodePools[i] = *h.toV1NodePool(&nodePool, cluster, nil)
+		}
+
+		v1Cluster.NodePools = nodePools
 	}
 
 	return &v1Cluster
@@ -465,7 +474,7 @@ func (h *handler) GetClusters(c *gin.Context) {
 		}
 
 		for _, cluster := range clusterList.Items {
-			clusters = append(clusters, *h.toV1Cluster(&organization, &cluster))
+			clusters = append(clusters, *h.toV1Cluster(&organization, &cluster, nil))
 		}
 	}
 
@@ -534,7 +543,20 @@ func (h *handler) GetCluster(c *gin.Context) {
 		return
 	}
 
-	v1Cluster := h.toV1Cluster(organization, &cluster)
+	matchingFields = client.MatchingFields{
+		"metadata.ownerReferences.uid": clusterID,
+	}
+
+	var nodePoolList v1alpha1.NodePoolList
+	err = h.controllerClient.List(ctx, &nodePoolList, matchingFields)
+	if err != nil {
+		h.logger.Error("error listing node pools", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	v1Cluster := h.toV1Cluster(organization, &cluster, &nodePoolList)
 
 	c.JSON(http.StatusOK, v1Cluster)
 }
