@@ -567,11 +567,14 @@ func TestDeleteClusterErrors(t *testing.T) {
 }
 
 func TestGetCluster(t *testing.T) {
+	now := metav1.Now()
+
 	tt := []struct {
 		name      string
 		clusterID string
 		sub       string
 		lists     []client.ObjectList
+		expected  v1.Cluster
 	}{
 		{
 			name:      "test simple",
@@ -603,9 +606,10 @@ func TestGetCluster(t *testing.T) {
 					Items: []v1alpha1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "testing",
-								UID:       "26836276-22c6-41bc-bb40-78cdf141e302",
+								Name:              "test",
+								Namespace:         "testing",
+								UID:               "26836276-22c6-41bc-bb40-78cdf141e302",
+								CreationTimestamp: now,
 								OwnerReferences: []metav1.OwnerReference{
 									{
 										APIVersion: v1alpha1.GroupVersion.String(),
@@ -618,6 +622,12 @@ func TestGetCluster(t *testing.T) {
 						},
 					},
 				},
+			},
+			expected: v1.Cluster{
+				Name:         "test",
+				ID:           "26836276-22c6-41bc-bb40-78cdf141e302",
+				Organization: "test-org",
+				CreatedAt:    now.Time.Truncate(time.Second),
 			},
 		},
 	}
@@ -660,6 +670,21 @@ func TestGetCluster(t *testing.T) {
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
 				t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+			}
+
+			b, err := io.ReadAll(w.Result().Body)
+			if err != nil {
+				t.Fatalf("error reading result body: %s", err)
+			}
+
+			var actual v1.Cluster
+			err = json.Unmarshal(b, &actual)
+			if err != nil {
+				t.Fatalf("error unmarshalling result body: %s", err)
+			}
+
+			if !cmp.Equal(actual, tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
 			}
 		})
 	}
@@ -1181,6 +1206,8 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 }
 
 func TestGetClusters(t *testing.T) {
+	now := metav1.Now()
+
 	tt := []struct {
 		name     string
 		sub      string
@@ -1216,9 +1243,10 @@ func TestGetClusters(t *testing.T) {
 					Items: []v1alpha1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:       "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
-								Name:      "cluster1",
-								Namespace: "testing",
+								UID:               "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
+								Name:              "cluster1",
+								Namespace:         "testing",
+								CreationTimestamp: now,
 								OwnerReferences: []metav1.OwnerReference{
 									{
 										APIVersion: v1alpha1.GroupVersion.String(),
@@ -1237,6 +1265,7 @@ func TestGetClusters(t *testing.T) {
 					ID:           "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
 					Name:         "cluster1",
 					Organization: "test",
+					CreatedAt:    now.Time.Truncate(time.Second),
 				},
 			},
 		},
