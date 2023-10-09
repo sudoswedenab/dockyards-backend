@@ -22,6 +22,17 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;watch
 
+func (h *handler) toV1Cluster(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster) *v1.Cluster {
+	v1Cluster := v1.Cluster{
+		ID:           string(cluster.UID),
+		Name:         cluster.Name,
+		Organization: organization.Name,
+		CreatedAt:    cluster.CreationTimestamp.Time,
+	}
+
+	return &v1Cluster
+}
+
 func (h *handler) PostOrgClusters(c *gin.Context) {
 	ctx := context.Background()
 
@@ -454,11 +465,7 @@ func (h *handler) GetClusters(c *gin.Context) {
 		}
 
 		for _, cluster := range clusterList.Items {
-			clusters = append(clusters, v1.Cluster{
-				ID:           string(cluster.UID),
-				Name:         cluster.Name,
-				Organization: organization.Name,
-			})
+			clusters = append(clusters, *h.toV1Cluster(&organization, &cluster))
 		}
 	}
 
@@ -527,5 +534,7 @@ func (h *handler) GetCluster(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, cluster)
+	v1Cluster := h.toV1Cluster(organization, &cluster)
+
+	c.JSON(http.StatusOK, v1Cluster)
 }
