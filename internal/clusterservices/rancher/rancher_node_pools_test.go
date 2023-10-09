@@ -3,8 +3,8 @@ package rancher
 import (
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher/ranchermock"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
@@ -15,7 +15,7 @@ func TestGetNodePool(t *testing.T) {
 		name               string
 		nodePoolID         string
 		ranchermockOptions []ranchermock.MockOption
-		expected           v1.NodePool
+		expected           v1alpha1.NodePoolStatus
 	}{
 		{
 			name:       "test simple",
@@ -35,19 +35,13 @@ func TestGetNodePool(t *testing.T) {
 						Resource: types.Resource{
 							ID: "node-123",
 						},
+						Name:       "test",
 						NodePoolID: "node-pool-123",
 					},
 				}),
 			},
-			expected: v1.NodePool{
-				ID:        "node-pool-123",
-				ClusterID: "cluster-123",
-				Name:      "test",
-				Nodes: []v1.Node{
-					{
-						ID: "node-123",
-					},
-				},
+			expected: v1alpha1.NodePoolStatus{
+				ClusterServiceID: "node-pool-123",
 			},
 		},
 	}

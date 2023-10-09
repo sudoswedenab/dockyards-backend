@@ -6,14 +6,16 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 type MockClusterService struct {
 	clusterservices.ClusterService
-	clusters    map[string]v1.Cluster
-	nodePools   map[string]v1.NodePool
-	kubeconfigs map[string]clientcmdv1.Config
+	clusters       map[string]v1.Cluster
+	nodePoolStatus map[string]v1alpha1.NodePoolStatus
+	kubeconfigs    map[string]clientcmdv1.Config
 }
 
 type MockOption func(*MockClusterService)
@@ -43,29 +45,29 @@ func (s *MockClusterService) CreateCluster(organization *v1alpha1.Organization, 
 	return &cluster, nil
 }
 
-func (s *MockClusterService) CreateNodePool(organization *v1alpha1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1.NodePool, error) {
-	nodePool := v1.NodePool{
-		Name:                       nodePoolOptions.Name,
-		Quantity:                   nodePoolOptions.Quantity,
-		ControlPlane:               nodePoolOptions.ControlPlane,
-		ControlPlaneComponentsOnly: nodePoolOptions.ControlPlaneComponentsOnly,
-		Etcd:                       nodePoolOptions.Etcd,
-		LoadBalancer:               nodePoolOptions.LoadBalancer,
-	}
+func (s *MockClusterService) CreateNodePool(organization *v1alpha1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1alpha1.NodePoolStatus, error) {
+	resources := corev1.ResourceList{}
 
 	if nodePoolOptions.RAMSizeMb != nil {
-		nodePool.RAMSizeMb = *nodePoolOptions.RAMSizeMb
+		quantity := resource.NewScaledQuantity(int64(*nodePoolOptions.RAMSizeMb), 2)
+		resources[corev1.ResourceMemory] = *quantity
 	}
 
 	if nodePoolOptions.DiskSizeGb != nil {
-		nodePool.DiskSizeGb = *nodePoolOptions.DiskSizeGb
+		quantity := resource.NewScaledQuantity(int64(*nodePoolOptions.DiskSizeGb), 3)
+		resources[corev1.ResourceStorage] = *quantity
 	}
 
 	if nodePoolOptions.CPUCount != nil {
-		nodePool.CPUCount = *nodePoolOptions.CPUCount
+		quantity := resource.NewQuantity(int64(*nodePoolOptions.CPUCount), resource.DecimalSI)
+		resources[corev1.ResourceCPU] = *quantity
 	}
 
-	return &nodePool, nil
+	nodePoolStatus := v1alpha1.NodePoolStatus{
+		Resources: resources,
+	}
+
+	return &nodePoolStatus, nil
 }
 
 func (s *MockClusterService) DeleteCluster(organization *v1alpha1.Organization, cluster *v1.Cluster) error {
@@ -96,18 +98,18 @@ func (s *MockClusterService) DeleteGarbage() {
 	return
 }
 
-func (s *MockClusterService) GetNodePool(nodePoolID string) (*v1.NodePool, error) {
-	nodePool, hasNodePool := s.nodePools[nodePoolID]
-	if !hasNodePool {
+func (s *MockClusterService) GetNodePool(nodePoolID string) (*v1alpha1.NodePoolStatus, error) {
+	nodePoolStatus, hasNodePoolStatus := s.nodePoolStatus[nodePoolID]
+	if !hasNodePoolStatus {
 		return nil, errors.New("no such node pool")
 	}
 
-	return &nodePool, nil
+	return &nodePoolStatus, nil
 }
 
 func (s *MockClusterService) DeleteNodePool(organization *v1alpha1.Organization, nodePoolID string) error {
-	_, hasNodePool := s.nodePools[nodePoolID]
-	if !hasNodePool {
+	_, hasNodePoolStatus := s.nodePoolStatus[nodePoolID]
+	if !hasNodePoolStatus {
 		return errors.New("no such node pool")
 	}
 
@@ -120,9 +122,9 @@ func WithClusters(clusters map[string]v1.Cluster) MockOption {
 	}
 }
 
-func WithNodePools(nodePools map[string]v1.NodePool) MockOption {
+func WithNodePools(nodePoolStatus map[string]v1alpha1.NodePoolStatus) MockOption {
 	return func(s *MockClusterService) {
-		s.nodePools = nodePools
+		s.nodePoolStatus = nodePoolStatus
 	}
 }
 
