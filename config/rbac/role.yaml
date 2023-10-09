@@ -32,6 +32,41 @@ rules:
 - apiGroups:
   - dockyards.io
   resources:
+  - clusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - clusters
+  - organizations
+  verbs:
+  - get
+- apiGroups:
+  - dockyards.io
+  resources:
+  - clusters/status
+  verbs:
+  - patch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - nodepools/status
+  verbs:
+  - patch
+- apiGroups:
+  - dockyards.io
+  resources:
   - organizations
   verbs:
   - get
