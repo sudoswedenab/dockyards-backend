@@ -31,7 +31,7 @@ func TestCreateMetalLBDeployment(t *testing.T) {
 	tt := []struct {
 		name     string
 		network  networks.Network
-		cluster  v1.Cluster
+		cluster  v1alpha1.Cluster
 		expected v1.Deployment
 	}{
 		{
@@ -47,12 +47,14 @@ func TestCreateMetalLBDeployment(t *testing.T) {
 					"shouldbeignored",
 				},
 			},
-			cluster: v1.Cluster{
-				ID: "cluster-123",
+			cluster: v1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: "8a1953d9-156f-4099-afc8-ee30f890eb72",
+				},
 			},
 			expected: v1.Deployment{
 				Type:      v1.DeploymentTypeKustomize,
-				ClusterID: "cluster-123",
+				ClusterID: "8a1953d9-156f-4099-afc8-ee30f890eb72",
 				Name:      util.Ptr("metallb"),
 				Namespace: util.Ptr("metallb-system"),
 				Kustomize: &map[string][]byte{
@@ -161,7 +163,7 @@ func TestCreateClusterMetalLBDeploymentErrors(t *testing.T) {
 	tt := []struct {
 		name        string
 		network     networks.Network
-		cluster     v1.Cluster
+		cluster     v1alpha1.Cluster
 		prefix      netip.Prefix
 		tag         string
 		allocations int
@@ -320,7 +322,8 @@ func TestGetClusterDeployments(t *testing.T) {
 	tt := []struct {
 		name         string
 		organization v1alpha1.Organization
-		cluster      v1.Cluster
+		cluster      v1alpha1.Cluster
+		nodePoolList v1alpha1.NodePoolList
 		lists        []client.ObjectList
 	}{
 		{
@@ -342,6 +345,11 @@ func TestGetClusterDeployments(t *testing.T) {
 				},
 				Status: v1alpha1.OrganizationStatus{
 					NamespaceRef: "testing-123",
+				},
+			},
+			cluster: v1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: "9c4f62aa-1bd2-4add-a570-306a137f067b",
 				},
 			},
 			lists: []client.ObjectList{
@@ -392,7 +400,7 @@ func TestGetClusterDeployments(t *testing.T) {
 				},
 			}
 
-			_, err := s.GetClusterDeployments(&tc.organization, &tc.cluster)
+			_, err := s.GetClusterDeployments(&tc.organization, &tc.cluster, &tc.nodePoolList)
 			if err != nil {
 				t.Errorf("error getting cluster deployments: %s", err)
 			}

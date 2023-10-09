@@ -20,7 +20,7 @@ var (
 	ErrTagMissingPeer = errors.New("network missing tag peer")
 )
 
-func (s *openStackService) createMetalLBDeployment(network *networksv2.Network, cluster *v1.Cluster) (*v1.Deployment, error) {
+func (s *openStackService) createMetalLBDeployment(network *networksv2.Network, cluster *v1alpha1.Cluster) (*v1.Deployment, error) {
 	addresses := make([]string, 0)
 	bgpPeerSpec := map[string]any{
 		"peerASN":      64700,
@@ -176,7 +176,7 @@ func (s *openStackService) createMetalLBDeployment(network *networksv2.Network, 
 
 	metalLBDeployment := v1.Deployment{
 		Type:      v1.DeploymentTypeKustomize,
-		ClusterID: cluster.ID,
+		ClusterID: string(cluster.UID),
 		Name:      util.Ptr("metallb"),
 		Namespace: util.Ptr("metallb-system"),
 		Kustomize: &map[string][]byte{
@@ -190,10 +190,10 @@ func (s *openStackService) createMetalLBDeployment(network *networksv2.Network, 
 	return &metalLBDeployment, nil
 }
 
-func (s *openStackService) createIngressNginxDeployment(cluster *v1.Cluster) *v1.Deployment {
+func (s *openStackService) createIngressNginxDeployment(cluster *v1alpha1.Cluster) *v1.Deployment {
 	ingressNginxDeployment := v1.Deployment{
 		Type:           v1.DeploymentTypeHelm,
-		ClusterID:      cluster.ID,
+		ClusterID:      string(cluster.UID),
 		Name:           util.Ptr("ingress-nginx"),
 		Namespace:      util.Ptr("ingress-nginx"),
 		HelmChart:      util.Ptr("ingress-nginx"),
@@ -225,7 +225,7 @@ func (s *openStackService) createIngressNginxDeployment(cluster *v1.Cluster) *v1
 	return &ingressNginxDeployment
 }
 
-func (s *openStackService) GetClusterDeployments(organization *v1alpha1.Organization, cluster *v1.Cluster) (*[]v1.Deployment, error) {
+func (s *openStackService) GetClusterDeployments(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePoolList *v1alpha1.NodePoolList) (*[]v1.Deployment, error) {
 	openstackProject, err := s.getOpenstackProject(organization)
 	if err != nil {
 		return nil, err
@@ -246,7 +246,7 @@ func (s *openStackService) GetClusterDeployments(organization *v1alpha1.Organiza
 	}
 
 	openStackCinderCSIDeployment := v1.Deployment{
-		ClusterID:      cluster.ID,
+		ClusterID:      string(cluster.UID),
 		Name:           util.Ptr("openstack-cinder-csi"),
 		Type:           v1.DeploymentTypeHelm,
 		HelmChart:      util.Ptr("openstack-cinder-csi"),
@@ -277,9 +277,9 @@ func (s *openStackService) GetClusterDeployments(organization *v1alpha1.Organiza
 	}
 
 	needsLoadBalancer := false
-	for _, nodePool := range cluster.NodePools {
-		if nodePool.LoadBalancer != nil && *nodePool.LoadBalancer {
-			s.logger.Debug("cluster has node pool load balancer", "id", nodePool.ID)
+	for _, nodePool := range nodePoolList.Items {
+		if nodePool.Spec.LoadBalancer {
+			s.logger.Debug("cluster has node pool load balancer", "id", nodePool.UID)
 
 			needsLoadBalancer = true
 			break
