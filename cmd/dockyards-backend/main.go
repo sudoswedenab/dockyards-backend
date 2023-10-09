@@ -238,6 +238,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.Node{}, "metadata.ownerReferences.uid", index.OwnerRefsIndexer)
+	if err != nil {
+		logger.Error("error addming owner refs indexer to manager", "err", err)
+
+		os.Exit(1)
+	}
+
 	var cloudService cloudservices.CloudService
 	switch cloudServiceFlag {
 	case "openstack":
