@@ -35,6 +35,7 @@ import (
 	"github.com/glebarez/sqlite"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-logr/logr/funcr"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -177,6 +178,9 @@ func main() {
 		logger.Error("Failed to initialize database", "err", err)
 		os.Exit(1)
 	}
+
+	logr := funcr.New(func(format, args string) { fmt.Println(format, args) }, funcr.Options{})
+	ctrl.SetLogger(logr)
 
 	kubeconfig, err := config.GetConfig()
 	if err != nil {
