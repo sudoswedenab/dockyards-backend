@@ -442,6 +442,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = controller.NewNodePoolController(manager, clusterService, logger.With("controller", "nodepool"))
+	if err != nil {
+		logger.Error("error creating new cluster controller", "err", err)
+
+		os.Exit(1)
+	}
+
 	err = manager.Start(context.Background())
 	if err != nil {
 		logger.Error("error starting manager", "err", err)
