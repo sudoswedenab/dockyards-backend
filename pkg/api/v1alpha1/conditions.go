@@ -10,4 +10,5 @@ const (
 	UserVerifiedReason         string = "UserVerified"
 	ClusterReadyReason         string = "ClusterReady"
 	NodePoolReadyReason        string = "NodePoolReady"
+	NodeReadyReason            string = "NodeReady"
 )
