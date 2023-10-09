@@ -27,3 +27,14 @@ func MemberRefsIndexer(object client.Object) []string {
 
 	return memberUIDs
 }
+
+func OwnerRefsIndexer(object client.Object) []string {
+	ownerReferences := object.GetOwnerReferences()
+
+	ownerUIDs := make([]string, len(ownerReferences))
+	for i, ownerReference := range ownerReferences {
+		ownerUIDs[i] = string(ownerReference.UID)
+	}
+
+	return ownerUIDs
+}
