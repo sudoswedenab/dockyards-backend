@@ -10,7 +10,7 @@ import (
 )
 
 func (r *rancher) DeleteCluster(organization *v1alpha1.Organization, cluster *v1.Cluster) error {
-	encodedName := name.EncodeName(cluster.Organization, cluster.Name)
+	encodedName := name.EncodeName(organization.Name, cluster.Name)
 
 	listOpts := types.ListOpts{
 		Filters: map[string]interface{}{
