@@ -622,12 +622,37 @@ func TestGetCluster(t *testing.T) {
 						},
 					},
 				},
+				&v1alpha1.NodePoolList{
+					Items: []v1alpha1.NodePool{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-pool",
+								UID:  "14edb8e7-b76a-48c7-bfd8-81588d243c33",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.ClusterKind,
+										Name:       "test",
+										UID:        "26836276-22c6-41bc-bb40-78cdf141e302",
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 			expected: v1.Cluster{
 				Name:         "test",
 				ID:           "26836276-22c6-41bc-bb40-78cdf141e302",
 				Organization: "test-org",
 				CreatedAt:    now.Time.Truncate(time.Second),
+				NodePools: []v1.NodePool{
+					{
+						ID:        "14edb8e7-b76a-48c7-bfd8-81588d243c33",
+						Name:      "test-pool",
+						ClusterID: "26836276-22c6-41bc-bb40-78cdf141e302",
+					},
+				},
 			},
 		},
 	}
@@ -640,7 +665,10 @@ func TestGetCluster(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
+				WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).
+				WithIndex(&v1alpha1.NodePool{}, "metadata.ownerReferences.uid", index.OwnerRefsIndexer).
+				Build()
 
 			h := handler{
 				logger:           logger,
