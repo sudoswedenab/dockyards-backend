@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -166,4 +167,48 @@ func (h *handler) isMember(subject string, organization *v1alpha1.Organization) 
 	}
 
 	return false
+}
+
+func (h *handler) getOwnerOrganization(ctx context.Context, object client.Object) (*v1alpha1.Organization, error) {
+	for _, ownerReference := range object.GetOwnerReferences() {
+		if ownerReference.APIVersion != v1alpha1.GroupVersion.String() {
+			continue
+		}
+
+		if ownerReference.Kind != v1alpha1.OrganizationKind {
+			continue
+		}
+
+		var organization v1alpha1.Organization
+		err := h.controllerClient.Get(ctx, client.ObjectKey{Name: ownerReference.Name}, &organization)
+		if err != nil {
+			return nil, err
+		}
+
+		return &organization, nil
+	}
+
+	return nil, nil
+}
+
+func (h *handler) getOwnerCluster(ctx context.Context, object client.Object) (*v1alpha1.Cluster, error) {
+	for _, ownerReference := range object.GetOwnerReferences() {
+		if ownerReference.APIVersion != v1alpha1.GroupVersion.String() {
+			continue
+		}
+
+		if ownerReference.Kind != v1alpha1.ClusterKind {
+			continue
+		}
+
+		var cluster v1alpha1.Cluster
+		err := h.controllerClient.Get(ctx, client.ObjectKey{Name: ownerReference.Name, Namespace: object.GetNamespace()}, &cluster)
+		if err != nil {
+			return nil, err
+		}
+
+		return &cluster, nil
+	}
+
+	return nil, nil
 }
