@@ -222,11 +222,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, "metadata.uid", index.UIDIndexer)
-	if err != nil {
-		logger.Error("error adding uid indexer to manager", "err", err)
+	for _, object := range []client.Object{&v1alpha1.User{}, &v1alpha1.Cluster{}, &v1alpha1.NodePool{}, &v1alpha1.Node{}} {
+		err = manager.GetFieldIndexer().IndexField(ctx, object, "metadata.uid", index.UIDIndexer)
+		if err != nil {
+			logger.Error("error adding uid indexer to manager", "err", err)
 
-		os.Exit(1)
+			os.Exit(1)
+		}
 	}
 
 	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.Organization{}, "spec.memberRefs", index.MemberRefsIndexer)
