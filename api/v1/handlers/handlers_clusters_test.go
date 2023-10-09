@@ -20,6 +20,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/google/go-cmp/cmp"
@@ -51,8 +52,7 @@ func TestPostOrgClusters(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-org",
-								Namespace: "test",
+								Name: "test-org",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -76,18 +76,16 @@ func TestPostOrgClusters(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(),
 				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
-				namespace:        "test",
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -145,8 +143,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-org",
-								Namespace: "test",
+								Name: "test-org",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -174,8 +171,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-org",
-								Namespace: "test",
+								Name: "test-org",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -234,8 +230,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-org",
-								Namespace: "test",
+								Name: "test-org",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -245,20 +240,25 @@ func TestPostOrgClustersErrors(t *testing.T) {
 									},
 								},
 							},
+							Status: v1alpha1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
+						},
+					},
+				},
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test-cluster",
+								Namespace: "testing",
+							},
 						},
 					},
 				},
 			},
 			clusterOptions: v1.ClusterOptions{
 				Name: "test-cluster",
-			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"test-cluster": {
-						Name:         "test-cluster",
-						Organization: "test-org",
-					},
-				}),
 			},
 			expected: http.StatusConflict,
 		},
@@ -271,8 +271,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-org",
-								Namespace: "test",
+								Name: "test-org",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -295,14 +294,6 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					},
 				}),
 			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"test-cluster": {
-						Name:         "test-cluster",
-						Organization: "test-org",
-					},
-				}),
-			},
 			expected: http.StatusUnprocessableEntity,
 		},
 	}
@@ -318,11 +309,9 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
-				namespace:        "test",
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -358,23 +347,22 @@ func TestPostOrgClustersErrors(t *testing.T) {
 
 func TestDeleteCluster(t *testing.T) {
 	tt := []struct {
-		name               string
-		clusterID          string
-		sub                string
-		lists              []client.ObjectList
-		clustermockOptions []clustermock.MockOption
+		name      string
+		clusterID string
+		sub       string
+		lists     []client.ObjectList
 	}{
 		{
 			name:      "test simple",
-			clusterID: "cluster-123",
+			clusterID: "43257a3d-426d-458b-af8e-4aefad29d442",
 			sub:       "7994b631-399a-41e6-9c6c-200391f8f87d",
 			lists: []client.ObjectList{
 				&v1alpha1.OrganizationList{
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-org",
-								Namespace: "test",
+								Name: "test-org",
+								UID:  "10659cb0-fce0-4155-b8c6-4b6b825b6da9",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -384,18 +372,31 @@ func TestDeleteCluster(t *testing.T) {
 									},
 								},
 							},
+							Status: v1alpha1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
 						},
 					},
 				},
-			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						ID:           "cluster-123",
-						Organization: "test-org",
-						Name:         "test-cluster",
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "43257a3d-426d-458b-af8e-4aefad29d442",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "10659cb0-fce0-4155-b8c6-4b6b825b6da9",
+									},
+								},
+							},
+						},
 					},
-				}),
+				},
 			},
 		},
 	}
@@ -404,18 +405,15 @@ func TestDeleteCluster(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
-				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
-				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -570,23 +568,22 @@ func TestDeleteClusterErrors(t *testing.T) {
 
 func TestGetCluster(t *testing.T) {
 	tt := []struct {
-		name               string
-		clusterID          string
-		sub                string
-		lists              []client.ObjectList
-		clustermockOptions []clustermock.MockOption
+		name      string
+		clusterID string
+		sub       string
+		lists     []client.ObjectList
 	}{
 		{
 			name:      "test simple",
-			clusterID: "cluster-123",
+			clusterID: "26836276-22c6-41bc-bb40-78cdf141e302",
 			sub:       "f235721e-8e34-4b57-a6aa-8f6d31162a41",
 			lists: []client.ObjectList{
 				&v1alpha1.OrganizationList{
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-org",
-								Namespace: "test",
+								Name: "test-org",
+								UID:  "fca014c1-a753-4867-9ed3-9d59a4cb89d3",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -596,17 +593,31 @@ func TestGetCluster(t *testing.T) {
 									},
 								},
 							},
+							Status: v1alpha1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
 						},
 					},
 				},
-			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						Name:         "cluster-123",
-						Organization: "test-org",
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "26836276-22c6-41bc-bb40-78cdf141e302",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "fca014c1-a753-4867-9ed3-9d59a4cb89d3",
+									},
+								},
+							},
+						},
 					},
-				}),
+				},
 			},
 		},
 	}
@@ -615,18 +626,15 @@ func TestGetCluster(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
-				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
-				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -659,12 +667,11 @@ func TestGetCluster(t *testing.T) {
 
 func TestGetClusterErrors(t *testing.T) {
 	tt := []struct {
-		name               string
-		clusterID          string
-		sub                string
-		lists              []client.ObjectList
-		clustermockOptions []clustermock.MockOption
-		expected           int
+		name      string
+		clusterID string
+		sub       string
+		lists     []client.ObjectList
+		expected  int
 	}{
 		{
 			name:     "test empty",
@@ -672,12 +679,12 @@ func TestGetClusterErrors(t *testing.T) {
 		},
 		{
 			name:      "test invalid cluster",
-			clusterID: "cluster-123",
+			clusterID: "9aaa7968-e06e-4b71-98b4-0acdd37b957f",
 			expected:  http.StatusUnauthorized,
 		},
 		{
 			name:      "test invalid membership",
-			clusterID: "cluster-123",
+			clusterID: "f8d06eb3-e43d-4057-b200-97062c6d96cc",
 			sub:       "f6f6531f-ab6c-4237-b1cb-76133674465f",
 			lists: []client.ObjectList{
 				&v1alpha1.OrganizationList{
@@ -686,6 +693,7 @@ func TestGetClusterErrors(t *testing.T) {
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test-org",
 								Namespace: "test",
+								UID:       "aa1e5599-1cf4-4b50-9020-79b4492a5545",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -695,17 +703,31 @@ func TestGetClusterErrors(t *testing.T) {
 									},
 								},
 							},
+							Status: v1alpha1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
 						},
 					},
 				},
-			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						Name:         "cluster-123",
-						Organization: "test-org",
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "f8d06eb3-e43d-4057-b200-97062c6d96cc",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "aa1e5599-1cf4-4b50-9020-79b4492a5545",
+									},
+								},
+							},
+						},
 					},
-				}),
+				},
 			},
 			expected: http.StatusUnauthorized,
 		},
@@ -719,14 +741,11 @@ func TestGetClusterErrors(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
-				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
-				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -759,14 +778,13 @@ func TestGetClusterErrors(t *testing.T) {
 
 func TestPostOrgClustersDeployments(t *testing.T) {
 	tt := []struct {
-		name               string
-		organizationName   string
-		sub                string
-		lists              []client.ObjectList
-		clusterOptions     v1.ClusterOptions
-		clustermockOptions []clustermock.MockOption
-		cloudmockOptions   []cloudmock.MockOption
-		expected           []v1.Deployment
+		name             string
+		organizationName string
+		sub              string
+		lists            []client.ObjectList
+		clusterOptions   v1.ClusterOptions
+		cloudmockOptions []cloudmock.MockOption
+		expected         []v1.Deployment
 	}{
 		{
 			name:             "test cluster with cloud cluster deployments",
@@ -777,9 +795,8 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:       "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
-								Name:      "test-org",
-								Namespace: "test",
+								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name: "test-org",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -806,9 +823,8 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 			},
 			expected: []v1.Deployment{
 				{
-					ID:        uuid.MustParse("f802ebb7-9cb3-4e0e-9e5b-ca3c0feb44dc"),
-					ClusterID: "cluster-123",
-					Name:      util.Ptr("test"),
+					ID:   uuid.MustParse("f802ebb7-9cb3-4e0e-9e5b-ca3c0feb44dc"),
+					Name: util.Ptr("test"),
 					Status: v1.DeploymentStatus{
 						State:  util.Ptr("created"),
 						Health: util.Ptr(v1.DeploymentStatusHealthWarning),
@@ -839,12 +855,10 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				cloudService:     cloudmock.NewMockCloudService(tc.cloudmockOptions...),
 				logger:           logger,
 				db:               db,
 				controllerClient: fakeClient,
-				namespace:        "test",
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -876,8 +890,19 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 				t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
 			}
 
+			b, err = io.ReadAll(w.Result().Body)
+			if err != nil {
+				t.Fatalf("error reading result body: %s", err)
+			}
+
+			var cluster v1.Cluster
+			err = json.Unmarshal(b, &cluster)
+			if err != nil {
+				t.Fatalf("error unmarshalling result body: %s", err)
+			}
+
 			var actual []v1.Deployment
-			err = db.Find(&actual, "cluster_id = ?", "cluster-123").Error
+			err = db.Find(&actual, "cluster_id = ?", cluster.ID).Error
 			if err != nil {
 				t.Fatalf("unexpected error finding deployment in database: %s", err)
 			}
@@ -911,16 +936,15 @@ func TestGetClusterKubeconfig(t *testing.T) {
 	}{
 		{
 			name:      "test simple",
-			clusterID: "cluster-123",
+			clusterID: "8fa24e25-eb7a-428f-a750-e6e8aeee8c93",
 			sub:       "9eb06ff5-4299-480c-b957-0b10485d873c",
 			lists: []client.ObjectList{
 				&v1alpha1.OrganizationList{
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:       "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
-								Name:      "test-org",
-								Namespace: "test",
+								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name: "test-org",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -930,17 +954,36 @@ func TestGetClusterKubeconfig(t *testing.T) {
 									},
 								},
 							},
+							Status: v1alpha1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
+						},
+					},
+				},
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "8fa24e25-eb7a-428f-a750-e6e8aeee8c93",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+									},
+								},
+							},
+							Status: v1alpha1.ClusterStatus{
+								ClusterServiceID: "cluster-123",
+							},
 						},
 					},
 				},
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						Name:         "cluster-123",
-						Organization: "test-org",
-					},
-				}),
 				clustermock.WithKubeconfigs(map[string]clientcmdv1.Config{
 					"cluster-123": {
 						CurrentContext: "cluster-123",
@@ -957,17 +1000,16 @@ func TestGetClusterKubeconfig(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
 
 			h := handler{
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
-				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -1021,7 +1063,7 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 		},
 		{
 			name:      "test invalid cluster id",
-			clusterID: "cluster-234",
+			clusterID: "3152f6b4-23fd-4e11-8482-2fb38ddf03bd",
 			sub:       "83a44759-56b8-480a-9575-ad0f3519f73a",
 			lists: []client.ObjectList{
 				&v1alpha1.OrganizationList{
@@ -1044,28 +1086,19 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 					},
 				},
 			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						Organization: "test-org",
-						Name:         "cluster-123",
-					},
-				}),
-			},
 			expected: http.StatusUnauthorized,
 		},
 		{
 			name:      "test invalid organization membership",
-			clusterID: "cluster-123",
+			clusterID: "a6b450d8-4bb0-4aa0-83c3-b30cb55460d2",
 			sub:       "ef418237-2fd1-4977-861a-2031094a6ae5",
 			lists: []client.ObjectList{
 				&v1alpha1.OrganizationList{
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:       "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
-								Name:      "test-org",
-								Namespace: "test",
+								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+								Name: "test-org",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -1075,17 +1108,31 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 									},
 								},
 							},
+							Status: v1alpha1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
 						},
 					},
 				},
-			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						Organization: "test-org",
-						Name:         "cluster-123",
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "a6b450d8-4bb0-4aa0-83c3-b30cb55460d2",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
+									},
+								},
+							},
+						},
 					},
-				}),
+				},
 			},
 			expected: http.StatusUnauthorized,
 		},
@@ -1097,13 +1144,12 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
 
 			h := handler{
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
-				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -1136,11 +1182,10 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 
 func TestGetClusters(t *testing.T) {
 	tt := []struct {
-		name               string
-		sub                string
-		lists              []client.ObjectList
-		clustermockOptions []clustermock.MockOption
-		expected           []v1.Cluster
+		name     string
+		sub      string
+		lists    []client.ObjectList
+		expected []v1.Cluster
 	}{
 		{
 			name: "test single cluster",
@@ -1150,9 +1195,8 @@ func TestGetClusters(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:       "e7f0fc59-5cae-4208-a97b-a8e46c999821",
-								Name:      "test-org",
-								Namespace: "test",
+								UID:  "e7f0fc59-5cae-4208-a97b-a8e46c999821",
+								Name: "test",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -1162,24 +1206,37 @@ func TestGetClusters(t *testing.T) {
 									},
 								},
 							},
+							Status: v1alpha1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
+						},
+					},
+				},
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
+								Name:      "cluster1",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.OrganizationKind,
+										Name:       "test",
+										UID:        "e7f0fc59-5cae-4208-a97b-a8e46c999821",
+									},
+								},
+							},
 						},
 					},
 				},
 			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						ID:           "cluster-123",
-						Name:         "test-cluster",
-						Organization: "test-org",
-					},
-				}),
-			},
 			expected: []v1.Cluster{
 				{
-					ID:           "cluster-123",
-					Name:         "test-cluster",
-					Organization: "test-org",
+					ID:           "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
+					Name:         "cluster1",
+					Organization: "test",
 				},
 			},
 		},
@@ -1191,9 +1248,8 @@ func TestGetClusters(t *testing.T) {
 					Items: []v1alpha1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								UID:       "391aa7e8-999d-4f41-9815-29bd39e94c41",
-								Name:      "test-org",
-								Namespace: "test",
+								UID:  "391aa7e8-999d-4f41-9815-29bd39e94c41",
+								Name: "test-org",
 							},
 							Spec: v1alpha1.OrganizationSpec{
 								MemberRefs: []v1alpha1.UserReference{
@@ -1207,14 +1263,6 @@ func TestGetClusters(t *testing.T) {
 					},
 				},
 			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						ID:   "cluster-123",
-						Name: "test-cluster",
-					},
-				}),
-			},
 			expected: []v1.Cluster{},
 		},
 	}
@@ -1225,13 +1273,11 @@ func TestGetClusters(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Organization{}, "spec.memberRefs", index.MemberRefsIndexer).Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
-				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()

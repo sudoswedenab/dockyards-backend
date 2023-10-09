@@ -13,11 +13,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;watch
 
 func (h *handler) PostOrgClusters(c *gin.Context) {
 	ctx := context.Background()
@@ -29,8 +32,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	objectKey := client.ObjectKey{
-		Name:      org,
-		Namespace: h.namespace,
+		Name: org,
 	}
 
 	var organization v1alpha1.Organization
@@ -103,28 +105,31 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 	}
 
-	existingClusters, err := h.clusterService.GetAllClusters()
-	if err != nil {
-		h.logger.Error("unexpected error getting existing clusters", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
+	cluster := v1alpha1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      clusterOptions.Name,
+			Namespace: organization.Status.NamespaceRef,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         v1alpha1.GroupVersion.String(),
+					Kind:               v1alpha1.OrganizationKind,
+					Name:               organization.Name,
+					UID:                organization.UID,
+					BlockOwnerDeletion: util.Ptr(true),
+				},
+			},
+		},
+		Spec: v1alpha1.ClusterSpec{},
 	}
 
-	for _, existingCluster := range *existingClusters {
-		if existingCluster.Organization != organization.Name {
-			continue
-		}
+	err = h.controllerClient.Create(ctx, &cluster)
+	if err != nil {
+		h.logger.Error("error creating cluster", "err", err)
 
-		if existingCluster.Name == clusterOptions.Name {
+		if apierrors.IsAlreadyExists(err) {
 			c.AbortWithStatus(http.StatusConflict)
 			return
 		}
-	}
-
-	cluster, err := h.clusterService.CreateCluster(&organization, &clusterOptions)
-	if err != nil {
-		h.logger.Error("error creating cluster", "name", clusterOptions.Name, "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -150,25 +155,58 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		})
 	}
 
-	hasErrors := false
-	for _, nodePoolOption := range *nodePoolOptions {
-		h.logger.Debug("creating cluster node pool", "name", nodePoolOption.Name)
+	nodePoolList := v1alpha1.NodePoolList{
+		Items: make([]v1alpha1.NodePool, len(*nodePoolOptions)),
+	}
 
-		nodePool, err := h.clusterService.CreateNodePool(&organization, cluster, &nodePoolOption)
+	hasErrors := false
+	for i, nodePoolOption := range *nodePoolOptions {
+		nodePool := v1alpha1.NodePool{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-" + nodePoolOption.Name,
+				Namespace: cluster.Namespace,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion:         v1alpha1.GroupVersion.String(),
+						Kind:               v1alpha1.ClusterKind,
+						Name:               cluster.Name,
+						UID:                cluster.UID,
+						BlockOwnerDeletion: util.Ptr(true),
+					},
+				},
+			},
+			Spec: v1alpha1.NodePoolSpec{
+				Quantity: nodePoolOption.Quantity,
+			},
+		}
+
+		if nodePoolOption.ControlPlane != nil {
+			nodePool.Spec.ControlPlane = *nodePoolOption.ControlPlane
+		}
+
+		if nodePoolOption.Etcd != nil {
+			nodePool.Spec.ControlPlane = *nodePoolOption.Etcd
+		}
+
+		if nodePoolOption.LoadBalancer != nil {
+			nodePool.Spec.LoadBalancer = *nodePoolOption.LoadBalancer
+		}
+
+		err := h.controllerClient.Create(ctx, &nodePool)
 		if err != nil {
-			h.logger.Error("error creating node pool", "name", nodePoolOption.Name, "err", err)
+			h.logger.Error("error creating node pool", "err", err)
 
 			hasErrors = true
 			break
 		}
 
-		h.logger.Debug("created cluster node pool", "name", nodePool.Name)
+		nodePoolList.Items[i] = nodePool
 
-		cluster.NodePools = append(cluster.NodePools, *nodePool)
+		h.logger.Debug("created cluster node pool", "id", nodePool.UID)
 	}
 
 	if clusterOptions.NoClusterApps == nil || !*clusterOptions.NoClusterApps {
-		clusterDeployments, err := h.cloudService.GetClusterDeployments(&organization, cluster)
+		clusterDeployments, err := h.cloudService.GetClusterDeployments(&organization, &cluster, &nodePoolList)
 		if err != nil {
 			h.logger.Error("error getting cloud service cluster deployments", "err", err)
 
@@ -223,18 +261,17 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	if hasErrors {
-		h.logger.Error("deleting cluster", "id", cluster.ID)
-
-		err := h.clusterService.DeleteCluster(&organization, cluster)
-		if err != nil {
-			h.logger.Warn("unexpected error deleting cluster", "err", err)
-		}
+		h.logger.Error("deleting cluster", "id", cluster.UID)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusCreated, cluster)
+	v1Cluster := v1.Cluster{
+		ID: string(cluster.UID),
+	}
+
+	c.JSON(http.StatusCreated, v1Cluster)
 }
 
 func (h *handler) GetClusterKubeconfig(c *gin.Context) {
@@ -246,25 +283,37 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
-	cluster, err := h.clusterService.GetCluster(clusterID)
+	matchingFields := client.MatchingFields{
+		"metadata.uid": clusterID,
+	}
+
+	var clusterList v1alpha1.ClusterList
+	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		h.logger.Error("error getting cluster from cluster service", "id", clusterID, "err", err)
+		h.logger.Error("error listing clusters", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	if len(clusterList.Items) != 1 {
+		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	objectKey := client.ObjectKey{
-		Name:      cluster.Organization,
-		Namespace: h.namespace,
-	}
+	cluster := clusterList.Items[0]
 
-	var organization v1alpha1.Organization
-	err = h.controllerClient.Get(ctx, objectKey, &organization)
+	organization, err := h.getOwnerOrganization(ctx, &cluster)
 	if err != nil {
-		h.logger.Error("error getting organization from kubernetes", "err", err)
+		h.logger.Error("error getting owner organization", "err", err)
 
-		c.AbortWithStatus(http.StatusUnauthorized)
+		if apierrors.IsNotFound(err) {
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
@@ -276,7 +325,7 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
-	isMember := h.isMember(subject, &organization)
+	isMember := h.isMember(subject, organization)
 	if !isMember {
 		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
 
@@ -284,11 +333,9 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
-	h.logger.Debug("getting kubeconfig for cluster", "id", clusterID)
-
-	kubeconfig, err := h.clusterService.GetKubeconfig(clusterID, time.Duration(time.Hour))
+	kubeconfig, err := h.clusterService.GetKubeconfig(cluster.Status.ClusterServiceID, time.Duration(time.Hour))
 	if err != nil {
-		h.logger.Error("unexpected error getting kubeconfig", "err", err)
+		h.logger.Error("error getting kubeconfig", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -311,30 +358,34 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	clusterID := c.Param("clusterID")
 	if clusterID == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
-
 		return
 	}
 
-	cluster, err := h.clusterService.GetCluster(clusterID)
+	matchingFields := client.MatchingFields{
+		"metadata.uid": clusterID,
+	}
+
+	var clusterList v1alpha1.ClusterList
+	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		h.logger.Error("error getting cluster from cluster service", "id", clusterID, "err", err)
+		h.logger.Error("error listing clusters", "err", err)
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	objectKey := client.ObjectKey{
-		Name:      cluster.Organization,
-		Namespace: h.namespace,
+	if len(clusterList.Items) != 1 {
+		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
-	var organization v1alpha1.Organization
-	err = h.controllerClient.Get(ctx, objectKey, &organization)
-	if err != nil {
-		h.logger.Error("error getting organization from kubernetes", "err", err)
+	cluster := clusterList.Items[0]
 
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
+	organization, err := h.getOwnerOrganization(ctx, &cluster)
+	if err != nil {
+		h.logger.Error("error getting owner organization", "err", err)
 	}
 
 	subject, err := h.getSubjectFromContext(c)
@@ -345,7 +396,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 		return
 	}
 
-	isMember := h.isMember(subject, &organization)
+	isMember := h.isMember(subject, organization)
 	if !isMember {
 		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
 
@@ -353,15 +404,15 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 		return
 	}
 
-	err = h.clusterService.DeleteCluster(&organization, cluster)
+	err = h.controllerClient.Delete(ctx, &cluster)
 	if err != nil {
-		h.logger.Error("unexpected error deleting cluster", "err", err)
+		h.logger.Error("error deleting cluster", "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Debug("successfully deleted cluster", "id", cluster.ID)
+	h.logger.Debug("deleted cluster", "id", cluster.UID)
 
 	c.JSON(http.StatusAccepted, gin.H{})
 }
@@ -377,71 +428,86 @@ func (h *handler) GetClusters(c *gin.Context) {
 		return
 	}
 
+	matchingFields := client.MatchingFields{
+		"spec.memberRefs": subject,
+	}
+
 	var organizationList v1alpha1.OrganizationList
-	err = h.controllerClient.List(ctx, &organizationList)
+	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
+		h.logger.Error("error listing organizations", "err", err)
+
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
-	orgs := make(map[string]*v1alpha1.Organization)
-	for i, organization := range organizationList.Items {
-		orgs[organization.Name] = &organizationList.Items[i]
-	}
+	clusters := []v1.Cluster{}
 
-	clusters, err := h.clusterService.GetAllClusters()
-	if err != nil {
-		h.logger.Error("unexpected error when getting clusters", "err", err)
+	for _, organization := range organizationList.Items {
+		var clusterList v1alpha1.ClusterList
+		err = h.controllerClient.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef))
+		if err != nil {
+			h.logger.Error("error listing clusters", "err", err)
 
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	filteredClusters := []v1.Cluster{}
-	for _, cluster := range *clusters {
-		if cluster.Organization == "" {
-			continue
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
 
-		isMember := h.isMember(subject, orgs[cluster.Organization])
-		if isMember {
-			filteredClusters = append(filteredClusters, cluster)
+		for _, cluster := range clusterList.Items {
+			clusters = append(clusters, v1.Cluster{
+				ID:           string(cluster.UID),
+				Name:         cluster.Name,
+				Organization: organization.Name,
+			})
 		}
 	}
 
-	c.JSON(http.StatusOK, filteredClusters)
+	c.JSON(http.StatusOK, clusters)
 }
 
 func (h *handler) GetCluster(c *gin.Context) {
 	ctx := context.Background()
 
-	id := c.Param("clusterID")
-	if id == "" {
+	clusterID := c.Param("clusterID")
+	if clusterID == "" {
 		h.logger.Error("empty cluster id")
 
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	cluster, err := h.clusterService.GetCluster(id)
+	matchingFields := client.MatchingFields{
+		"metadata.uid": clusterID,
+	}
+
+	var clusterList v1alpha1.ClusterList
+	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		h.logger.Error("error getting cluster from cluster service", "id", id, "err", err)
+		h.logger.Error("error listing clusters", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	if len(clusterList.Items) != 1 {
+		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	objectKey := client.ObjectKey{
-		Name:      cluster.Organization,
-		Namespace: h.namespace,
-	}
+	cluster := clusterList.Items[0]
 
-	var organization v1alpha1.Organization
-	err = h.controllerClient.Get(ctx, objectKey, &organization)
+	organization, err := h.getOwnerOrganization(ctx, &cluster)
 	if err != nil {
-		h.logger.Error("error getting organization from kubernetes", "err", err)
+		h.logger.Error("error getting owner organization", "err", err)
 
-		c.AbortWithStatus(http.StatusUnauthorized)
+		if apierrors.IsNotFound(err) {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
@@ -453,7 +519,7 @@ func (h *handler) GetCluster(c *gin.Context) {
 		return
 	}
 
-	isMember := h.isMember(subject, &organization)
+	isMember := h.isMember(subject, organization)
 	if !isMember {
 		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
 
