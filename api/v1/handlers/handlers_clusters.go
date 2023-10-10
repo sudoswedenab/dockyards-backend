@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -28,6 +29,11 @@ func (h *handler) toV1Cluster(organization *v1alpha1.Organization, cluster *v1al
 		Name:         cluster.Name,
 		Organization: organization.Name,
 		CreatedAt:    cluster.CreationTimestamp.Time,
+	}
+
+	condition := meta.FindStatusCondition(cluster.Status.Conditions, v1alpha1.ReadyCondition)
+	if condition != nil {
+		v1Cluster.State = condition.Message
 	}
 
 	if nodePoolList != nil && len(nodePoolList.Items) > 0 {
