@@ -619,6 +619,16 @@ func TestGetCluster(t *testing.T) {
 									},
 								},
 							},
+							Status: v1alpha1.ClusterStatus{
+								Conditions: []metav1.Condition{
+									{
+										Type:    v1alpha1.ReadyCondition,
+										Status:  metav1.ConditionTrue,
+										Reason:  v1alpha1.ClusterReadyReason,
+										Message: "active",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -653,6 +663,7 @@ func TestGetCluster(t *testing.T) {
 						ClusterID: "26836276-22c6-41bc-bb40-78cdf141e302",
 					},
 				},
+				State: "active",
 			},
 		},
 	}
