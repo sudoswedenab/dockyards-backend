@@ -9,7 +9,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -101,22 +100,27 @@ func (c *clusterController) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return requeue, nil
 	}
 
-	existingCluster, err := c.clusterService.GetCluster(cluster.Status.ClusterServiceID)
+	clusterStatus, err := c.clusterService.GetCluster(cluster.Status.ClusterServiceID)
 	if err != nil {
 		c.logger.Error("error getting cluster from cluster service", "err", err)
 
 		return ctrl.Result{}, err
 	}
 
-	condition := metav1.Condition{
-		Type:    v1alpha1.ReadyCondition,
-		Status:  metav1.ConditionFalse,
-		Reason:  v1alpha1.ClusterReadyReason,
-		Message: existingCluster.State,
+	condition := meta.FindStatusCondition(clusterStatus.Conditions, v1alpha1.ReadyCondition)
+	if condition == nil {
+		c.logger.Debug("cluster service has not reported ready condition", "name", cluster.Name)
+
+		return requeue, nil
 	}
 
 	patch := client.MergeFrom(cluster.DeepCopy())
-	meta.SetStatusCondition(&cluster.Status.Conditions, condition)
+
+	if cluster.Status.Version != clusterStatus.Version {
+		cluster.Status.Version = clusterStatus.Version
+	}
+
+	meta.SetStatusCondition(&cluster.Status.Conditions, *condition)
 	err = c.Status().Patch(ctx, &cluster, patch)
 	if err != nil {
 		c.logger.Error("error updating cluster status conditions", "err", err)
