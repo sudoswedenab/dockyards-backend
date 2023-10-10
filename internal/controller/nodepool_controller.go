@@ -6,7 +6,9 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,6 +19,8 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodepools/status,verbs=patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters;organizations,verbs=get
+// +kubebuilder:rbac:groups=dockyards.io,resources=nodes,verbs=get;list;watch;create
+// +kubebuilder:rbac:groups=dockyards.io,resources=nodes/status,verbs=patch
 
 const (
 	nodePoolFinalizer = "dockyards.io/backend-controller"
@@ -138,6 +142,62 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 		c.logger.Error("error patching status conditions", "err", err)
 
 		return ctrl.Result{}, err
+	}
+
+	nodeList, err := c.clusterService.GetNodes(&nodePool)
+	for _, nodeItem := range nodeList.Items {
+		c.logger.Debug("node item", "name", nodeItem.Name)
+
+		objectKey := client.ObjectKey{
+			Name:      nodeItem.Namespace,
+			Namespace: nodePool.Namespace,
+		}
+
+		var node v1alpha1.Node
+		err := c.Get(ctx, objectKey, &node)
+		if client.IgnoreNotFound(err) != nil {
+			c.logger.Error("error getting node", "err", err)
+
+			return ctrl.Result{}, err
+		}
+
+		if apierrors.IsNotFound(err) {
+			node := v1alpha1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      nodeItem.Name,
+					Namespace: nodePool.Namespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         v1alpha1.GroupVersion.String(),
+							Kind:               v1alpha1.NodePoolKind,
+							Name:               nodePool.Name,
+							UID:                nodePool.UID,
+							BlockOwnerDeletion: util.Ptr(true),
+						},
+					},
+				},
+			}
+
+			err := c.Create(ctx, &node)
+			if err != nil {
+				c.logger.Error("error creating node", "err", err)
+
+				return ctrl.Result{}, err
+			}
+
+			patch := client.MergeFrom(node.DeepCopy())
+
+			node.Status = v1alpha1.NodeStatus{
+				ClusterServiceID: nodeItem.Status.ClusterServiceID,
+			}
+
+			err = c.Status().Patch(ctx, &node, patch)
+			if err != nil {
+				c.logger.Error("error patching node", "err", err)
+
+				return ctrl.Result{}, err
+			}
+		}
 	}
 
 	return requeue, nil
