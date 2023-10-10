@@ -6,7 +6,6 @@ require (
 	bitbucket.org/sudosweden/dockyards-backend/pkg/api v1.2.3
 	bitbucket.org/sudosweden/dockyards-openstack v0.0.0-20231004131042-eb0a79bfbd85
 	github.com/containers/image/v5 v5.27.0
-	github.com/deepmap/oapi-codegen v1.13.4
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/glebarez/sqlite v1.9.0
@@ -16,14 +15,15 @@ require (
 	github.com/go-logr/logr v1.2.4
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/google/go-cmp v0.5.9
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/gophercloud/gophercloud v1.7.0
 	github.com/gophercloud/utils v0.0.0-20230523080330-de873b9cf00d
 	github.com/joho/godotenv v1.4.0
+	github.com/oapi-codegen/runtime v1.0.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rancher/norman v0.0.0-20221205184727-32ef2e185b99
 	github.com/rancher/rancher/pkg/client v0.0.0-20230315001606-cd1a71624a94
-	golang.org/x/crypto v0.11.0
+	golang.org/x/crypto v0.12.0
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.4
 	k8s.io/api v0.28.2
@@ -85,11 +85,8 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
-	github.com/labstack/echo/v4 v4.11.1 // indirect
-	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -105,23 +102,22 @@ require (
 	github.com/prometheus/procfs v0.10.1 // indirect
 	github.com/rancher/wrangler v1.0.1-0.20230131212012-76adc44fca0c // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/arch v0.4.0 // indirect
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.13.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/oauth2 v0.9.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/term v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/term v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.11.1 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
