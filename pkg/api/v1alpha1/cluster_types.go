@@ -9,11 +9,13 @@ const (
 )
 
 type ClusterSpec struct {
+	Version string `json:"version,omitempty"`
 }
 
 type ClusterStatus struct {
 	Conditions       []metav1.Condition `json:"conditions,omitempty"`
 	ClusterServiceID string             `json:"clusterServiceID,omitempty"`
+	Version          string             `json:"version,omitempty"`
 }
 
 // +kubebuilder:object:root=true
