@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -8,11 +9,13 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	utildeployment "bitbucket.org/sudosweden/dockyards-backend/pkg/util/deployment"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (h *handler) PostClusterDeployments(c *gin.Context) {
@@ -106,20 +109,34 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 }
 
 func (h *handler) GetClusterDeployments(c *gin.Context) {
+	ctx := context.Background()
+
 	clusterID := c.Param("clusterID")
 
-	cluster, err := h.clusterService.GetCluster(clusterID)
+	matchingFields := client.MatchingFields{
+		"metadata.uid": clusterID,
+	}
+
+	var clusterList v1alpha1.ClusterList
+	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		h.logger.Error("error getting deployment cluster from cluster service", "id", clusterID, "err", err)
+		h.logger.Error("error listing clusters", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	if len(clusterList.Items) != 1 {
+		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	h.logger.Debug("cluster", "organization", cluster.Organization)
+	cluster := clusterList.Items[0]
 
 	var deployments []v1.Deployment
-	err = h.db.Find(&deployments, "cluster_id = ?", clusterID).Error
+	err = h.db.Find(&deployments, "cluster_id = ?", cluster.UID).Error
 	if err != nil {
 		h.logger.Error("error finding deployments in database", "err", err)
 

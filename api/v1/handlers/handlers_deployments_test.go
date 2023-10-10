@@ -15,15 +15,20 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestGetDeployment(t *testing.T) {
@@ -321,116 +326,135 @@ func TestGetClusterDeployments(t *testing.T) {
 		clusterID          string
 		deployments        []v1.Deployment
 		deploymentStatuses []v1.DeploymentStatus
-		clustermockOptions []clustermock.MockOption
+		lists              []client.ObjectList
 		expected           []v1.Deployment
 	}{
 		{
 			name:      "test single deployment",
-			clusterID: "cluster-123",
+			clusterID: "9746d1c6-01d3-4d24-b552-7888d5119a7e",
 			deployments: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("115590c5-c5f5-48d3-95b4-5fd6a1d3e77f"),
 					Name:      util.Ptr("test"),
-					ClusterID: "cluster-123",
+					ClusterID: "9746d1c6-01d3-4d24-b552-7888d5119a7e",
 				},
 			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						ID:           "cluster-123",
-						Name:         "test",
-						Organization: "hello123",
+			lists: []client.ObjectList{
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "9746d1c6-01d3-4d24-b552-7888d5119a7e",
+							},
+						},
 					},
-				}),
+				},
 			},
 			expected: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("115590c5-c5f5-48d3-95b4-5fd6a1d3e77f"),
 					Name:      util.Ptr("test"),
-					ClusterID: "cluster-123",
+					ClusterID: "9746d1c6-01d3-4d24-b552-7888d5119a7e",
 				},
 			},
 		},
 		{
 			name:      "test multiple deployments",
-			clusterID: "cluster-123",
+			clusterID: "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 			deployments: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("9f5be117-7a87-4b14-8788-42b595cd7679"),
 					Name:      util.Ptr("test1"),
-					ClusterID: "cluster-123",
+					ClusterID: "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 				},
 				{
 					ID:        uuid.MustParse("d40c37d3-7465-4bc6-bfbf-19669f05a16a"),
 					Name:      util.Ptr("test2"),
-					ClusterID: "cluster-234",
+					ClusterID: "8bf6e7fa-2492-4e8a-9597-0041fc49d3ee",
 				},
 				{
 					ID:        uuid.MustParse("a7743bee-d4cc-4342-b7bd-d149fa26f38f"),
 					Name:      util.Ptr("test3"),
-					ClusterID: "cluster-123",
+					ClusterID: "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 				},
 			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						ID:           "cluster-123",
-						Name:         "test",
-						Organization: "hello123",
+			lists: []client.ObjectList{
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "cluster-123",
+								Namespace: "testing",
+								UID:       "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "cluster-234",
+								Namespace: "testing",
+								UID:       "8bf6e7fa-2492-4e8a-9597-0041fc49d3ee",
+							},
+						},
 					},
-				}),
+				},
 			},
 			expected: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("9f5be117-7a87-4b14-8788-42b595cd7679"),
 					Name:      util.Ptr("test1"),
-					ClusterID: "cluster-123",
+					ClusterID: "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 				},
 				{
 					ID:        uuid.MustParse("a7743bee-d4cc-4342-b7bd-d149fa26f38f"),
 					Name:      util.Ptr("test3"),
-					ClusterID: "cluster-123",
+					ClusterID: "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 				},
 			},
 		},
 		{
 			name:      "test cluster without deployments",
-			clusterID: "cluster-123",
+			clusterID: "d1359b49-9190-45f0-b586-b5240fea847c",
 			deployments: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("b6cf669a-601f-4543-9a3c-d65da2d176d2"),
 					Name:      util.Ptr("test1"),
-					ClusterID: "cluster-234",
+					ClusterID: "6b446452-2522-45db-aee3-4c3df0acc181",
 				},
 				{
 					ID:        uuid.MustParse("1748bcf1-92c7-482e-a07c-a808701b2d84"),
 					Name:      util.Ptr("test2"),
-					ClusterID: "cluster-345",
+					ClusterID: "462d8b0f-6d3a-44c3-a04f-658802252721",
 				},
 				{
 					ID:        uuid.MustParse("fd9786ad-6722-4ac4-9e18-6a128472eb60"),
 					Name:      util.Ptr("test3"),
-					ClusterID: "cluster-456",
+					ClusterID: "fcf10d81-9e9b-4792-ab61-3cb668497529",
 				},
 			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						ID:           "cluster-123",
-						Name:         "test",
-						Organization: "hello123",
+			lists: []client.ObjectList{
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "d1359b49-9190-45f0-b586-b5240fea847c",
+							},
+						},
 					},
-				}),
+				},
 			},
 			expected: []v1.Deployment{},
 		},
 		{
 			name:      "test with deployment status",
-			clusterID: "cluster-123",
+			clusterID: "e96f28f3-a2f9-426c-8e9d-9ffdba4b8581",
 			deployments: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("2a0d2f6d-e3b1-4021-84cd-5c47918dc99e"),
-					ClusterID: "cluster-123",
+					ClusterID: "e96f28f3-a2f9-426c-8e9d-9ffdba4b8581",
 				},
 			},
 			deploymentStatuses: []v1.DeploymentStatus{
@@ -440,19 +464,23 @@ func TestGetClusterDeployments(t *testing.T) {
 					State:        util.Ptr("testing"),
 				},
 			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						ID:           "cluster-123",
-						Name:         "test",
-						Organization: "hello123",
+			lists: []client.ObjectList{
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "e96f28f3-a2f9-426c-8e9d-9ffdba4b8581",
+							},
+						},
 					},
-				}),
+				},
 			},
 			expected: []v1.Deployment{
 				{
 					ID:        uuid.MustParse("2a0d2f6d-e3b1-4021-84cd-5c47918dc99e"),
-					ClusterID: "cluster-123",
+					ClusterID: "e96f28f3-a2f9-426c-8e9d-9ffdba4b8581",
 				},
 			},
 		},
@@ -462,7 +490,7 @@ func TestGetClusterDeployments(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 			gormSlogger := loggers.NewGormSlogger(logger)
 
 			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
@@ -485,12 +513,14 @@ func TestGetClusterDeployments(t *testing.T) {
 				}
 			}
 
-			clusterService := clustermock.NewMockClusterService(tc.clustermockOptions...)
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
 
 			h := handler{
-				db:             db,
-				logger:         logger,
-				clusterService: clusterService,
+				db:               db,
+				logger:           logger,
+				controllerClient: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
