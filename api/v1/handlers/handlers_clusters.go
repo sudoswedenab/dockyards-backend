@@ -30,6 +30,7 @@ func (h *handler) toV1Cluster(organization *v1alpha1.Organization, cluster *v1al
 		Name:         cluster.Name,
 		Organization: organization.Name,
 		CreatedAt:    cluster.CreationTimestamp.Time,
+		Version:      cluster.Status.Version,
 	}
 
 	condition := meta.FindStatusCondition(cluster.Status.Conditions, v1alpha1.ReadyCondition)
