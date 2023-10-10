@@ -170,7 +170,7 @@ func TestGetAllClusters(t *testing.T) {
 			},
 			expected: &[]v1.Cluster{
 				{
-					ID:           "cluster-123",
+					Id:           "cluster-123",
 					Organization: "test",
 					Name:         "cluster",
 					Version:      "v1.2.3",

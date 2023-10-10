@@ -61,7 +61,7 @@ func (r *rancher) CreateNodePool(organization *v1alpha1.Organization, cluster *v
 
 	hostnamePrefix := cluster.Name + "-" + nodePoolOptions.Name + "-"
 	opts := managementv3.NodePool{
-		ClusterID:               cluster.ID,
+		ClusterID:               cluster.Id,
 		DeleteNotReadyAfterSecs: 0,
 		DrainBeforeDelete:       true,
 		HostnamePrefix:          hostnamePrefix,

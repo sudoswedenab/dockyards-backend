@@ -8,7 +8,7 @@ import (
 
 func (a *sudoAPI) GetCredential(ctx context.Context, req GetCredentialRequestObject) (GetCredentialResponseObject, error) {
 	var credential v1.Credential
-	err := a.db.Take(&credential, "id = ?", req.CredentialID).Error
+	err := a.db.Take(&credential, "id = ?", req.CredentialId).Error
 	if err != nil {
 		a.logger.Error("error taking credential from database", "err", err)
 

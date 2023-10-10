@@ -37,7 +37,7 @@ func (h *handler) GetOrgs(c *gin.Context) {
 	var v1Organizations []v1.Organization
 	for _, organization := range organizationList.Items {
 		v1Organization := v1.Organization{
-			ID:   string(organization.UID),
+			Id:   string(organization.UID),
 			Name: organization.Name,
 		}
 

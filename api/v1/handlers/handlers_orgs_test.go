@@ -54,7 +54,7 @@ func TestGetOrgs(t *testing.T) {
 			sub: "89a3e0aa-7744-49af-ae7e-1461004c1598",
 			expected: []v1.Organization{
 				{
-					ID:   "03582042-318e-4c1e-9728-755c5eaf4267",
+					Id:   "03582042-318e-4c1e-9728-755c5eaf4267",
 					Name: "test",
 				},
 			},
@@ -116,11 +116,11 @@ func TestGetOrgs(t *testing.T) {
 			sub: "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
 			expected: []v1.Organization{
 				{
-					ID:   "58c282c0-6a68-4ec8-9032-83d33f259bbe",
+					Id:   "58c282c0-6a68-4ec8-9032-83d33f259bbe",
 					Name: "test1",
 				},
 				{
-					ID:   "5c13be53-fecd-467d-9546-d8ba3bb68103",
+					Id:   "5c13be53-fecd-467d-9546-d8ba3bb68103",
 					Name: "test3",
 				},
 			},

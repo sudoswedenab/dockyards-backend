@@ -85,11 +85,11 @@ func (c *clusterController) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, err
 		}
 
-		c.logger.Debug("created cluster in cluster service", "id", createdCluster.ID)
+		c.logger.Debug("created cluster in cluster service", "id", createdCluster.Id)
 
 		patch := client.MergeFrom(cluster.DeepCopy())
 
-		cluster.Status.ClusterServiceID = createdCluster.ID
+		cluster.Status.ClusterServiceID = createdCluster.Id
 		err = c.Status().Patch(ctx, &cluster, patch)
 		if err != nil {
 			c.logger.Error("error patching cluster status", "err", err)
@@ -138,7 +138,7 @@ func (c *clusterController) reconcileDelete(ctx context.Context, cluster *v1alph
 
 	if cluster.Status.ClusterServiceID != "" {
 		v1Cluster := v1.Cluster{
-			ID:   cluster.Status.ClusterServiceID,
+			Id:   cluster.Status.ClusterServiceID,
 			Name: cluster.Name,
 		}
 

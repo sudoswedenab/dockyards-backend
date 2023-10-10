@@ -176,7 +176,7 @@ func (s *openStackService) createMetalLBDeployment(network *networksv2.Network, 
 
 	metalLBDeployment := v1.Deployment{
 		Type:      v1.DeploymentTypeKustomize,
-		ClusterID: string(cluster.UID),
+		ClusterId: string(cluster.UID),
 		Name:      util.Ptr("metallb"),
 		Namespace: util.Ptr("metallb-system"),
 		Kustomize: &map[string][]byte{
@@ -193,7 +193,7 @@ func (s *openStackService) createMetalLBDeployment(network *networksv2.Network, 
 func (s *openStackService) createIngressNginxDeployment(cluster *v1alpha1.Cluster) *v1.Deployment {
 	ingressNginxDeployment := v1.Deployment{
 		Type:           v1.DeploymentTypeHelm,
-		ClusterID:      string(cluster.UID),
+		ClusterId:      string(cluster.UID),
 		Name:           util.Ptr("ingress-nginx"),
 		Namespace:      util.Ptr("ingress-nginx"),
 		HelmChart:      util.Ptr("ingress-nginx"),
@@ -246,7 +246,7 @@ func (s *openStackService) GetClusterDeployments(organization *v1alpha1.Organiza
 	}
 
 	openStackCinderCSIDeployment := v1.Deployment{
-		ClusterID:      string(cluster.UID),
+		ClusterId:      string(cluster.UID),
 		Name:           util.Ptr("openstack-cinder-csi"),
 		Type:           v1.DeploymentTypeHelm,
 		HelmChart:      util.Ptr("openstack-cinder-csi"),

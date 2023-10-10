@@ -55,7 +55,7 @@ func (r *rancher) CreateCluster(organization *v1alpha1.Organization, clusterOpti
 	cluster := v1.Cluster{
 		Organization: clusterOrganization,
 		Name:         clusterName,
-		ID:           createdCluster.ID,
+		Id:           createdCluster.ID,
 	}
 	return &cluster, nil
 }

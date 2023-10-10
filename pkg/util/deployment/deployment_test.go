@@ -111,7 +111,7 @@ func TestCreateRepository(t *testing.T) {
 		{
 			name: "test container image",
 			deployment: v1.Deployment{
-				ID:             uuid.MustParse("56104a5b-e229-471e-84bd-8217287ab157"),
+				Id:             uuid.MustParse("56104a5b-e229-471e-84bd-8217287ab157"),
 				Type:           v1.DeploymentTypeContainerImage,
 				Name:           util.Ptr("test"),
 				Namespace:      util.Ptr("test"),
@@ -121,7 +121,7 @@ func TestCreateRepository(t *testing.T) {
 		{
 			name: "test kustomize",
 			deployment: v1.Deployment{
-				ID:        uuid.MustParse("bee3f0a1-73e5-45ee-ad06-c535d9c7ac8f"),
+				Id:        uuid.MustParse("bee3f0a1-73e5-45ee-ad06-c535d9c7ac8f"),
 				Type:      v1.DeploymentTypeKustomize,
 				Name:      util.Ptr("test"),
 				Namespace: util.Ptr("test"),
@@ -144,7 +144,7 @@ func TestCreateRepository(t *testing.T) {
 				t.Fatalf("error creating repository: %s", err)
 			}
 
-			gitPath := path.Join(dirTemp, "v1/deployments", tc.deployment.ID.String())
+			gitPath := path.Join(dirTemp, "v1/deployments", tc.deployment.Id.String())
 
 			repository, err := git.PlainOpen(gitPath)
 			if err != nil {

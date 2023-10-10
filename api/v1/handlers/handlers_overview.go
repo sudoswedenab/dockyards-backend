@@ -44,11 +44,11 @@ func (h *handler) GetOverview(c *gin.Context) {
 	for _, cluster := range *allClusters {
 		clusterOverview := v1.ClusterOverview{
 			Name: cluster.Name,
-			ID:   cluster.ID,
+			Id:   cluster.Id,
 		}
 
 		var deployments []v1.Deployment
-		err := h.db.Find(&deployments, "cluster_id = ?", cluster.ID).Error
+		err := h.db.Find(&deployments, "cluster_id = ?", cluster.Id).Error
 		if err != nil {
 			h.logger.Error("error getting deployments from database", "err", err)
 
@@ -60,7 +60,7 @@ func (h *handler) GetOverview(c *gin.Context) {
 		for _, deployment := range deployments {
 			deploymentOverview := v1.DeploymentOverview{
 				Name: *deployment.Name,
-				ID:   deployment.ID.String(),
+				Id:   deployment.Id.String(),
 			}
 
 			deploymentsOverview = append(deploymentsOverview, deploymentOverview)
@@ -83,7 +83,7 @@ func (h *handler) GetOverview(c *gin.Context) {
 
 		organizationOverview := v1.OrganizationOverview{
 			Name:     organization.Name,
-			ID:       string(organization.UID),
+			Id:       string(organization.UID),
 			Clusters: &clustersOverview,
 		}
 
@@ -106,7 +106,7 @@ func (h *handler) GetOverview(c *gin.Context) {
 			}
 
 			userOverview := v1.UserOverview{
-				ID:    string(user.UID),
+				Id:    string(user.UID),
 				Email: user.Spec.Email,
 			}
 

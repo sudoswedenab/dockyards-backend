@@ -32,7 +32,7 @@ func TestGetApps(t *testing.T) {
 			name: "test single",
 			apps: []v1.App{
 				{
-					ID:   uuid.MustParse("86ea7a7c-2c77-49a8-9af2-a36be89aa031"),
+					Id:   uuid.MustParse("86ea7a7c-2c77-49a8-9af2-a36be89aa031"),
 					Name: "test",
 				},
 			},
@@ -41,15 +41,15 @@ func TestGetApps(t *testing.T) {
 			name: "test multiple",
 			apps: []v1.App{
 				{
-					ID:   uuid.MustParse("7a8991b6-0fc8-450b-b97b-d39becc24d89"),
+					Id:   uuid.MustParse("7a8991b6-0fc8-450b-b97b-d39becc24d89"),
 					Name: "test1",
 				},
 				{
-					ID:   uuid.MustParse("3f09378e-c762-4725-9c28-443055297e75"),
+					Id:   uuid.MustParse("3f09378e-c762-4725-9c28-443055297e75"),
 					Name: "test2",
 				},
 				{
-					ID:   uuid.MustParse("3f72e332-2148-44f3-9266-9f4793c5cf7f"),
+					Id:   uuid.MustParse("3f72e332-2148-44f3-9266-9f4793c5cf7f"),
 					Name: "test3",
 				},
 			},
@@ -126,62 +126,62 @@ func TestGetApp(t *testing.T) {
 			appID: "7d5fcf7d-e7aa-43da-83e7-700ffc37748e",
 			apps: []v1.App{
 				{
-					ID:   uuid.MustParse("7d5fcf7d-e7aa-43da-83e7-700ffc37748e"),
+					Id:   uuid.MustParse("7d5fcf7d-e7aa-43da-83e7-700ffc37748e"),
 					Name: "test",
 				},
 			},
 			appSteps: []v1.AppStep{
 				{
-					ID:    uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
-					AppID: uuid.MustParse("7d5fcf7d-e7aa-43da-83e7-700ffc37748e"),
+					Id:    uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
+					AppId: uuid.MustParse("7d5fcf7d-e7aa-43da-83e7-700ffc37748e"),
 					Name:  "step",
 				},
 			},
 			stepOptions: []v1.StepOption{
 				{
-					AppStepID:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
+					AppStepId:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
 					DisplayName: "Helm Chart",
-					JSONPointer: "/helm_chart",
+					JsonPointer: "/helm_chart",
 					Default:     util.Ptr("test"),
 				},
 				{
-					AppStepID:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
+					AppStepId:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
 					DisplayName: "Helm Repository",
-					JSONPointer: "/helm_repository",
+					JsonPointer: "/helm_repository",
 					Default:     util.Ptr("http://localhost/chart-repository"),
 				},
 				{
-					AppStepID:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
+					AppStepId:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
 					DisplayName: "Helm Version",
-					JSONPointer: "/helm_version",
+					JsonPointer: "/helm_version",
 					Default:     util.Ptr("1.2.3"),
 				},
 			},
 			expected: v1.App{
-				ID:   uuid.MustParse("7d5fcf7d-e7aa-43da-83e7-700ffc37748e"),
+				Id:   uuid.MustParse("7d5fcf7d-e7aa-43da-83e7-700ffc37748e"),
 				Name: "test",
 				AppSteps: []v1.AppStep{
 					{
-						ID:    uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
-						AppID: uuid.MustParse("7d5fcf7d-e7aa-43da-83e7-700ffc37748e"),
+						Id:    uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
+						AppId: uuid.MustParse("7d5fcf7d-e7aa-43da-83e7-700ffc37748e"),
 						Name:  "step",
 						StepOptions: []v1.StepOption{
 							{
-								AppStepID:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
+								AppStepId:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
 								DisplayName: "Helm Chart",
-								JSONPointer: "/helm_chart",
+								JsonPointer: "/helm_chart",
 								Default:     util.Ptr("test"),
 							},
 							{
-								AppStepID:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
+								AppStepId:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
 								DisplayName: "Helm Repository",
-								JSONPointer: "/helm_repository",
+								JsonPointer: "/helm_repository",
 								Default:     util.Ptr("http://localhost/chart-repository"),
 							},
 							{
-								AppStepID:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
+								AppStepId:   uuid.MustParse("caf03733-fb00-4852-bb7f-849eb1e46539"),
 								DisplayName: "Helm Version",
-								JSONPointer: "/helm_version",
+								JsonPointer: "/helm_version",
 								Default:     util.Ptr("1.2.3"),
 							},
 						},
@@ -194,52 +194,52 @@ func TestGetApp(t *testing.T) {
 			appID: "d837640f-01e4-4834-a82c-2c7c995afdb0",
 			apps: []v1.App{
 				{
-					ID:   uuid.MustParse("d837640f-01e4-4834-a82c-2c7c995afdb0"),
+					Id:   uuid.MustParse("d837640f-01e4-4834-a82c-2c7c995afdb0"),
 					Name: "test1",
 				},
 				{
-					ID:   uuid.MustParse("657bb8da-4018-4457-a295-325a295c803b"),
+					Id:   uuid.MustParse("657bb8da-4018-4457-a295-325a295c803b"),
 					Name: "test2",
 				},
 			},
 			appSteps: []v1.AppStep{
 				{
-					ID:    uuid.MustParse("fe0e09c4-e4c8-4e76-99a2-8b6d9f07df02"),
-					AppID: uuid.MustParse("d837640f-01e4-4834-a82c-2c7c995afdb0"),
+					Id:    uuid.MustParse("fe0e09c4-e4c8-4e76-99a2-8b6d9f07df02"),
+					AppId: uuid.MustParse("d837640f-01e4-4834-a82c-2c7c995afdb0"),
 				},
 				{
-					ID:    uuid.MustParse("2ee1a20a-662b-46ed-bac1-f1824466aa6f"),
-					AppID: uuid.MustParse("657bb8da-4018-4457-a295-325a295c803b"),
+					Id:    uuid.MustParse("2ee1a20a-662b-46ed-bac1-f1824466aa6f"),
+					AppId: uuid.MustParse("657bb8da-4018-4457-a295-325a295c803b"),
 				},
 			},
 			stepOptions: []v1.StepOption{
 				{
-					AppStepID:   uuid.MustParse("fe0e09c4-e4c8-4e76-99a2-8b6d9f07df02"),
-					JSONPointer: "/helm_chart",
+					AppStepId:   uuid.MustParse("fe0e09c4-e4c8-4e76-99a2-8b6d9f07df02"),
+					JsonPointer: "/helm_chart",
 					Default:     util.Ptr("test1"),
 				},
 				{
-					AppStepID:   uuid.MustParse("2ee1a20a-662b-46ed-bac1-f1824466aa6f"),
-					JSONPointer: "/helm_chart",
+					AppStepId:   uuid.MustParse("2ee1a20a-662b-46ed-bac1-f1824466aa6f"),
+					JsonPointer: "/helm_chart",
 					Default:     util.Ptr("test2"),
 				},
 				{
-					AppStepID:   uuid.MustParse("2ee1a20a-662b-46ed-bac1-f1824466aa6f"),
-					JSONPointer: "/helm_repository",
+					AppStepId:   uuid.MustParse("2ee1a20a-662b-46ed-bac1-f1824466aa6f"),
+					JsonPointer: "/helm_repository",
 					Default:     util.Ptr("test2"),
 				},
 			},
 			expected: v1.App{
-				ID:   uuid.MustParse("d837640f-01e4-4834-a82c-2c7c995afdb0"),
+				Id:   uuid.MustParse("d837640f-01e4-4834-a82c-2c7c995afdb0"),
 				Name: "test1",
 				AppSteps: []v1.AppStep{
 					{
-						ID:    uuid.MustParse("fe0e09c4-e4c8-4e76-99a2-8b6d9f07df02"),
-						AppID: uuid.MustParse("d837640f-01e4-4834-a82c-2c7c995afdb0"),
+						Id:    uuid.MustParse("fe0e09c4-e4c8-4e76-99a2-8b6d9f07df02"),
+						AppId: uuid.MustParse("d837640f-01e4-4834-a82c-2c7c995afdb0"),
 						StepOptions: []v1.StepOption{
 							{
-								AppStepID:   uuid.MustParse("fe0e09c4-e4c8-4e76-99a2-8b6d9f07df02"),
-								JSONPointer: "/helm_chart",
+								AppStepId:   uuid.MustParse("fe0e09c4-e4c8-4e76-99a2-8b6d9f07df02"),
+								JsonPointer: "/helm_chart",
 								Default:     util.Ptr("test1"),
 							},
 						},

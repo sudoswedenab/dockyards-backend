@@ -36,7 +36,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		return
 	}
 
-	deployment.ClusterID = clusterID
+	deployment.ClusterId = clusterID
 
 	err = utildeployment.AddNormalizedName(&deployment)
 	if err != nil {
@@ -57,7 +57,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	}
 
 	var existingDeployment v1.Deployment
-	err = h.db.Take(&existingDeployment, "name = ? AND cluster_id = ?", *deployment.Name, deployment.ClusterID).Error
+	err = h.db.Take(&existingDeployment, "name = ? AND cluster_id = ?", *deployment.Name, deployment.ClusterId).Error
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			h.logger.Error("error taking deployment from database", "name", *deployment.Name, "err", err)
@@ -68,7 +68,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	}
 
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		h.logger.Debug("deployment name already in-use", "name", *deployment.Name, "cluster", deployment.ClusterID)
+		h.logger.Debug("deployment name already in-use", "name", *deployment.Name, "cluster", deployment.ClusterId)
 
 		c.AbortWithStatus(http.StatusConflict)
 		return
@@ -92,8 +92,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	}
 
 	deploymentStatus := v1.DeploymentStatus{
-		ID:           uuid.New(),
-		DeploymentID: deployment.ID,
+		Id:           uuid.New(),
+		DeploymentId: deployment.Id,
 		State:        util.Ptr("pending"),
 		Health:       util.Ptr(v1.DeploymentStatusHealthWarning),
 	}
@@ -166,17 +166,17 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 	}
 
 	for _, deploymentStatus := range deploymentStatuses {
-		h.logger.Debug("deleting deployment status from database", "id", deploymentStatus.ID)
+		h.logger.Debug("deleting deployment status from database", "id", deploymentStatus.Id)
 
 		err := h.db.Delete(&deploymentStatus).Error
 		if err != nil {
-			h.logger.Error("error deleting deployment status from database", "id", deploymentStatus.ID, "err", err)
+			h.logger.Error("error deleting deployment status from database", "id", deploymentStatus.Id, "err", err)
 
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
-		h.logger.Debug("deleted deployment status from database", "id", deploymentStatus.ID)
+		h.logger.Debug("deleted deployment status from database", "id", deploymentStatus.Id)
 	}
 
 	var deployment v1.Deployment
@@ -188,19 +188,19 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 		return
 	}
 
-	h.logger.Debug("deleting deployment from database", "id", deployment.ID)
+	h.logger.Debug("deleting deployment from database", "id", deployment.Id)
 
 	err = h.db.Delete(&deployment).Error
 	if err != nil {
-		h.logger.Error("error deleting deployment from database", "id", deployment.ID, "err", err)
+		h.logger.Error("error deleting deployment from database", "id", deployment.Id, "err", err)
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Debug("deleted deployment from database", "id", deployment.ID)
+	h.logger.Debug("deleted deployment from database", "id", deployment.Id)
 
-	repoPath := path.Join(h.gitProjectRoot, "/v1/deployments", deployment.ID.String())
+	repoPath := path.Join(h.gitProjectRoot, "/v1/deployments", deployment.Id.String())
 
 	h.logger.Debug("deleting repository from filesystem", "path", repoPath)
 

@@ -22,9 +22,9 @@ func (a *sudoAPI) GetDeployments(ctx context.Context, req GetDeploymentsRequestO
 
 func (a *sudoAPI) GetDeployment(ctx context.Context, req GetDeploymentRequestObject) (GetDeploymentResponseObject, error) {
 	var deployment v1.Deployment
-	err := a.db.Take(&deployment, "id = ?", req.DeploymentID).Error
+	err := a.db.Take(&deployment, "id = ?", req.DeploymentId).Error
 	if err != nil {
-		a.logger.Error("error taking deployment from database", "id", req.DeploymentID, "err", err)
+		a.logger.Error("error taking deployment from database", "id", req.DeploymentId, "err", err)
 
 		return GetDeployment500Response{}, nil
 	}
@@ -34,7 +34,7 @@ func (a *sudoAPI) GetDeployment(ctx context.Context, req GetDeploymentRequestObj
 
 func (a *sudoAPI) CreateDeployment(ctx context.Context, req CreateDeploymentRequestObject) (CreateDeploymentResponseObject, error) {
 	deployment := *req.Body
-	deployment.ID = uuid.New()
+	deployment.Id = uuid.New()
 
 	err := utildeployment.CreateRepository(&deployment, a.gitProjectRoot)
 	if err != nil {
@@ -55,10 +55,10 @@ func (a *sudoAPI) CreateDeployment(ctx context.Context, req CreateDeploymentRequ
 
 func (a *sudoAPI) CreateDeploymentStatus(ctx context.Context, req CreateDeploymentStatusRequestObject) (CreateDeploymentStatusResponseObject, error) {
 	deploymentStatus := *req.Body
-	deploymentStatus.ID = uuid.New()
+	deploymentStatus.Id = uuid.New()
 
 	var lastDeploymentStatus v1.DeploymentStatus
-	err := a.db.Order("created_at desc").First(&lastDeploymentStatus, "deployment_id = ?", deploymentStatus.DeploymentID).Error
+	err := a.db.Order("created_at desc").First(&lastDeploymentStatus, "deployment_id = ?", deploymentStatus.DeploymentId).Error
 	if *lastDeploymentStatus.State == *deploymentStatus.State && *lastDeploymentStatus.Health == *deploymentStatus.Health {
 		a.logger.Error("deployment status same as last")
 

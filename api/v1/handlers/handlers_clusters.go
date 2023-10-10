@@ -26,7 +26,7 @@ import (
 
 func (h *handler) toV1Cluster(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePoolList *v1alpha1.NodePoolList) *v1.Cluster {
 	v1Cluster := v1.Cluster{
-		ID:           string(cluster.UID),
+		Id:           string(cluster.UID),
 		Name:         cluster.Name,
 		Organization: organization.Name,
 		CreatedAt:    cluster.CreationTimestamp.Time,
@@ -245,7 +245,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 			for _, clusterDeployment := range *clusterDeployments {
 				h.logger.Debug("creating cluster deployment", "name", *clusterDeployment.Name)
 
-				clusterDeployment.ID = uuid.New()
+				clusterDeployment.Id = uuid.New()
 
 				if clusterDeployment.Type == v1.DeploymentTypeContainerImage || clusterDeployment.Type == v1.DeploymentTypeKustomize {
 					h.logger.Debug("creating repository for cluster deployment")
@@ -267,11 +267,11 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 					break
 				}
 
-				h.logger.Debug("created cluster deployment", "name", *clusterDeployment.Name, "id", clusterDeployment.ID)
+				h.logger.Debug("created cluster deployment", "name", *clusterDeployment.Name, "id", clusterDeployment.Id)
 
 				deploymentStatus := v1.DeploymentStatus{
-					ID:           uuid.New(),
-					DeploymentID: clusterDeployment.ID,
+					Id:           uuid.New(),
+					DeploymentId: clusterDeployment.Id,
 					State:        util.Ptr("created"),
 					Health:       util.Ptr(v1.DeploymentStatusHealthWarning),
 				}
@@ -283,7 +283,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 					continue
 				}
 
-				h.logger.Debug("created cluster deployment status", "id", deploymentStatus.ID)
+				h.logger.Debug("created cluster deployment status", "id", deploymentStatus.Id)
 			}
 		}
 	}
@@ -296,7 +296,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	v1Cluster := v1.Cluster{
-		ID: string(cluster.UID),
+		Id: string(cluster.UID),
 	}
 
 	c.JSON(http.StatusCreated, v1Cluster)

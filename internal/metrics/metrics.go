@@ -192,7 +192,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 	for _, deployment := range deployments {
 		labels := prometheus.Labels{
 			"name":       *deployment.Name,
-			"cluster_id": deployment.ClusterID,
+			"cluster_id": deployment.ClusterId,
 		}
 
 		m.deploymentMetric.With(labels).Set(1)

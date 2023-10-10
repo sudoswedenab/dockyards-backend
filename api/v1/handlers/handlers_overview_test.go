@@ -89,11 +89,11 @@ func TestGetOverview(t *testing.T) {
 			expected: v1.Overview{
 				Organizations: []v1.OrganizationOverview{
 					{
-						ID:   "01cdc762-a115-43c6-9770-6587087d6fb8",
+						Id:   "01cdc762-a115-43c6-9770-6587087d6fb8",
 						Name: "test",
 						Users: &[]v1.UserOverview{
 							{
-								ID:    "23aa679e-e3c8-47f8-bad6-2284b92b83e7",
+								Id:    "23aa679e-e3c8-47f8-bad6-2284b92b83e7",
 								Email: "test@dockyards.dev",
 							},
 						},
@@ -167,11 +167,11 @@ func TestGetOverview(t *testing.T) {
 			expected: v1.Overview{
 				Organizations: []v1.OrganizationOverview{
 					{
-						ID:   "8d2c74e5-efee-4b70-8f9d-e3535ba2d1f9",
+						Id:   "8d2c74e5-efee-4b70-8f9d-e3535ba2d1f9",
 						Name: "test1",
 						Users: &[]v1.UserOverview{
 							{
-								ID:    "e27df599-93cd-4e30-93f1-98399e3e7237",
+								Id:    "e27df599-93cd-4e30-93f1-98399e3e7237",
 								Email: "user1@dockyards.dev",
 							},
 						},

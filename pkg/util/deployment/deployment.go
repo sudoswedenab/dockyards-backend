@@ -157,7 +157,7 @@ func AddNormalizedName(deployment *v1.Deployment) error {
 		deployment.Namespace = deployment.Name
 	}
 
-	deployment.ID = uuid.New()
+	deployment.Id = uuid.New()
 
 	return nil
 }
@@ -193,7 +193,7 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 			return err
 		}
 
-		repoPath := path.Join(gitProjectRoot, "/v1/deployments", deployment.ID.String())
+		repoPath := path.Join(gitProjectRoot, "/v1/deployments", deployment.Id.String())
 
 		fs := osfs.New(repoPath)
 		storage := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())
@@ -275,7 +275,7 @@ func CreateRepository(deployment *v1.Deployment, gitProjectRoot string) error {
 			return ErrDeploymentKustomizationMissing
 		}
 
-		repoPath := path.Join(gitProjectRoot, "/v1/deployments", deployment.ID.String())
+		repoPath := path.Join(gitProjectRoot, "/v1/deployments", deployment.Id.String())
 
 		fs := osfs.New(repoPath)
 		storage := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())

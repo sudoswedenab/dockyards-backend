@@ -21,7 +21,7 @@ func (r *rancher) clusterToModel(cluster *managementv3.Cluster) v1.Cluster {
 		State:        cluster.State,
 		NodeCount:    int(cluster.NodeCount),
 		CreatedAt:    createdAt,
-		ID:           cluster.ID,
+		Id:           cluster.ID,
 	}
 
 	if cluster.RancherKubernetesEngineConfig != nil {

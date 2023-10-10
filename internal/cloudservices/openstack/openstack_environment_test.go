@@ -44,8 +44,8 @@ func TestGetClosestFlavorID(t *testing.T) {
 			},
 			nodePoolOptions: v1.NodePoolOptions{
 				DiskSizeGb: util.Ptr(10),
-				RAMSizeMb:  util.Ptr(2048),
-				CPUCount:   util.Ptr(1),
+				RamSizeMb:  util.Ptr(2048),
+				CpuCount:   util.Ptr(1),
 			},
 			expected: "ram-123",
 		},
@@ -72,7 +72,7 @@ func TestGetClosestFlavorID(t *testing.T) {
 				},
 			},
 			nodePoolOptions: v1.NodePoolOptions{
-				CPUCount: util.Ptr(3),
+				CpuCount: util.Ptr(3),
 			},
 			expected: "cpu-123",
 		},
@@ -99,7 +99,7 @@ func TestGetClosestFlavorID(t *testing.T) {
 				},
 			},
 			nodePoolOptions: v1.NodePoolOptions{
-				RAMSizeMb: util.Ptr(2000),
+				RamSizeMb: util.Ptr(2000),
 			},
 			expected: "ram-123",
 		},

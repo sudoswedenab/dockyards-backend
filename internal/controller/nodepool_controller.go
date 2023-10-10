@@ -98,7 +98,7 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 		v1Cluster := v1.Cluster{
 			Name: cluster.Name,
-			ID:   cluster.Status.ClusterServiceID,
+			Id:   cluster.Status.ClusterServiceID,
 		}
 
 		nodePoolStatus, err := c.clusterService.CreateNodePool(organization, &v1Cluster, &nodePoolOptions)

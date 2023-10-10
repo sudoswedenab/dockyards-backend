@@ -22,8 +22,8 @@ func (s *openStackService) GetFlavorNodePool(flavorID string) (*v1.NodePool, err
 	}
 
 	nodePool := v1.NodePool{
-		CPUCount:   flavor.VCPUs,
-		RAMSizeMb:  flavor.RAM,
+		CpuCount:   flavor.VCPUs,
+		RamSizeMb:  flavor.RAM,
 		DiskSizeGb: flavor.Disk,
 	}
 

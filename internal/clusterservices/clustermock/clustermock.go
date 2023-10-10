@@ -38,7 +38,7 @@ func (s *MockClusterService) CreateCluster(organization *v1alpha1.Organization, 
 	}
 
 	cluster := v1.Cluster{
-		ID:   "cluster-123",
+		Id:   "cluster-123",
 		Name: clusterOptions.Name,
 	}
 
@@ -48,8 +48,8 @@ func (s *MockClusterService) CreateCluster(organization *v1alpha1.Organization, 
 func (s *MockClusterService) CreateNodePool(organization *v1alpha1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1alpha1.NodePoolStatus, error) {
 	resources := corev1.ResourceList{}
 
-	if nodePoolOptions.RAMSizeMb != nil {
-		quantity := resource.NewScaledQuantity(int64(*nodePoolOptions.RAMSizeMb), 2)
+	if nodePoolOptions.RamSizeMb != nil {
+		quantity := resource.NewScaledQuantity(int64(*nodePoolOptions.RamSizeMb), 2)
 		resources[corev1.ResourceMemory] = *quantity
 	}
 
@@ -58,8 +58,8 @@ func (s *MockClusterService) CreateNodePool(organization *v1alpha1.Organization,
 		resources[corev1.ResourceStorage] = *quantity
 	}
 
-	if nodePoolOptions.CPUCount != nil {
-		quantity := resource.NewQuantity(int64(*nodePoolOptions.CPUCount), resource.DecimalSI)
+	if nodePoolOptions.CpuCount != nil {
+		quantity := resource.NewQuantity(int64(*nodePoolOptions.CpuCount), resource.DecimalSI)
 		resources[corev1.ResourceCPU] = *quantity
 	}
 
@@ -88,7 +88,7 @@ func (s *MockClusterService) GetCluster(clusterID string) (*v1alpha1.ClusterStat
 	}
 
 	clusterStatus := v1alpha1.ClusterStatus{
-		ClusterServiceID: cluster.ID,
+		ClusterServiceID: cluster.Id,
 	}
 
 	return &clusterStatus, nil

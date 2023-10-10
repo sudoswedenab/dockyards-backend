@@ -41,7 +41,7 @@ func (h *handler) GetWhoami(c *gin.Context) {
 	user := userList.Items[0]
 
 	v1User := v1.User{
-		ID:    string(user.UID),
+		Id:    string(user.UID),
 		Name:  user.Name,
 		Email: user.Spec.Email,
 	}

@@ -511,7 +511,7 @@ func TestDeleteClusterErrors(t *testing.T) {
 			clustermockOptions: []clustermock.MockOption{
 				clustermock.WithClusters(map[string]v1.Cluster{
 					"cluster-123": {
-						ID:           "cluster-123",
+						Id:           "cluster-123",
 						Organization: "test-org",
 					},
 				}),
@@ -654,14 +654,14 @@ func TestGetCluster(t *testing.T) {
 			},
 			expected: v1.Cluster{
 				Name:         "test",
-				ID:           "26836276-22c6-41bc-bb40-78cdf141e302",
+				Id:           "26836276-22c6-41bc-bb40-78cdf141e302",
 				Organization: "test-org",
 				CreatedAt:    now.Time.Truncate(time.Second),
 				NodePools: []v1.NodePool{
 					{
-						ID:        "14edb8e7-b76a-48c7-bfd8-81588d243c33",
+						Id:        "14edb8e7-b76a-48c7-bfd8-81588d243c33",
 						Name:      "test-pool",
-						ClusterID: "26836276-22c6-41bc-bb40-78cdf141e302",
+						ClusterId: "26836276-22c6-41bc-bb40-78cdf141e302",
 					},
 				},
 				State:   "active",
@@ -882,14 +882,14 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 			cloudmockOptions: []cloudmock.MockOption{
 				cloudmock.WithClusterDeployments(map[string]*v1.Deployment{
 					"abc-123": {
-						ID:   uuid.MustParse("f802ebb7-9cb3-4e0e-9e5b-ca3c0feb44dc"),
+						Id:   uuid.MustParse("f802ebb7-9cb3-4e0e-9e5b-ca3c0feb44dc"),
 						Name: util.Ptr("test"),
 					},
 				}),
 			},
 			expected: []v1.Deployment{
 				{
-					ID:   uuid.MustParse("f802ebb7-9cb3-4e0e-9e5b-ca3c0feb44dc"),
+					Id:   uuid.MustParse("f802ebb7-9cb3-4e0e-9e5b-ca3c0feb44dc"),
 					Name: util.Ptr("test"),
 					Status: v1.DeploymentStatus{
 						State:  util.Ptr("created"),
@@ -968,14 +968,14 @@ func TestPostOrgClustersDeployments(t *testing.T) {
 			}
 
 			var actual []v1.Deployment
-			err = db.Find(&actual, "cluster_id = ?", cluster.ID).Error
+			err = db.Find(&actual, "cluster_id = ?", cluster.Id).Error
 			if err != nil {
 				t.Fatalf("unexpected error finding deployment in database: %s", err)
 			}
 
 			for i, deployment := range actual {
 				var deploymentStatus v1.DeploymentStatus
-				err = db.Take(&deploymentStatus, "deployment_id = ?", deployment.ID).Error
+				err = db.Take(&deploymentStatus, "deployment_id = ?", deployment.Id).Error
 				if err != nil {
 					t.Fatalf("error taking deployment status from database: %s", err)
 				}
@@ -1306,7 +1306,7 @@ func TestGetClusters(t *testing.T) {
 			},
 			expected: []v1.Cluster{
 				{
-					ID:           "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
+					Id:           "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
 					Name:         "cluster1",
 					Organization: "test",
 					CreatedAt:    now.Time.Truncate(time.Second),

@@ -8,7 +8,7 @@ import (
 )
 
 func (a *sudoAPI) GetKubeconfig(ctx context.Context, req GetKubeconfigRequestObject) (GetKubeconfigResponseObject, error) {
-	kubeconfig, err := a.clusterService.GetKubeconfig(req.ClusterID, 0)
+	kubeconfig, err := a.clusterService.GetKubeconfig(req.ClusterId, 0)
 	if err != nil {
 		a.logger.Error("error getting kubeconfig", "err", err)
 
@@ -22,7 +22,7 @@ func (a *sudoAPI) GetKubeconfig(ctx context.Context, req GetKubeconfigRequestObj
 		return GetKubeconfig500Response{}, nil
 	}
 
-	res := GetKubeconfig200TextplainCharsetUTF8Response{
+	res := GetKubeconfig200TextplainCharsetUtf8Response{
 		Body: bytes.NewBuffer(b),
 	}
 	return res, nil

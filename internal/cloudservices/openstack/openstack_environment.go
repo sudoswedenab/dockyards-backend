@@ -269,24 +269,24 @@ func (s *openStackService) getClosestFlavorID(flavors []flavors.Flavor, nodePool
 	closestFlavorID := ""
 	shortestDistance := math.MaxFloat64
 
-	if nodePoolOptions.CPUCount == nil {
-		nodePoolOptions.CPUCount = util.Ptr(0)
+	if nodePoolOptions.CpuCount == nil {
+		nodePoolOptions.CpuCount = util.Ptr(0)
 	}
 
-	if nodePoolOptions.RAMSizeMb == nil {
-		nodePoolOptions.RAMSizeMb = util.Ptr(0)
+	if nodePoolOptions.RamSizeMb == nil {
+		nodePoolOptions.RamSizeMb = util.Ptr(0)
 	}
 
 	if nodePoolOptions.DiskSizeGb == nil {
 		nodePoolOptions.DiskSizeGb = util.Ptr(0)
 	}
 
-	s.logger.Debug("flavor requirements", "ram", *nodePoolOptions.RAMSizeMb, "cpu", *nodePoolOptions.CPUCount, "disk", *nodePoolOptions.DiskSizeGb)
+	s.logger.Debug("flavor requirements", "ram", *nodePoolOptions.RamSizeMb, "cpu", *nodePoolOptions.CpuCount, "disk", *nodePoolOptions.DiskSizeGb)
 
 	for _, flavor := range flavors {
 		diskSquared := math.Pow(float64(flavor.Disk-*nodePoolOptions.DiskSizeGb), 2)
-		ramSquared := math.Pow(float64(flavor.RAM-*nodePoolOptions.RAMSizeMb), 2)
-		vcpuSquared := math.Pow(float64(flavor.VCPUs-*nodePoolOptions.CPUCount), 2)
+		ramSquared := math.Pow(float64(flavor.RAM-*nodePoolOptions.RamSizeMb), 2)
+		vcpuSquared := math.Pow(float64(flavor.VCPUs-*nodePoolOptions.CpuCount), 2)
 
 		distance := math.Sqrt(diskSquared + ramSquared + vcpuSquared)
 

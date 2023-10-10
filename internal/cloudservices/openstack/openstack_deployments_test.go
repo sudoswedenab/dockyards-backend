@@ -54,7 +54,7 @@ func TestCreateMetalLBDeployment(t *testing.T) {
 			},
 			expected: v1.Deployment{
 				Type:      v1.DeploymentTypeKustomize,
-				ClusterID: "8a1953d9-156f-4099-afc8-ee30f890eb72",
+				ClusterId: "8a1953d9-156f-4099-afc8-ee30f890eb72",
 				Name:      util.Ptr("metallb"),
 				Namespace: util.Ptr("metallb-system"),
 				Kustomize: &map[string][]byte{

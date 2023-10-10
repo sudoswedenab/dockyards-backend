@@ -70,7 +70,7 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 		return
 	}
 
-	credential.ID = uuid.New()
+	credential.Id = uuid.New()
 	credential.Organization = org
 
 	err = h.db.Create(&credential).Error
@@ -95,11 +95,11 @@ func (h *handler) DeleteOrgCredentials(c *gin.Context) {
 		return
 	}
 
-	h.logger.Debug("delete credential", "id", credential.ID)
+	h.logger.Debug("delete credential", "id", credential.Id)
 
 	err = h.db.Delete(&credential).Error
 	if err != nil {
-		h.logger.Error("error deleting credential from database", "id", credential.ID, "err", err)
+		h.logger.Error("error deleting credential from database", "id", credential.Id, "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}

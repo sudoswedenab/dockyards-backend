@@ -17,12 +17,12 @@ import (
 
 func (h *handler) toV1NodePool(nodePool *v1alpha1.NodePool, cluster *v1alpha1.Cluster, nodeList *v1alpha1.NodeList) *v1.NodePool {
 	v1NodePool := v1.NodePool{
-		ID:         string(nodePool.UID),
-		ClusterID:  string(cluster.UID),
+		Id:         string(nodePool.UID),
+		ClusterId:  string(cluster.UID),
 		Name:       nodePool.Name,
 		DiskSizeGb: int(nodePool.Status.Resources.Storage().Value() / 1024 / 1024 / 1024),
-		CPUCount:   int(nodePool.Status.Resources.Cpu().Value()),
-		RAMSizeMb:  int(nodePool.Status.Resources.Memory().Value()),
+		CpuCount:   int(nodePool.Status.Resources.Cpu().Value()),
+		RamSizeMb:  int(nodePool.Status.Resources.Memory().Value()),
 		Quantity:   nodePool.Spec.Quantity,
 	}
 
@@ -30,7 +30,7 @@ func (h *handler) toV1NodePool(nodePool *v1alpha1.NodePool, cluster *v1alpha1.Cl
 		nodes := make([]v1.Node, len(nodeList.Items))
 		for i, node := range nodeList.Items {
 			nodes[i] = v1.Node{
-				ID:   string(node.UID),
+				Id:   string(node.UID),
 				Name: node.Name,
 			}
 		}
