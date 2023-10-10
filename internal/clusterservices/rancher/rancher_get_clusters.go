@@ -4,10 +4,11 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (r *rancher) clusterToModel(cluster *managementv3.Cluster) v1.Cluster {
@@ -45,71 +46,43 @@ func (r *rancher) GetAllClusters() (*[]v1.Cluster, error) {
 	return &clusters, nil
 }
 
-func (r *rancher) GetCluster(id string) (*v1.Cluster, error) {
-	rancherCluster, err := r.managementClient.Cluster.ByID(id)
+func (r *rancher) getClusterCondition(clusterConditions []managementv3.ClusterCondition, conditionType string) *managementv3.ClusterCondition {
+	for i, clusterCondition := range clusterConditions {
+		if clusterCondition.Type == conditionType {
+			return &clusterConditions[i]
+		}
+	}
+
+	return nil
+}
+
+func (r *rancher) GetCluster(id string) (*v1alpha1.ClusterStatus, error) {
+	cluster, err := r.managementClient.Cluster.ByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	cluster := r.clusterToModel(rancherCluster)
-
-	listOpts := types.ListOpts{
-		Filters: map[string]interface{}{
-			"clusterId": rancherCluster.ID,
-		},
+	clusterStatus := v1alpha1.ClusterStatus{
+		ClusterServiceID: cluster.ID,
 	}
 
-	rancherNodePools, err := r.managementClient.NodePool.List(&listOpts)
-	if err != nil {
-		return nil, err
+	readyCondition := r.getClusterCondition(cluster.Conditions, "Ready")
+	if readyCondition != nil {
+		condition := metav1.Condition{
+			Type:    v1alpha1.ReadyCondition,
+			Status:  metav1.ConditionStatus(readyCondition.Status),
+			Reason:  v1alpha1.ClusterReadyReason,
+			Message: cluster.State,
+		}
+
+		clusterStatus.Conditions = []metav1.Condition{
+			condition,
+		}
 	}
 
-	for _, rancherNodePool := range rancherNodePools.Data {
-		isLoadBalancer := false
-		for _, nodeTaint := range rancherNodePool.NodeTaints {
-			if nodeTaint.Key == TaintNodeRoleLoadBalancer {
-				isLoadBalancer = true
-			}
-		}
-
-		var customNodeTemplate CustomNodeTemplate
-		err := r.managementClient.ByID(managementv3.NodeTemplateType, rancherNodePool.NodeTemplateID, &customNodeTemplate)
-		if err != nil {
-			return nil, err
-		}
-
-		flavorNodePool, err := r.cloudService.GetFlavorNodePool(customNodeTemplate.OpenstackConfig.FlavorID)
-		if err != nil {
-			return nil, err
-		}
-
-		nodePool := v1.NodePool{
-			ID:         rancherNodePool.ID,
-			Name:       rancherNodePool.Name,
-			Quantity:   int(rancherNodePool.Quantity),
-			CPUCount:   flavorNodePool.CPUCount,
-			RAMSizeMb:  flavorNodePool.RAMSizeMb,
-			DiskSizeGb: flavorNodePool.DiskSizeGb,
-		}
-
-		if rancherNodePool.ControlPlane {
-			nodePool.ControlPlane = &rancherNodePool.ControlPlane
-		}
-
-		if rancherNodePool.Etcd {
-			nodePool.Etcd = &rancherNodePool.Etcd
-		}
-
-		if !rancherNodePool.Worker {
-			nodePool.ControlPlaneComponentsOnly = util.Ptr(true)
-		}
-
-		if isLoadBalancer {
-			nodePool.LoadBalancer = util.Ptr(true)
-		}
-
-		cluster.NodePools = append(cluster.NodePools, nodePool)
+	if cluster.RancherKubernetesEngineConfig != nil {
+		clusterStatus.Version = cluster.RancherKubernetesEngineConfig.Version
 	}
 
-	return &cluster, nil
+	return &clusterStatus, nil
 }

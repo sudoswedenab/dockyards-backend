@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher/ranchermock"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGetCluster(t *testing.T) {
@@ -17,8 +18,7 @@ func TestGetCluster(t *testing.T) {
 		name               string
 		clusterID          string
 		mockRancherOptions []ranchermock.MockOption
-		mockCloudOptions   []cloudmock.MockOption
-		expected           v1.Cluster
+		expected           v1alpha1.ClusterStatus
 	}{
 		{
 			name:      "test simple",
@@ -29,42 +29,64 @@ func TestGetCluster(t *testing.T) {
 						Resource: types.Resource{
 							ID: "cluster-123",
 						},
-					},
-				}),
-				ranchermock.WithNodePools(map[string]*managementv3.NodePool{
-					"node-pool-123": {
-						Resource: types.Resource{
-							ID: "node-pool-123",
+						Conditions: []managementv3.ClusterCondition{
+							{
+								Type:   "Provisioned",
+								Status: "True",
+							},
+							{
+								Type:   "Ready",
+								Status: "True",
+							},
 						},
-						NodeTemplateID: "node-template-123",
-						Worker:         true,
-					},
-				}),
-				ranchermock.WithAPIBaseClient(map[string]any{
-					"/node-template-123": &CustomNodeTemplate{
-						OpenstackConfig: &openstackConfig{
-							FlavorID: "flavor-123",
-						},
+						State: "testing",
 					},
 				}),
 			},
-			mockCloudOptions: []cloudmock.MockOption{
-				cloudmock.WithFlavors(map[string]*v1.NodePool{
-					"flavor-123": {
-						CPUCount:   123,
-						RAMSizeMb:  1024,
-						DiskSizeGb: 512,
-					},
-				}),
-			},
-			expected: v1.Cluster{
-				ID: "cluster-123",
-				NodePools: []v1.NodePool{
+			expected: v1alpha1.ClusterStatus{
+				ClusterServiceID: "cluster-123",
+				Conditions: []metav1.Condition{
 					{
-						ID:         "node-pool-123",
-						CPUCount:   123,
-						RAMSizeMb:  1024,
-						DiskSizeGb: 512,
+						Type:    v1alpha1.ReadyCondition,
+						Status:  metav1.ConditionTrue,
+						Reason:  v1alpha1.ClusterReadyReason,
+						Message: "testing",
+					},
+				},
+			},
+		},
+		{
+			name:      "test provisioning cluster",
+			clusterID: "cluster-123",
+			mockRancherOptions: []ranchermock.MockOption{
+				ranchermock.WithClusters(map[string]*managementv3.Cluster{
+					"cluster-123": {
+						Resource: types.Resource{
+							ID: "cluster-123",
+						},
+						Conditions: []managementv3.ClusterCondition{
+							{
+								Type:    "Provisioned",
+								Status:  "False",
+								Message: "provisioning etcd",
+							},
+							{
+								Type:   "Ready",
+								Status: "False",
+							},
+						},
+						State: "testing",
+					},
+				}),
+			},
+			expected: v1alpha1.ClusterStatus{
+				ClusterServiceID: "cluster-123",
+				Conditions: []metav1.Condition{
+					{
+						Type:    v1alpha1.ReadyCondition,
+						Status:  metav1.ConditionFalse,
+						Reason:  v1alpha1.ClusterReadyReason,
+						Message: "testing",
 					},
 				},
 			},
@@ -74,10 +96,9 @@ func TestGetCluster(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRancherClient := ranchermock.NewMockRancherClient(tc.mockRancherOptions...)
-			mockCloudService := cloudmock.NewMockCloudService(tc.mockCloudOptions...)
+
 			r := rancher{
 				managementClient: mockRancherClient,
-				cloudService:     mockCloudService,
 			}
 
 			actual, err := r.GetCluster(tc.clusterID)

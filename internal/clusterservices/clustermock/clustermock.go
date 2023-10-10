@@ -81,13 +81,17 @@ func (s *MockClusterService) DeleteCluster(organization *v1alpha1.Organization, 
 
 }
 
-func (s *MockClusterService) GetCluster(clusterID string) (*v1.Cluster, error) {
+func (s *MockClusterService) GetCluster(clusterID string) (*v1alpha1.ClusterStatus, error) {
 	cluster, hasCluster := s.clusters[clusterID]
 	if !hasCluster {
 		return nil, errors.New("no such cluster")
 	}
 
-	return &cluster, nil
+	clusterStatus := v1alpha1.ClusterStatus{
+		ClusterServiceID: cluster.ID,
+	}
+
+	return &clusterStatus, nil
 }
 
 func (s *MockClusterService) CollectMetrics() error {
