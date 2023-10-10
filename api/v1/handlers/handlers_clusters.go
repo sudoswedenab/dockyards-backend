@@ -21,7 +21,8 @@ import (
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
-// +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;watch;create;delete
+// +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=create
 
 func (h *handler) toV1Cluster(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePoolList *v1alpha1.NodePoolList) *v1.Cluster {
 	v1Cluster := v1.Cluster{

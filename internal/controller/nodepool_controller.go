@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=get;list;watch;patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodepools/status,verbs=patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters;organizations,verbs=get
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodes,verbs=get;list;watch;create

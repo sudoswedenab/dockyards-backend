@@ -34,8 +34,11 @@ rules:
   resources:
   - clusters
   verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
   - watch
 - apiGroups:
   - dockyards.io
@@ -55,13 +58,30 @@ rules:
   resources:
   - nodepools
   verbs:
+  - create
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - nodepools/status
+  verbs:
+  - patch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - nodes
+  verbs:
+  - create
   - get
   - list
   - watch
 - apiGroups:
   - dockyards.io
   resources:
-  - nodepools/status
+  - nodes/status
   verbs:
   - patch
 - apiGroups:
