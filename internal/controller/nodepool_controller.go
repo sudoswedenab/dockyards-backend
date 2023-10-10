@@ -149,7 +149,7 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 		c.logger.Debug("node item", "name", nodeItem.Name)
 
 		objectKey := client.ObjectKey{
-			Name:      nodeItem.Namespace,
+			Name:      nodeItem.Name,
 			Namespace: nodePool.Namespace,
 		}
 
