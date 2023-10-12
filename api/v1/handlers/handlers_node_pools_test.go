@@ -194,7 +194,7 @@ func TestGetNodePool(t *testing.T) {
 							},
 							Spec: v1alpha1.NodePoolSpec{
 								ControlPlane: true,
-								Quantity:     3,
+								Replicas:     util.Ptr(int32(3)),
 								Resources: corev1.ResourceList{
 									corev1.ResourceStorage: resource.MustParse("123Gi"),
 								},

@@ -23,7 +23,10 @@ func (h *handler) toV1NodePool(nodePool *v1alpha1.NodePool, cluster *v1alpha1.Cl
 		DiskSizeGb: int(nodePool.Status.Resources.Storage().Value() / 1024 / 1024 / 1024),
 		CpuCount:   int(nodePool.Status.Resources.Cpu().Value()),
 		RamSizeMb:  int(nodePool.Status.Resources.Memory().Value()),
-		Quantity:   nodePool.Spec.Quantity,
+	}
+
+	if nodePool.Spec.Replicas != nil {
+		v1NodePool.Quantity = int(*nodePool.Spec.Replicas)
 	}
 
 	if nodeList != nil && len(nodeList.Items) > 0 {
@@ -225,7 +228,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 			Namespace: cluster.Namespace,
 		},
 		Spec: v1alpha1.NodePoolSpec{
-			Quantity:  nodePoolOptions.Quantity,
+			Replicas:  util.Ptr(int32(nodePoolOptions.Quantity)),
 			Resources: corev1.ResourceList{},
 		},
 	}

@@ -204,7 +204,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 				},
 			},
 			Spec: v1alpha1.NodePoolSpec{
-				Quantity: nodePoolOption.Quantity,
+				Replicas: util.Ptr(int32(nodePoolOption.Quantity)),
 			},
 		}
 
