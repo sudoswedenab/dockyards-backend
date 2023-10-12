@@ -464,6 +464,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = controller.NewNodeController(manager, clusterService, logger.With("controller", "node"))
+	if err != nil {
+		logger.Error("error creating new node controller", "err", err)
+
+		os.Exit(1)
+	}
+
 	err = manager.Start(context.Background())
 	if err != nil {
 		logger.Error("error starting manager", "err", err)
