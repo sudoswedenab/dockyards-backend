@@ -104,7 +104,7 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 
-		return ctrl.Result{}, nil
+		return requeue, nil
 	}
 
 	nodePoolStatus, err := c.clusterService.GetNodePool(nodePool.Status.ClusterServiceID)
