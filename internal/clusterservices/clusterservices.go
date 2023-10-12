@@ -21,4 +21,5 @@ type ClusterService interface {
 	GetKubeconfig(string, time.Duration) (*clientcmdv1.Config, error)
 	DeleteNodePool(*v1alpha1.Organization, string) error
 	GetNodes(*v1alpha1.NodePool) (*v1alpha1.NodeList, error)
+	GetNode(string) (*v1alpha1.NodeStatus, error)
 }
