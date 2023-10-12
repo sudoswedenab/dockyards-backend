@@ -40,7 +40,8 @@ spec:
                 type: boolean
               loadBalancer:
                 type: boolean
-              quantity:
+              replicas:
+                format: int32
                 type: integer
               resources:
                 additionalProperties:
