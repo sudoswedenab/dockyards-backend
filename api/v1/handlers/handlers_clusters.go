@@ -220,6 +220,10 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 			nodePool.Spec.LoadBalancer = *nodePoolOption.LoadBalancer
 		}
 
+		if nodePoolOption.ControlPlaneComponentsOnly != nil {
+			nodePool.Spec.DedicatedRole = *nodePoolOption.ControlPlaneComponentsOnly
+		}
+
 		err := h.controllerClient.Create(ctx, &nodePool)
 		if err != nil {
 			h.logger.Error("error creating node pool", "err", err)
