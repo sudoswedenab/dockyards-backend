@@ -6,7 +6,7 @@ import (
 )
 
 type CloudService interface {
-	PrepareEnvironment(*v1alpha1.Organization, *v1.Cluster, *v1.NodePoolOptions) (*CloudConfig, error)
+	PrepareEnvironment(*v1alpha1.Organization, *v1alpha1.Cluster, *v1alpha1.NodePool) (*CloudConfig, error)
 	CleanEnvironment(*v1alpha1.Organization, *CloudConfig) error
 	GetClusterDeployments(*v1alpha1.Organization, *v1alpha1.Cluster, *v1alpha1.NodePoolList) (*[]v1.Deployment, error)
 	DeleteGarbage()

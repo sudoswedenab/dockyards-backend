@@ -4,9 +4,7 @@ import (
 	"errors"
 	"math"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gophercloud/gophercloud/openstack"
@@ -16,10 +14,11 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*cloudservices.CloudConfig, error) {
-	logger := s.logger.With("node-pool", nodePoolOptions.Name, "cluster", cluster.Name, "organization", organization.Name)
+func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePool *v1alpha1.NodePool) (*cloudservices.CloudConfig, error) {
+	logger := s.logger.With("nodepool", nodePool.Name, "cluster", cluster.Name, "organization", organization.Name)
 
 	openstackProject, err := s.getOpenstackProject(organization)
 	if err != nil {
@@ -67,7 +66,7 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organizatio
 		return nil, err
 	}
 
-	flavorID := s.getClosestFlavorID(allFlavors, nodePoolOptions)
+	flavorID := s.getClosestFlavorID(allFlavors, nodePool)
 	if flavorID == "" {
 		return nil, errors.New("unable to find a suitable flavor")
 	}
@@ -110,7 +109,7 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organizatio
 	}
 
 	networkLabel := "default"
-	if nodePoolOptions.LoadBalancer != nil && *nodePoolOptions.LoadBalancer {
+	if nodePool.Spec.LoadBalancer {
 		networkLabel = "elasticip"
 	}
 
@@ -127,7 +126,7 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organizatio
 		return nil, errors.New("unable to find suitable network")
 	}
 
-	keypairName := name.EncodeName(organization.Name, name.EncodeName(cluster.Name, nodePoolOptions.Name))
+	keypairName := name.EncodeName(organization.Name, name.EncodeName(cluster.Name, nodePool.Name))
 	createOpts := keypairs.CreateOpts{
 		Name: keypairName,
 	}
@@ -141,9 +140,8 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organizatio
 
 	securityGroups := []string{}
 
-	secgroupName := cluster.Name + "-" + nodePoolOptions.Name
 	secgroupOpts := secgroups.CreateOpts{
-		Name:        secgroupName,
+		Name:        nodePool.Name,
 		Description: "no",
 	}
 
@@ -265,28 +263,34 @@ func (s *openStackService) CleanEnvironment(organization *v1alpha1.Organization,
 	return nil
 }
 
-func (s *openStackService) getClosestFlavorID(flavors []flavors.Flavor, nodePoolOptions *v1.NodePoolOptions) string {
+func (s *openStackService) getClosestFlavorID(flavors []flavors.Flavor, nodePool *v1alpha1.NodePool) string {
 	closestFlavorID := ""
 	shortestDistance := math.MaxFloat64
 
-	if nodePoolOptions.CpuCount == nil {
-		nodePoolOptions.CpuCount = util.Ptr(0)
+	vcpus := 0
+	resourceCPU, hasResourceCPU := nodePool.Spec.Resources[corev1.ResourceCPU]
+	if hasResourceCPU {
+		vcpus = int(resourceCPU.Value())
 	}
 
-	if nodePoolOptions.RamSizeMb == nil {
-		nodePoolOptions.RamSizeMb = util.Ptr(0)
+	ram := 0
+	resourceMemory, hasResourceMemory := nodePool.Spec.Resources[corev1.ResourceMemory]
+	if hasResourceMemory {
+		ram = int(resourceMemory.Value() / 1024 / 1024)
 	}
 
-	if nodePoolOptions.DiskSizeGb == nil {
-		nodePoolOptions.DiskSizeGb = util.Ptr(0)
+	disk := 0
+	resourceStorage, hasResourceStorage := nodePool.Spec.Resources[corev1.ResourceStorage]
+	if hasResourceStorage {
+		disk = int(resourceStorage.Value() / 1024 / 1024 / 1024)
 	}
 
-	s.logger.Debug("flavor requirements", "ram", *nodePoolOptions.RamSizeMb, "cpu", *nodePoolOptions.CpuCount, "disk", *nodePoolOptions.DiskSizeGb)
+	s.logger.Debug("flavor requirements", "ram", ram, "vcpus", vcpus, "disk", disk)
 
 	for _, flavor := range flavors {
-		diskSquared := math.Pow(float64(flavor.Disk-*nodePoolOptions.DiskSizeGb), 2)
-		ramSquared := math.Pow(float64(flavor.RAM-*nodePoolOptions.RamSizeMb), 2)
-		vcpuSquared := math.Pow(float64(flavor.VCPUs-*nodePoolOptions.CpuCount), 2)
+		diskSquared := math.Pow(float64(flavor.Disk-disk), 2)
+		ramSquared := math.Pow(float64(flavor.RAM-ram), 2)
+		vcpuSquared := math.Pow(float64(flavor.VCPUs-vcpus), 2)
 
 		distance := math.Sqrt(diskSquared + ramSquared + vcpuSquared)
 
