@@ -6,8 +6,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
@@ -45,26 +43,10 @@ func (s *MockClusterService) CreateCluster(organization *v1alpha1.Organization, 
 	return &cluster, nil
 }
 
-func (s *MockClusterService) CreateNodePool(organization *v1alpha1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1alpha1.NodePoolStatus, error) {
-	resources := corev1.ResourceList{}
-
-	if nodePoolOptions.RamSizeMb != nil {
-		quantity := resource.NewScaledQuantity(int64(*nodePoolOptions.RamSizeMb), 2)
-		resources[corev1.ResourceMemory] = *quantity
-	}
-
-	if nodePoolOptions.DiskSizeGb != nil {
-		quantity := resource.NewScaledQuantity(int64(*nodePoolOptions.DiskSizeGb), 3)
-		resources[corev1.ResourceStorage] = *quantity
-	}
-
-	if nodePoolOptions.CpuCount != nil {
-		quantity := resource.NewQuantity(int64(*nodePoolOptions.CpuCount), resource.DecimalSI)
-		resources[corev1.ResourceCPU] = *quantity
-	}
-
+func (s *MockClusterService) CreateNodePool(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePool *v1alpha1.NodePool) (*v1alpha1.NodePoolStatus, error) {
 	nodePoolStatus := v1alpha1.NodePoolStatus{
-		Resources: resources,
+		ClusterServiceID: "node-pool-123",
+		Resources:        nodePool.Spec.Resources,
 	}
 
 	return &nodePoolStatus, nil

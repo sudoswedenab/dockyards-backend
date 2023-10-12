@@ -3,15 +3,14 @@ package rancher
 import (
 	"strings"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (r *rancher) CreateNodePool(organization *v1alpha1.Organization, cluster *v1.Cluster, nodePoolOptions *v1.NodePoolOptions) (*v1alpha1.NodePoolStatus, error) {
-	cloudConfig, err := r.cloudService.PrepareEnvironment(organization, cluster, nodePoolOptions)
+func (r *rancher) CreateNodePool(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePool *v1alpha1.NodePool) (*v1alpha1.NodePoolStatus, error) {
+	cloudConfig, err := r.cloudService.PrepareEnvironment(organization, cluster, nodePool)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +33,7 @@ func (r *rancher) CreateNodePool(organization *v1alpha1.Organization, cluster *v
 	nodeTaints := []managementv3.Taint{}
 	nodeLabels := map[string]string{}
 
-	if nodePoolOptions.LoadBalancer != nil && *nodePoolOptions.LoadBalancer {
+	if nodePool.Spec.LoadBalancer {
 		taint := managementv3.Taint{
 			Effect: string(corev1.TaintEffectNoSchedule),
 			Key:    TaintNodeRoleLoadBalancer,
@@ -44,7 +43,7 @@ func (r *rancher) CreateNodePool(organization *v1alpha1.Organization, cluster *v
 		nodeLabels[LabelNodeRoleLoadBalancer] = ""
 	}
 
-	nodeTemplateName := cluster.Name + "-" + nodePoolOptions.Name
+	nodeTemplateName := nodePool.Name
 	customNodeTemplate := CustomNodeTemplate{
 		NodeTemplate: managementv3.NodeTemplate{
 			Name:   nodeTemplateName,
@@ -59,29 +58,24 @@ func (r *rancher) CreateNodePool(organization *v1alpha1.Organization, cluster *v
 		return nil, err
 	}
 
-	hostnamePrefix := cluster.Name + "-" + nodePoolOptions.Name + "-"
+	quantity := int64(1)
+	if nodePool.Spec.Replicas != nil {
+		quantity = int64(*nodePool.Spec.Replicas)
+	}
+
+	hostnamePrefix := nodePool.Name + "-"
 	opts := managementv3.NodePool{
-		ClusterID:               cluster.Id,
+		ClusterID:               cluster.Status.ClusterServiceID,
 		DeleteNotReadyAfterSecs: 0,
 		DrainBeforeDelete:       true,
 		HostnamePrefix:          hostnamePrefix,
-		Name:                    nodePoolOptions.Name,
+		Name:                    nodePool.Name,
 		NodeTaints:              nodeTaints,
 		NodeTemplateID:          createdNodeTemplate.ID,
-		Quantity:                int64(nodePoolOptions.Quantity),
-		Worker:                  true,
-	}
-
-	if nodePoolOptions.ControlPlane != nil {
-		opts.ControlPlane = *nodePoolOptions.ControlPlane
-	}
-
-	if nodePoolOptions.Etcd != nil {
-		opts.Etcd = *nodePoolOptions.Etcd
-	}
-
-	if nodePoolOptions.ControlPlaneComponentsOnly != nil {
-		opts.Worker = !*nodePoolOptions.ControlPlaneComponentsOnly
+		Quantity:                quantity,
+		Worker:                  !nodePool.Spec.DedicatedRole,
+		ControlPlane:            nodePool.Spec.ControlPlane,
+		Etcd:                    nodePool.Spec.ControlPlane,
 	}
 
 	createdNodePool, err := r.managementClient.NodePool.Create(&opts)

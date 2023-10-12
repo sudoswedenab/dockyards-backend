@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
@@ -89,19 +88,7 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if nodePool.Status.ClusterServiceID == "" {
 		c.logger.Debug("node pool has empty cluster service id")
 
-		nodePoolOptions := v1.NodePoolOptions{
-			Name:         cluster.Name + "-" + nodePool.Name,
-			Quantity:     nodePool.Spec.Quantity,
-			ControlPlane: &nodePool.Spec.ControlPlane,
-			Etcd:         &nodePool.Spec.ControlPlane,
-		}
-
-		v1Cluster := v1.Cluster{
-			Name: cluster.Name,
-			Id:   cluster.Status.ClusterServiceID,
-		}
-
-		nodePoolStatus, err := c.clusterService.CreateNodePool(organization, &v1Cluster, &nodePoolOptions)
+		nodePoolStatus, err := c.clusterService.CreateNodePool(organization, cluster, &nodePool)
 		if err != nil {
 			c.logger.Error("error creating node pool in cluster service", "err", err)
 
