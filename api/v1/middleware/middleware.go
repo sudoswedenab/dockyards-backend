@@ -1,14 +1,11 @@
 package middleware
 
 import (
+	"crypto/ecdsa"
 	"log/slog"
-
-	"gorm.io/gorm"
 )
 
 type Handler struct {
-	DB                 *gorm.DB
-	Logger             *slog.Logger
-	AccessTokenSecret  []byte
-	RefreshTokenSecret []byte
+	Logger          *slog.Logger
+	AccessPublicKey *ecdsa.PublicKey
 }

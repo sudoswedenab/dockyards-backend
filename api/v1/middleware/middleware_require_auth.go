@@ -23,12 +23,12 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 
 	// Parse takes the token string and a function for looking up the key.
 	token, err := jwt.Parse(bearerToken, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
-		return h.AccessTokenSecret, nil
+		return h.AccessPublicKey, nil
 	})
 
 	if err != nil {
