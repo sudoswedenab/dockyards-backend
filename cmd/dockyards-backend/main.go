@@ -362,20 +362,20 @@ func main() {
 		}))
 	}
 
-	jwtAccessTokenSecret, jwtRefreshTokenSecret, err := jwt.GetOrGenerateTokens(ctx, controllerClient, logger.With("util", "jwt"))
+	accessKey, refreshKey, err := jwt.GetOrGenerateKeys(ctx, controllerClient, logger)
 	if err != nil {
-		logger.Error("error getting jwt secret tokens", "err", err)
+		logger.Error("error getting private keys for jwt", "err", err)
 
 		os.Exit(1)
 	}
 
 	handlerOptions := []handlers.HandlerOption{
-		handlers.WithJWTAccessTokens(jwtAccessTokenSecret, jwtRefreshTokenSecret),
 		handlers.WithCloudService(cloudService),
 		handlers.WithClusterService(clusterService),
 		handlers.WithGitProjectRoot(gitProjectRoot),
 		handlers.WithManager(manager),
 		handlers.WithNamespace("dockyards"),
+		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
 	}
 
 	err = handlers.RegisterRoutes(r, db, logger, handlerOptions...)
