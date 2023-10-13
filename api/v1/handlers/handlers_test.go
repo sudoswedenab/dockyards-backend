@@ -29,9 +29,8 @@ func TestRegisterRoutes(t *testing.T) {
 			}
 
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			tokens := WithJWTAccessTokens([]byte("access123"), []byte("refresh123"))
 
-			actual := RegisterRoutes(r, db, logger, tokens)
+			actual := RegisterRoutes(r, db, logger)
 			if actual != tc.expected {
 				t.Errorf("expected error %s, got %s", tc.expected, actual)
 			}

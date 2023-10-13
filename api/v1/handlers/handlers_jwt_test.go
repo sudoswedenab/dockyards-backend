@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -59,15 +62,15 @@ func TestPostRefresh(t *testing.T) {
 		},
 	}
 
-	accessTokenSecret := []byte("testing-access")
-	refreshTokenSecret := []byte("testing-refresh")
+	accessPrivateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	refreshPrivateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
-			refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, tc.claims)
-			signedRefreshToken, err := refreshToken.SignedString(refreshTokenSecret)
+			refreshToken := jwt.NewWithClaims(jwt.SigningMethodES256, tc.claims)
+			signedRefreshToken, err := refreshToken.SignedString(refreshPrivateKey)
 			if err != nil {
 				t.Fatalf("unexpected error signing refresh token: %s", err)
 			}
@@ -77,11 +80,11 @@ func TestPostRefresh(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, "metadata.uid", index.UIDIndexer).Build()
 
 			h := handler{
-				jwtAccessTokenSecret:  accessTokenSecret,
-				jwtRefreshTokenSecret: refreshTokenSecret,
-				logger:                logger,
-				controllerClient:      fakeClient,
-				namespace:             "test",
+				logger:               logger,
+				controllerClient:     fakeClient,
+				jwtAccessPrivateKey:  accessPrivateKey,
+				jwtRefreshPrivateKey: refreshPrivateKey,
+				jwtRefreshPublicKey:  &refreshPrivateKey.PublicKey,
 			}
 
 			w := httptest.NewRecorder()
@@ -159,15 +162,15 @@ func TestPostRefreshErrors(t *testing.T) {
 		},
 	}
 
-	accessTokenSecret := []byte("test-access-errors")
-	refreshTokenSecret := []byte("test-refresh-errors")
+	accessPrivateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	refreshPrivateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
-			refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, tc.claims)
-			signedRefreshToken, err := refreshToken.SignedString(refreshTokenSecret)
+			refreshToken := jwt.NewWithClaims(jwt.SigningMethodES256, tc.claims)
+			signedRefreshToken, err := refreshToken.SignedString(refreshPrivateKey)
 			if err != nil {
 				t.Fatalf("unexpected error signing refresh token: %s", err)
 			}
@@ -177,11 +180,11 @@ func TestPostRefreshErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, "metadata.uid", index.UIDIndexer).Build()
 
 			h := handler{
-				jwtAccessTokenSecret:  accessTokenSecret,
-				jwtRefreshTokenSecret: refreshTokenSecret,
-				logger:                logger,
-				controllerClient:      fakeClient,
-				namespace:             "test",
+				logger:               logger,
+				controllerClient:     fakeClient,
+				jwtAccessPrivateKey:  accessPrivateKey,
+				jwtRefreshPrivateKey: refreshPrivateKey,
+				jwtRefreshPublicKey:  &refreshPrivateKey.PublicKey,
 			}
 
 			w := httptest.NewRecorder()

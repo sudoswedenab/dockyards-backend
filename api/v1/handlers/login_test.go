@@ -2,6 +2,9 @@ package handlers
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -135,6 +138,9 @@ func TestLogin(t *testing.T) {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
+	accessPrivateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	refreshPrivateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			scheme := scheme.Scheme
@@ -142,8 +148,10 @@ func TestLogin(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, "spec.email", index.EmailIndexer).Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger:               logger,
+				controllerClient:     fakeClient,
+				jwtAccessPrivateKey:  accessPrivateKey,
+				jwtRefreshPrivateKey: refreshPrivateKey,
 			}
 
 			r := gin.New()

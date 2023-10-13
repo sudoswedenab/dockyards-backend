@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -18,15 +19,17 @@ import (
 )
 
 type handler struct {
-	db                    *gorm.DB
-	clusterService        clusterservices.ClusterService
-	logger                *slog.Logger
-	jwtAccessTokenSecret  []byte
-	jwtRefreshTokenSecret []byte
-	cloudService          cloudservices.CloudService
-	gitProjectRoot        string
-	controllerClient      client.Client
-	namespace             string
+	db                   *gorm.DB
+	clusterService       clusterservices.ClusterService
+	logger               *slog.Logger
+	cloudService         cloudservices.CloudService
+	gitProjectRoot       string
+	controllerClient     client.Client
+	namespace            string
+	jwtAccessPrivateKey  *ecdsa.PrivateKey
+	jwtRefreshPrivateKey *ecdsa.PrivateKey
+	jwtAccessPublicKey   *ecdsa.PublicKey
+	jwtRefreshPublicKey  *ecdsa.PublicKey
 }
 
 type HandlerOption func(*handler)
@@ -34,13 +37,6 @@ type HandlerOption func(*handler)
 func WithCloudService(cloudService cloudservices.CloudService) HandlerOption {
 	return func(h *handler) {
 		h.cloudService = cloudService
-	}
-}
-
-func WithJWTAccessTokens(accessToken, refreshToken []byte) HandlerOption {
-	return func(h *handler) {
-		h.jwtAccessTokenSecret = accessToken
-		h.jwtRefreshTokenSecret = refreshToken
 	}
 }
 
@@ -69,6 +65,18 @@ func WithNamespace(namespace string) HandlerOption {
 	}
 }
 
+func WithJWTPrivateKeys(accessKey, refreshKey *ecdsa.PrivateKey) HandlerOption {
+	accessPublicKey := accessKey.PublicKey
+	refreshPublicKey := refreshKey.PublicKey
+
+	return func(h *handler) {
+		h.jwtAccessPrivateKey = accessKey
+		h.jwtRefreshPrivateKey = refreshKey
+		h.jwtAccessPublicKey = &accessPublicKey
+		h.jwtRefreshPublicKey = &refreshPublicKey
+	}
+}
+
 func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOptions ...HandlerOption) error {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
@@ -83,19 +91,13 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 		handlerOption(&h)
 	}
 
-	if len(h.jwtAccessTokenSecret) == 0 || len(h.jwtRefreshTokenSecret) == 0 {
-		logger.Warn("using empty jwt tokens")
-	}
-
 	if h.namespace == "" {
 		logger.Warn("using empty namespace")
 	}
 
 	middlewareHandler := middleware.Handler{
-		DB:                 db,
-		Logger:             logger,
-		AccessTokenSecret:  h.jwtAccessTokenSecret,
-		RefreshTokenSecret: h.jwtRefreshTokenSecret,
+		Logger:          logger,
+		AccessPublicKey: h.jwtAccessPublicKey,
 	}
 
 	if h.gitProjectRoot == "" {

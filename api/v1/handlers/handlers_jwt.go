@@ -31,11 +31,11 @@ func (h *handler) PostRefresh(c *gin.Context) {
 
 	// Parse the token string and a function for looking for the key.
 	token, err := jwt.ParseWithClaims(refreshToken, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return h.jwtRefreshTokenSecret, nil
+		return h.jwtRefreshPublicKey, nil
 	})
 	if err != nil {
 		h.logger.Error("error parsing token with claims", "err", err)
@@ -99,8 +99,8 @@ func (h *handler) generateTokens(user v1alpha1.User) (*v1.Tokens, error) {
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedAccessToken, err := token.SignedString(h.jwtAccessTokenSecret)
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	signedAccessToken, err := token.SignedString(h.jwtAccessPrivateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +110,8 @@ func (h *handler) generateTokens(user v1alpha1.User) (*v1.Tokens, error) {
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 2)),
 	}
 
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)
-	signedRefreshToken, err := refreshToken.SignedString(h.jwtRefreshTokenSecret)
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodES256, refreshTokenClaims)
+	signedRefreshToken, err := refreshToken.SignedString(h.jwtRefreshPrivateKey)
 	if err != nil {
 		return nil, err
 	}
