@@ -14,19 +14,13 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
 	"github.com/gin-gonic/gin"
-	"github.com/glebarez/sqlite"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/uuid"
-	"gorm.io/gorm"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
@@ -837,155 +831,6 @@ func TestGetClusterErrors(t *testing.T) {
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
 				t.Fatalf("expected status code %d, got %d", tc.expected, statusCode)
-			}
-		})
-	}
-}
-
-func TestPostOrgClustersDeployments(t *testing.T) {
-	tt := []struct {
-		name             string
-		organizationName string
-		sub              string
-		lists            []client.ObjectList
-		clusterOptions   v1.ClusterOptions
-		cloudmockOptions []cloudmock.MockOption
-		expected         []v1.Deployment
-	}{
-		{
-			name:             "test cluster with cloud cluster deployments",
-			organizationName: "test-org",
-			sub:              "f9b8f6b0-5fc6-4f9c-b264-a08da850b991",
-			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
-								Name: "test-org",
-							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
-									{
-										Name: "test",
-										UID:  "f9b8f6b0-5fc6-4f9c-b264-a08da850b991",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			clusterOptions: v1.ClusterOptions{
-				Name: "test",
-			},
-			cloudmockOptions: []cloudmock.MockOption{
-				cloudmock.WithClusterDeployments(map[string]*v1.Deployment{
-					"abc-123": {
-						Id:   uuid.MustParse("f802ebb7-9cb3-4e0e-9e5b-ca3c0feb44dc"),
-						Name: util.Ptr("test"),
-					},
-				}),
-			},
-			expected: []v1.Deployment{
-				{
-					Id:   uuid.MustParse("f802ebb7-9cb3-4e0e-9e5b-ca3c0feb44dc"),
-					Name: util.Ptr("test"),
-					Status: v1.DeploymentStatus{
-						State:  util.Ptr("created"),
-						Health: util.Ptr(v1.DeploymentStatusHealthWarning),
-					},
-				},
-			},
-		},
-	}
-
-	gin.SetMode(gin.TestMode)
-
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-			gormSlogger := loggers.NewGormSlogger(logger)
-
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: gormSlogger})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
-			err = internal.SyncDataBase(db)
-			if err != nil {
-				t.Fatalf("unexpected error syncing database: %s", err)
-			}
-
-			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
-
-			h := handler{
-				cloudService:     cloudmock.NewMockCloudService(tc.cloudmockOptions...),
-				logger:           logger,
-				db:               db,
-				controllerClient: fakeClient,
-			}
-
-			b, err := json.Marshal(tc.clusterOptions)
-			if err != nil {
-				t.Fatalf("unexpected error marshalling test cluster options: %s", err)
-			}
-
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Params = []gin.Param{
-				{Key: "org", Value: tc.organizationName},
-			}
-			c.Set("sub", tc.sub)
-
-			u := url.URL{
-				Path: path.Join("/v1/orgs", tc.organizationName, "clusters"),
-			}
-
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(b))
-			if err != nil {
-				t.Fatalf("unexpected error preparing test request: %s", err)
-			}
-
-			h.PostOrgClusters(c)
-
-			statusCode := w.Result().StatusCode
-			if statusCode != http.StatusCreated {
-				t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
-			}
-
-			b, err = io.ReadAll(w.Result().Body)
-			if err != nil {
-				t.Fatalf("error reading result body: %s", err)
-			}
-
-			var cluster v1.Cluster
-			err = json.Unmarshal(b, &cluster)
-			if err != nil {
-				t.Fatalf("error unmarshalling result body: %s", err)
-			}
-
-			var actual []v1.Deployment
-			err = db.Find(&actual, "cluster_id = ?", cluster.Id).Error
-			if err != nil {
-				t.Fatalf("unexpected error finding deployment in database: %s", err)
-			}
-
-			for i, deployment := range actual {
-				var deploymentStatus v1.DeploymentStatus
-				err = db.Take(&deploymentStatus, "deployment_id = ?", deployment.Id).Error
-				if err != nil {
-					t.Fatalf("error taking deployment status from database: %s", err)
-				}
-
-				actual[i].Status = deploymentStatus
-			}
-
-			ignoreTypes := []any{uuid.UUID{}, time.Time{}}
-			if !cmp.Equal(actual, tc.expected, cmpopts.IgnoreTypes(ignoreTypes...)) {
-				t.Errorf("difference between actual and expected: %s", cmp.Diff(tc.expected, actual, cmpopts.IgnoreTypes(ignoreTypes...)))
 			}
 		})
 	}

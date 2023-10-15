@@ -8,11 +8,9 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/deployment"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/google/uuid"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -235,61 +233,6 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		nodePoolList.Items[i] = nodePool
 
 		h.logger.Debug("created cluster node pool", "id", nodePool.UID)
-	}
-
-	if clusterOptions.NoClusterApps == nil || !*clusterOptions.NoClusterApps {
-		clusterDeployments, err := h.cloudService.GetClusterDeployments(&organization, &cluster, &nodePoolList)
-		if err != nil {
-			h.logger.Error("error getting cloud service cluster deployments", "err", err)
-
-			hasErrors = true
-		}
-
-		if !hasErrors {
-			for _, clusterDeployment := range *clusterDeployments {
-				h.logger.Debug("creating cluster deployment", "name", *clusterDeployment.Name)
-
-				clusterDeployment.Id = uuid.New()
-
-				if clusterDeployment.Type == v1.DeploymentTypeContainerImage || clusterDeployment.Type == v1.DeploymentTypeKustomize {
-					h.logger.Debug("creating repository for cluster deployment")
-
-					err := deployment.CreateRepository(&clusterDeployment, h.gitProjectRoot)
-					if err != nil {
-						h.logger.Error("error creating repository for cluster deployment")
-
-						hasErrors = true
-						break
-					}
-				}
-
-				err := h.db.Create(&clusterDeployment).Error
-				if err != nil {
-					h.logger.Error("error creating cluster deployment in database", "name", *clusterDeployment.Name, "err", err)
-
-					hasErrors = true
-					break
-				}
-
-				h.logger.Debug("created cluster deployment", "name", *clusterDeployment.Name, "id", clusterDeployment.Id)
-
-				deploymentStatus := v1.DeploymentStatus{
-					Id:           uuid.New(),
-					DeploymentId: clusterDeployment.Id,
-					State:        util.Ptr("created"),
-					Health:       util.Ptr(v1.DeploymentStatusHealthWarning),
-				}
-
-				err = h.db.Create(&deploymentStatus).Error
-				if err != nil {
-					h.logger.Warn("error creating cluster deployment status", "err", err)
-
-					continue
-				}
-
-				h.logger.Debug("created cluster deployment status", "id", deploymentStatus.Id)
-			}
-		}
 	}
 
 	if hasErrors {
