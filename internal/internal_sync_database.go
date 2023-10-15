@@ -6,12 +6,7 @@ import (
 )
 
 func SyncDataBase(db *gorm.DB) error {
-	err := db.AutoMigrate(&v1.Deployment{})
-	if err != nil {
-		return err
-	}
-
-	err = db.AutoMigrate(&v1.Credential{})
+	err := db.AutoMigrate(&v1.Credential{})
 	if err != nil {
 		return err
 	}
@@ -27,11 +22,6 @@ func SyncDataBase(db *gorm.DB) error {
 	}
 
 	err = db.AutoMigrate(&v1.StepOption{})
-	if err != nil {
-		return err
-	}
-
-	err = db.AutoMigrate(&v1.DeploymentStatus{})
 	if err != nil {
 		return err
 	}
