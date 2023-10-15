@@ -216,7 +216,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, object := range []client.Object{&v1alpha1.User{}, &v1alpha1.Cluster{}, &v1alpha1.NodePool{}, &v1alpha1.Node{}} {
+	for _, object := range []client.Object{&v1alpha1.User{}, &v1alpha1.Cluster{}, &v1alpha1.NodePool{}, &v1alpha1.Node{}, &v1alpha1.Deployment{}} {
 		err = manager.GetFieldIndexer().IndexField(ctx, object, "metadata.uid", index.UIDIndexer)
 		if err != nil {
 			logger.Error("error adding uid indexer to manager", "err", err)
@@ -232,7 +232,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, object := range []client.Object{&v1alpha1.NodePool{}, &v1alpha1.Node{}} {
+	for _, object := range []client.Object{&v1alpha1.NodePool{}, &v1alpha1.Node{}, &v1alpha1.Deployment{}} {
 		err = manager.GetFieldIndexer().IndexField(ctx, object, "metadata.ownerReferences.uid", index.OwnerRefsIndexer)
 		if err != nil {
 			logger.Error("error addming owner refs indexer to manager", "err", err)
