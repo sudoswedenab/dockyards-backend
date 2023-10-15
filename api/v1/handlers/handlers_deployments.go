@@ -339,10 +339,22 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 	deployments := make([]v1.Deployment, len(deploymentList.Items))
 	for i, deployment := range deploymentList.Items {
 		name := strings.TrimPrefix(deployment.Name, cluster.Name+"-")
+
+		var deploymentType v1.DeploymentType
+		switch deployment.Spec.DeploymentRef.Kind {
+		case v1alpha1.ContainerImageDeploymentKind:
+			deploymentType = v1.DeploymentTypeContainerImage
+		case v1alpha1.HelmDeploymentKind:
+			deploymentType = v1.DeploymentTypeHelm
+		case v1alpha1.KustomizeDeploymentKind:
+			deploymentType = v1.DeploymentTypeKustomize
+		}
+
 		deployments[i] = v1.Deployment{
 			Id:        string(deployment.UID),
 			ClusterId: string(cluster.UID),
 			Name:      &name,
+			Type:      deploymentType,
 		}
 	}
 
