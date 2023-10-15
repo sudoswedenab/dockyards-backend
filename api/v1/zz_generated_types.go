@@ -89,14 +89,14 @@ type Deployment struct {
 	CredentialId   *string                 `json:"credential_id,omitempty"`
 	HelmChart      *string                 `json:"helm_chart,omitempty"`
 	HelmRepository *string                 `json:"helm_repository,omitempty"`
-	HelmValues     *map[string]interface{} `gorm:"serializer:json" json:"helm_values,omitempty"`
+	HelmValues     *map[string]interface{} `json:"helm_values,omitempty"`
 	HelmVersion    *string                 `json:"helm_version,omitempty"`
-	Id             uuid.UUID               `json:"id"`
-	Kustomize      *map[string][]byte      `gorm:"serializer:json" json:"kustomize,omitempty"`
+	Id             string                  `json:"id"`
+	Kustomize      *map[string][]byte      `json:"kustomize,omitempty"`
 	Name           *string                 `json:"name,omitempty"`
 	Namespace      *string                 `json:"namespace,omitempty"`
 	Port           *int                    `json:"port,omitempty"`
-	Status         DeploymentStatus        `json:"status"`
+	Status         *DeploymentStatus       `json:"status,omitempty"`
 	Type           DeploymentType          `json:"type"`
 }
 
@@ -112,11 +112,11 @@ type DeploymentOverview struct {
 // DeploymentStatus defines model for deployment_status.
 type DeploymentStatus struct {
 	CreatedAt    time.Time               `json:"created_at"`
-	DeploymentId uuid.UUID               `json:"deployment_id"`
+	DeploymentId string                  `json:"deployment_id"`
 	Health       *DeploymentStatusHealth `json:"health,omitempty"`
-	Id           uuid.UUID               `json:"id"`
+	Id           string                  `json:"id"`
 	State        *string                 `json:"state,omitempty"`
-	Urls         *[]string               `gorm:"serializer:json" json:"urls,omitempty"`
+	Urls         *[]string               `json:"urls,omitempty"`
 }
 
 // DeploymentStatusHealth defines model for DeploymentStatus.Health.
