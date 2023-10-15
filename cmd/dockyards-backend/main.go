@@ -7,9 +7,7 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
-	"net/http/cgi"
 	"os"
-	"path"
 	"strings"
 	"sync"
 	"time"
@@ -113,10 +111,8 @@ func main() {
 	var delGarbageInterval int
 	var collectMetricsInterval int
 	var ginMode string
-	var gitProjectRoot string
 	var cloudServiceFlag string
 	var clusterServiceFlag string
-	var gitCGIPath string
 	var insecureLogging bool
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
@@ -124,10 +120,8 @@ func main() {
 	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval seconds")
 	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
-	flag.StringVar(&gitProjectRoot, "git-project-root", "/var/www/git", "git project root")
 	flag.StringVar(&cloudServiceFlag, "cloud-service", "openstack", "cloud service")
 	flag.StringVar(&clusterServiceFlag, "cluster-service", "rancher", "cluster service")
-	flag.StringVar(&gitCGIPath, "git-cgi-path", "/usr/libexec/git-core/git-http-backend", "git-cgi-path")
 	flag.BoolVar(&insecureLogging, "insecure-logging", false, "insecure logging")
 	flag.Parse()
 
@@ -372,7 +366,6 @@ func main() {
 	handlerOptions := []handlers.HandlerOption{
 		handlers.WithCloudService(cloudService),
 		handlers.WithClusterService(clusterService),
-		handlers.WithGitProjectRoot(gitProjectRoot),
 		handlers.WithManager(manager),
 		handlers.WithNamespace("dockyards"),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
@@ -391,7 +384,6 @@ func main() {
 		sudo.WithLogger(logger),
 		sudo.WithDatabase(db),
 		sudo.WithClusterService(clusterService),
-		sudo.WithGitProjectRoot(gitProjectRoot),
 	}
 
 	sudoAPI, err := sudo.NewSudoAPI(sudoOptions...)
@@ -412,28 +404,6 @@ func main() {
 
 	privateRouter.Handle("/metrics", promHandler)
 	privateRouter.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {})
-
-	cgiHandler := cgi.Handler{
-		Path: gitCGIPath,
-		Dir:  gitProjectRoot,
-		Env: []string{
-			"GIT_PROJECT_ROOT=" + gitProjectRoot,
-			"GIT_HTTP_EXPORT_ALL=true",
-		},
-	}
-
-	gitHandleFunc := func(w http.ResponseWriter, r *http.Request) {
-		deploymentID := chi.URLParam(r, "deploymentID")
-		wildcard := chi.URLParam(r, "*")
-
-		newPath := path.Join("/v1/deployments", deploymentID, wildcard)
-		r.URL.Path = newPath
-
-		logger.Debug("git connection", "wildcard", wildcard, "path", newPath)
-		cgiHandler.ServeHTTP(w, r)
-	}
-
-	privateRouter.HandleFunc("/git/{deploymentID}/*", gitHandleFunc)
 
 	privateServer := &http.Server{
 		Handler: privateRouter,

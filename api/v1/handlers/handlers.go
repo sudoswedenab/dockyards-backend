@@ -23,7 +23,6 @@ type handler struct {
 	clusterService       clusterservices.ClusterService
 	logger               *slog.Logger
 	cloudService         cloudservices.CloudService
-	gitProjectRoot       string
 	controllerClient     client.Client
 	namespace            string
 	jwtAccessPrivateKey  *ecdsa.PrivateKey
@@ -43,12 +42,6 @@ func WithCloudService(cloudService cloudservices.CloudService) HandlerOption {
 func WithClusterService(clusterService clusterservices.ClusterService) HandlerOption {
 	return func(h *handler) {
 		h.clusterService = clusterService
-	}
-}
-
-func WithGitProjectRoot(gitProjectRoot string) HandlerOption {
-	return func(h *handler) {
-		h.gitProjectRoot = gitProjectRoot
 	}
 }
 
@@ -98,12 +91,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	middlewareHandler := middleware.Handler{
 		Logger:          logger,
 		AccessPublicKey: h.jwtAccessPublicKey,
-	}
-
-	if h.gitProjectRoot == "" {
-		logger.Warn("no git project root set, using '/var/www/git'")
-
-		h.gitProjectRoot = "/var/www/git"
 	}
 
 	r.POST("/v1/login", h.Login)
