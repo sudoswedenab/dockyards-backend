@@ -56,6 +56,50 @@ rules:
 - apiGroups:
   - dockyards.io
   resources:
+  - containerimagedeployments
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - deployments
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - helmdeployments
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - kustomizedeployments
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dockyards.io
+  resources:
   - nodepools
   verbs:
   - create
