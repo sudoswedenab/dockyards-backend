@@ -21,8 +21,12 @@ func (h *handler) GetOverview(c *gin.Context) {
 		return
 	}
 
+	matchingFields := client.MatchingFields{
+		"spec.memberRefs.uid": subject,
+	}
+
 	var organizationList v1alpha1.OrganizationList
-	err = h.controllerClient.List(ctx, &organizationList)
+	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing organizations in kubernetes", "err", err)
 
@@ -32,63 +36,67 @@ func (h *handler) GetOverview(c *gin.Context) {
 
 	var overview v1.Overview
 
-	allClusters, err := h.clusterService.GetAllClusters()
-	if err != nil {
-		h.logger.Error("error getting all clusters", "err", err)
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	clustersOverviews := make(map[string][]v1.ClusterOverview)
-	for _, cluster := range *allClusters {
-		clusterOverview := v1.ClusterOverview{
-			Name: cluster.Name,
-			Id:   cluster.Id,
+	for _, organization := range organizationList.Items {
+		organizationOverview := v1.OrganizationOverview{
+			Name: organization.Name,
+			Id:   string(organization.UID),
 		}
 
-		var deployments []v1.Deployment
-		err := h.db.Find(&deployments, "cluster_id = ?", cluster.Id).Error
+		matchingFields := client.MatchingFields{
+			"metadata.ownerReferences.uid": string(organization.UID),
+		}
+
+		var clusterList v1alpha1.ClusterList
+		err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 		if err != nil {
-			h.logger.Error("error getting deployments from database", "err", err)
+			h.logger.Error("error listing clusters", "err", err)
 
 			c.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
 
-		deploymentsOverview := []v1.DeploymentOverview{}
-
-		for _, deployment := range deployments {
-			deploymentOverview := v1.DeploymentOverview{
-				Name: *deployment.Name,
-				Id:   deployment.Id.String(),
+		clustersOverviews := []v1.ClusterOverview{}
+		for _, cluster := range clusterList.Items {
+			clusterOverview := v1.ClusterOverview{
+				Name: cluster.Name,
+				Id:   string(cluster.UID),
 			}
 
-			deploymentsOverview = append(deploymentsOverview, deploymentOverview)
+			matchingFields := client.MatchingFields{
+				"metadata.ownerReferences.uid": string(cluster.UID),
+			}
+
+			var deploymentList v1alpha1.DeploymentList
+			err := h.controllerClient.List(ctx, &deploymentList, matchingFields)
+			if err != nil {
+				h.logger.Error("error listing deployments", "err", err)
+
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+
+			deploymentsOverview := []v1.DeploymentOverview{}
+			for _, deployment := range deploymentList.Items {
+				deploymentOverview := v1.DeploymentOverview{
+					Name: deployment.Name,
+					Id:   string(deployment.UID),
+				}
+
+				deploymentsOverview = append(deploymentsOverview, deploymentOverview)
+			}
+
+			if len(deploymentsOverview) != 0 {
+				clusterOverview.Deployments = &deploymentsOverview
+			}
+
+			clustersOverviews = append(clustersOverviews, clusterOverview)
 		}
 
-		clusterOverview.Deployments = &deploymentsOverview
-
-		organizationClusters := clustersOverviews[cluster.Organization]
-		organizationClusters = append(organizationClusters, clusterOverview)
-		clustersOverviews[cluster.Organization] = organizationClusters
-
-	}
-
-	for _, organization := range organizationList.Items {
-		if !h.isMember(subject, &organization) {
-			continue
-		}
-
-		clustersOverview := clustersOverviews[organization.Name]
-
-		organizationOverview := v1.OrganizationOverview{
-			Name:     organization.Name,
-			Id:       string(organization.UID),
-			Clusters: &clustersOverview,
+		if len(clustersOverviews) != 0 {
+			organizationOverview.Clusters = &clustersOverviews
 		}
 
 		usersOverview := []v1.UserOverview{}
-
 		for _, memberRef := range organization.Spec.MemberRefs {
 			h.logger.Debug("member", "name", memberRef.Name)
 
@@ -113,7 +121,9 @@ func (h *handler) GetOverview(c *gin.Context) {
 			usersOverview = append(usersOverview, userOverview)
 		}
 
-		organizationOverview.Users = &usersOverview
+		if len(usersOverview) != 0 {
+			organizationOverview.Users = &usersOverview
+		}
 
 		overview.Organizations = append(overview.Organizations, organizationOverview)
 	}

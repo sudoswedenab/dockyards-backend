@@ -6,14 +6,12 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
-	"path"
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,11 +22,10 @@ import (
 
 func TestGetOverview(t *testing.T) {
 	tt := []struct {
-		name               string
-		sub                string
-		lists              []client.ObjectList
-		clustermockOptions []clustermock.MockOption
-		expected           v1.Overview
+		name     string
+		sub      string
+		lists    []client.ObjectList
+		expected v1.Overview
 	}{
 		{
 			name: "test missing membership",
@@ -179,6 +176,107 @@ func TestGetOverview(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test one of everything",
+			sub:  "a1731db0-1800-40b7-9a86-92019ac064cd",
+			lists: []client.ObjectList{
+				&v1alpha1.OrganizationList{
+					Items: []v1alpha1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+								UID:  "5990f561-9e70-49a7-a9c0-c1bb69777509",
+							},
+							Spec: v1alpha1.OrganizationSpec{
+								MemberRefs: []v1alpha1.UserReference{
+									{
+										Name: "test",
+										UID:  "a1731db0-1800-40b7-9a86-92019ac064cd",
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "b5d8649f-5d2c-4056-b9c9-fd766bc53fca",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.OrganizationKind,
+										Name:       "test",
+										UID:        "5990f561-9e70-49a7-a9c0-c1bb69777509",
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1alpha1.DeploymentList{
+					Items: []v1alpha1.Deployment{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "7d692e1b-c924-4dc1-b383-803879c919c3",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: v1alpha1.GroupVersion.String(),
+										Kind:       v1alpha1.ClusterKind,
+										Name:       "test",
+										UID:        "b5d8649f-5d2c-4056-b9c9-fd766bc53fca",
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1alpha1.UserList{
+					Items: []v1alpha1.User{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+								UID:  "a1731db0-1800-40b7-9a86-92019ac064cd",
+							},
+							Spec: v1alpha1.UserSpec{
+								Email: "test@dockyards.dev",
+							},
+						},
+					},
+				},
+			},
+			expected: v1.Overview{
+				Organizations: []v1.OrganizationOverview{
+					{
+						Name: "test",
+						Id:   "5990f561-9e70-49a7-a9c0-c1bb69777509",
+						Clusters: &[]v1.ClusterOverview{
+							{
+								Name: "test",
+								Id:   "b5d8649f-5d2c-4056-b9c9-fd766bc53fca",
+								Deployments: &[]v1.DeploymentOverview{
+									{
+										Name: "test",
+										Id:   "7d692e1b-c924-4dc1-b383-803879c919c3",
+									},
+								},
+							},
+						},
+						Users: &[]v1.UserOverview{
+							{
+								Email: "test@dockyards.dev",
+								Id:    "a1731db0-1800-40b7-9a86-92019ac064cd",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {
@@ -187,26 +285,23 @@ func TestGetOverview(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
+				WithIndex(&v1alpha1.Organization{}, "spec.memberRefs.uid", index.MemberRefsIndexer).
+				WithIndex(&v1alpha1.Cluster{}, "metadata.ownerReferences.uid", index.OwnerRefsIndexer).
+				WithIndex(&v1alpha1.Deployment{}, "metadata.ownerReferences.uid", index.OwnerRefsIndexer).
+				Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
-				namespace:        "testing",
 			}
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			u := url.URL{
-				Path: path.Join("/v1/refresh"),
-			}
-
 			c.Set("sub", tc.sub)
 			c.Request = &http.Request{
-				Method: http.MethodPost,
-				URL:    &u,
+				Method: http.MethodGet,
 			}
 
 			h.GetOverview(c)
