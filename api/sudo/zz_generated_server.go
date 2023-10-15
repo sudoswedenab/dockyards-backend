@@ -25,18 +25,6 @@ type ServerInterface interface {
 	// (GET /sudo/credentials/{credential_id})
 	GetCredential(w http.ResponseWriter, r *http.Request, credentialId string)
 
-	// (GET /sudo/deployments)
-	GetDeployments(w http.ResponseWriter, r *http.Request)
-
-	// (POST /sudo/deployments)
-	CreateDeployment(w http.ResponseWriter, r *http.Request)
-
-	// (GET /sudo/deployments/{deployment_id})
-	GetDeployment(w http.ResponseWriter, r *http.Request, deploymentId string)
-
-	// (POST /sudo/deployments/{deployment_id}/status)
-	CreateDeploymentStatus(w http.ResponseWriter, r *http.Request, deploymentId string)
-
 	// (GET /sudo/kubeconfigs/{cluster_id})
 	GetKubeconfig(w http.ResponseWriter, r *http.Request, clusterId string)
 }
@@ -52,26 +40,6 @@ func (_ Unimplemented) GetClusters(w http.ResponseWriter, r *http.Request) {
 
 // (GET /sudo/credentials/{credential_id})
 func (_ Unimplemented) GetCredential(w http.ResponseWriter, r *http.Request, credentialId string) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// (GET /sudo/deployments)
-func (_ Unimplemented) GetDeployments(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// (POST /sudo/deployments)
-func (_ Unimplemented) CreateDeployment(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// (GET /sudo/deployments/{deployment_id})
-func (_ Unimplemented) GetDeployment(w http.ResponseWriter, r *http.Request, deploymentId string) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// (POST /sudo/deployments/{deployment_id}/status)
-func (_ Unimplemented) CreateDeploymentStatus(w http.ResponseWriter, r *http.Request, deploymentId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -121,88 +89,6 @@ func (siw *ServerInterfaceWrapper) GetCredential(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCredential(w, r, credentialId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// GetDeployments operation middleware
-func (siw *ServerInterfaceWrapper) GetDeployments(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDeployments(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// CreateDeployment operation middleware
-func (siw *ServerInterfaceWrapper) CreateDeployment(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateDeployment(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// GetDeployment operation middleware
-func (siw *ServerInterfaceWrapper) GetDeployment(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var err error
-
-	// ------------- Path parameter "deployment_id" -------------
-	var deploymentId string
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "deployment_id", runtime.ParamLocationPath, chi.URLParam(r, "deployment_id"), &deploymentId)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deployment_id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDeployment(w, r, deploymentId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// CreateDeploymentStatus operation middleware
-func (siw *ServerInterfaceWrapper) CreateDeploymentStatus(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var err error
-
-	// ------------- Path parameter "deployment_id" -------------
-	var deploymentId string
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "deployment_id", runtime.ParamLocationPath, chi.URLParam(r, "deployment_id"), &deploymentId)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deployment_id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateDeploymentStatus(w, r, deploymentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -358,18 +244,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/sudo/credentials/{credential_id}", wrapper.GetCredential)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/sudo/deployments", wrapper.GetDeployments)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/sudo/deployments", wrapper.CreateDeployment)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/sudo/deployments/{deployment_id}", wrapper.GetDeployment)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/sudo/deployments/{deployment_id}/status", wrapper.CreateDeploymentStatus)
-	})
-	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/sudo/kubeconfigs/{cluster_id}", wrapper.GetKubeconfig)
 	})
 
@@ -425,113 +299,6 @@ func (response GetCredential500Response) VisitGetCredentialResponse(w http.Respo
 	return nil
 }
 
-type GetDeploymentsRequestObject struct {
-}
-
-type GetDeploymentsResponseObject interface {
-	VisitGetDeploymentsResponse(w http.ResponseWriter) error
-}
-
-type GetDeployments200JSONResponse []externalRef0.Deployment
-
-func (response GetDeployments200JSONResponse) VisitGetDeploymentsResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetDeployments500Response struct {
-}
-
-func (response GetDeployments500Response) VisitGetDeploymentsResponse(w http.ResponseWriter) error {
-	w.WriteHeader(500)
-	return nil
-}
-
-type CreateDeploymentRequestObject struct {
-	Body *CreateDeploymentJSONRequestBody
-}
-
-type CreateDeploymentResponseObject interface {
-	VisitCreateDeploymentResponse(w http.ResponseWriter) error
-}
-
-type CreateDeployment200JSONResponse externalRef0.Deployment
-
-func (response CreateDeployment200JSONResponse) VisitCreateDeploymentResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type CreateDeployment500Response struct {
-}
-
-func (response CreateDeployment500Response) VisitCreateDeploymentResponse(w http.ResponseWriter) error {
-	w.WriteHeader(500)
-	return nil
-}
-
-type GetDeploymentRequestObject struct {
-	DeploymentId string `json:"deployment_id"`
-}
-
-type GetDeploymentResponseObject interface {
-	VisitGetDeploymentResponse(w http.ResponseWriter) error
-}
-
-type GetDeployment200JSONResponse externalRef0.Deployment
-
-func (response GetDeployment200JSONResponse) VisitGetDeploymentResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetDeployment500Response struct {
-}
-
-func (response GetDeployment500Response) VisitGetDeploymentResponse(w http.ResponseWriter) error {
-	w.WriteHeader(500)
-	return nil
-}
-
-type CreateDeploymentStatusRequestObject struct {
-	DeploymentId string `json:"deployment_id"`
-	Body         *CreateDeploymentStatusJSONRequestBody
-}
-
-type CreateDeploymentStatusResponseObject interface {
-	VisitCreateDeploymentStatusResponse(w http.ResponseWriter) error
-}
-
-type CreateDeploymentStatus201Response struct {
-}
-
-func (response CreateDeploymentStatus201Response) VisitCreateDeploymentStatusResponse(w http.ResponseWriter) error {
-	w.WriteHeader(201)
-	return nil
-}
-
-type CreateDeploymentStatus208Response struct {
-}
-
-func (response CreateDeploymentStatus208Response) VisitCreateDeploymentStatusResponse(w http.ResponseWriter) error {
-	w.WriteHeader(208)
-	return nil
-}
-
-type CreateDeploymentStatus500Response struct {
-}
-
-func (response CreateDeploymentStatus500Response) VisitCreateDeploymentStatusResponse(w http.ResponseWriter) error {
-	w.WriteHeader(500)
-	return nil
-}
-
 type GetKubeconfigRequestObject struct {
 	ClusterId string `json:"cluster_id"`
 }
@@ -575,18 +342,6 @@ type StrictServerInterface interface {
 
 	// (GET /sudo/credentials/{credential_id})
 	GetCredential(ctx context.Context, request GetCredentialRequestObject) (GetCredentialResponseObject, error)
-
-	// (GET /sudo/deployments)
-	GetDeployments(ctx context.Context, request GetDeploymentsRequestObject) (GetDeploymentsResponseObject, error)
-
-	// (POST /sudo/deployments)
-	CreateDeployment(ctx context.Context, request CreateDeploymentRequestObject) (CreateDeploymentResponseObject, error)
-
-	// (GET /sudo/deployments/{deployment_id})
-	GetDeployment(ctx context.Context, request GetDeploymentRequestObject) (GetDeploymentResponseObject, error)
-
-	// (POST /sudo/deployments/{deployment_id}/status)
-	CreateDeploymentStatus(ctx context.Context, request CreateDeploymentStatusRequestObject) (CreateDeploymentStatusResponseObject, error)
 
 	// (GET /sudo/kubeconfigs/{cluster_id})
 	GetKubeconfig(ctx context.Context, request GetKubeconfigRequestObject) (GetKubeconfigResponseObject, error)
@@ -664,120 +419,6 @@ func (sh *strictHandler) GetCredential(w http.ResponseWriter, r *http.Request, c
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetCredentialResponseObject); ok {
 		if err := validResponse.VisitGetCredentialResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetDeployments operation middleware
-func (sh *strictHandler) GetDeployments(w http.ResponseWriter, r *http.Request) {
-	var request GetDeploymentsRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetDeployments(ctx, request.(GetDeploymentsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetDeployments")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetDeploymentsResponseObject); ok {
-		if err := validResponse.VisitGetDeploymentsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// CreateDeployment operation middleware
-func (sh *strictHandler) CreateDeployment(w http.ResponseWriter, r *http.Request) {
-	var request CreateDeploymentRequestObject
-
-	var body CreateDeploymentJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.CreateDeployment(ctx, request.(CreateDeploymentRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CreateDeployment")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(CreateDeploymentResponseObject); ok {
-		if err := validResponse.VisitCreateDeploymentResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetDeployment operation middleware
-func (sh *strictHandler) GetDeployment(w http.ResponseWriter, r *http.Request, deploymentId string) {
-	var request GetDeploymentRequestObject
-
-	request.DeploymentId = deploymentId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetDeployment(ctx, request.(GetDeploymentRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetDeployment")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetDeploymentResponseObject); ok {
-		if err := validResponse.VisitGetDeploymentResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// CreateDeploymentStatus operation middleware
-func (sh *strictHandler) CreateDeploymentStatus(w http.ResponseWriter, r *http.Request, deploymentId string) {
-	var request CreateDeploymentStatusRequestObject
-
-	request.DeploymentId = deploymentId
-
-	var body CreateDeploymentStatusJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.CreateDeploymentStatus(ctx, request.(CreateDeploymentStatusRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CreateDeploymentStatus")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(CreateDeploymentStatusResponseObject); ok {
-		if err := validResponse.VisitCreateDeploymentStatusResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
