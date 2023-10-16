@@ -5,8 +5,6 @@ definitions:
   - step: &environment
       name: environment
       script:
-      - git fetch --tags
-      - echo "export IMAGE_NAME=$BITBUCKET_REPO_SLUG" >> env.sh
       - echo "export VERSION=$BITBUCKET_BRANCH-$(git describe --always --dirty)-$(date +%s)" >> env.sh
       - echo "export IMAGE=075899289117.dkr.ecr.eu-north-1.amazonaws.com/dockyards-backend" >> env.sh
       - cat env.sh
@@ -20,14 +18,14 @@ definitions:
       name: build
       script:
       - source env.sh
-      - docker build . --file Containerfile --tag ${IMAGE_NAME}
-      - docker save ${IMAGE_NAME} --output "${IMAGE_NAME}.tar"
+      - docker build . --file Containerfile --tag dockyards-backend
+      - docker save dockyards-backend --output dockyards-backend.tar
       services:
       - docker
       caches:
       - docker
       artifacts:
-      - "*.tar"
+      - dockyards-backend.tar
   - step: &push
       name: push
       image: docker.io/amazon/aws-cli:2.11.8
@@ -39,8 +37,8 @@ definitions:
       - aws configure --profile bitbucket set role_arn arn:aws:iam::075899289117:role/BitbucketPipelinesBackend
       - aws configure --profile bitbucket set web_identity_token_file /tmp/web-identity-token
       - aws ecr get-login-password --profile bitbucket | docker login --username "AWS" --password-stdin "075899289117.dkr.ecr.eu-north-1.amazonaws.com"
-      - docker load --input "${IMAGE_NAME}.tar"
-      - docker tag "${IMAGE_NAME}" "${IMAGE}:${VERSION}"
+      - docker load --input dockyards-backend.tar
+      - docker tag dockyards-backend "${IMAGE}:${VERSION}"
       - docker push "${IMAGE}:${VERSION}"
       services:
       - docker
