@@ -8,7 +8,11 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -17,6 +21,7 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;watch;patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters/status,verbs=patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create
 
 var (
 	requeue = ctrl.Result{Requeue: true, RequeueAfter: time.Duration(time.Minute)}
@@ -98,6 +103,62 @@ func (c *clusterController) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		return requeue, nil
+	}
+
+	objectKey := client.ObjectKey{
+		Name:      cluster.Name + "-kubeconfig",
+		Namespace: cluster.Namespace,
+	}
+
+	var secret corev1.Secret
+	err = c.Get(ctx, objectKey, &secret)
+	if client.IgnoreNotFound(err) != nil {
+		c.logger.Error("error getting cluster kubeconfig secret", "err", err)
+
+		return ctrl.Result{}, err
+	}
+
+	if apierrors.IsNotFound(err) {
+		c.logger.Debug("creating cluster kubeconfig")
+
+		kubeconfig, err := c.clusterService.GetKubeconfig(cluster.Status.ClusterServiceID, 0)
+		if err != nil {
+			c.logger.Error("error getting cluster kubeconfig", "err", err)
+
+			return ctrl.Result{}, err
+		}
+
+		value, err := clientcmd.Write(*kubeconfig)
+		if err != nil {
+			c.logger.Error("error serializing kubeconfig to yaml", "err", err)
+
+			return ctrl.Result{}, err
+		}
+
+		secret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-kubeconfig",
+				Namespace: cluster.Namespace,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: v1alpha1.GroupVersion.String(),
+						Kind:       v1alpha1.ClusterKind,
+						Name:       cluster.Name,
+						UID:        cluster.UID,
+					},
+				},
+			},
+			Data: map[string][]byte{
+				"value": value,
+			},
+		}
+
+		err = c.Create(ctx, &secret)
+		if err != nil {
+			c.logger.Error("error creating kubeconfig secret", "err", err)
+
+			return ctrl.Result{}, err
+		}
 	}
 
 	clusterStatus, err := c.clusterService.GetCluster(cluster.Status.ClusterServiceID)
