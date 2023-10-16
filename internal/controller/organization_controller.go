@@ -18,7 +18,7 @@ type organizationController struct {
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations/status,verbs=patch
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create
+// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create
 
 func (c *organizationController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var organization v1alpha1.Organization
