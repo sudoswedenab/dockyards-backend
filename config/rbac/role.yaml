@@ -5,6 +5,14 @@ metadata:
   name: dockyards-backend
 rules:
 - apiGroups:
+  - cloud.dockyards.io
+  resources:
+  - openstackprojects
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - ""
   resources:
   - namespaces
@@ -18,14 +26,7 @@ rules:
   resources:
   - secrets
   verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - cloud.dockyards.io
-  resources:
-  - openstackprojects
-  verbs:
+  - create
   - get
   - list
   - watch
