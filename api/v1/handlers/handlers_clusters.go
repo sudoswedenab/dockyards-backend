@@ -14,8 +14,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
@@ -316,7 +316,7 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
-	b, err := yaml.Marshal(kubeconfig)
+	b, err := clientcmd.Write(*kubeconfig)
 	if err != nil {
 		h.logger.Error("error marshalling kubeconfig to yaml", "err", err)
 

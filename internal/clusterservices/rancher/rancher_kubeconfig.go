@@ -5,11 +5,11 @@ import (
 	"time"
 
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
-	"k8s.io/client-go/tools/clientcmd/api/v1"
-	"sigs.k8s.io/yaml"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (*v1.Config, error) {
+func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (*clientcmdapi.Config, error) {
 	rancherCluster, err := r.managementClient.Cluster.ByID(clusterID)
 	if err != nil {
 		return nil, err
@@ -24,15 +24,14 @@ func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (*v1.Config
 
 	r.logger.Debug("generated kubeconfig for cluster", "id", rancherCluster.ID)
 
-	var config v1.Config
-	err = yaml.Unmarshal([]byte(generatedKubeConfig.Config), &config)
+	config, err := clientcmd.Load([]byte(generatedKubeConfig.Config))
 	if err != nil {
 		return nil, err
 	}
 
-	authInfo := config.AuthInfos[0].AuthInfo
+	currentUser := config.AuthInfos[config.CurrentContext]
 
-	tokenID := authInfo.Token[:strings.Index(authInfo.Token, ":")]
+	tokenID := currentUser.Token[:strings.Index(currentUser.Token, ":")]
 
 	unrestrictedToken, err := r.managementClient.Token.ByID(tokenID)
 	if err != nil {
@@ -53,14 +52,8 @@ func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (*v1.Config
 
 	r.logger.Debug("created limited token", "id", createdToken.ID, "ttl", ttl)
 
-	authInfo.Token = createdToken.Token
-	config.AuthInfos[0].Name = clusterID
-	config.AuthInfos[0].AuthInfo = authInfo
-	config.Clusters[0].Name = clusterID
-	config.Contexts[0].Name = clusterID
-	config.Contexts[0].Context.Cluster = clusterID
-	config.Contexts[0].Context.AuthInfo = clusterID
-	config.CurrentContext = clusterID
+	currentUser.Token = createdToken.Token
+	config.AuthInfos[config.CurrentContext] = currentUser
 
 	r.logger.Debug("deleting unrestricted token", "id", unrestrictedToken.ID)
 
@@ -71,5 +64,5 @@ func (r *rancher) GetKubeconfig(clusterID string, ttl time.Duration) (*v1.Config
 
 	r.logger.Debug("deleted unrestricted token", "id", unrestrictedToken.ID)
 
-	return &config, nil
+	return config, nil
 }

@@ -23,7 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/yaml"
@@ -843,7 +843,7 @@ func TestGetClusterKubeconfig(t *testing.T) {
 		sub                string
 		lists              []client.ObjectList
 		clustermockOptions []clustermock.MockOption
-		expected           clientcmdv1.Config
+		expected           clientcmdapi.Config
 	}{
 		{
 			name:      "test simple",
@@ -895,13 +895,13 @@ func TestGetClusterKubeconfig(t *testing.T) {
 				},
 			},
 			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithKubeconfigs(map[string]clientcmdv1.Config{
+				clustermock.WithKubeconfigs(map[string]clientcmdapi.Config{
 					"cluster-123": {
 						CurrentContext: "cluster-123",
 					},
 				}),
 			},
-			expected: clientcmdv1.Config{
+			expected: clientcmdapi.Config{
 				CurrentContext: "cluster-123",
 			},
 		},
@@ -950,7 +950,7 @@ func TestGetClusterKubeconfig(t *testing.T) {
 
 			b, err := io.ReadAll(w.Result().Body)
 
-			var actual clientcmdv1.Config
+			var actual clientcmdapi.Config
 			err = yaml.Unmarshal(b, &actual)
 			if err != nil {
 				t.Fatalf("error unmarshalling result body yaml: %s", err)
