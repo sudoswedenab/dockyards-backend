@@ -88,15 +88,26 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if nodePool.Status.ClusterServiceID == "" {
 		c.logger.Debug("node pool has empty cluster service id")
 
+		patch := client.MergeFrom(nodePool.DeepCopy())
+
 		nodePoolStatus, err := c.clusterService.CreateNodePool(organization, cluster, &nodePool)
 		if err != nil {
 			c.logger.Error("error creating node pool in cluster service", "err", err)
 
-			return ctrl.Result{}, err
+			readyCondition := metav1.Condition{
+				Type:    v1alpha1.ReadyCondition,
+				Status:  metav1.ConditionFalse,
+				Reason:  v1alpha1.NodePoolReadyReason,
+				Message: err.Error(),
+			}
+
+			meta.SetStatusCondition(&nodePool.Status.Conditions, readyCondition)
 		}
 
-		patch := client.MergeFrom(nodePool.DeepCopy())
-		nodePool.Status = *nodePoolStatus
+		if nodePoolStatus != nil {
+			nodePool.Status.ClusterServiceID = nodePoolStatus.ClusterServiceID
+		}
+
 		err = c.Status().Patch(ctx, &nodePool, patch)
 		if err != nil {
 			c.logger.Error("error patching node pool status", "err", err)
