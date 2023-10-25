@@ -39,6 +39,8 @@ spec:
             type: object
           spec:
             properties:
+              displayName:
+                type: string
               email:
                 type: string
               password:
