@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/sudo"
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
@@ -379,23 +378,6 @@ func main() {
 
 	privateRouter := chi.NewRouter()
 	privateRouter.Use(middleware.Logger)
-
-	sudoOptions := []sudo.SudoOption{
-		sudo.WithLogger(logger),
-		sudo.WithDatabase(db),
-		sudo.WithClusterService(clusterService),
-	}
-
-	sudoAPI, err := sudo.NewSudoAPI(sudoOptions...)
-	if err != nil {
-		logger.Error("error creating new sudo api", "err", err)
-
-		os.Exit(1)
-	}
-
-	sudoAPIStrictHandler := sudo.NewStrictHandler(sudoAPI, nil)
-
-	sudo.HandlerFromMux(sudoAPIStrictHandler, privateRouter)
 
 	promHandlerOpts := promhttp.HandlerOpts{
 		Registry: registry,

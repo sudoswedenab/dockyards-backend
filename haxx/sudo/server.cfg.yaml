@@ -1,7 +1,0 @@
-package: sudo
-generate:
-  chi-server: true
-  strict-server: true
-import-mapping:
-  ../v1/spec.yaml: bitbucket.org/sudosweden/dockyards-backend/api/v1 
-output: api/sudo/zz_generated_server.go
