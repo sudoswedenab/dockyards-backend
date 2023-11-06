@@ -17,7 +17,6 @@ require (
 	github.com/gophercloud/gophercloud v1.7.0
 	github.com/gophercloud/utils v0.0.0-20230523080330-de873b9cf00d
 	github.com/joho/godotenv v1.4.0
-	github.com/oapi-codegen/runtime v1.0.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rancher/norman v0.0.0-20221205184727-32ef2e185b99
 	github.com/rancher/rancher/pkg/client v0.0.0-20230315001606-cd1a71624a94
@@ -35,7 +34,6 @@ require (
 replace bitbucket.org/sudosweden/dockyards-backend/pkg/api => ./pkg/api
 
 require (
-	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.10.0-rc3 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

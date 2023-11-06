@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -24,7 +24,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
 	openstackv1alpha1 "bitbucket.org/sudosweden/dockyards-openstack/api/v1alpha1"
 	"github.com/gin-contrib/cors"
