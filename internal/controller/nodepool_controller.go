@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
@@ -88,6 +89,13 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if nodePool.Status.ClusterServiceID == "" {
 		c.logger.Debug("node pool has empty cluster service id")
 
+		readyCondition := meta.FindStatusCondition(nodePool.Status.Conditions, v1alpha1.ReadyCondition)
+		if readyCondition != nil {
+			if nodePool.Generation == readyCondition.ObservedGeneration && time.Now().Sub(readyCondition.LastTransitionTime.Time) < time.Duration(time.Minute) {
+				return requeue, nil
+			}
+		}
+
 		patch := client.MergeFrom(nodePool.DeepCopy())
 
 		nodePoolStatus, err := c.clusterService.CreateNodePool(organization, cluster, &nodePool)
@@ -95,10 +103,11 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 			c.logger.Error("error creating node pool in cluster service", "err", err)
 
 			readyCondition := metav1.Condition{
-				Type:    v1alpha1.ReadyCondition,
-				Status:  metav1.ConditionFalse,
-				Reason:  v1alpha1.NodePoolReadyReason,
-				Message: err.Error(),
+				Type:               v1alpha1.ReadyCondition,
+				ObservedGeneration: nodePool.Generation,
+				Status:             metav1.ConditionFalse,
+				Reason:             v1alpha1.NodePoolReadyReason,
+				Message:            err.Error(),
 			}
 
 			meta.SetStatusCondition(&nodePool.Status.Conditions, readyCondition)
