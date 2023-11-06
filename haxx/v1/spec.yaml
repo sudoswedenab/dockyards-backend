@@ -653,13 +653,8 @@ components:
       properties:
         id:
           type: string
-          x-go-type: uuid.UUID
-          x-go-type-import:
-            path: github.com/google/uuid
         name:
           type: string
-          x-oapi-codegen-extra-tags:
-            gorm: unique; not null
         description:
           type: string
         icon:
@@ -671,19 +666,12 @@ components:
       required:
       - id
       - name
-      - app_steps
     app_step:
       properties:
         id:
           type: string
-          x-go-type: uuid.UUID
-          x-go-type-import:
-            path: github.com/google/uuid
         app_id:
           type: string
-          x-go-type: uuid.UUID
-          x-go-type-import:
-            path: github.com/google/uuid
         name:
           type: string
         step_options:
@@ -694,14 +682,10 @@ components:
       - id
       - app_id
       - name
-      - step_options
     step_option:
       properties:
         app_step_id:
           type: string
-          x-go-type: uuid.UUID
-          x-go-type-import:
-            path: github.com/google/uuid
         display_name:
           type: string
         json_pointer:

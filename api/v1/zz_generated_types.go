@@ -29,19 +29,19 @@ const (
 
 // App defines model for app.
 type App struct {
-	AppSteps    []AppStep `json:"app_steps"`
-	Description *string   `json:"description,omitempty"`
-	Icon        *string   `json:"icon,omitempty"`
-	Id          uuid.UUID `json:"id"`
-	Name        string    `gorm:"unique; not null" json:"name"`
+	AppSteps    *[]AppStep `json:"app_steps,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	Icon        *string    `json:"icon,omitempty"`
+	Id          string     `json:"id"`
+	Name        string     `json:"name"`
 }
 
 // AppStep defines model for app_step.
 type AppStep struct {
-	AppId       uuid.UUID    `json:"app_id"`
-	Id          uuid.UUID    `json:"id"`
-	Name        string       `json:"name"`
-	StepOptions []StepOption `json:"step_options"`
+	AppId       string        `json:"app_id"`
+	Id          string        `json:"id"`
+	Name        string        `json:"name"`
+	StepOptions *[]StepOption `json:"step_options,omitempty"`
 }
 
 // Cluster defines model for cluster.
@@ -195,7 +195,7 @@ type Overview struct {
 
 // StepOption defines model for step_option.
 type StepOption struct {
-	AppStepId   uuid.UUID `json:"app_step_id"`
+	AppStepId   string    `json:"app_step_id"`
 	Default     *string   `json:"default,omitempty"`
 	DisplayName string    `json:"display_name"`
 	Hidden      *bool     `json:"hidden,omitempty"`
