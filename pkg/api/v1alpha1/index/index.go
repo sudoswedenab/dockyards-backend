@@ -5,6 +5,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	EmailIndexKey      = ".spec.email"
+	UIDIndexKey        = ".metadata.uid"
+	MemberRefsIndexKey = ".spec.memberRefs.uid"
+	OwnerRefsIndexKey  = ".metadata.ownerReferences.uid"
+)
+
 func EmailIndexer(object client.Object) []string {
 	return []string{
 		object.(*v1alpha1.User).Spec.Email,
