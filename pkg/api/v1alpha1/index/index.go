@@ -2,6 +2,7 @@ package index
 
 import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -10,6 +11,7 @@ const (
 	UIDIndexKey        = ".metadata.uid"
 	MemberRefsIndexKey = ".spec.memberRefs.uid"
 	OwnerRefsIndexKey  = ".metadata.ownerReferences.uid"
+	SecretTypeIndexKey = ".type"
 )
 
 func EmailIndexer(object client.Object) []string {
@@ -44,4 +46,12 @@ func OwnerRefsIndexer(object client.Object) []string {
 	}
 
 	return ownerUIDs
+}
+
+func SecretTypeIndexer(object client.Object) []string {
+	secret := object.(*corev1.Secret)
+
+	return []string{
+		string(secret.Type),
+	}
 }
