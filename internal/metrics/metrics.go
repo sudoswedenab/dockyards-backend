@@ -22,6 +22,7 @@ type prometheusMetrics struct {
 	deploymentMetric   *prometheus.GaugeVec
 	credentialMetric   *prometheus.GaugeVec
 	controllerClient   client.Client
+	clusterMetric      *prometheus.GaugeVec
 }
 
 type PrometheusMetricsOption func(*prometheusMetrics)
@@ -85,11 +86,22 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 		},
 	)
 
+	clusterMetric := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "dockyards_backend_cluster",
+		},
+		[]string{
+			"name",
+			"organization_name",
+		},
+	)
+
 	m := prometheusMetrics{
 		organizationMetric: organizationMetric,
 		userMetric:         userMetric,
 		deploymentMetric:   deploymentMetric,
 		credentialMetric:   credentialMetric,
+		clusterMetric:      clusterMetric,
 	}
 
 	for _, prometheusMetricsOption := range prometheusMetricsOptions {
@@ -228,6 +240,30 @@ func (m *prometheusMetrics) CollectMetrics() error {
 		}
 
 		m.credentialMetric.With(labels).Set(1)
+	}
+
+	var clusterList v1alpha1.ClusterList
+	err = m.controllerClient.List(ctx, &clusterList)
+	if err != nil {
+		m.logger.Error("error listing clusters", "err", err)
+	}
+
+	m.clusterMetric.Reset()
+
+	for _, cluster := range clusterList.Items {
+		ownerOrganizationName := getOwnerOrganizationName(&cluster)
+		if ownerOrganizationName == "" {
+			m.logger.Warn("cluster has no owner organization", "name", cluster.Name)
+
+			continue
+		}
+
+		labels := prometheus.Labels{
+			"name":              cluster.Name,
+			"organization_name": ownerOrganizationName,
+		}
+
+		m.clusterMetric.With(labels).Set(1)
 	}
 
 	return nil
