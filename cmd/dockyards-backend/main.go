@@ -166,12 +166,6 @@ func main() {
 		internal.WaitUntil(connectToDB)
 	}
 
-	err = internal.SyncDataBase(db)
-	if err != nil {
-		logger.Error("Failed to initialize database", "err", err)
-		os.Exit(1)
-	}
-
 	logr := funcr.New(func(format, args string) { fmt.Println(format, args) }, funcr.Options{})
 	ctrl.SetLogger(logr)
 
