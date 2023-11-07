@@ -6,6 +6,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"github.com/gin-gonic/gin"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -21,7 +22,7 @@ func (h *handler) GetWhoami(c *gin.Context) {
 	ctx := context.Background()
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": sub,
+		index.UIDIndexKey: sub,
 	}
 
 	var userList v1alpha1.UserList

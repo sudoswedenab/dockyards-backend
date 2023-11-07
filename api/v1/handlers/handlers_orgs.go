@@ -6,6 +6,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"github.com/gin-gonic/gin"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,7 +23,7 @@ func (h *handler) GetOrgs(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"spec.memberRefs": subject,
+		index.MemberRefsIndexKey: subject,
 	}
 
 	var organizationList v1alpha1.OrganizationList

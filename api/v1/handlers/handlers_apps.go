@@ -6,6 +6,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"github.com/gin-gonic/gin"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -55,7 +56,7 @@ func (h *handler) GetApp(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": appID,
+		index.UIDIndexKey: appID,
 	}
 
 	var appList v1alpha1.AppList

@@ -286,9 +286,9 @@ func TestGetOverview(t *testing.T) {
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Organization{}, "spec.memberRefs.uid", index.MemberRefsIndexer).
-				WithIndex(&v1alpha1.Cluster{}, "metadata.ownerReferences.uid", index.OwnerRefsIndexer).
-				WithIndex(&v1alpha1.Deployment{}, "metadata.ownerReferences.uid", index.OwnerRefsIndexer).
+				WithIndex(&v1alpha1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer).
+				WithIndex(&v1alpha1.Cluster{}, index.OwnerRefsIndexKey, index.OwnerRefsIndexer).
+				WithIndex(&v1alpha1.Deployment{}, index.OwnerRefsIndexKey, index.OwnerRefsIndexer).
 				Build()
 
 			h := handler{

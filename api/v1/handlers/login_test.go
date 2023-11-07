@@ -145,7 +145,7 @@ func TestLogin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, "spec.email", index.EmailIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, index.EmailIndexKey, index.EmailIndexer).Build()
 
 			h := handler{
 				logger:               logger,
@@ -264,7 +264,7 @@ func TestLoginErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, "spec.email", index.EmailIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, index.EmailIndexKey, index.EmailIndexer).Build()
 
 			h := handler{
 				logger:           logger,

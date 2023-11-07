@@ -189,7 +189,7 @@ func TestGetOrgs(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Organization{}, "spec.memberRefs", index.MemberRefsIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer).Build()
 
 			h := handler{
 				logger:           logger,

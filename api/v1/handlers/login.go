@@ -6,6 +6,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -23,7 +24,7 @@ func (h *handler) Login(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"spec.email": body.Email,
+		index.EmailIndexKey: body.Email,
 	}
 
 	var userList v1alpha1.UserList

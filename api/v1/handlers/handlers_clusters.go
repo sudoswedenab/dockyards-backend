@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -259,7 +260,7 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": clusterID,
+		index.UIDIndexKey: clusterID,
 	}
 
 	var clusterList v1alpha1.ClusterList
@@ -337,7 +338,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": clusterID,
+		index.UIDIndexKey: clusterID,
 	}
 
 	var clusterList v1alpha1.ClusterList
@@ -404,7 +405,7 @@ func (h *handler) GetClusters(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"spec.memberRefs": subject,
+		index.MemberRefsIndexKey: subject,
 	}
 
 	var organizationList v1alpha1.OrganizationList
@@ -448,7 +449,7 @@ func (h *handler) GetCluster(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": clusterID,
+		index.UIDIndexKey: clusterID,
 	}
 
 	var clusterList v1alpha1.ClusterList
@@ -499,7 +500,7 @@ func (h *handler) GetCluster(c *gin.Context) {
 	}
 
 	matchingFields = client.MatchingFields{
-		"metadata.ownerReferences.uid": clusterID,
+		index.OwnerRefsIndexKey: clusterID,
 	}
 
 	var nodePoolList v1alpha1.NodePoolList

@@ -226,7 +226,7 @@ func TestGetApp(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.App{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.App{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,

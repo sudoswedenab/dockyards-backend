@@ -9,6 +9,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,7 +62,7 @@ func (h *handler) PostRefresh(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": subject,
+		index.UIDIndexKey: subject,
 	}
 
 	var userList v1alpha1.UserList

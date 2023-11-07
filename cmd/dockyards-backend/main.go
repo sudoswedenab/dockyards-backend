@@ -208,7 +208,7 @@ func main() {
 
 	ctx := context.Background()
 
-	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, "spec.email", index.EmailIndexer)
+	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, index.EmailIndexKey, index.EmailIndexer)
 	if err != nil {
 		logger.Error("error adding email indexer to manager", "err", err)
 
@@ -216,7 +216,7 @@ func main() {
 	}
 
 	for _, object := range []client.Object{&v1alpha1.User{}, &v1alpha1.Cluster{}, &v1alpha1.NodePool{}, &v1alpha1.Node{}, &v1alpha1.Deployment{}} {
-		err = manager.GetFieldIndexer().IndexField(ctx, object, "metadata.uid", index.UIDIndexer)
+		err = manager.GetFieldIndexer().IndexField(ctx, object, index.UIDIndexKey, index.UIDIndexer)
 		if err != nil {
 			logger.Error("error adding uid indexer to manager", "err", err)
 
@@ -224,7 +224,7 @@ func main() {
 		}
 	}
 
-	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.Organization{}, "spec.memberRefs", index.MemberRefsIndexer)
+	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer)
 	if err != nil {
 		logger.Error("error adding member refs indexer to manager", "err", err)
 
@@ -232,7 +232,7 @@ func main() {
 	}
 
 	for _, object := range []client.Object{&v1alpha1.NodePool{}, &v1alpha1.Node{}, &v1alpha1.Deployment{}} {
-		err = manager.GetFieldIndexer().IndexField(ctx, object, "metadata.ownerReferences.uid", index.OwnerRefsIndexer)
+		err = manager.GetFieldIndexer().IndexField(ctx, object, index.OwnerRefsIndexKey, index.OwnerRefsIndexer)
 		if err != nil {
 			logger.Error("error addming owner refs indexer to manager", "err", err)
 

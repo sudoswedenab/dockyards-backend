@@ -292,8 +292,8 @@ func TestGetNodePool(t *testing.T) {
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.NodePool{}, "metadata.uid", index.UIDIndexer).
-				WithIndex(&v1alpha1.Node{}, "metadata.ownerReferences.uid", index.OwnerRefsIndexer).
+				WithIndex(&v1alpha1.NodePool{}, index.UIDIndexKey, index.UIDIndexer).
+				WithIndex(&v1alpha1.Node{}, index.OwnerRefsIndexKey, index.OwnerRefsIndexer).
 				Build()
 
 			h := handler{
@@ -671,7 +671,7 @@ func TestPostClusterNodePools(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,
@@ -917,7 +917,7 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,
@@ -1040,7 +1040,7 @@ func TestDeleteNodePool(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.NodePool{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.NodePool{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,
@@ -1225,7 +1225,7 @@ func TestDeleteNodePoolErrors(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.NodePool{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.NodePool{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,

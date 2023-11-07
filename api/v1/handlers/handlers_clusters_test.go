@@ -403,7 +403,7 @@ func TestDeleteCluster(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,
@@ -673,8 +673,8 @@ func TestGetCluster(t *testing.T) {
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).
-				WithIndex(&v1alpha1.NodePool{}, "metadata.ownerReferences.uid", index.OwnerRefsIndexer).
+				WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).
+				WithIndex(&v1alpha1.NodePool{}, index.OwnerRefsIndexKey, index.OwnerRefsIndexer).
 				Build()
 
 			h := handler{
@@ -801,7 +801,7 @@ func TestGetClusterErrors(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,
@@ -915,7 +915,7 @@ func TestGetClusterKubeconfig(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
@@ -1055,7 +1055,7 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
@@ -1192,7 +1192,7 @@ func TestGetClusters(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Organization{}, "spec.memberRefs", index.MemberRefsIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer).Build()
 
 			h := handler{
 				logger:           logger,

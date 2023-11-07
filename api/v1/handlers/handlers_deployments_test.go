@@ -258,7 +258,7 @@ func TestGetDeployment(t *testing.T) {
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Deployment{}, "metadata.uid", index.UIDIndexer).
+				WithIndex(&v1alpha1.Deployment{}, index.UIDIndexKey, index.UIDIndexer).
 				Build()
 
 			h := handler{
@@ -321,7 +321,7 @@ func TestGetDeploymentErrors(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Deployment{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Deployment{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,
@@ -693,8 +693,8 @@ func TestGetClusterDeployments(t *testing.T) {
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).
-				WithIndex(&v1alpha1.Deployment{}, "metadata.ownerReferences.uid", index.OwnerRefsIndexer).
+				WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).
+				WithIndex(&v1alpha1.Deployment{}, index.OwnerRefsIndexKey, index.OwnerRefsIndexer).
 				Build()
 
 			h := handler{
@@ -770,7 +770,7 @@ func TestDeleteDeployment(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Deployment{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Deployment{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,
@@ -912,7 +912,7 @@ func TestPostClusterDeployments(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,
@@ -1049,7 +1049,7 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
 				logger:           logger,
@@ -1164,7 +1164,7 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Cluster{}, "metadata.uid", index.UIDIndexer).
+				WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).
 				Build()
 
 			h := handler{

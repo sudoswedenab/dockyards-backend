@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
@@ -63,7 +64,7 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	nodePoolID := c.Param("nodePoolID")
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": nodePoolID,
+		index.UIDIndexKey: nodePoolID,
 	}
 
 	var nodePoolList v1alpha1.NodePoolList
@@ -117,7 +118,7 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	}
 
 	matchingFields = client.MatchingFields{
-		"metadata.ownerReferences.uid": nodePoolID,
+		index.OwnerRefsIndexKey: nodePoolID,
 	}
 
 	var nodeList v1alpha1.NodeList
@@ -170,7 +171,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": clusterID,
+		index.UIDIndexKey: clusterID,
 	}
 
 	var clusterList v1alpha1.ClusterList
@@ -273,7 +274,7 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 	nodePoolID := c.Param("nodePoolID")
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": nodePoolID,
+		index.UIDIndexKey: nodePoolID,
 	}
 
 	var nodePoolList v1alpha1.NodePoolList

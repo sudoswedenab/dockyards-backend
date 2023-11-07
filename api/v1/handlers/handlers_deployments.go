@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	utildeployment "bitbucket.org/sudosweden/dockyards-backend/pkg/util/deployment"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
@@ -36,7 +37,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": clusterID,
+		index.UIDIndexKey: clusterID,
 	}
 
 	var clusterList v1alpha1.ClusterList
@@ -282,7 +283,7 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 	clusterID := c.Param("clusterID")
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": clusterID,
+		index.UIDIndexKey: clusterID,
 	}
 
 	var clusterList v1alpha1.ClusterList
@@ -324,7 +325,7 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 	}
 
 	matchingFields = client.MatchingFields{
-		"metadata.ownerReferences.uid": string(cluster.UID),
+		index.OwnerRefsIndexKey: string(cluster.UID),
 	}
 
 	var deploymentList v1alpha1.DeploymentList
@@ -373,7 +374,7 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": deploymentID,
+		index.UIDIndexKey: deploymentID,
 	}
 
 	var deploymentList v1alpha1.DeploymentList
@@ -418,7 +419,7 @@ func (h *handler) GetDeployment(c *gin.Context) {
 	deploymentID := c.Param("deploymentID")
 
 	matchingFields := client.MatchingFields{
-		"metadata.uid": deploymentID,
+		index.UIDIndexKey: deploymentID,
 	}
 
 	var deploymentList v1alpha1.DeploymentList
