@@ -10,6 +10,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=dockyards.io,resources=apps,verbs=get;list;watch
+
 func (h *handler) GetApps(c *gin.Context) {
 	ctx := context.Background()
 
