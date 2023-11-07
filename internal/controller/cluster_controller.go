@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -21,6 +22,7 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;watch;patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters/status,verbs=patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create
 
 var (
@@ -193,6 +195,24 @@ func (c *clusterController) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (c *clusterController) reconcileDelete(ctx context.Context, cluster *v1alpha1.Cluster, organization *v1alpha1.Organization) (ctrl.Result, error) {
+	matchingFields := client.MatchingFields{
+		index.OwnerRefsIndexKey: string(cluster.UID),
+	}
+
+	var nodePoolList v1alpha1.NodePoolList
+	err := c.List(ctx, &nodePoolList, matchingFields)
+	if err != nil {
+		c.logger.Error("error listing node pools", "err", err)
+
+		return ctrl.Result{}, err
+	}
+
+	if len(nodePoolList.Items) != 0 {
+		c.logger.Info("requeing cluster with node pools", "name", cluster.Name, "pools", len(nodePoolList.Items))
+
+		return requeue, nil
+	}
+
 	if cluster.Status.ClusterServiceID == "" {
 		c.logger.Warn("cluster has no cluster service id")
 	}
@@ -213,7 +233,7 @@ func (c *clusterController) reconcileDelete(ctx context.Context, cluster *v1alph
 
 	patch := client.MergeFrom(cluster.DeepCopy())
 	controllerutil.RemoveFinalizer(cluster, clusterFinalizer)
-	err := c.Patch(ctx, cluster, patch)
+	err = c.Patch(ctx, cluster, patch)
 	if err != nil {
 		c.logger.Error("error removing finalizer from cluster", "err", err)
 
