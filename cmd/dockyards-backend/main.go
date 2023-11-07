@@ -322,14 +322,12 @@ func main() {
 		logger.Debug("creating prometheus metrics goroutine", "interval", interval)
 
 		prometheusMetrics.CollectMetrics()
-		clusterService.CollectMetrics()
 
 		ticker := time.NewTicker(interval)
 		for {
 			select {
 			case <-ticker.C:
 				prometheusMetrics.CollectMetrics()
-				clusterService.CollectMetrics()
 			}
 		}
 	}()
