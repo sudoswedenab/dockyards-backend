@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
@@ -12,16 +11,17 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;watch;create;delete
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=create
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
 
 func (h *handler) toV1Cluster(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePoolList *v1alpha1.NodePoolList) *v1.Cluster {
 	v1Cluster := v1.Cluster{
@@ -309,23 +309,34 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
-	kubeconfig, err := h.clusterService.GetKubeconfig(cluster.Status.ClusterServiceID, time.Duration(time.Hour))
+	objectKey := client.ObjectKey{
+		Name:      cluster.Name + "-kubeconfig",
+		Namespace: cluster.Namespace,
+	}
+
+	var secret corev1.Secret
+	err = h.controllerClient.Get(ctx, objectKey, &secret)
 	if err != nil {
 		h.logger.Error("error getting kubeconfig", "err", err)
 
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	b, err := clientcmd.Write(*kubeconfig)
-	if err != nil {
-		h.logger.Error("error marshalling kubeconfig to yaml", "err", err)
+		if apierrors.IsNotFound(err) {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	c.Data(http.StatusOK, binding.MIMEYAML, b)
+	kubeconfig, hasValue := secret.Data["value"]
+	if !hasValue {
+		h.logger.Debug("kubeconfig secret has no value")
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.Data(http.StatusOK, binding.MIMEYAML, kubeconfig)
 }
 
 func (h *handler) DeleteCluster(c *gin.Context) {

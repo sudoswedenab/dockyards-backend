@@ -21,6 +21,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -441,12 +442,11 @@ func TestDeleteCluster(t *testing.T) {
 
 func TestDeleteClusterErrors(t *testing.T) {
 	tt := []struct {
-		name               string
-		clusterID          string
-		sub                string
-		lists              []client.ObjectList
-		clustermockOptions []clustermock.MockOption
-		expected           int
+		name      string
+		clusterID string
+		sub       string
+		lists     []client.ObjectList
+		expected  int
 	}{
 		{
 			name:     "test empty",
@@ -502,14 +502,6 @@ func TestDeleteClusterErrors(t *testing.T) {
 					},
 				},
 			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithClusters(map[string]v1.Cluster{
-					"cluster-123": {
-						Id:           "cluster-123",
-						Organization: "test-org",
-					},
-				}),
-			},
 			expected: http.StatusUnauthorized,
 		},
 	}
@@ -525,11 +517,8 @@ func TestDeleteClusterErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
-				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
-				namespace:        "test",
 			}
 
 			w := httptest.NewRecorder()
@@ -838,12 +827,11 @@ func TestGetClusterErrors(t *testing.T) {
 
 func TestGetClusterKubeconfig(t *testing.T) {
 	tt := []struct {
-		name               string
-		clusterID          string
-		sub                string
-		lists              []client.ObjectList
-		clustermockOptions []clustermock.MockOption
-		expected           clientcmdapi.Config
+		name      string
+		clusterID string
+		sub       string
+		lists     []client.ObjectList
+		expected  clientcmdapi.Config
 	}{
 		{
 			name:      "test simple",
@@ -893,13 +881,19 @@ func TestGetClusterKubeconfig(t *testing.T) {
 						},
 					},
 				},
-			},
-			clustermockOptions: []clustermock.MockOption{
-				clustermock.WithKubeconfigs(map[string]clientcmdapi.Config{
-					"cluster-123": {
-						CurrentContext: "cluster-123",
+				&corev1.SecretList{
+					Items: []corev1.Secret{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test-kubeconfig",
+								Namespace: "testing",
+							},
+							Data: map[string][]byte{
+								"value": []byte("current-context: cluster-123"),
+							},
+						},
 					},
-				}),
+				},
 			},
 			expected: clientcmdapi.Config{
 				CurrentContext: "cluster-123",
@@ -918,7 +912,6 @@ func TestGetClusterKubeconfig(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
 			}
@@ -961,12 +954,11 @@ func TestGetClusterKubeconfig(t *testing.T) {
 
 func TestGetClusterKubeconfigErrors(t *testing.T) {
 	tt := []struct {
-		name               string
-		clusterID          string
-		sub                string
-		lists              []client.ObjectList
-		clustermockOptions []clustermock.MockOption
-		expected           int
+		name      string
+		clusterID string
+		sub       string
+		lists     []client.ObjectList
+		expected  int
 	}{
 		{
 			name:     "test empty cluster id",
@@ -1058,7 +1050,6 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
-				clusterService:   clustermock.NewMockClusterService(tc.clustermockOptions...),
 				logger:           logger,
 				controllerClient: fakeClient,
 			}
