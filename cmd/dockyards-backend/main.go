@@ -356,7 +356,6 @@ func main() {
 	}
 
 	handlerOptions := []handlers.HandlerOption{
-		handlers.WithCloudService(cloudService),
 		handlers.WithManager(manager),
 		handlers.WithNamespace("dockyards"),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),

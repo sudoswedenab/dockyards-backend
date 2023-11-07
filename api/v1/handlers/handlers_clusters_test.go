@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
@@ -78,7 +77,6 @@ func TestPostOrgClusters(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
 			}
@@ -304,7 +302,6 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				cloudService:     cloudmock.NewMockCloudService(),
 				logger:           logger,
 				controllerClient: fakeClient,
 			}
