@@ -370,7 +370,7 @@ func main() {
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
 	}
 
-	err = handlers.RegisterRoutes(r, db, logger, handlerOptions...)
+	err = handlers.RegisterRoutes(r, logger, handlerOptions...)
 	if err != nil {
 		logger.Error("error registering handler routes", "err", err)
 		os.Exit(1)

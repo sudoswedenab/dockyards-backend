@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/glebarez/sqlite"
-	"gorm.io/gorm"
 )
 
 func TestRegisterRoutes(t *testing.T) {
@@ -23,14 +21,10 @@ func TestRegisterRoutes(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			r := gin.New()
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-			if err != nil {
-				t.Fatalf("unexpected error creating db: %s", err)
-			}
 
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
-			actual := RegisterRoutes(r, db, logger)
+			actual := RegisterRoutes(r, logger)
 			if actual != tc.expected {
 				t.Errorf("expected error %s, got %s", tc.expected, actual)
 			}

@@ -12,14 +12,12 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type handler struct {
-	db                   *gorm.DB
 	clusterService       clusterservices.ClusterService
 	logger               *slog.Logger
 	cloudService         cloudservices.CloudService
@@ -70,13 +68,12 @@ func WithJWTPrivateKeys(accessKey, refreshKey *ecdsa.PrivateKey) HandlerOption {
 	}
 }
 
-func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOptions ...HandlerOption) error {
+func RegisterRoutes(r *gin.Engine, logger *slog.Logger, handlerOptions ...HandlerOption) error {
 	methodNotAllowed := func(c *gin.Context) {
 		c.Status(http.StatusMethodNotAllowed)
 	}
 
 	h := handler{
-		db:     db,
 		logger: logger,
 	}
 
