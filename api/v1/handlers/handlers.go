@@ -9,7 +9,6 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,7 +17,6 @@ import (
 )
 
 type handler struct {
-	clusterService       clusterservices.ClusterService
 	logger               *slog.Logger
 	cloudService         cloudservices.CloudService
 	controllerClient     client.Client
@@ -34,12 +32,6 @@ type HandlerOption func(*handler)
 func WithCloudService(cloudService cloudservices.CloudService) HandlerOption {
 	return func(h *handler) {
 		h.cloudService = cloudService
-	}
-}
-
-func WithClusterService(clusterService clusterservices.ClusterService) HandlerOption {
-	return func(h *handler) {
-		h.clusterService = clusterService
 	}
 }
 
