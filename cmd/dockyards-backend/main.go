@@ -276,7 +276,6 @@ func main() {
 			rancher.WithRancherClientOpts(cattleURL, cattleBearerToken, trustInsecure),
 			rancher.WithLogger(logger.With("clusterservice", "rancher")),
 			rancher.WithCloudService(cloudService),
-			rancher.WithPrometheusRegistry(registry),
 		}
 
 		clusterService, err = rancher.NewRancher(rancherOptions...)
