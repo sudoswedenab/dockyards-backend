@@ -112,6 +112,7 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 	m.registry.MustRegister(m.userMetric)
 	m.registry.MustRegister(m.deploymentMetric)
 	m.registry.MustRegister(m.credentialMetric)
+	m.registry.MustRegister(m.clusterMetric)
 
 	buildInfo, ok := debug.ReadBuildInfo()
 	if ok {
