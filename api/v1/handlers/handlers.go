@@ -117,10 +117,11 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, logger *slog.Logger, handlerOpti
 	g.GET("/deployments/:deploymentID", h.GetDeployment)
 	g.DELETE("/deployments/:deploymentID", h.DeleteDeployment)
 
-	g.GET("/credentials", h.GetCredentials)
-	g.GET("/credentials/:uuid", h.GetCredentialUUID)
+	g.GET("/orgs/:org/credentials", h.GetOrgCredentials)
 	g.POST("/orgs/:org/credentials", h.PostOrgCredentials)
-	g.DELETE("orgs/:org/credentials/:credential", h.DeleteOrgCredentials)
+
+	g.GET("/credentials/:credentialID", h.GetCredential)
+	g.DELETE("credentials/:credentialID", h.DeleteCredential)
 
 	g.GET("/overview", h.GetOverview)
 	g.GET("/whoami", h.GetWhoami)

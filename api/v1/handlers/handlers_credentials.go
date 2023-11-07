@@ -6,11 +6,20 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (h *handler) GetCredentials(c *gin.Context) {
+const (
+	DockyardsSecretTypeCredential = "dockyards.io/credential"
+)
+
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;delete
+
+func (h *handler) GetOrgCredentials(c *gin.Context) {
 	ctx := context.Background()
 
 	subject, err := h.getSubjectFromContext(c)
@@ -21,8 +30,13 @@ func (h *handler) GetCredentials(c *gin.Context) {
 		return
 	}
 
+	organizationID := c.Param("org")
+	matchingFields := client.MatchingFields{
+		index.UIDIndexKey: organizationID,
+	}
+
 	var organizationList v1alpha1.OrganizationList
-	err = h.controllerClient.List(ctx, &organizationList)
+	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error getting organizations from kubernetes", "err", err)
 
@@ -30,34 +44,51 @@ func (h *handler) GetCredentials(c *gin.Context) {
 		return
 	}
 
-	orgs := make(map[string]*v1alpha1.Organization)
-	for i, organization := range organizationList.Items {
-		orgs[organization.Name] = &organizationList.Items[i]
-	}
+	if len(organizationList.Items) != 1 {
+		h.logger.Debug("expected exactly one organization", "count", len(organizationList.Items))
 
-	var credentials []v1.Credential
-	err = h.db.Select("id", "name", "organization").Find(&credentials).Error
-	if err != nil {
-		h.logger.Error("error finding credentials in database", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	filteredCredentials := []v1.Credential{}
+	organization := organizationList.Items[0]
 
-	for _, credential := range credentials {
-		isMember := h.isMember(subject, orgs[credential.Organization])
-		if isMember {
-			filteredCredentials = append(filteredCredentials, credential)
+	if !h.isMember(subject, &organization) {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	matchingFields = client.MatchingFields{
+		index.SecretTypeIndexKey: DockyardsSecretTypeCredential,
+	}
+
+	var secretList corev1.SecretList
+	err = h.controllerClient.List(ctx, &secretList, matchingFields)
+	if err != nil {
+		h.logger.Error("error listing secrets", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	v1Credentials := make([]v1.Credential, len(secretList.Items))
+
+	for i, secret := range secretList.Items {
+		v1Credentials[i] = v1.Credential{
+			Id:           string(secret.UID),
+			Name:         secret.Name,
+			Organization: organization.Name,
 		}
 	}
 
-	c.JSON(http.StatusOK, filteredCredentials)
+	c.JSON(http.StatusOK, v1Credentials)
 }
 
 func (h *handler) PostOrgCredentials(c *gin.Context) {
-	org := c.Param("org")
-	if org == "" {
+	ctx := context.Background()
+
+	organizationID := c.Param("org")
+	if organizationID == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -66,40 +97,134 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 	err := c.BindJSON(&credential)
 	if err != nil {
 		h.logger.Error("error binding request json to credential", "err", err)
+
 		c.AbortWithStatus(http.StatusUnprocessableEntity)
 		return
 	}
 
-	credential.Id = uuid.New()
-	credential.Organization = org
+	matchingFields := client.MatchingFields{
+		index.UIDIndexKey: organizationID,
+	}
 
-	err = h.db.Create(&credential).Error
+	var organizationList v1alpha1.OrganizationList
+	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
-		h.logger.Error("error creating credential in database", "err", err)
+		h.logger.Error("error listing organizations", "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusCreated, credential)
+	if len(organizationList.Items) != 1 {
+		h.logger.Debug("expected exactly one organization", "count", len(organizationList.Items))
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	organization := organizationList.Items[0]
+
+	subject, err := h.getSubjectFromContext(c)
+	if err != nil {
+		h.logger.Error("error getting subject from context", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	if !h.isMember(subject, &organization) {
+	}
+
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      credential.Name,
+			Namespace: organization.Status.NamespaceRef,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: v1alpha1.GroupVersion.String(),
+					Kind:       v1alpha1.OrganizationKind,
+					Name:       organization.Name,
+					UID:        organization.UID,
+				},
+			},
+		},
+	}
+
+	err = h.controllerClient.Create(ctx, &secret)
+	if err != nil {
+		h.logger.Error("error creating secret", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	createdCredential := v1.Credential{
+		Id:   string(secret.UID),
+		Name: secret.Name,
+	}
+
+	c.JSON(http.StatusCreated, createdCredential)
 }
 
-func (h *handler) DeleteOrgCredentials(c *gin.Context) {
-	org := c.Param("org")
-	name := c.Param("credential")
+func (h *handler) DeleteCredential(c *gin.Context) {
+	ctx := context.Background()
 
-	var credential v1.Credential
-	err := h.db.Take(&credential, "organization = ? and name = ?", org, name).Error
+	credentialID := c.Param("credentialID")
+
+	matchingFields := client.MatchingFields{
+		index.UIDIndexKey: credentialID,
+	}
+
+	var secretList corev1.SecretList
+	err := h.controllerClient.List(ctx, &secretList, matchingFields)
 	if err != nil {
-		h.logger.Error("error taking credential from database", "err", err)
+		h.logger.Error("error listing secrets", "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Debug("delete credential", "id", credential.Id)
+	if len(secretList.Items) != 1 {
+		h.logger.Debug("expected exactly one secret", "count", len(secretList.Items))
 
-	err = h.db.Delete(&credential).Error
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	secret := secretList.Items[0]
+
+	organization, err := h.getOwnerOrganization(ctx, &secret)
 	if err != nil {
-		h.logger.Error("error deleting credential from database", "id", credential.Id, "err", err)
+		h.logger.Error("error getting owner organization", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	if organization == nil {
+		h.logger.Debug("secret is not owned by organization")
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	subject, err := h.getSubjectFromContext(c)
+	if err != nil {
+		h.logger.Error("error getting subject from context", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	if !h.isMember(subject, organization) {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	err = h.controllerClient.Delete(ctx, &secret)
+	if err != nil {
+		h.logger.Error("error deleting secret", "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -107,15 +232,66 @@ func (h *handler) DeleteOrgCredentials(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func (h *handler) GetCredentialUUID(c *gin.Context) {
-	id := c.Param("uuid")
+func (h *handler) GetCredential(c *gin.Context) {
+	ctx := context.Background()
 
-	var credential v1.Credential
-	err := h.db.Take(&credential, "id = ?", id).Error
+	credentialID := c.Param("credentialID")
+
+	matchingFields := client.MatchingFields{
+		index.UIDIndexKey: credentialID,
+	}
+
+	var secretList corev1.SecretList
+	err := h.controllerClient.List(ctx, &secretList, matchingFields)
 	if err != nil {
+		h.logger.Error("error listing secrets", "err", err)
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, credential)
+	if len(secretList.Items) != 1 {
+		h.logger.Debug("expected exactly one secret", "count", len(secretList.Items))
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	secret := secretList.Items[0]
+
+	organization, err := h.getOwnerOrganization(ctx, &secret)
+	if err != nil {
+		h.logger.Error("error getting owner organization", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	if organization == nil {
+		h.logger.Debug("secret is not owned by organization")
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	subject, err := h.getSubjectFromContext(c)
+	if err != nil {
+		h.logger.Error("error getting subject from context", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	if !h.isMember(subject, organization) {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	v1Credential := v1.Credential{
+		Id:           string(secret.UID),
+		Name:         secret.Name,
+		Organization: organization.Name,
+	}
+
+	c.JSON(http.StatusOK, v1Credential)
 }
