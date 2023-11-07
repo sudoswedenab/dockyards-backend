@@ -119,8 +119,8 @@ func main() {
 	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval seconds")
 	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
-	flag.StringVar(&cloudServiceFlag, "cloud-service", "openstack", "cloud service")
-	flag.StringVar(&clusterServiceFlag, "cluster-service", "rancher", "cluster service")
+	flag.StringVar(&cloudServiceFlag, "cloud-service", "none", "cloud service")
+	flag.StringVar(&clusterServiceFlag, "cluster-service", "none", "cluster service")
 	flag.BoolVar(&insecureLogging, "insecure-logging", false, "insecure logging")
 	flag.Parse()
 
@@ -259,6 +259,8 @@ func main() {
 		}
 	case "cloudmock":
 		cloudService = cloudmock.NewMockCloudService()
+	case "none":
+		logger.Info("not using a cloud service")
 	default:
 		logger.Error("unsupported cloud service", "service", cloudServiceFlag)
 
@@ -283,6 +285,8 @@ func main() {
 		}
 	case "clustermock":
 		clusterService = clustermock.NewMockClusterService()
+	case "none":
+		logger.Info("not using a cluster service")
 	default:
 		logger.Error("unsupported cluster service", "service", clusterServiceFlag)
 
@@ -298,8 +302,13 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				clusterService.DeleteGarbage()
-				cloudService.DeleteGarbage()
+				if clusterServiceFlag != "none" {
+					clusterService.DeleteGarbage()
+				}
+
+				if cloudServiceFlag != "none" {
+					cloudService.DeleteGarbage()
+				}
 			}
 		}
 	}()
@@ -398,36 +407,38 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = controller.NewClusterController(manager, clusterService, logger.With("controller", "cluster"))
-	if err != nil {
-		logger.Error("error creating new cluster controller", "err", err)
+	if clusterServiceFlag != "none" {
+		err = controller.NewClusterController(manager, clusterService, logger.With("controller", "cluster"))
+		if err != nil {
+			logger.Error("error creating new cluster controller", "err", err)
 
-		os.Exit(1)
-	}
+			os.Exit(1)
+		}
 
-	err = controller.NewNodePoolController(manager, clusterService, logger.With("controller", "nodepool"))
-	if err != nil {
-		logger.Error("error creating new cluster controller", "err", err)
+		err = controller.NewNodePoolController(manager, clusterService, logger.With("controller", "nodepool"))
+		if err != nil {
+			logger.Error("error creating new cluster controller", "err", err)
 
-		os.Exit(1)
-	}
+			os.Exit(1)
+		}
 
-	err = controller.NewNodeController(manager, clusterService, logger.With("controller", "node"))
-	if err != nil {
-		logger.Error("error creating new node controller", "err", err)
+		err = controller.NewNodeController(manager, clusterService, logger.With("controller", "node"))
+		if err != nil {
+			logger.Error("error creating new node controller", "err", err)
 
-		os.Exit(1)
-	}
+			os.Exit(1)
+		}
 
-	err = (&controller.ReleaseReconciler{
-		Client:         manager.GetClient(),
-		Logger:         logger,
-		ClusterService: clusterService,
-	}).SetupWithManager(manager)
-	if err != nil {
-		logger.Error("error creating release controller", "err", err)
+		err = (&controller.ReleaseReconciler{
+			Client:         manager.GetClient(),
+			Logger:         logger,
+			ClusterService: clusterService,
+		}).SetupWithManager(manager)
+		if err != nil {
+			logger.Error("error creating release controller", "err", err)
 
-		os.Exit(1)
+			os.Exit(1)
+		}
 	}
 
 	err = manager.Start(context.Background())
