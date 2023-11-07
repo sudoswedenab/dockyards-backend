@@ -182,17 +182,31 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 	m.deploymentMetric.Reset()
 
-	var deployments []v1.Deployment
-	err = m.db.Find(&deployments).Error
+	var deploymentList v1alpha1.DeploymentList
+	err = m.controllerClient.List(ctx, &deploymentList)
 	if err != nil {
 		m.logger.Error("error finding deployments in database", "err", err)
+
 		return err
 	}
 
-	for _, deployment := range deployments {
+	for _, deployment := range deploymentList.Items {
+		ownerClusterUID, err := getOwnerClusterUID(&deployment)
+		if err != nil {
+			m.logger.Warn("error getting owner cluster", "err", err)
+
+			continue
+		}
+
+		if ownerClusterUID == "" {
+			m.logger.Warn("deployment has no owner cluster", "name", deployment.Name)
+
+			continue
+		}
+
 		labels := prometheus.Labels{
-			"name":       *deployment.Name,
-			"cluster_id": deployment.ClusterId,
+			"name":       deployment.Name,
+			"cluster_id": ownerClusterUID,
 		}
 
 		m.deploymentMetric.With(labels).Set(1)
@@ -217,4 +231,21 @@ func (m *prometheusMetrics) CollectMetrics() error {
 	}
 
 	return nil
+}
+
+func getOwnerClusterUID(object client.Object) (string, error) {
+	ownerReferences := object.GetOwnerReferences()
+	for _, ownerReference := range ownerReferences {
+		if ownerReference.APIVersion != v1alpha1.GroupVersion.String() {
+			continue
+		}
+
+		if ownerReference.Kind != v1alpha1.ClusterKind {
+			continue
+		}
+
+		return string(ownerReference.UID), nil
+	}
+
+	return "", nil
 }
