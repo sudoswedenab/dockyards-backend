@@ -5,8 +5,6 @@ package v1
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 const (
@@ -76,8 +74,8 @@ type ClusterOverview struct {
 
 // Credential defines model for credential.
 type Credential struct {
-	Data         *map[string]interface{} `gorm:"serializer:json" json:"data,omitempty"`
-	Id           uuid.UUID               `json:"id"`
+	Data         *map[string]interface{} `json:"data,omitempty"`
+	Id           string                  `json:"id"`
 	Name         string                  `json:"name"`
 	Organization string                  `json:"organization"`
 }
