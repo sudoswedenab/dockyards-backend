@@ -234,6 +234,13 @@ func main() {
 		}
 	}
 
+	err = manager.GetFieldIndexer().IndexField(ctx, &corev1.Secret{}, index.SecretTypeIndexKey, index.SecretTypeIndexer)
+	if err != nil {
+		logger.Error("error adding secret type indexer to manager", "err", err)
+
+		os.Exit(1)
+	}
+
 	var cloudService cloudservices.CloudService
 	switch cloudServiceFlag {
 	case "openstack":
