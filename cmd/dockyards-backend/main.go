@@ -299,7 +299,6 @@ func main() {
 
 	prometheusMetricsOptions := []metrics.PrometheusMetricsOption{
 		metrics.WithLogger(logger),
-		metrics.WithDatabase(db),
 		metrics.WithPrometheusRegistry(registry),
 		metrics.WithManager(manager),
 	}

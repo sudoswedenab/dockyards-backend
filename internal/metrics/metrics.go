@@ -9,7 +9,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"github.com/prometheus/client_golang/prometheus"
-	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,7 +16,6 @@ import (
 
 type prometheusMetrics struct {
 	logger             *slog.Logger
-	db                 *gorm.DB
 	registry           *prometheus.Registry
 	organizationMetric *prometheus.GaugeVec
 	userMetric         *prometheus.GaugeVec
@@ -31,12 +29,6 @@ type PrometheusMetricsOption func(*prometheusMetrics)
 func WithLogger(logger *slog.Logger) PrometheusMetricsOption {
 	return func(m *prometheusMetrics) {
 		m.logger = logger
-	}
-}
-
-func WithDatabase(db *gorm.DB) PrometheusMetricsOption {
-	return func(m *prometheusMetrics) {
-		m.db = db
 	}
 }
 
