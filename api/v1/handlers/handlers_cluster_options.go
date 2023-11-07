@@ -1,14 +1,19 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (h *handler) getRecommendedNodePools() []v1.NodePoolOptions {
+// +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
+
+func getRecommendedNodePools() []v1.NodePoolOptions {
 	return []v1.NodePoolOptions{
 		{
 			Name:                       "control-plane",
@@ -40,16 +45,27 @@ func (h *handler) getRecommendedNodePools() []v1.NodePoolOptions {
 }
 
 func (h *handler) GetClusterOptions(c *gin.Context) {
-	supportedVersions, err := h.clusterService.GetSupportedVersions()
-	if err != nil {
-		h.logger.Error("error getting supported versions from cluster service", "err", err)
+	ctx := context.Background()
+
+	objectKey := client.ObjectKey{
+		Name:      "supported-versions",
+		Namespace: h.namespace,
 	}
 
-	recommendedNodePools := h.getRecommendedNodePools()
+	var release v1alpha1.Release
+	err := h.controllerClient.Get(ctx, objectKey, &release)
+	if err != nil {
+		h.logger.Error("error getting release", "err", err)
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	recommendedNodePools := getRecommendedNodePools()
 
 	c.JSON(http.StatusOK, v1.Options{
 		SingleNode:      false,
-		Version:         supportedVersions,
+		Version:         release.Status.Versions,
 		NodePoolOptions: recommendedNodePools,
 	})
 }

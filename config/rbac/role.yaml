@@ -155,6 +155,20 @@ rules:
 - apiGroups:
   - dockyards.io
   resources:
+  - releases
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - releases/status
+  verbs:
+  - patch
+- apiGroups:
+  - dockyards.io
+  resources:
   - users
   verbs:
   - get

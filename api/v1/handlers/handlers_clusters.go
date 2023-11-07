@@ -166,7 +166,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	if nodePoolOptions == nil || len(*nodePoolOptions) == 0 {
 		h.logger.Debug("using recommended node pool options")
 
-		nodePoolOptions = util.Ptr(h.getRecommendedNodePools())
+		nodePoolOptions = util.Ptr(getRecommendedNodePools())
 	}
 
 	if clusterOptions.SingleNode != nil && *clusterOptions.SingleNode {
