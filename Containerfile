@@ -2,7 +2,7 @@ FROM docker.io/library/golang:1.21 as builder
 COPY . /src
 WORKDIR /src
 ENV CGO_ENABLED=0
-RUN go build -v -o ./dockyards-backend ./cmd/dockyards-backend
+RUN go build -o ./dockyards-backend ./cmd/dockyards-backend
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=builder /src/dockyards-backend /usr/bin/dockyards-backend
