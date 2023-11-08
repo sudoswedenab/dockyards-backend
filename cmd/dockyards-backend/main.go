@@ -32,7 +32,7 @@ import (
 	"github.com/glebarez/sqlite"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-logr/logr/funcr"
+	"github.com/go-logr/logr/slogr"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -130,6 +130,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	logr := slogr.NewLogr(logger.Handler())
+	ctrl.SetLogger(logr)
+
 	flag.Parse()
 
 	var db *gorm.DB
@@ -165,9 +168,6 @@ func main() {
 
 		internal.WaitUntil(connectToDB)
 	}
-
-	logr := funcr.New(func(format, args string) { fmt.Println(format, args) }, funcr.Options{})
-	ctrl.SetLogger(logr)
 
 	kubeconfig, err := config.GetConfig()
 	if err != nil {
