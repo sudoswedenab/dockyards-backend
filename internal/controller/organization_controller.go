@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,7 +21,7 @@ type OrganizationReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create
 
 func (c *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var organization v1alpha1.Organization
+	var organization v1alpha2.Organization
 	err := c.Get(ctx, req.NamespacedName, &organization)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -35,8 +35,8 @@ func (c *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				GenerateName: organization.Name + "-",
 				OwnerReferences: []metav1.OwnerReference{
 					{
-						APIVersion: v1alpha1.GroupVersion.String(),
-						Kind:       v1alpha1.OrganizationKind,
+						APIVersion: v1alpha2.GroupVersion.String(),
+						Kind:       v1alpha2.OrganizationKind,
 						Name:       organization.Name,
 						UID:        organization.UID,
 					},
@@ -72,5 +72,5 @@ func (c *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 }
 
 func (r *OrganizationReconciler) SetupWithManager(manager ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(manager).For(&v1alpha1.Organization{}).Complete(r)
+	return ctrl.NewControllerManagedBy(manager).For(&v1alpha2.Organization{}).Complete(r)
 }
