@@ -25,6 +25,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
 	openstackv1alpha1 "bitbucket.org/sudosweden/dockyards-openstack/api/v1alpha1"
 	"github.com/gin-contrib/cors"
@@ -178,6 +179,7 @@ func main() {
 
 	scheme := runtime.NewScheme()
 	v1alpha1.AddToScheme(scheme)
+	v1alpha2.AddToScheme(scheme)
 	corev1.AddToScheme(scheme)
 	openstackv1alpha1.AddToScheme(scheme)
 
@@ -402,6 +404,20 @@ func main() {
 	err = controller.NewOrganizationController(manager, logger.With("controller", "organization"))
 	if err != nil {
 		logger.Error("error creating new organization controller", "err", err)
+
+		os.Exit(1)
+	}
+
+	err = (&v1alpha1.Organization{}).SetupWebhookWithManager(manager)
+	if err != nil {
+		logger.Error("error creating organization webhook", "err", err)
+
+		os.Exit(1)
+	}
+
+	err = (&v1alpha2.Organization{}).SetupWebhookWithManager(manager)
+	if err != nil {
+		logger.Error("error creating organization webhook", "err", err)
 
 		os.Exit(1)
 	}
