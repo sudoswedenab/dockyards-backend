@@ -11,16 +11,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type organizationController struct {
+type OrganizationReconciler struct {
 	client.Client
-	logger *slog.Logger
+	Logger *slog.Logger
 }
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations/status,verbs=patch
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create
 
-func (c *organizationController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (c *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var organization v1alpha1.Organization
 	err := c.Get(ctx, req.NamespacedName, &organization)
 	if err != nil {
@@ -28,7 +28,7 @@ func (c *organizationController) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	if organization.Status.NamespaceRef == "" {
-		c.logger.Info("organization has no namespace reference", "name", organization.Name)
+		c.Logger.Info("organization has no namespace reference", "name", organization.Name)
 
 		namespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -46,7 +46,7 @@ func (c *organizationController) Reconcile(ctx context.Context, req ctrl.Request
 
 		err := c.Create(ctx, &namespace)
 		if err != nil {
-			c.logger.Error("error creating namespace", "err", err)
+			c.Logger.Error("error creating namespace", "err", err)
 
 			return ctrl.Result{}, err
 		}
@@ -56,33 +56,21 @@ func (c *organizationController) Reconcile(ctx context.Context, req ctrl.Request
 
 		err = c.Status().Patch(ctx, &organization, patch)
 		if err != nil {
-			c.logger.Error("error patching organization status", "err", err)
+			c.Logger.Error("error patching organization status", "err", err)
 
 			return ctrl.Result{}, err
 		}
 
-		c.logger.Debug("created namespace for organization", "name", namespace.Name)
+		c.Logger.Debug("created namespace for organization", "name", namespace.Name)
 
 		return ctrl.Result{}, nil
 	}
 
-	c.logger.Debug("nothing to reconcile for organization", "name", organization.Name)
+	c.Logger.Debug("nothing to reconcile for organization", "name", organization.Name)
 
 	return ctrl.Result{}, nil
 }
 
-func NewOrganizationController(manager ctrl.Manager, logger *slog.Logger) error {
-	client := manager.GetClient()
-
-	c := organizationController{
-		Client: client,
-		logger: logger,
-	}
-
-	err := ctrl.NewControllerManagedBy(manager).For(&v1alpha1.Organization{}).Complete(&c)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (r *OrganizationReconciler) SetupWithManager(manager ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(manager).For(&v1alpha1.Organization{}).Complete(r)
 }

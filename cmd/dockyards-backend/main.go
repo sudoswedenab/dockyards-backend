@@ -401,9 +401,12 @@ func main() {
 	go privateServer.ListenAndServe()
 	go r.Run(":9000")
 
-	err = controller.NewOrganizationController(manager, logger.With("controller", "organization"))
+	err = (&controller.OrganizationReconciler{
+		Client: manager.GetClient(),
+		Logger: logger.With("reconciler", "organization"),
+	}).SetupWithManager(manager)
 	if err != nil {
-		logger.Error("error creating new organization controller", "err", err)
+		logger.Error("error creating new organization reconciler", "err", err)
 
 		os.Exit(1)
 	}
