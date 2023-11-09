@@ -1,7 +1,6 @@
-package v1alpha1
+package v1alpha2
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -9,14 +8,19 @@ const (
 	OrganizationKind = "Organization"
 )
 
+type Cloud struct {
+	ProjectRef *NamespacedObjectReference `json:"cloudRef,omitempty"`
+	SecretRef  *NamespacedSecretReference `json:"cloudSecret,omitempty"`
+}
+
 type OrganizationSpec struct {
 	DisplayName string `json:"displayName,omitempty"`
 
 	// +kubebuilder:validation:MinItems=1
-	MemberRefs []UserReference `json:"memberRefs"`
+	MemberRefs []MemberReference `json:"memberRefs"`
 
-	BillingRef *corev1.ObjectReference `json:"billingRef,omitempty"`
-	CloudRef   *CloudReference         `json:"cloudRef,omitempty"`
+	BillingRef *NamespacedObjectReference `json:"billingRef,omitempty"`
+	Cloud      Cloud                      `json:"cloud,omitempty"`
 }
 
 type OrganizationStatus struct {
@@ -28,7 +32,7 @@ type OrganizationStatus struct {
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 type Organization struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
