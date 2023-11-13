@@ -169,3 +169,76 @@ func TestGetOwnerOrganization(t *testing.T) {
 		})
 	}
 }
+
+func TestGetOwnerCluster(t *testing.T) {
+	tt := []struct {
+		name     string
+		lists    []client.ObjectList
+		object   client.Object
+		expected v1alpha1.Cluster
+	}{
+		{
+			name: "test nodepool with owner",
+			lists: []client.ObjectList{
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "2e83235e-478f-4c58-804f-1d153b6457b5",
+							},
+						},
+					},
+				},
+			},
+			object: &v1alpha1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "testing",
+					UID:       "8a6d302a-89d2-418b-bf01-0b907cdd8d42",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: v1alpha1.GroupVersion.String(),
+							Kind:       v1alpha1.ClusterKind,
+							Name:       "test",
+							UID:        "2e83235e-478f-4c58-804f-1d153b6457b5",
+						},
+					},
+				},
+			},
+			expected: v1alpha1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: v1alpha1.GroupVersion.String(),
+					Kind:       v1alpha1.ClusterKind,
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "test",
+					Namespace:       "testing",
+					UID:             "2e83235e-478f-4c58-804f-1d153b6457b5",
+					ResourceVersion: "999",
+				},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			v1alpha2.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+
+			actual, err := apiutil.GetOwnerCluster(ctx, fakeClient, tc.object)
+			if err != nil {
+				t.Fatalf("error getting owner organization: %s", err)
+			}
+
+			if !cmp.Equal(actual, &tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(&tc.expected, actual))
+			}
+		})
+	}
+}
