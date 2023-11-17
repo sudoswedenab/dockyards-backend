@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/ipam"
 	"github.com/gophercloud/gophercloud"
 	"gorm.io/gorm"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,7 +20,6 @@ type openStackService struct {
 	garbageMutex     *sync.Mutex
 	endpointOpts     gophercloud.EndpointOpts
 	insecureLogging  bool
-	ipManager        ipam.IPManager
 	controllerClient client.Client
 }
 
