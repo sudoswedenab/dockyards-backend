@@ -72,21 +72,6 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 	return slog.New(slog.NewTextHandler(os.Stdout, &handlerOptions)), nil
 }
 
-func buildDataSourceName() string {
-	conf := os.Getenv("DB_CONF")
-	if conf != "" {
-		return conf
-	}
-
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	name := os.Getenv("DB_NAME")
-
-	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", host, port, user, password, name)
-}
-
 func loadEnvVariables() {
 	err := godotenv.Load()
 	if err != nil {
@@ -100,7 +85,6 @@ func loadEnvVariables() {
 
 func main() {
 	var logLevel string
-	var useInmemDb bool
 	var trustInsecure bool
 	var delGarbageInterval int
 	var collectMetricsInterval int
@@ -109,7 +93,6 @@ func main() {
 	var clusterServiceFlag string
 	var insecureLogging bool
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
-	flag.BoolVar(&useInmemDb, "use-inmem-db", false, "use in-memory database")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
 	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval seconds")
 	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
