@@ -9,11 +9,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
-	"bitbucket.org/sudosweden/dockyards-backend/internal"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
@@ -21,7 +19,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/loggers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
@@ -30,15 +27,12 @@ import (
 	openstackv1alpha1 "bitbucket.org/sudosweden/dockyards-openstack/api/v1alpha1"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/glebarez/sqlite"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-logr/logr/slogr"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -133,42 +127,6 @@ func main() {
 
 	logr := slogr.NewLogr(logger.Handler())
 	ctrl.SetLogger(logr)
-
-	flag.Parse()
-
-	var db *gorm.DB
-	var connectToDB func(*sync.WaitGroup)
-
-	gormLogger := loggers.NewGormSlogger(logger.With("orm", "gorm"))
-	gormConfig := gorm.Config{
-		Logger:         gormLogger,
-		TranslateError: true,
-	}
-
-	if useInmemDb {
-		db, err = gorm.Open(sqlite.Open(":memory:"), &gormConfig)
-		if err != nil {
-			logger.Error("error creating in-memory db", "err", err)
-			os.Exit(1)
-		}
-	} else {
-		dsn := buildDataSourceName()
-		logger.Debug("database config", "dsn", dsn)
-		connectToDB = func(wg *sync.WaitGroup) {
-			logger.Info("Trying to connect..")
-			db, err = gorm.Open(postgres.Open(dsn), &gormConfig)
-			if err != nil {
-				logger.Info("Failed to connect to database, trying again..")
-				time.Sleep(time.Second * 3)
-				connectToDB(wg)
-			} else {
-				fmt.Println("Success!")
-				wg.Done()
-			}
-		}
-
-		internal.WaitUntil(connectToDB)
-	}
 
 	kubeconfig, err := config.GetConfig()
 	if err != nil {
