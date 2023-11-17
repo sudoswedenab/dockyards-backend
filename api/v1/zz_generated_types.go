@@ -198,7 +198,7 @@ type StepOption struct {
 	DisplayName string    `json:"display_name"`
 	Hidden      *bool     `json:"hidden,omitempty"`
 	JsonPointer string    `json:"json_pointer"`
-	Selection   *[]string `gorm:"serializer:json" json:"selection,omitempty"`
+	Selection   *[]string `json:"selection,omitempty"`
 	Type        *string   `json:"type,omitempty"`
 }
 

@@ -695,8 +695,6 @@ components:
           type: array
           items:
             type: string
-          x-oapi-codegen-extra-tags:
-            gorm: serializer:json
       required:
       - app_step_id
       - display_name
