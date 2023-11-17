@@ -248,7 +248,6 @@ func main() {
 	case "openstack":
 		openStackOptions := []openstack.OpenStackOption{
 			openstack.WithLogger(logger.With("cloudservice", "openstack")),
-			openstack.WithDatabase(db),
 			openstack.WithCloudsYAML("openstack"),
 			openstack.WithInsecureLogging(insecureLogging),
 			openstack.WithManager(manager),

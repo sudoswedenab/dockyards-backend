@@ -8,7 +8,6 @@ import (
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/utils/openstack/clientconfig"
-	"gorm.io/gorm"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -25,12 +24,6 @@ func WithRegion(region string) OpenStackOption {
 
 	return func(s *openStackService) {
 		s.endpointOpts = endpointOpts
-	}
-}
-
-func WithDatabase(db *gorm.DB) OpenStackOption {
-	return func(s *openStackService) {
-		s.db = db
 	}
 }
 
