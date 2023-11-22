@@ -129,6 +129,7 @@ rules:
   - nodes
   verbs:
   - create
+  - delete
   - get
   - list
   - watch
@@ -145,6 +146,7 @@ rules:
   verbs:
   - get
   - list
+  - patch
   - watch
 - apiGroups:
   - dockyards.io

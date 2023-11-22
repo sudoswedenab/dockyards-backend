@@ -11,6 +11,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=dockyards.io,resources=nodes,verbs=get;delete;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=nodes/status,verbs=patch
+
 type NodeReconciler struct {
 	client.Client
 	Logger         *slog.Logger
@@ -45,6 +48,19 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Error("error getting node status from cluster service", "err", err)
 
 		return ctrl.Result{}, err
+	}
+
+	if nodeStatus == nil {
+		logger.Info("deleting node missing in cluster service")
+
+		err := r.Delete(ctx, &node)
+		if err != nil {
+			logger.Error("error deleting node")
+
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
 	}
 
 	condition := meta.FindStatusCondition(nodeStatus.Conditions, v1alpha1.ReadyCondition)
