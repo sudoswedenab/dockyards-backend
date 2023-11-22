@@ -42,7 +42,7 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return r.reconcileDelete(ctx, &organization)
 	}
 
-	if !controllerutil.ContainsFinalizer(&organization, clusterFinalizer) {
+	if !controllerutil.ContainsFinalizer(&organization, OrganizationFinalizer) {
 		patch := client.MergeFrom(organization.DeepCopy())
 
 		controllerutil.AddFinalizer(&organization, OrganizationFinalizer)
@@ -121,7 +121,7 @@ func (r *OrganizationReconciler) reconcileDelete(ctx context.Context, organizati
 
 	patch := client.MergeFrom(organization.DeepCopy())
 
-	controllerutil.RemoveFinalizer(organization, clusterFinalizer)
+	controllerutil.RemoveFinalizer(organization, OrganizationFinalizer)
 
 	err = r.Patch(ctx, organization, patch)
 	if err != nil {
