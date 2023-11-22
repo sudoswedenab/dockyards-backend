@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	openstackv1alpha1 "bitbucket.org/sudosweden/dockyards-openstack/api/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,26 +19,28 @@ import (
 func TestGetOpenstackProject(t *testing.T) {
 	tt := []struct {
 		name         string
-		organization v1alpha1.Organization
+		organization v1alpha2.Organization
 		lists        []client.ObjectList
 		expected     openstackv1alpha1.OpenstackProject
 	}{
 		{
 			name: "test single project",
-			organization: v1alpha1.Organization{
+			organization: v1alpha2.Organization{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
 					UID:  "9bdaf261-659c-4786-bd07-d6a8a8e04243",
 				},
-				Spec: v1alpha1.OrganizationSpec{
-					CloudRef: &v1alpha1.CloudReference{
-						APIVersion: openstackv1alpha1.GroupVersion.String(),
-						Kind:       openstackv1alpha1.OpenstackProjectKind,
-						Name:       "project1",
-						Namespace:  "testing",
+				Spec: v1alpha2.OrganizationSpec{
+					Cloud: v1alpha2.Cloud{
+						ProjectRef: &v1alpha2.NamespacedObjectReference{
+							APIVersion: openstackv1alpha1.GroupVersion.String(),
+							Kind:       openstackv1alpha1.OpenstackProjectKind,
+							Name:       "project1",
+							Namespace:  "testing",
+						},
 					},
 				},
-				Status: v1alpha1.OrganizationStatus{
+				Status: v1alpha2.OrganizationStatus{
 					NamespaceRef: "testing-123",
 				},
 			},
@@ -105,34 +108,36 @@ func TestGetOpenstackProjectErrors(t *testing.T) {
 	tt := []struct {
 		name         string
 		lists        []client.ObjectList
-		organization v1alpha1.Organization
+		organization v1alpha2.Organization
 		expected     error
 	}{
 		{
 			name: "test organization without cloud ref",
-			organization: v1alpha1.Organization{
+			organization: v1alpha2.Organization{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "testing",
 					UID:       "9a966287-a084-409c-8d85-94eca04dda9b",
 				},
-				Spec: v1alpha1.OrganizationSpec{},
+				Spec: v1alpha2.OrganizationSpec{},
 			},
 			expected: ErrNoCloudReference,
 		},
 		{
 			name: "test organization with unsupported kind",
-			organization: v1alpha1.Organization{
+			organization: v1alpha2.Organization{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "testing",
 					UID:       "ea48801a-7448-42db-b5de-31aa9c9bd23e",
 				},
-				Spec: v1alpha1.OrganizationSpec{
-					CloudRef: &v1alpha1.CloudReference{
-						APIVersion: "cloud.dockyards.io/v1alpha1",
-						Kind:       "NoCloudProject",
-						Name:       "test",
+				Spec: v1alpha2.OrganizationSpec{
+					Cloud: v1alpha2.Cloud{
+						ProjectRef: &v1alpha2.NamespacedObjectReference{
+							APIVersion: "cloud.dockyards.io/v1alpha1",
+							Kind:       "NoCloudProject",
+							Name:       "test",
+						},
 					},
 				},
 			},

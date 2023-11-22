@@ -3,11 +3,12 @@ package cloudservices
 import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 )
 
 type CloudService interface {
-	PrepareEnvironment(*v1alpha1.Organization, *v1alpha1.Cluster, *v1alpha1.NodePool) (*CloudConfig, error)
-	CleanEnvironment(*v1alpha1.Organization, *CloudConfig) error
+	PrepareEnvironment(*v1alpha2.Organization, *v1alpha1.Cluster, *v1alpha1.NodePool) (*CloudConfig, error)
+	CleanEnvironment(*v1alpha2.Organization, *CloudConfig) error
 	DeleteGarbage()
 	GetFlavorNodePool(string) (*v1.NodePool, error)
 }

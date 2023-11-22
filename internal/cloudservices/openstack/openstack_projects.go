@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	openstackv1alpha1 "bitbucket.org/sudosweden/dockyards-openstack/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,20 +19,20 @@ var (
 	ErrNoSecretReference = errors.New("organization has no secret reference")
 )
 
-func (s *openStackService) getOpenstackProject(organization *v1alpha1.Organization) (*openstackv1alpha1.OpenstackProject, error) {
-	if organization.Spec.CloudRef == nil {
+func (s *openStackService) getOpenstackProject(organization *v1alpha2.Organization) (*openstackv1alpha1.OpenstackProject, error) {
+	if organization.Spec.Cloud.ProjectRef == nil {
 		return nil, ErrNoCloudReference
 	}
 
-	if organization.Spec.CloudRef.Kind != openstackv1alpha1.OpenstackProjectKind {
+	if organization.Spec.Cloud.ProjectRef.Kind != openstackv1alpha1.OpenstackProjectKind {
 		return nil, ErrNoOpenstackKind
 	}
 
 	ctx := context.Background()
 
 	objectKey := client.ObjectKey{
-		Name:      organization.Spec.CloudRef.Name,
-		Namespace: organization.Spec.CloudRef.Namespace,
+		Name:      organization.Spec.Cloud.ProjectRef.Name,
+		Namespace: organization.Spec.Cloud.ProjectRef.Namespace,
 	}
 
 	var openstackProject openstackv1alpha1.OpenstackProject
@@ -44,16 +44,16 @@ func (s *openStackService) getOpenstackProject(organization *v1alpha1.Organizati
 	return &openstackProject, nil
 }
 
-func (s *openStackService) getOpenstackSecret(organization *v1alpha1.Organization) (*corev1.Secret, error) {
-	if organization.Spec.CloudRef.SecretRef == "" {
+func (s *openStackService) getOpenstackSecret(organization *v1alpha2.Organization) (*corev1.Secret, error) {
+	if organization.Spec.Cloud.SecretRef.Name == "" {
 		return nil, ErrNoSecretReference
 	}
 
 	ctx := context.Background()
 
 	objectKey := client.ObjectKey{
-		Name:      organization.Spec.CloudRef.SecretRef,
-		Namespace: organization.Status.NamespaceRef,
+		Name:      organization.Spec.Cloud.SecretRef.Name,
+		Namespace: organization.Spec.Cloud.SecretRef.Namespace,
 	}
 
 	var secret corev1.Secret

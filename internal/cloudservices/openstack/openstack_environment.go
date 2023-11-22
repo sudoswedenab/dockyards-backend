@@ -8,6 +8,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
@@ -19,7 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePool *v1alpha1.NodePool) (*cloudservices.CloudConfig, error) {
+func (s *openStackService) PrepareEnvironment(organization *v1alpha2.Organization, cluster *v1alpha1.Cluster, nodePool *v1alpha1.NodePool) (*cloudservices.CloudConfig, error) {
 	logger := s.logger.With("nodepool", nodePool.Name, "cluster", cluster.Name, "organization", organization.Name)
 
 	openstackProject, err := s.getOpenstackProject(organization)
@@ -220,7 +221,7 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organizatio
 	return &config, nil
 }
 
-func (s *openStackService) CleanEnvironment(organization *v1alpha1.Organization, config *cloudservices.CloudConfig) error {
+func (s *openStackService) CleanEnvironment(organization *v1alpha2.Organization, config *cloudservices.CloudConfig) error {
 	openstackProject, err := s.getOpenstackProject(organization)
 	if err != nil {
 		s.logger.Error("error getting openstack organization", "err", err)
