@@ -6,7 +6,9 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,75 +24,81 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodes/status,verbs=patch
 
 const (
-	nodePoolFinalizer = "dockyards.io/backend-controller"
+	NodePoolFinalizer = "dockyards.io/backend-controller"
 )
 
-type nodePoolController struct {
+type NodePoolReconciler struct {
 	client.Client
-	logger         *slog.Logger
-	clusterService clusterservices.ClusterService
+	Logger         *slog.Logger
+	ClusterService clusterservices.ClusterService
 }
 
-func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := r.Logger.With("name", req.Name, "namespace", req.Namespace)
+
 	var nodePool v1alpha1.NodePool
-	err := c.Get(ctx, req.NamespacedName, &nodePool)
-	if err != nil {
+	err := r.Get(ctx, req.NamespacedName, &nodePool)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting node pool", "err", err)
+
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	cluster, err := c.getOwnerCluster(ctx, &nodePool)
+	cluster, err := apiutil.GetOwnerCluster(ctx, r.Client, &nodePool)
 	if err != nil {
-		c.logger.Error("error getting owner cluster", "err", err)
+		logger.Error("error getting owner cluster", "err", err)
 
 		return ctrl.Result{}, err
 	}
 
 	if cluster == nil {
-		c.logger.Debug("ignoring node pool without cluster owner")
+		logger.Debug("ignoring node pool without cluster owner")
 
-		return requeue, nil
+		return ctrl.Result{}, nil
 	}
 
 	if cluster.Status.ClusterServiceID == "" {
-		c.logger.Debug("owner cluster has no cluster service id")
+		logger.Debug("owner cluster has no cluster service id")
 
-		return requeue, nil
+		return ctrl.Result{}, nil
 	}
 
-	organization, err := c.getOwnerOrganization(ctx, cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, r.Client, cluster)
 	if err != nil {
-		c.logger.Error("error getting owner organization", "err", err)
+		logger.Error("error getting owner organization", "err", err)
 
 		return ctrl.Result{}, err
 	}
 
 	if organization == nil {
-		c.logger.Debug("ignoring node pool with cluster owner without organization owner")
+		logger.Debug("ignoring node pool without organization owner")
 
-		return requeue, nil
+		return ctrl.Result{}, nil
 	}
 
-	if !controllerutil.ContainsFinalizer(&nodePool, nodePoolFinalizer) {
+	if !controllerutil.ContainsFinalizer(&nodePool, NodePoolFinalizer) {
 		patch := client.MergeFrom(nodePool.DeepCopy())
-		controllerutil.AddFinalizer(&nodePool, nodePoolFinalizer)
-		err := c.Patch(ctx, &nodePool, patch)
+
+		controllerutil.AddFinalizer(&nodePool, NodePoolFinalizer)
+
+		err := r.Patch(ctx, &nodePool, patch)
 		if err != nil {
-			c.logger.Error("error adding finalizer to node pool", "err", err)
+			logger.Error("error patching node pool", "err", err)
 
 			return ctrl.Result{}, err
 		}
 	}
 
 	if !nodePool.DeletionTimestamp.IsZero() {
-		return c.reconcileDelete(ctx, &nodePool, organization)
+		return r.reconcileDelete(ctx, &nodePool, organization)
 	}
 
 	if nodePool.Status.ClusterServiceID == "" {
-		c.logger.Debug("node pool has empty cluster service id")
+		logger.Debug("node pool has empty cluster service id")
 
-		nodePoolStatus, err := c.clusterService.CreateNodePool(organization, cluster, &nodePool)
+		nodePoolStatus, err := r.ClusterService.CreateNodePool(organization, cluster, &nodePool)
 		if err != nil {
-			c.logger.Error("error creating node pool in cluster service", "err", err)
+			logger.Error("error creating node pool in cluster service", "err", err)
 
 			readyCondition := metav1.Condition{
 				Type:               v1alpha1.ReadyCondition,
@@ -101,15 +109,15 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 			}
 
 			if !meta.IsStatusConditionPresentAndEqual(nodePool.Status.Conditions, v1alpha1.ReadyCondition, metav1.ConditionFalse) {
-				c.logger.Debug("node pool needs status condition update")
+				logger.Debug("node pool needs status condition update")
 
 				patch := client.MergeFrom(nodePool.DeepCopy())
 
 				meta.SetStatusCondition(&nodePool.Status.Conditions, readyCondition)
 
-				err := c.Status().Patch(ctx, &nodePool, patch)
+				err := r.Status().Patch(ctx, &nodePool, patch)
 				if err != nil {
-					c.logger.Error("error patching node pool status", "err", err)
+					logger.Error("error patching node pool status", "err", err)
 
 					return ctrl.Result{}, err
 				}
@@ -121,9 +129,9 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 			nodePool.Status.ClusterServiceID = nodePoolStatus.ClusterServiceID
 
-			err = c.Status().Patch(ctx, &nodePool, patch)
+			err = r.Status().Patch(ctx, &nodePool, patch)
 			if err != nil {
-				c.logger.Error("error patching node pool status", "err", err)
+				logger.Error("error patching node pool status", "err", err)
 
 				return ctrl.Result{}, err
 			}
@@ -132,9 +140,9 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return requeue, nil
 	}
 
-	nodePoolStatus, err := c.clusterService.GetNodePool(nodePool.Status.ClusterServiceID)
+	nodePoolStatus, err := r.ClusterService.GetNodePool(nodePool.Status.ClusterServiceID)
 	if err != nil {
-		c.logger.Error("error geting node pool from cluster service", "err", err)
+		logger.Error("error geting node pool from cluster service", "err", err)
 
 		return ctrl.Result{}, err
 	}
@@ -149,16 +157,16 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 	meta.SetStatusCondition(&nodePool.Status.Conditions, condition)
 
-	err = c.Status().Patch(ctx, &nodePool, patch)
+	err = r.Status().Patch(ctx, &nodePool, patch)
 	if err != nil {
-		c.logger.Error("error patching status conditions", "err", err)
+		logger.Error("error patching status conditions", "err", err)
 
 		return ctrl.Result{}, err
 	}
 
-	nodeList, err := c.clusterService.GetNodes(&nodePool)
+	nodeList, err := r.ClusterService.GetNodes(&nodePool)
 	for _, nodeItem := range nodeList.Items {
-		c.logger.Debug("node item", "name", nodeItem.Name)
+		logger.Debug("node item", "name", nodeItem.Name)
 
 		objectKey := client.ObjectKey{
 			Name:      nodeItem.Name,
@@ -166,9 +174,9 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 
 		var node v1alpha1.Node
-		err := c.Get(ctx, objectKey, &node)
+		err := r.Get(ctx, objectKey, &node)
 		if client.IgnoreNotFound(err) != nil {
-			c.logger.Error("error getting node", "err", err)
+			logger.Error("error getting node", "err", err)
 
 			return ctrl.Result{}, err
 		}
@@ -190,9 +198,9 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 				},
 			}
 
-			err := c.Create(ctx, &node)
+			err := r.Create(ctx, &node)
 			if err != nil {
-				c.logger.Error("error creating node", "err", err)
+				logger.Error("error creating node", "err", err)
 
 				return ctrl.Result{}, err
 			}
@@ -203,9 +211,9 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 				ClusterServiceID: nodeItem.Status.ClusterServiceID,
 			}
 
-			err = c.Status().Patch(ctx, &node, patch)
+			err = r.Status().Patch(ctx, &node, patch)
 			if err != nil {
-				c.logger.Error("error patching node", "err", err)
+				logger.Error("error patching node", "err", err)
 
 				return ctrl.Result{}, err
 			}
@@ -215,26 +223,25 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return requeue, nil
 }
 
-func (c *nodePoolController) reconcileDelete(ctx context.Context, nodePool *v1alpha1.NodePool, organization *v1alpha1.Organization) (ctrl.Result, error) {
-	c.logger.Debug("deleted node pool")
+func (r *NodePoolReconciler) reconcileDelete(ctx context.Context, nodePool *v1alpha1.NodePool, organization *v1alpha2.Organization) (ctrl.Result, error) {
+	logger := r.Logger.With("name", nodePool.Name, "namespace", nodePool.Namespace)
 
 	if nodePool.Status.ClusterServiceID != "" {
-		err := c.clusterService.DeleteNodePool(organization, nodePool.Status.ClusterServiceID)
+		err := r.ClusterService.DeleteNodePool(organization, nodePool.Status.ClusterServiceID)
 		if err != nil {
-			c.logger.Error("error deleting node pool from cluster service", "err", err)
+			logger.Error("error deleting node pool from cluster service", "err", err)
 
 			return ctrl.Result{}, err
 		}
-
-		c.logger.Debug("deleted node pool from cluster service", "id", nodePool.Status.ClusterServiceID)
 	}
 
 	patch := client.MergeFrom(nodePool.DeepCopy())
-	controllerutil.RemoveFinalizer(nodePool, nodePoolFinalizer)
 
-	err := c.Patch(ctx, nodePool, patch)
+	controllerutil.RemoveFinalizer(nodePool, NodePoolFinalizer)
+
+	err := r.Patch(ctx, nodePool, patch)
 	if err != nil {
-		c.logger.Error("error removing finalizer from node pool", "err", err)
+		logger.Error("error removing finalizer from node pool", "err", err)
 
 		return ctrl.Result{}, err
 	}
@@ -242,70 +249,12 @@ func (c *nodePoolController) reconcileDelete(ctx context.Context, nodePool *v1al
 	return ctrl.Result{}, nil
 }
 
-func (c *nodePoolController) getOwnerCluster(ctx context.Context, nodePool *v1alpha1.NodePool) (*v1alpha1.Cluster, error) {
-	for _, ownerReference := range nodePool.GetOwnerReferences() {
-		if ownerReference.APIVersion != v1alpha1.GroupVersion.String() {
-			continue
-		}
+func (r *NodePoolReconciler) SetupWithManager(manager ctrl.Manager) error {
+	scheme := manager.GetScheme()
+	v1alpha1.AddToScheme(scheme)
+	v1alpha2.AddToScheme(scheme)
 
-		if ownerReference.Kind != v1alpha1.ClusterKind {
-			continue
-		}
-
-		objectKey := client.ObjectKey{
-			Name:      ownerReference.Name,
-			Namespace: nodePool.Namespace,
-		}
-
-		var cluster v1alpha1.Cluster
-		err := c.Get(ctx, objectKey, &cluster)
-		if err != nil {
-			return nil, err
-		}
-
-		return &cluster, nil
-	}
-
-	return nil, nil
-}
-
-func (c *nodePoolController) getOwnerOrganization(ctx context.Context, cluster *v1alpha1.Cluster) (*v1alpha1.Organization, error) {
-	for _, ownerReference := range cluster.GetOwnerReferences() {
-		if ownerReference.APIVersion != v1alpha1.GroupVersion.String() {
-			continue
-		}
-
-		if ownerReference.Kind != v1alpha1.OrganizationKind {
-			continue
-		}
-
-		objectKey := client.ObjectKey{
-			Name:      ownerReference.Name,
-			Namespace: cluster.Namespace,
-		}
-
-		var organization v1alpha1.Organization
-		err := c.Get(ctx, objectKey, &organization)
-		if err != nil {
-			return nil, err
-		}
-
-		return &organization, nil
-	}
-
-	return nil, nil
-}
-
-func NewNodePoolController(manager ctrl.Manager, clusterService clusterservices.ClusterService, logger *slog.Logger) error {
-	client := manager.GetClient()
-
-	c := nodePoolController{
-		Client:         client,
-		clusterService: clusterService,
-		logger:         logger,
-	}
-
-	err := ctrl.NewControllerManagedBy(manager).For(&v1alpha1.NodePool{}).Complete(&c)
+	err := ctrl.NewControllerManagedBy(manager).For(&v1alpha1.NodePool{}).Complete(r)
 	if err != nil {
 		return err
 	}
