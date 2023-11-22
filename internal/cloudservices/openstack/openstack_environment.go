@@ -1,7 +1,9 @@
 package openstack
 
 import (
+	"context"
 	"errors"
+	"log/slog"
 	"math"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
@@ -87,9 +89,11 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organizatio
 
 	var imageID string
 	for _, image := range allImages {
-		logger.Debug("checking image", "image", image)
+		s.logger.Log(context.Background(), slog.LevelDebug-1, "checking image", "image", image)
+
 		if image.Name == "ubuntu-22.04" {
 			logger.Debug("found image to use", "id", image.ID, "name", image.Name)
+
 			imageID = image.ID
 			break
 		}
@@ -115,9 +119,11 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha1.Organizatio
 
 	var netID string
 	for _, network := range allNetworks {
-		logger.Debug("checking network", "id", network.ID)
+		s.logger.Log(context.Background(), slog.LevelDebug-1, "checking network", "id", network.ID)
+
 		if network.Label == networkLabel {
 			logger.Debug("found network to use", "id", network.ID, "label", network.Label)
+
 			netID = network.ID
 			break
 		}
@@ -285,7 +291,7 @@ func (s *openStackService) getClosestFlavorID(flavors []flavors.Flavor, nodePool
 
 		distance := math.Sqrt(diskSquared + ramSquared + vcpuSquared)
 
-		s.logger.Debug("checking flavor distance", "id", flavor.ID, "disk", flavor.Disk, "ram", flavor.RAM, "vcpus", flavor.VCPUs, "distance", distance)
+		s.logger.Log(context.Background(), slog.LevelDebug-1, "checking flavor distance", "id", flavor.ID, "disk", flavor.Disk, "ram", flavor.RAM, "vcpus", flavor.VCPUs, "distance", distance)
 
 		if distance == 0 {
 			closestFlavorID = flavor.ID
