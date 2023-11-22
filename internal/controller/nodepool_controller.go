@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"log/slog"
-	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
@@ -89,15 +88,6 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if nodePool.Status.ClusterServiceID == "" {
 		c.logger.Debug("node pool has empty cluster service id")
 
-		readyCondition := meta.FindStatusCondition(nodePool.Status.Conditions, v1alpha1.ReadyCondition)
-		if readyCondition != nil {
-			if nodePool.Generation == readyCondition.ObservedGeneration && time.Now().Sub(readyCondition.LastTransitionTime.Time) < time.Duration(time.Minute) {
-				return requeue, nil
-			}
-		}
-
-		patch := client.MergeFrom(nodePool.DeepCopy())
-
 		nodePoolStatus, err := c.clusterService.CreateNodePool(organization, cluster, &nodePool)
 		if err != nil {
 			c.logger.Error("error creating node pool in cluster service", "err", err)
@@ -110,18 +100,33 @@ func (c *nodePoolController) Reconcile(ctx context.Context, req ctrl.Request) (c
 				Message:            err.Error(),
 			}
 
-			meta.SetStatusCondition(&nodePool.Status.Conditions, readyCondition)
+			if !meta.IsStatusConditionPresentAndEqual(nodePool.Status.Conditions, v1alpha1.ReadyCondition, metav1.ConditionFalse) {
+				c.logger.Debug("node pool needs status condition update")
+
+				patch := client.MergeFrom(nodePool.DeepCopy())
+
+				meta.SetStatusCondition(&nodePool.Status.Conditions, readyCondition)
+
+				err := c.Status().Patch(ctx, &nodePool, patch)
+				if err != nil {
+					c.logger.Error("error patching node pool status", "err", err)
+
+					return ctrl.Result{}, err
+				}
+			}
 		}
 
 		if nodePoolStatus != nil {
+			patch := client.MergeFrom(nodePool.DeepCopy())
+
 			nodePool.Status.ClusterServiceID = nodePoolStatus.ClusterServiceID
-		}
 
-		err = c.Status().Patch(ctx, &nodePool, patch)
-		if err != nil {
-			c.logger.Error("error patching node pool status", "err", err)
+			err = c.Status().Patch(ctx, &nodePool, patch)
+			if err != nil {
+				c.logger.Error("error patching node pool status", "err", err)
 
-			return ctrl.Result{}, err
+				return ctrl.Result{}, err
+			}
 		}
 
 		return requeue, nil
