@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"github.com/rancher/norman/clientbase"
 	"github.com/rancher/norman/types"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,14 +54,26 @@ func (r *rancher) getNodeCondition(nodeConditions []managementv3.NodeCondition, 
 	return nil
 }
 
+func (r *rancher) ignoreNotFound(err error) error {
+	if clientbase.IsNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
 func (r *rancher) GetNode(nodeID string) (*v1alpha1.NodeStatus, error) {
 	if nodeID == "" {
 		return nil, errors.New("node id must not be empty")
 	}
 
 	node, err := r.managementClient.Node.ByID(nodeID)
-	if err != nil {
+	if r.ignoreNotFound(err) != nil {
 		return nil, err
+	}
+
+	if clientbase.IsNotFound(err) {
+		return nil, nil
 	}
 
 	nodeStatus := v1alpha1.NodeStatus{
