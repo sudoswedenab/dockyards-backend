@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
@@ -28,7 +29,7 @@ func (s *MockClusterService) GetAllClusters() (*[]v1.Cluster, error) {
 	return &clusters, nil
 }
 
-func (s *MockClusterService) CreateCluster(organization *v1alpha1.Organization, clusterOptions *v1.ClusterOptions) (*v1.Cluster, error) {
+func (s *MockClusterService) CreateCluster(organization *v1alpha2.Organization, clusterOptions *v1.ClusterOptions) (*v1.Cluster, error) {
 	_, hasCluster := s.clusters[clusterOptions.Name]
 	if hasCluster {
 		return nil, errors.New("cluster name in-use")
@@ -43,7 +44,7 @@ func (s *MockClusterService) CreateCluster(organization *v1alpha1.Organization, 
 	return &cluster, nil
 }
 
-func (s *MockClusterService) CreateNodePool(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePool *v1alpha1.NodePool) (*v1alpha1.NodePoolStatus, error) {
+func (s *MockClusterService) CreateNodePool(organization *v1alpha2.Organization, cluster *v1alpha1.Cluster, nodePool *v1alpha1.NodePool) (*v1alpha1.NodePoolStatus, error) {
 	nodePoolStatus := v1alpha1.NodePoolStatus{
 		ClusterServiceID: "node-pool-123",
 		Resources:        nodePool.Spec.Resources,
@@ -52,7 +53,7 @@ func (s *MockClusterService) CreateNodePool(organization *v1alpha1.Organization,
 	return &nodePoolStatus, nil
 }
 
-func (s *MockClusterService) DeleteCluster(organization *v1alpha1.Organization, cluster *v1.Cluster) error {
+func (s *MockClusterService) DeleteCluster(organization *v1alpha2.Organization, cluster *v1.Cluster) error {
 	for _, c := range s.clusters {
 		if c.Organization == organization.Name && c.Name == cluster.Name {
 			return nil
@@ -93,7 +94,7 @@ func (s *MockClusterService) GetNodePool(nodePoolID string) (*v1alpha1.NodePoolS
 	return &nodePoolStatus, nil
 }
 
-func (s *MockClusterService) DeleteNodePool(organization *v1alpha1.Organization, nodePoolID string) error {
+func (s *MockClusterService) DeleteNodePool(organization *v1alpha2.Organization, nodePoolID string) error {
 	_, hasNodePoolStatus := s.nodePoolStatus[nodePoolID]
 	if !hasNodePoolStatus {
 		return errors.New("no such node pool")
