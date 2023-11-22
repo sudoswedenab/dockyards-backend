@@ -11,45 +11,56 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type nodeController struct {
+type NodeReconciler struct {
 	client.Client
-	logger         *slog.Logger
-	clusterService clusterservices.ClusterService
+	Logger         *slog.Logger
+	ClusterService clusterservices.ClusterService
 }
 
-func (c *nodeController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := r.Logger.With("name", req.Name, "namespace", req.Namespace)
+
 	var node v1alpha1.Node
-	err := c.Get(ctx, req.NamespacedName, &node)
+	err := r.Get(ctx, req.NamespacedName, &node)
 	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting node", "err", err)
+
 		return ctrl.Result{}, err
 	}
 
-	if node.Status.ClusterServiceID == "" {
-		c.logger.Debug("ignoring node without cluster service id")
+	if !node.DeletionTimestamp.IsZero() {
+		logger.Debug("ignoring deleted node")
 
 		return ctrl.Result{}, nil
 	}
 
-	nodeStatus, err := c.clusterService.GetNode(node.Status.ClusterServiceID)
+	if node.Status.ClusterServiceID == "" {
+		logger.Debug("ignoring node without cluster service id")
+
+		return ctrl.Result{}, nil
+	}
+
+	nodeStatus, err := r.ClusterService.GetNode(node.Status.ClusterServiceID)
 	if err != nil {
-		c.logger.Error("error getting node pool status from cluster service", "err", err)
+		logger.Error("error getting node status from cluster service", "err", err)
 
 		return ctrl.Result{}, err
 	}
 
 	condition := meta.FindStatusCondition(nodeStatus.Conditions, v1alpha1.ReadyCondition)
 	if condition == nil {
-		c.logger.Debug("cluster service has no ready condition for node")
+		logger.Debug("cluster service has no ready condition for node")
 
 		return requeue, nil
 	}
 
 	patch := client.MergeFrom(node.DeepCopy())
+
 	meta.SetStatusCondition(&node.Status.Conditions, *condition)
 
-	err = c.Status().Patch(ctx, &node, patch)
+	err = r.Status().Patch(ctx, &node, patch)
 	if err != nil {
-		c.logger.Error("error patching node status", "err", err)
+		logger.Error("error patching node status", "err", err)
 
 		return ctrl.Result{}, err
 	}
@@ -57,14 +68,11 @@ func (c *nodeController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return requeue, nil
 }
 
-func NewNodeController(manager ctrl.Manager, clusterService clusterservices.ClusterService, logger *slog.Logger) error {
-	c := nodeController{
-		Client:         manager.GetClient(),
-		logger:         logger,
-		clusterService: clusterService,
-	}
+func (r *NodeReconciler) SetupWithManager(manager ctrl.Manager) error {
+	scheme := manager.GetScheme()
+	v1alpha1.AddToScheme(scheme)
 
-	err := ctrl.NewControllerManagedBy(manager).For(&v1alpha1.Node{}).Complete(&c)
+	err := ctrl.NewControllerManagedBy(manager).For(&v1alpha1.Node{}).Complete(r)
 	if err != nil {
 		return err
 	}

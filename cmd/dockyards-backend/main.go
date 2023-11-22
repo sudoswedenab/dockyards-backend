@@ -388,7 +388,11 @@ func main() {
 			os.Exit(1)
 		}
 
-		err = controller.NewNodeController(manager, clusterService, logger.With("controller", "node"))
+		err = (&controller.NodeReconciler{
+			Client:         manager.GetClient(),
+			Logger:         logger.With("controller", "node"),
+			ClusterService: clusterService,
+		}).SetupWithManager(manager)
 		if err != nil {
 			logger.Error("error creating new node controller", "err", err)
 
