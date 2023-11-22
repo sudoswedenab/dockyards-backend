@@ -20,15 +20,15 @@ type OrganizationReconciler struct {
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations/status,verbs=patch
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create
 
-func (c *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var organization v1alpha2.Organization
-	err := c.Get(ctx, req.NamespacedName, &organization)
+	err := r.Get(ctx, req.NamespacedName, &organization)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if organization.Status.NamespaceRef == "" {
-		c.Logger.Info("organization has no namespace reference", "name", organization.Name)
+		r.Logger.Info("organization has no namespace reference", "name", organization.Name)
 
 		namespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -44,9 +44,9 @@ func (c *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			},
 		}
 
-		err := c.Create(ctx, &namespace)
+		err := r.Create(ctx, &namespace)
 		if err != nil {
-			c.Logger.Error("error creating namespace", "err", err)
+			r.Logger.Error("error creating namespace", "err", err)
 
 			return ctrl.Result{}, err
 		}
@@ -54,19 +54,19 @@ func (c *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		patch := client.MergeFrom(organization.DeepCopy())
 		organization.Status.NamespaceRef = namespace.Name
 
-		err = c.Status().Patch(ctx, &organization, patch)
+		err = r.Status().Patch(ctx, &organization, patch)
 		if err != nil {
-			c.Logger.Error("error patching organization status", "err", err)
+			r.Logger.Error("error patching organization status", "err", err)
 
 			return ctrl.Result{}, err
 		}
 
-		c.Logger.Debug("created namespace for organization", "name", namespace.Name)
+		r.Logger.Debug("created namespace for organization", "name", namespace.Name)
 
 		return ctrl.Result{}, nil
 	}
 
-	c.Logger.Debug("nothing to reconcile for organization", "name", organization.Name)
+	r.Logger.Debug("nothing to reconcile for organization", "name", organization.Name)
 
 	return ctrl.Result{}, nil
 }
