@@ -28,7 +28,7 @@ import (
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create
 
 var (
-	requeue = ctrl.Result{Requeue: true, RequeueAfter: time.Duration(time.Minute)}
+	requeue = ctrl.Result{Requeue: true, RequeueAfter: time.Duration(time.Minute * 2)}
 )
 
 const (
