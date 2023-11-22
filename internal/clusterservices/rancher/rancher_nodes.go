@@ -32,7 +32,7 @@ func (r *rancher) GetNodes(nodePool *v1alpha1.NodePool) (*v1alpha1.NodeList, err
 	for i, node := range nodes.Data {
 		nodeList.Items[i] = v1alpha1.Node{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: node.NodeName,
+				Name: node.RequestedHostname,
 			},
 			Status: v1alpha1.NodeStatus{
 				ClusterServiceID: node.ID,
