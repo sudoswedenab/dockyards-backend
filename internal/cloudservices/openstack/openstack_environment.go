@@ -25,15 +25,11 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha2.Organizatio
 
 	openstackProject, err := s.getOpenstackProject(organization)
 	if err != nil {
-		logger.Error("error getting openstack organization", "err", err)
-
 		return nil, err
 	}
 
 	secret, err := s.getOpenstackSecret(organization)
 	if err != nil {
-		logger.Error("error getting openstack secret", "err", err)
-
 		return nil, err
 	}
 
@@ -154,8 +150,6 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha2.Organizatio
 
 	securityGroup, err := secgroups.Create(computev2, secgroupOpts).Extract()
 	if err != nil {
-		s.logger.Error("error preparing environment", "err", err)
-
 		s.logger.Debug("deleting new keypair", "name", keypair.Name)
 
 		deleteErr := keypairs.Delete(computev2, keypair.Name, nil).ExtractErr()
@@ -179,8 +173,6 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha2.Organizatio
 
 		rule, err := rules.Create(networkv2, createRuleOpts).Extract()
 		if err != nil {
-			s.logger.Error("error preparing environment", "err", err)
-
 			s.logger.Debug("deleting new security group", "id", securityGroup.ID)
 
 			deleteErr := secgroups.Delete(computev2, securityGroup.ID).ExtractErr()
@@ -224,8 +216,6 @@ func (s *openStackService) PrepareEnvironment(organization *v1alpha2.Organizatio
 func (s *openStackService) CleanEnvironment(organization *v1alpha2.Organization, config *cloudservices.CloudConfig) error {
 	openstackProject, err := s.getOpenstackProject(organization)
 	if err != nil {
-		s.logger.Error("error getting openstack organization", "err", err)
-
 		return err
 	}
 
@@ -235,8 +225,6 @@ func (s *openStackService) CleanEnvironment(organization *v1alpha2.Organization,
 
 	computev2, err := openstack.NewComputeV2(scopedClient, s.endpointOpts)
 	if err != nil {
-		s.logger.Error("error creating compute service client", "err", err)
-
 		return err
 	}
 
