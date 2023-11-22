@@ -366,7 +366,11 @@ func main() {
 	}
 
 	if clusterServiceFlag != "none" {
-		err = controller.NewClusterController(manager, clusterService, logger.With("controller", "cluster"))
+		err = (&controller.ClusterReconciler{
+			Client:         manager.GetClient(),
+			Logger:         logger.With("controller", "cluster"),
+			ClusterService: clusterService,
+		}).SetupWithManager(manager)
 		if err != nil {
 			logger.Error("error creating new cluster controller", "err", err)
 
