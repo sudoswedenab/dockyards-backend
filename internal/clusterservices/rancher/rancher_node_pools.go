@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"github.com/rancher/norman/clientbase"
 	managementv3 "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -106,8 +107,12 @@ func (r *rancher) GetNodePool(nodePoolID string) (*v1alpha1.NodePoolStatus, erro
 
 func (r *rancher) DeleteNodePool(organization *v1alpha2.Organization, nodePoolID string) error {
 	nodePool, err := r.managementClient.NodePool.ByID(nodePoolID)
-	if err != nil {
+	if r.ignoreNotFound(err) != nil {
 		return err
+	}
+
+	if clientbase.IsNotFound(err) {
+		return nil
 	}
 
 	var customNodeTemplate CustomNodeTemplate
