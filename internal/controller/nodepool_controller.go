@@ -166,8 +166,6 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	nodeList, err := r.ClusterService.GetNodes(&nodePool)
 	for _, nodeItem := range nodeList.Items {
-		logger.Debug("node item", "name", nodeItem.Name)
-
 		objectKey := client.ObjectKey{
 			Name:      nodeItem.Name,
 			Namespace: nodePool.Namespace,
@@ -182,6 +180,8 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 
 		if apierrors.IsNotFound(err) {
+			logger.Debug("node not found")
+
 			node := v1alpha1.Node{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      nodeItem.Name,
