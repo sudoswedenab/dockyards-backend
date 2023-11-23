@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -63,22 +64,49 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	condition := meta.FindStatusCondition(nodeStatus.Conditions, v1alpha1.ReadyCondition)
-	if condition == nil {
-		logger.Debug("cluster service has no ready condition for node")
-
-		return requeue, nil
-	}
+	needsPatch := false
 
 	patch := client.MergeFrom(node.DeepCopy())
 
-	meta.SetStatusCondition(&node.Status.Conditions, *condition)
+	provisionedCondition := meta.FindStatusCondition(nodeStatus.Conditions, v1alpha1.ProvisionedCondition)
+	if provisionedCondition != nil {
+		if !meta.IsStatusConditionPresentAndEqual(node.Status.Conditions, provisionedCondition.Type, provisionedCondition.Status) {
+			meta.SetStatusCondition(&node.Status.Conditions, *provisionedCondition)
 
-	err = r.Status().Patch(ctx, &node, patch)
-	if err != nil {
-		logger.Error("error patching node status", "err", err)
+			needsPatch = true
+		}
+	}
 
-		return ctrl.Result{}, err
+	readyCondition := meta.FindStatusCondition(nodeStatus.Conditions, v1alpha1.ReadyCondition)
+	if readyCondition != nil {
+		if !meta.IsStatusConditionPresentAndEqual(node.Status.Conditions, readyCondition.Type, readyCondition.Status) {
+			meta.SetStatusCondition(&node.Status.Conditions, *readyCondition)
+
+			needsPatch = true
+		}
+	}
+
+	if readyCondition == nil && provisionedCondition != nil {
+		condition := metav1.Condition{
+			Type:   v1alpha1.ReadyCondition,
+			Status: metav1.ConditionFalse,
+			Reason: v1alpha1.ProvisioningFailedReason,
+		}
+
+		meta.SetStatusCondition(&node.Status.Conditions, condition)
+
+		needsPatch = true
+	}
+
+	if needsPatch {
+		logger.Debug("node status needs patch")
+
+		err = r.Status().Patch(ctx, &node, patch)
+		if err != nil {
+			logger.Error("error patching node status", "err", err)
+
+			return ctrl.Result{}, err
+		}
 	}
 
 	return requeue, nil

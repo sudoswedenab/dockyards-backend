@@ -14,4 +14,5 @@ const (
 	NodeReadyReason            string = "NodeReady"
 	DeploymentReadyReason      string = "DeploymentReady"
 	NodeProvisionedReason      string = "NodeProvisioned"
+	ProvisioningFailedReason   string = "ProvisioningFailed"
 )
