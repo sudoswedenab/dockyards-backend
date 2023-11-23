@@ -14,7 +14,11 @@ spec:
     singular: nodepool
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Provisioned")].status
+      name: Provisioned
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         properties:
