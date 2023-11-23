@@ -100,20 +100,19 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		if err != nil {
 			logger.Error("error creating node pool in cluster service", "err", err)
 
-			readyCondition := metav1.Condition{
-				Type:               v1alpha1.ReadyCondition,
-				ObservedGeneration: nodePool.Generation,
-				Status:             metav1.ConditionFalse,
-				Reason:             v1alpha1.NodePoolReadyReason,
-				Message:            err.Error(),
+			provisionedCondition := metav1.Condition{
+				Type:    v1alpha1.ProvisionedCondition,
+				Status:  metav1.ConditionFalse,
+				Reason:  v1alpha1.NodePoolProvisionedReason,
+				Message: err.Error(),
 			}
 
-			if !meta.IsStatusConditionPresentAndEqual(nodePool.Status.Conditions, v1alpha1.ReadyCondition, metav1.ConditionFalse) {
+			if !meta.IsStatusConditionPresentAndEqual(nodePool.Status.Conditions, provisionedCondition.Type, provisionedCondition.Status) {
 				logger.Debug("node pool needs status condition update")
 
 				patch := client.MergeFrom(nodePool.DeepCopy())
 
-				meta.SetStatusCondition(&nodePool.Status.Conditions, readyCondition)
+				meta.SetStatusCondition(&nodePool.Status.Conditions, provisionedCondition)
 
 				err := r.Status().Patch(ctx, &nodePool, patch)
 				if err != nil {
@@ -129,6 +128,14 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 			nodePool.Status.ClusterServiceID = nodePoolStatus.ClusterServiceID
 
+			provisionedCondition := metav1.Condition{
+				Type:   v1alpha1.ProvisionedCondition,
+				Status: metav1.ConditionTrue,
+				Reason: v1alpha1.NodePoolProvisionedReason,
+			}
+
+			meta.SetStatusCondition(&nodePool.Status.Conditions, provisionedCondition)
+
 			err = r.Status().Patch(ctx, &nodePool, patch)
 			if err != nil {
 				logger.Error("error patching node pool status", "err", err)
@@ -138,30 +145,6 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 
 		return requeue, nil
-	}
-
-	nodePoolStatus, err := r.ClusterService.GetNodePool(nodePool.Status.ClusterServiceID)
-	if err != nil {
-		logger.Error("error geting node pool from cluster service", "err", err)
-
-		return ctrl.Result{}, err
-	}
-
-	patch := client.MergeFrom(nodePool.DeepCopy())
-
-	condition := metav1.Condition{
-		Type:    v1alpha1.ReadyCondition,
-		Status:  metav1.ConditionFalse,
-		Reason:  v1alpha1.NodePoolReadyReason,
-		Message: nodePoolStatus.ClusterServiceID,
-	}
-	meta.SetStatusCondition(&nodePool.Status.Conditions, condition)
-
-	err = r.Status().Patch(ctx, &nodePool, patch)
-	if err != nil {
-		logger.Error("error patching status conditions", "err", err)
-
-		return ctrl.Result{}, err
 	}
 
 	nodeList, err := r.ClusterService.GetNodes(&nodePool)
