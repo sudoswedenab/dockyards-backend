@@ -1,8 +1,9 @@
 package v1alpha1
 
 const (
-	ReadyCondition    string = "Ready"
-	VerifiedCondition string = "Verified"
+	ReadyCondition       string = "Ready"
+	VerifiedCondition    string = "Verified"
+	ProvisionedCondition string = "Provisioned"
 )
 
 const (
@@ -12,4 +13,5 @@ const (
 	NodePoolReadyReason        string = "NodePoolReady"
 	NodeReadyReason            string = "NodeReady"
 	DeploymentReadyReason      string = "DeploymentReady"
+	NodeProvisionedReason      string = "NodeProvisioned"
 )

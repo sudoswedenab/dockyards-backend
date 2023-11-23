@@ -80,6 +80,18 @@ func (r *rancher) GetNode(nodeID string) (*v1alpha1.NodeStatus, error) {
 		ClusterServiceID: node.ID,
 	}
 
+	provisionedCondition := r.getNodeCondition(node.Conditions, "Provisioned")
+	if provisionedCondition != nil {
+		condition := metav1.Condition{
+			Type:    v1alpha1.ProvisionedCondition,
+			Status:  metav1.ConditionStatus(provisionedCondition.Status),
+			Reason:  v1alpha1.NodeProvisionedReason,
+			Message: provisionedCondition.Message,
+		}
+
+		nodeStatus.Conditions = append(nodeStatus.Conditions, condition)
+	}
+
 	readyCondition := r.getNodeCondition(node.Conditions, "Ready")
 	if readyCondition != nil {
 		condition := metav1.Condition{
@@ -89,9 +101,7 @@ func (r *rancher) GetNode(nodeID string) (*v1alpha1.NodeStatus, error) {
 			Message: readyCondition.Message,
 		}
 
-		nodeStatus.Conditions = []metav1.Condition{
-			condition,
-		}
+		nodeStatus.Conditions = append(nodeStatus.Conditions, condition)
 	}
 
 	return &nodeStatus, nil
