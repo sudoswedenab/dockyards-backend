@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
@@ -14,6 +15,10 @@ import (
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodes,verbs=get;delete;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodes/status,verbs=patch
+
+var (
+	NodeRequeue = ctrl.Result{Requeue: true, RequeueAfter: time.Duration(time.Second * 30)}
+)
 
 type NodeReconciler struct {
 	client.Client
@@ -109,7 +114,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 	}
 
-	return requeue, nil
+	return NodeRequeue, nil
 }
 
 func (r *NodeReconciler) SetupWithManager(manager ctrl.Manager) error {
