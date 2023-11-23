@@ -391,7 +391,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 		return
 	}
 
-	err = h.controllerClient.Delete(ctx, &cluster)
+	err = h.controllerClient.Delete(ctx, &cluster, client.PropagationPolicy(metav1.DeletePropagationForeground))
 	if err != nil {
 		h.logger.Error("error deleting cluster", "err", err)
 
