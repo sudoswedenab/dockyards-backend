@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -12,14 +13,18 @@ type NodeSpec struct {
 }
 
 type NodeStatus struct {
-	ClusterServiceID string             `json:"clusterServiceID,omitempty"`
-	Conditions       []metav1.Condition `json:"conditions,omitempty"`
+	ClusterServiceID string              `json:"clusterServiceID,omitempty"`
+	Conditions       []metav1.Condition  `json:"conditions,omitempty"`
+	Resources        corev1.ResourceList `json:"resources,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
+// +kubebuilder:printcolumn:name="CPU",type=string,JSONPath=".status.resources.cpu"
+// +kubebuilder:printcolumn:name="Memory",type=string,JSONPath=".status.resources.memory"
+// +kubebuilder:printcolumn:name="Storage",type=string,JSONPath=".status.resources.storage"
 type Node struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
