@@ -168,10 +168,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, object := range []client.Object{&v1alpha1.NodePool{}, &v1alpha1.Node{}, &v1alpha1.Deployment{}} {
+	for _, object := range []client.Object{&v1alpha1.NodePool{}, &v1alpha1.Node{}, &v1alpha1.Deployment{}, &v1alpha1.Cluster{}} {
 		err = manager.GetFieldIndexer().IndexField(ctx, object, index.OwnerRefsIndexKey, index.OwnerRefsIndexer)
 		if err != nil {
-			logger.Error("error addming owner refs indexer to manager", "err", err)
+			logger.Error("error adding owner refs indexer to manager", "err", err)
 
 			os.Exit(1)
 		}
