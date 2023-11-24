@@ -242,3 +242,75 @@ func TestGetOwnerCluster(t *testing.T) {
 		})
 	}
 }
+
+func TestGetOwnerNodePool(t *testing.T) {
+	tt := []struct {
+		name     string
+		object   client.Object
+		lists    []client.ObjectList
+		expected *v1alpha1.NodePool
+	}{
+		{
+			name: "test node",
+			object: &v1alpha1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "testing",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: v1alpha1.GroupVersion.String(),
+							Kind:       v1alpha1.NodePoolKind,
+							Name:       "test",
+							UID:        "ebafc27f-b2de-418c-8c50-2ca83bd7e492",
+						},
+					},
+				},
+			},
+			lists: []client.ObjectList{
+				&v1alpha1.NodePoolList{
+					Items: []v1alpha1.NodePool{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "ebafc27f-b2de-418c-8c50-2ca83bd7e492",
+							},
+						},
+					},
+				},
+			},
+			expected: &v1alpha1.NodePool{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: v1alpha1.GroupVersion.String(),
+					Kind:       v1alpha1.NodePoolKind,
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "test",
+					Namespace:       "testing",
+					UID:             "ebafc27f-b2de-418c-8c50-2ca83bd7e492",
+					ResourceVersion: "999",
+				},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			scheme := scheme.Scheme
+			v1alpha1.AddToScheme(scheme)
+			v1alpha2.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+
+			actual, err := apiutil.GetOwnerNodePool(ctx, fakeClient, tc.object)
+			if err != nil {
+				t.Fatalf("error getting owner node pool: %s", err)
+			}
+
+			if !cmp.Equal(actual, tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}

@@ -69,3 +69,35 @@ func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*v1
 
 	return nil, nil
 }
+
+func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*v1alpha1.NodePool, error) {
+	for _, ownerReference := range o.GetOwnerReferences() {
+		if ownerReference.Kind != v1alpha1.NodePoolKind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupVersion.Group != v1alpha1.GroupVersion.Group {
+			continue
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      ownerReference.Name,
+			Namespace: o.GetNamespace(),
+		}
+
+		var nodePool v1alpha1.NodePool
+		err = c.Get(ctx, objectKey, &nodePool)
+		if err != nil {
+			return nil, err
+		}
+
+		return &nodePool, nil
+	}
+
+	return nil, nil
+}
