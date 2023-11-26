@@ -16,6 +16,7 @@ type NodeStatus struct {
 	ClusterServiceID string              `json:"clusterServiceID,omitempty"`
 	Conditions       []metav1.Condition  `json:"conditions,omitempty"`
 	Resources        corev1.ResourceList `json:"resources,omitempty"`
+	CloudServiceID   string              `json:"cloudServiceID,omitempty"`
 }
 
 // +kubebuilder:object:root=true
