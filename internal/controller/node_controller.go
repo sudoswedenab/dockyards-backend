@@ -103,6 +103,12 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		needsPatch = true
 	}
 
+	if node.Status.CloudServiceID != nodeStatus.CloudServiceID {
+		node.Status.CloudServiceID = nodeStatus.CloudServiceID
+
+		needsPatch = true
+	}
+
 	if needsPatch {
 		logger.Debug("node status needs patch")
 
