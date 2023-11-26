@@ -11,7 +11,6 @@ const (
 
 type NodePoolSpec struct {
 	Replicas      *int32              `json:"replicas,omitempty"`
-	CPUCount      int                 `json:"cpuCount,omitempty"`
 	ControlPlane  bool                `json:"controlPlane,omitempty"`
 	LoadBalancer  bool                `json:"loadBalancer,omitempty"`
 	DedicatedRole bool                `json:"dedicatedRole,omitempty"`

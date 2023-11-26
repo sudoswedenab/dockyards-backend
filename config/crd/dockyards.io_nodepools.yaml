@@ -38,8 +38,6 @@ spec:
             properties:
               controlPlane:
                 type: boolean
-              cpuCount:
-                type: integer
               dedicatedRole:
                 type: boolean
               loadBalancer:
