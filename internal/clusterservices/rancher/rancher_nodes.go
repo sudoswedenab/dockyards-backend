@@ -78,6 +78,7 @@ func (r *rancher) GetNode(nodeID string) (*v1alpha1.NodeStatus, error) {
 
 	nodeStatus := v1alpha1.NodeStatus{
 		ClusterServiceID: node.ID,
+		CloudServiceID:   node.ProviderId,
 	}
 
 	provisionedCondition := r.getNodeCondition(node.Conditions, "Provisioned")
