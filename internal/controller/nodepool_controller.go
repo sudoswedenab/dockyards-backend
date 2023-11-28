@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
@@ -25,6 +26,10 @@ import (
 
 const (
 	NodePoolFinalizer = "dockyards.io/backend-controller"
+)
+
+var (
+	NodePoolRequeue = ctrl.Result{RequeueAfter: time.Second * 30}
 )
 
 type NodePoolReconciler struct {
@@ -60,7 +65,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if cluster.Status.ClusterServiceID == "" {
 		logger.Debug("owner cluster has no cluster service id")
 
-		return ctrl.Result{}, nil
+		return NodePoolRequeue, nil
 	}
 
 	organization, err := apiutil.GetOwnerOrganization(ctx, r.Client, cluster)
