@@ -219,7 +219,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 					{
 						APIVersion: v1alpha1.GroupVersion.String(),
 						Kind:       v1alpha1.DeploymentKind,
-						Name:       deployment.Kind,
+						Name:       deployment.Name,
 						UID:        deployment.UID,
 					},
 				},
