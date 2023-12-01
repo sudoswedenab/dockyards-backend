@@ -227,6 +227,14 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nodePoolOptions.Name,
 			Namespace: cluster.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: v1alpha1.GroupVersion.String(),
+					Kind:       v1alpha1.ClusterKind,
+					Name:       cluster.Name,
+					UID:        cluster.UID,
+				},
+			},
 		},
 		Spec: v1alpha1.NodePoolSpec{
 			Replicas:  util.Ptr(int32(nodePoolOptions.Quantity)),
