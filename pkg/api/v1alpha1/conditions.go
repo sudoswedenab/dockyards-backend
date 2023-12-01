@@ -15,4 +15,5 @@ const (
 	NodeProvisionedReason      string = "NodeProvisioned"
 	ProvisioningFailedReason   string = "ProvisioningFailed"
 	NodePoolProvisionedReason  string = "NodePoolProvisioned"
+	ClusterProvisionedReason   string = "ClusterProvisioned"
 )

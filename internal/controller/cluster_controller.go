@@ -93,6 +93,28 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err != nil {
 			logger.Error("error creating cluster in cluster service", "err", err)
 
+			provisionedCondition := metav1.Condition{
+				Type:    v1alpha1.ProvisionedCondition,
+				Status:  metav1.ConditionFalse,
+				Reason:  v1alpha1.ClusterProvisionedReason,
+				Message: err.Error(),
+			}
+
+			if !meta.IsStatusConditionPresentAndEqual(cluster.Status.Conditions, provisionedCondition.Type, provisionedCondition.Status) {
+				logger.Debug("cluster needs status condition update")
+
+				patch := client.MergeFrom(cluster.DeepCopy())
+
+				meta.SetStatusCondition(&cluster.Status.Conditions, provisionedCondition)
+
+				err := r.Status().Patch(ctx, &cluster, patch)
+				if err != nil {
+					logger.Error("error patching cluster status", "err", err)
+
+					return ctrl.Result{}, err
+				}
+			}
+
 			return ctrl.Result{}, err
 		}
 
@@ -101,6 +123,14 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		patch := client.MergeFrom(cluster.DeepCopy())
 
 		cluster.Status.ClusterServiceID = createdCluster.Id
+
+		provisionedCondition := metav1.Condition{
+			Type:   v1alpha1.ProvisionedCondition,
+			Status: metav1.ConditionTrue,
+			Reason: v1alpha1.ClusterProvisionedReason,
+		}
+
+		meta.SetStatusCondition(&cluster.Status.Conditions, provisionedCondition)
 
 		err = r.Status().Patch(ctx, &cluster, patch)
 		if err != nil {
