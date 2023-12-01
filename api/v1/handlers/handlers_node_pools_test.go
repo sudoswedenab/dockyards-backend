@@ -595,7 +595,7 @@ func TestPostClusterNodePools(t *testing.T) {
 			},
 			expected: v1.NodePool{
 				ClusterId: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
-				Name:      "test",
+				Name:      "cluster1-test",
 			},
 		},
 		{
@@ -654,7 +654,7 @@ func TestPostClusterNodePools(t *testing.T) {
 				},
 			},
 			expected: v1.NodePool{
-				Name:                       "test2",
+				Name:                       "cluster-123-test2",
 				ClusterId:                  "b70dc16e-1c52-4861-9932-59d950edcc49",
 				Quantity:                   3,
 				LoadBalancer:               util.Ptr(true),
@@ -805,7 +805,7 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								UID:       "57a48eaa-87ac-4bdc-bd77-541e72c77df3",
-								Name:      "test",
+								Name:      "test-test",
 								Namespace: "testing",
 								OwnerReferences: []metav1.OwnerReference{
 									{

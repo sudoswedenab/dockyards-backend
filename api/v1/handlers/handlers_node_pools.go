@@ -223,9 +223,11 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		return
 	}
 
+	name := cluster.Name + "-" + nodePoolOptions.Name
+
 	nodePool := v1alpha1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      nodePoolOptions.Name,
+			Name:      name,
 			Namespace: cluster.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
