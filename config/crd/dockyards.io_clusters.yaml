@@ -114,6 +114,10 @@ spec:
                   - type
                   type: object
                 type: array
+              dnsZones:
+                items:
+                  type: string
+                type: array
               version:
                 type: string
             type: object

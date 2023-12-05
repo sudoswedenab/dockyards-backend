@@ -16,6 +16,7 @@ type ClusterStatus struct {
 	Conditions       []metav1.Condition `json:"conditions,omitempty"`
 	ClusterServiceID string             `json:"clusterServiceID,omitempty"`
 	Version          string             `json:"version,omitempty"`
+	DNSZones         []string           `json:"dnsZones,omitempty"`
 }
 
 // +kubebuilder:object:root=true
