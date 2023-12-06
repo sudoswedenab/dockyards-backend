@@ -15,7 +15,7 @@ type DeploymentSpec struct {
 
 type DeploymentStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-	URLs       string             `json:"urls,omitempty"`
+	URLs       []string           `json:"urls,omitempty"`
 }
 
 // +kubebuilder:object:root=true

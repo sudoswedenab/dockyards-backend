@@ -128,7 +128,9 @@ spec:
                   type: object
                 type: array
               urls:
-                type: string
+                items:
+                  type: string
+                type: array
             type: object
         type: object
     served: true
