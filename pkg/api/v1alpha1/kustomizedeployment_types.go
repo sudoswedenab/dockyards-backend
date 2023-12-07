@@ -13,7 +13,8 @@ type KustomizeDeploymentSpec struct {
 }
 
 type KustomizeDeploymentStatus struct {
-	RepositoryURL string `json:"repositoryURL,omitempty"`
+	RepositoryURL string             `json:"repositoryURL,omitempty"`
+	Conditions    []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
