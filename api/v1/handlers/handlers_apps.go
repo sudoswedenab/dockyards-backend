@@ -82,6 +82,14 @@ func (h *handler) GetApp(c *gin.Context) {
 		Name: app.Name,
 	}
 
+	if app.Spec.Description != "" {
+		v1App.Description = &app.Spec.Description
+	}
+
+	if app.Spec.Icon != "" {
+		v1App.Icon = &app.Spec.Icon
+	}
+
 	appSteps := make([]v1.AppStep, len(app.Spec.Steps))
 	for i, step := range app.Spec.Steps {
 		stepOptions := make([]v1.StepOption, len(step.Options))
