@@ -100,6 +100,10 @@ func (h *handler) GetApp(c *gin.Context) {
 				DisplayName: option.DisplayName,
 				JsonPointer: option.JSONPointer,
 			}
+
+			if option.Type != "" {
+				stepOptions[j].Type = &step.Options[j].Type
+			}
 		}
 
 		appSteps[i] = v1.AppStep{
