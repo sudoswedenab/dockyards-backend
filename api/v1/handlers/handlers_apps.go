@@ -104,6 +104,10 @@ func (h *handler) GetApp(c *gin.Context) {
 			if option.Type != "" {
 				stepOptions[j].Type = &step.Options[j].Type
 			}
+
+			if option.Hidden {
+				stepOptions[j].Hidden = &step.Options[j].Hidden
+			}
 		}
 
 		appSteps[i] = v1.AppStep{
