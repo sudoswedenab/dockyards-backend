@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=dockyards.io,resources=deployments,verbs=get;list;watch;create;update;patch
+// +kubebuilder:rbac:groups=dockyards.io,resources=deployments,verbs=create;delete;get;list;watch;patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=containerimagedeployments,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=helmdeployments,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=kustomizedeployments,verbs=get;list;watch;create;update;patch

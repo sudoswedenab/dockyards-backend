@@ -80,10 +80,10 @@ rules:
   - deployments
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
-  - update
   - watch
 - apiGroups:
   - dockyards.io
