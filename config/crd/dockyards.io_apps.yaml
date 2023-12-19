@@ -68,9 +68,6 @@ spec:
                             type: array
                           type:
                             type: string
-                        required:
-                        - displayName
-                        - jsonPointer
                         type: object
                       type: array
                   required:

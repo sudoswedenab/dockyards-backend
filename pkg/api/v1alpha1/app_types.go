@@ -5,8 +5,8 @@ import (
 )
 
 type AppOption struct {
-	JSONPointer string   `json:"jsonPointer"`
-	DisplayName string   `json:"displayName"`
+	JSONPointer string   `json:"jsonPointer,omitempty"`
+	DisplayName string   `json:"displayName,omitempty"`
 	Default     string   `json:"default,omitempty"`
 	Type        string   `json:"type,omitempty"`
 	Hidden      bool     `json:"hidden,omitempty"`
