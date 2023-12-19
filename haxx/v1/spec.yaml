@@ -697,9 +697,6 @@ components:
           type: array
           items:
             type: string
-      required:
-      - display_name
-      - json_pointer
     deployment_status:
       properties:
         id:

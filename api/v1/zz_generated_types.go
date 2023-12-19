@@ -192,9 +192,9 @@ type Overview struct {
 // StepOption defines model for step_option.
 type StepOption struct {
 	Default     *string   `json:"default,omitempty"`
-	DisplayName string    `json:"display_name"`
+	DisplayName *string   `json:"display_name,omitempty"`
 	Hidden      *bool     `json:"hidden,omitempty"`
-	JsonPointer string    `json:"json_pointer"`
+	JsonPointer *string   `json:"json_pointer,omitempty"`
 	Managed     *bool     `json:"managed,omitempty"`
 	Selection   *[]string `json:"selection,omitempty"`
 	Tags        *[]string `json:"tags,omitempty"`
