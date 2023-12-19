@@ -48,7 +48,6 @@ rules:
   - delete
   - get
   - list
-  - patch
   - watch
 - apiGroups:
   - dockyards.io
@@ -57,12 +56,6 @@ rules:
   - organizations
   verbs:
   - get
-- apiGroups:
-  - dockyards.io
-  resources:
-  - clusters/status
-  verbs:
-  - patch
 - apiGroups:
   - dockyards.io
   resources:
