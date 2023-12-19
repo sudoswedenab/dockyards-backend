@@ -36,8 +36,6 @@ type App struct {
 
 // AppStep defines model for app_step.
 type AppStep struct {
-	AppId       string        `json:"app_id"`
-	Id          string        `json:"id"`
 	Name        string        `json:"name"`
 	StepOptions *[]StepOption `json:"step_options,omitempty"`
 }
@@ -193,12 +191,14 @@ type Overview struct {
 
 // StepOption defines model for step_option.
 type StepOption struct {
-	AppStepId   string    `json:"app_step_id"`
 	Default     *string   `json:"default,omitempty"`
 	DisplayName string    `json:"display_name"`
 	Hidden      *bool     `json:"hidden,omitempty"`
 	JsonPointer string    `json:"json_pointer"`
+	Managed     *bool     `json:"managed,omitempty"`
 	Selection   *[]string `json:"selection,omitempty"`
+	Tags        *[]string `json:"tags,omitempty"`
+	Toggle      *[]string `json:"toggle,omitempty"`
 	Type        *string   `json:"type,omitempty"`
 }
 

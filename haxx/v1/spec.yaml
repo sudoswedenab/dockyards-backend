@@ -663,10 +663,6 @@ components:
       - name
     app_step:
       properties:
-        id:
-          type: string
-        app_id:
-          type: string
         name:
           type: string
         step_options:
@@ -674,13 +670,9 @@ components:
           items:
             $ref: '#/components/schemas/step_option'
       required:
-      - id
-      - app_id
       - name
     step_option:
       properties:
-        app_step_id:
-          type: string
         display_name:
           type: string
         json_pointer:
@@ -695,8 +687,17 @@ components:
           type: array
           items:
             type: string
+        managed:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+        toggle:
+          type: array
+          items:
+            type: string
       required:
-      - app_step_id
       - display_name
       - json_pointer
     deployment_status:
