@@ -108,6 +108,18 @@ func (h *handler) GetApp(c *gin.Context) {
 			if option.Hidden {
 				stepOptions[j].Hidden = &step.Options[j].Hidden
 			}
+
+			if option.Managed {
+				stepOptions[j].Managed = &step.Options[j].Managed
+			}
+
+			if len(option.Toggle) > 0 {
+				stepOptions[j].Toggle = &step.Options[j].Toggle
+			}
+
+			if len(option.Tags) > 0 {
+				stepOptions[j].Tags = &step.Options[j].Tags
+			}
 		}
 
 		appSteps[i] = v1.AppStep{

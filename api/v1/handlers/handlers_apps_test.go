@@ -252,6 +252,90 @@ func TestGetApp(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "test tags",
+			appID: "e4c48f89-dcaf-48e6-b27e-04c34fb651d7",
+			lists: []client.ObjectList{
+				&v1alpha1.AppList{
+					Items: []v1alpha1.App{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+								UID:  "e4c48f89-dcaf-48e6-b27e-04c34fb651d7",
+							},
+							Spec: v1alpha1.AppSpec{
+								Steps: []v1alpha1.AppStep{
+									{
+										Name: "testing",
+										Options: []v1alpha1.AppOption{
+											{
+												DisplayName: "Ingress Enabled",
+												Default:     "false",
+												Type:        "boolean",
+												Toggle: []string{
+													"annotations",
+													"tls",
+												},
+											},
+											{
+												DisplayName: "TLS Hosts",
+												Default:     "test",
+												Type:        "hostname",
+												Tags: []string{
+													"tls",
+												},
+											},
+											{
+												DisplayName: "Cluster Issuer",
+												Default:     "issuer",
+												Tags: []string{
+													"annotations",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: v1.App{
+				Id:   "e4c48f89-dcaf-48e6-b27e-04c34fb651d7",
+				Name: "test",
+				AppSteps: &[]v1.AppStep{
+					{
+						Name: "testing",
+						StepOptions: &[]v1.StepOption{
+							{
+								DisplayName: "Ingress Enabled",
+								Default:     util.Ptr("false"),
+								Type:        util.Ptr("boolean"),
+								Toggle: &[]string{
+									"annotations",
+									"tls",
+								},
+							},
+							{
+								DisplayName: "TLS Hosts",
+								Default:     util.Ptr("test"),
+								Type:        util.Ptr("hostname"),
+								Tags: &[]string{
+									"tls",
+								},
+							},
+							{
+								DisplayName: "Cluster Issuer",
+								Default:     util.Ptr("issuer"),
+								Tags: &[]string{
+									"annotations",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {
