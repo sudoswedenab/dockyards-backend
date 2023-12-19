@@ -195,7 +195,6 @@ func TestGetApp(t *testing.T) {
 												Default:     "test",
 											},
 											{
-												DisplayName: "Helm Hidden Annotation",
 												JSONPointer: "/helm_values/annotations/test",
 												Default:     "yes",
 												Hidden:      true,
@@ -216,34 +215,33 @@ func TestGetApp(t *testing.T) {
 						Name: "step",
 						StepOptions: &[]v1.StepOption{
 							{
-								DisplayName: "Helm Chart",
-								JsonPointer: "/helm_chart",
+								DisplayName: util.Ptr("Helm Chart"),
+								JsonPointer: util.Ptr("/helm_chart"),
 								Default:     util.Ptr("test"),
 							},
 							{
-								DisplayName: "Helm Repository",
-								JsonPointer: "/helm_repository",
+								DisplayName: util.Ptr("Helm Repository"),
+								JsonPointer: util.Ptr("/helm_repository"),
 								Default:     util.Ptr("http://localhost/chart-repository"),
 							},
 							{
-								DisplayName: "Helm Version",
-								JsonPointer: "/helm_version",
+								DisplayName: util.Ptr("Helm Version"),
+								JsonPointer: util.Ptr("/helm_version"),
 								Default:     util.Ptr("1.2.3"),
 							},
 							{
-								DisplayName: "Helm Ingress Enabled",
-								JsonPointer: "/helm_values/ingress/enabled",
+								DisplayName: util.Ptr("Helm Ingress Enabled"),
+								JsonPointer: util.Ptr("/helm_values/ingress/enabled"),
 								Default:     util.Ptr("true"),
 								Type:        util.Ptr("boolean"),
 							},
 							{
-								DisplayName: "Helm Ingress Host",
-								JsonPointer: "/helm_values/ingress/host",
+								DisplayName: util.Ptr("Helm Ingress Host"),
+								JsonPointer: util.Ptr("/helm_values/ingress/host"),
 								Default:     util.Ptr("test"),
 							},
 							{
-								DisplayName: "Helm Hidden Annotation",
-								JsonPointer: "/helm_values/annotations/test",
+								JsonPointer: util.Ptr("/helm_values/annotations/test"),
 								Default:     util.Ptr("yes"),
 								Hidden:      util.Ptr(true),
 							},
@@ -308,7 +306,7 @@ func TestGetApp(t *testing.T) {
 						Name: "testing",
 						StepOptions: &[]v1.StepOption{
 							{
-								DisplayName: "Ingress Enabled",
+								DisplayName: util.Ptr("Ingress Enabled"),
 								Default:     util.Ptr("false"),
 								Type:        util.Ptr("boolean"),
 								Toggle: &[]string{
@@ -317,7 +315,7 @@ func TestGetApp(t *testing.T) {
 								},
 							},
 							{
-								DisplayName: "TLS Hosts",
+								DisplayName: util.Ptr("TLS Hosts"),
 								Default:     util.Ptr("test"),
 								Type:        util.Ptr("hostname"),
 								Tags: &[]string{
@@ -325,7 +323,7 @@ func TestGetApp(t *testing.T) {
 								},
 							},
 							{
-								DisplayName: "Cluster Issuer",
+								DisplayName: util.Ptr("Cluster Issuer"),
 								Default:     util.Ptr("issuer"),
 								Tags: &[]string{
 									"annotations",

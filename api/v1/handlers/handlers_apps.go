@@ -96,9 +96,15 @@ func (h *handler) GetApp(c *gin.Context) {
 
 		for j, option := range step.Options {
 			stepOptions[j] = v1.StepOption{
-				Default:     &step.Options[j].Default,
-				DisplayName: option.DisplayName,
-				JsonPointer: option.JSONPointer,
+				Default: &step.Options[j].Default,
+			}
+
+			if option.DisplayName != "" {
+				stepOptions[j].DisplayName = &step.Options[j].DisplayName
+			}
+
+			if option.JSONPointer != "" {
+				stepOptions[j].JsonPointer = &step.Options[j].JSONPointer
 			}
 
 			if option.Type != "" {
