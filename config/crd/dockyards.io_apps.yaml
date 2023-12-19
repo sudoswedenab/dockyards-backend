@@ -52,7 +52,17 @@ spec:
                             type: boolean
                           jsonPointer:
                             type: string
+                          managed:
+                            type: boolean
                           selection:
+                            items:
+                              type: string
+                            type: array
+                          tags:
+                            items:
+                              type: string
+                            type: array
+                          toggle:
                             items:
                               type: string
                             type: array

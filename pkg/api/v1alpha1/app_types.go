@@ -11,6 +11,9 @@ type AppOption struct {
 	Type        string   `json:"type,omitempty"`
 	Hidden      bool     `json:"hidden,omitempty"`
 	Selection   []string `json:"selection,omitempty"`
+	Managed     bool     `json:"managed,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	Toggle      []string `json:"toggle,omitempty"`
 }
 
 type AppStep struct {
