@@ -149,7 +149,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			}
 		}
 
-		return requeue, nil
+		return NodePoolRequeue, nil
 	}
 
 	nodeList, err := r.ClusterService.GetNodes(&nodePool)
@@ -208,7 +208,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	return requeue, nil
+	return NodePoolRequeue, nil
 }
 
 func (r *NodePoolReconciler) reconcileDelete(ctx context.Context, nodePool *v1alpha1.NodePool, organization *v1alpha2.Organization) (ctrl.Result, error) {
