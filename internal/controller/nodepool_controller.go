@@ -6,11 +6,9 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -150,62 +148,6 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 
 		return NodePoolRequeue, nil
-	}
-
-	nodeList, err := r.ClusterService.GetNodes(&nodePool)
-	for _, nodeItem := range nodeList.Items {
-		objectKey := client.ObjectKey{
-			Name:      nodeItem.Name,
-			Namespace: nodePool.Namespace,
-		}
-
-		var node v1alpha1.Node
-		err := r.Get(ctx, objectKey, &node)
-		if client.IgnoreNotFound(err) != nil {
-			logger.Error("error getting node", "err", err)
-
-			return ctrl.Result{}, err
-		}
-
-		if apierrors.IsNotFound(err) {
-			logger.Debug("node not found")
-
-			node := v1alpha1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      nodeItem.Name,
-					Namespace: nodePool.Namespace,
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion:         v1alpha1.GroupVersion.String(),
-							Kind:               v1alpha1.NodePoolKind,
-							Name:               nodePool.Name,
-							UID:                nodePool.UID,
-							BlockOwnerDeletion: util.Ptr(true),
-						},
-					},
-				},
-			}
-
-			err := r.Create(ctx, &node)
-			if err != nil {
-				logger.Error("error creating node", "err", err)
-
-				return ctrl.Result{}, err
-			}
-
-			patch := client.MergeFrom(node.DeepCopy())
-
-			node.Status = v1alpha1.NodeStatus{
-				ClusterServiceID: nodeItem.Status.ClusterServiceID,
-			}
-
-			err = r.Status().Patch(ctx, &node, patch)
-			if err != nil {
-				logger.Error("error patching node", "err", err)
-
-				return ctrl.Result{}, err
-			}
-		}
 	}
 
 	return NodePoolRequeue, nil
