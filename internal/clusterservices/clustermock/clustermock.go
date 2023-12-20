@@ -38,17 +38,6 @@ func (s *MockClusterService) CreateNodePool(organization *v1alpha2.Organization,
 	return &nodePoolStatus, nil
 }
 
-func (s *MockClusterService) DeleteCluster(organization *v1alpha2.Organization, cluster *v1.Cluster) error {
-	for _, c := range s.clusters {
-		if c.Organization == organization.Name && c.Name == cluster.Name {
-			return nil
-		}
-	}
-
-	return errors.New("no such cluster")
-
-}
-
 func (s *MockClusterService) GetCluster(clusterID string) (*v1alpha1.ClusterStatus, error) {
 	cluster, hasCluster := s.clusters[clusterID]
 	if !hasCluster {
