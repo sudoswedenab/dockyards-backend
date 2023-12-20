@@ -7,11 +7,12 @@ import (
 )
 
 const (
-	EmailIndexKey      = ".spec.email"
-	UIDIndexKey        = ".metadata.uid"
-	MemberRefsIndexKey = ".spec.memberRefs.uid"
-	OwnerRefsIndexKey  = ".metadata.ownerReferences.uid"
-	SecretTypeIndexKey = ".type"
+	EmailIndexKey            = ".spec.email"
+	UIDIndexKey              = ".metadata.uid"
+	MemberRefsIndexKey       = ".spec.memberRefs.uid"
+	OwnerRefsIndexKey        = ".metadata.ownerReferences.uid"
+	SecretTypeIndexKey       = ".type"
+	ClusterServiceIDIndexKey = ".status.clusterServiceID"
 )
 
 func EmailIndexer(object client.Object) []string {
@@ -53,5 +54,18 @@ func SecretTypeIndexer(object client.Object) []string {
 
 	return []string{
 		string(secret.Type),
+	}
+}
+
+func IndexByClusterServiceID(o client.Object) []string {
+	switch t := o.(type) {
+	case *v1alpha1.Cluster:
+		return []string{t.Status.ClusterServiceID}
+	case *v1alpha1.NodePool:
+		return []string{t.Status.ClusterServiceID}
+	case *v1alpha1.Node:
+		return []string{t.Status.ClusterServiceID}
+	default:
+		return nil
 	}
 }
