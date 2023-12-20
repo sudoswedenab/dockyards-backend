@@ -29,21 +29,6 @@ func (s *MockClusterService) GetAllClusters() (*[]v1.Cluster, error) {
 	return &clusters, nil
 }
 
-func (s *MockClusterService) CreateCluster(organization *v1alpha2.Organization, clusterOptions *v1.ClusterOptions) (*v1.Cluster, error) {
-	_, hasCluster := s.clusters[clusterOptions.Name]
-	if hasCluster {
-		return nil, errors.New("cluster name in-use")
-
-	}
-
-	cluster := v1.Cluster{
-		Id:   "cluster-123",
-		Name: clusterOptions.Name,
-	}
-
-	return &cluster, nil
-}
-
 func (s *MockClusterService) CreateNodePool(organization *v1alpha2.Organization, cluster *v1alpha1.Cluster, nodePool *v1alpha1.NodePool) (*v1alpha1.NodePoolStatus, error) {
 	nodePoolStatus := v1alpha1.NodePoolStatus{
 		ClusterServiceID: "node-pool-123",

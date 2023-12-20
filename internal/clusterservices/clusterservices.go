@@ -10,7 +10,6 @@ import (
 )
 
 type ClusterService interface {
-	CreateCluster(*v1alpha2.Organization, *v1.ClusterOptions) (*v1.Cluster, error)
 	CreateNodePool(*v1alpha2.Organization, *v1alpha1.Cluster, *v1alpha1.NodePool) (*v1alpha1.NodePoolStatus, error)
 	GetAllClusters() (*[]v1.Cluster, error)
 	DeleteCluster(*v1alpha2.Organization, *v1.Cluster) error
