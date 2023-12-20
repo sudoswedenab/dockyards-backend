@@ -15,6 +15,5 @@ type ClusterService interface {
 	CollectMetrics() error
 	GetNodePool(string) (*v1alpha1.NodePoolStatus, error)
 	DeleteNodePool(*v1alpha2.Organization, string) error
-	GetNodes(*v1alpha1.NodePool) (*v1alpha1.NodeList, error)
 	GetNode(string) (*v1alpha1.NodeStatus, error)
 }
