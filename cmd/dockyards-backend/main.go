@@ -376,17 +376,6 @@ func main() {
 
 			os.Exit(1)
 		}
-
-		err = (&controller.ReleaseReconciler{
-			Client:         manager.GetClient(),
-			Logger:         logger,
-			ClusterService: clusterService,
-		}).SetupWithManager(manager)
-		if err != nil {
-			logger.Error("error creating release controller", "err", err)
-
-			os.Exit(1)
-		}
 	}
 
 	err = manager.Start(context.Background())
