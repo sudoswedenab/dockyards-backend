@@ -15,17 +15,3 @@ func (r *rancher) clusterOptionsToNodeTemplate(clusterOptions *v1.ClusterOptions
 
 	return &customNodeTemplate, nil
 }
-
-func (r *rancher) GetSupportedVersions() ([]string, error) {
-	setting, err := r.managementClient.Setting.ByID("k8s-versions-current")
-	if err != nil {
-		return []string{}, err
-	}
-
-	versions := strings.Split(setting.Value, ",")
-
-	slices.Sort(versions)
-	slices.Reverse(versions)
-
-	return versions, nil
-}
