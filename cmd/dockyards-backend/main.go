@@ -17,7 +17,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/rancher"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
@@ -41,9 +40,7 @@ import (
 )
 
 var (
-	cattleURL         string
-	cattleBearerToken string
-	corsAllowOrigins  string
+	corsAllowOrigins string
 )
 
 func init() {
@@ -78,8 +75,6 @@ func loadEnvVariables() {
 		log.Println("could not load .env file")
 	}
 
-	cattleURL = os.Getenv("CATTLE_URL")
-	cattleBearerToken = os.Getenv("CATTLE_BEARER_TOKEN")
 	corsAllowOrigins = os.Getenv("CORS_ALLOW_ORIGINS")
 }
 
@@ -213,17 +208,6 @@ func main() {
 
 	var clusterService clusterservices.ClusterService
 	switch clusterServiceFlag {
-	case "rancher":
-		rancherOptions := []rancher.RancherOption{
-			rancher.WithRancherClientOpts(cattleURL, cattleBearerToken, trustInsecure),
-			rancher.WithLogger(logger.With("clusterservice", "rancher")),
-			rancher.WithCloudService(cloudService),
-		}
-
-		clusterService, err = rancher.NewRancher(rancherOptions...)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
 	case "clustermock":
 		clusterService = clustermock.NewMockClusterService()
 	case "none":
