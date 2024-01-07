@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
@@ -83,7 +81,6 @@ func main() {
 	var delGarbageInterval int
 	var collectMetricsInterval int
 	var ginMode string
-	var cloudServiceFlag string
 	var clusterServiceFlag string
 	var insecureLogging bool
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
@@ -91,7 +88,6 @@ func main() {
 	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval seconds")
 	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
-	flag.StringVar(&cloudServiceFlag, "cloud-service", "none", "cloud service")
 	flag.StringVar(&clusterServiceFlag, "cluster-service", "none", "cluster service")
 	flag.BoolVar(&insecureLogging, "insecure-logging", false, "insecure logging")
 	flag.Parse()
@@ -174,18 +170,6 @@ func main() {
 	err = manager.GetFieldIndexer().IndexField(ctx, &corev1.Secret{}, index.SecretTypeIndexKey, index.SecretTypeIndexer)
 	if err != nil {
 		logger.Error("error adding secret type indexer to manager", "err", err)
-
-		os.Exit(1)
-	}
-
-	var cloudService cloudservices.CloudService
-	switch cloudServiceFlag {
-	case "cloudmock":
-		cloudService = cloudmock.NewMockCloudService()
-	case "none":
-		logger.Info("not using a cloud service")
-	default:
-		logger.Error("unsupported cloud service", "service", cloudServiceFlag)
 
 		os.Exit(1)
 	}
