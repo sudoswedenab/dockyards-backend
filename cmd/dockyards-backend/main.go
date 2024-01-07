@@ -14,7 +14,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/cloudmock"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/cloudservices/openstack"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
@@ -181,19 +180,6 @@ func main() {
 
 	var cloudService cloudservices.CloudService
 	switch cloudServiceFlag {
-	case "openstack":
-		openStackOptions := []openstack.OpenStackOption{
-			openstack.WithLogger(logger.With("cloudservice", "openstack")),
-			openstack.WithCloudsYAML("openstack"),
-			openstack.WithInsecureLogging(insecureLogging),
-			openstack.WithManager(manager),
-		}
-
-		cloudService, err = openstack.NewOpenStackService(openStackOptions...)
-		if err != nil {
-			logger.Error("error creating new openstack cloud service", "err", err)
-			os.Exit(1)
-		}
 	case "cloudmock":
 		cloudService = cloudmock.NewMockCloudService()
 	case "none":
