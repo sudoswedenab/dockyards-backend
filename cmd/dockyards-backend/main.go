@@ -75,15 +75,11 @@ func loadEnvVariables() {
 
 func main() {
 	var logLevel string
-	var trustInsecure bool
 	var collectMetricsInterval int
 	var ginMode string
-	var insecureLogging bool
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
-	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
 	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
-	flag.BoolVar(&insecureLogging, "insecure-logging", false, "insecure logging")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
