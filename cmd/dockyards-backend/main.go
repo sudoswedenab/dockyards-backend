@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
@@ -78,17 +76,13 @@ func loadEnvVariables() {
 func main() {
 	var logLevel string
 	var trustInsecure bool
-	var delGarbageInterval int
 	var collectMetricsInterval int
 	var ginMode string
-	var clusterServiceFlag string
 	var insecureLogging bool
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.BoolVar(&trustInsecure, "trust-insecure", false, "trust all certs")
-	flag.IntVar(&delGarbageInterval, "del-garbage-interval", 60, "delete garbage interval seconds")
 	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
-	flag.StringVar(&clusterServiceFlag, "cluster-service", "none", "cluster service")
 	flag.BoolVar(&insecureLogging, "insecure-logging", false, "insecure logging")
 	flag.Parse()
 
@@ -175,38 +169,6 @@ func main() {
 	}
 
 	registry := prometheus.NewRegistry()
-
-	var clusterService clusterservices.ClusterService
-	switch clusterServiceFlag {
-	case "clustermock":
-		clusterService = clustermock.NewMockClusterService()
-	case "none":
-		logger.Info("not using a cluster service")
-	default:
-		logger.Error("unsupported cluster service", "service", clusterServiceFlag)
-
-		os.Exit(1)
-	}
-
-	go func() {
-		interval := time.Second * time.Duration(delGarbageInterval)
-
-		logger.Debug("creating garbage deletion goroutine", "interval", interval)
-
-		ticker := time.NewTicker(interval)
-		for {
-			select {
-			case <-ticker.C:
-				if clusterServiceFlag != "none" {
-					clusterService.DeleteGarbage()
-				}
-
-				if cloudServiceFlag != "none" {
-					cloudService.DeleteGarbage()
-				}
-			}
-		}
-	}()
 
 	prometheusMetricsOptions := []metrics.PrometheusMetricsOption{
 		metrics.WithLogger(logger),

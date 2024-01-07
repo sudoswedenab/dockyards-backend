@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
@@ -536,13 +535,12 @@ func TestGetNodePoolErrors(t *testing.T) {
 
 func TestPostClusterNodePools(t *testing.T) {
 	tt := []struct {
-		name               string
-		clusterID          string
-		nodePoolOptions    v1.NodePoolOptions
-		clustermockOptions []clustermock.MockOption
-		sub                string
-		lists              []client.ObjectList
-		expected           v1.NodePool
+		name            string
+		clusterID       string
+		nodePoolOptions v1.NodePoolOptions
+		sub             string
+		lists           []client.ObjectList
+		expected        v1.NodePool
 	}{
 		{
 			name:      "test simple",

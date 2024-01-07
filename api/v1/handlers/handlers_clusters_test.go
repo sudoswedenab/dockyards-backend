@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/clusterservices/clustermock"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
@@ -114,13 +113,12 @@ func TestPostOrgClusters(t *testing.T) {
 
 func TestPostOrgClustersErrors(t *testing.T) {
 	tt := []struct {
-		name               string
-		organizationName   string
-		sub                string
-		lists              []client.ObjectList
-		clusterOptions     v1.ClusterOptions
-		clustermockOptions []clustermock.MockOption
-		expected           int
+		name             string
+		organizationName string
+		sub              string
+		lists            []client.ObjectList
+		clusterOptions   v1.ClusterOptions
+		expected         int
 	}{
 		{
 			name:             "test invalid organization",
