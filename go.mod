@@ -4,7 +4,6 @@ go 1.21.1
 
 require (
 	bitbucket.org/sudosweden/dockyards-backend/pkg/api v1.2.3
-	bitbucket.org/sudosweden/dockyards-openstack v0.0.0-20231004131042-eb0a79bfbd85
 	github.com/containers/image/v5 v5.27.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
