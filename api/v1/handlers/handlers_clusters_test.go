@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -20,6 +21,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -35,6 +37,7 @@ func TestPostOrgClusters(t *testing.T) {
 		sub              string
 		lists            []client.ObjectList
 		clusterOptions   v1.ClusterOptions
+		expected         []client.Object
 	}{
 		{
 			name:             "test recommended",
@@ -55,12 +58,121 @@ func TestPostOrgClusters(t *testing.T) {
 									},
 								},
 							},
+							Status: v1alpha1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
 						},
 					},
 				},
 			},
 			clusterOptions: v1.ClusterOptions{
 				Name: "test",
+			},
+			expected: []client.Object{
+				&v1alpha1.Cluster{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: v1alpha1.GroupVersion.String(),
+						Kind:       v1alpha1.ClusterKind,
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         v1alpha1.GroupVersion.String(),
+								Kind:               v1alpha1.OrganizationKind,
+								Name:               "test-org",
+								BlockOwnerDeletion: util.Ptr(true),
+							},
+						},
+					},
+				},
+				&v1alpha1.NodePool{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: v1alpha1.GroupVersion.String(),
+						Kind:       v1alpha1.NodePoolKind,
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-control-plane",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         v1alpha1.GroupVersion.String(),
+								Kind:               v1alpha1.ClusterKind,
+								Name:               "test",
+								BlockOwnerDeletion: util.Ptr(true),
+							},
+						},
+					},
+					Spec: v1alpha1.NodePoolSpec{
+						Replicas:      util.Ptr(int32(3)),
+						ControlPlane:  true,
+						DedicatedRole: true,
+						Resources: corev1.ResourceList{
+							corev1.ResourceCPU:     resource.MustParse("2"),
+							corev1.ResourceMemory:  resource.MustParse("4096M"),
+							corev1.ResourceStorage: resource.MustParse("100G"),
+						},
+					},
+				},
+				&v1alpha1.NodePool{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: v1alpha1.GroupVersion.String(),
+						Kind:       v1alpha1.NodePoolKind,
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-load-balancer",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         v1alpha1.GroupVersion.String(),
+								Kind:               v1alpha1.ClusterKind,
+								Name:               "test",
+								BlockOwnerDeletion: util.Ptr(true),
+							},
+						},
+					},
+					Spec: v1alpha1.NodePoolSpec{
+						Replicas:      util.Ptr(int32(2)),
+						LoadBalancer:  true,
+						DedicatedRole: true,
+						Resources: corev1.ResourceList{
+							corev1.ResourceCPU:     resource.MustParse("2"),
+							corev1.ResourceMemory:  resource.MustParse("4096M"),
+							corev1.ResourceStorage: resource.MustParse("100G"),
+						},
+					},
+				},
+				&v1alpha1.NodePool{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: v1alpha1.GroupVersion.String(),
+						Kind:       v1alpha1.NodePoolKind,
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-worker",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         v1alpha1.GroupVersion.String(),
+								Kind:               v1alpha1.ClusterKind,
+								Name:               "test",
+								BlockOwnerDeletion: util.Ptr(true),
+							},
+						},
+					},
+					Spec: v1alpha1.NodePoolSpec{
+						Replicas: util.Ptr(int32(2)),
+						Resources: corev1.ResourceList{
+							corev1.ResourceCPU:     resource.MustParse("4"),
+							corev1.ResourceMemory:  resource.MustParse("8192M"),
+							corev1.ResourceStorage: resource.MustParse("100G"),
+						},
+					},
+				},
 			},
 		},
 	}
@@ -106,6 +218,39 @@ func TestPostOrgClusters(t *testing.T) {
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusCreated {
 				t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+			}
+
+			for _, e := range tc.expected {
+				ctx := context.Background()
+
+				objectKey := client.ObjectKey{
+					Name:      e.GetName(),
+					Namespace: e.GetNamespace(),
+				}
+				switch x := e.(type) {
+				case *v1alpha1.Cluster:
+					var actual v1alpha1.Cluster
+					err := fakeClient.Get(ctx, objectKey, &actual)
+					if err != nil {
+						t.Errorf("error getting expected cluster: %s", err)
+					}
+
+					if !cmp.Equal(x, &actual) {
+						t.Errorf("diff: %s", cmp.Diff(x, &actual))
+					}
+				case *v1alpha1.NodePool:
+					var actual v1alpha1.NodePool
+					err := fakeClient.Get(ctx, objectKey, &actual)
+					if err != nil {
+						t.Errorf("error getting expected node pool: %s", err)
+					}
+
+					if !cmp.Equal(x, &actual) {
+						t.Errorf("diff: %s", cmp.Diff(x, &actual))
+					}
+				default:
+					t.Fatalf("test not supported on group version kind: %s", e.GetObjectKind().GroupVersionKind().String())
+				}
 			}
 		})
 	}
