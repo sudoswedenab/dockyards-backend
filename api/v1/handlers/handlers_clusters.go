@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -221,6 +222,26 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 		if nodePoolOption.ControlPlaneComponentsOnly != nil {
 			nodePool.Spec.DedicatedRole = *nodePoolOption.ControlPlaneComponentsOnly
+		}
+
+		nodePool.Spec.Resources = corev1.ResourceList{}
+
+		if nodePoolOption.CpuCount != nil {
+			quantity := resource.NewQuantity(int64(*nodePoolOption.CpuCount), resource.BinarySI)
+
+			nodePool.Spec.Resources[corev1.ResourceCPU] = *quantity
+		}
+
+		if nodePoolOption.DiskSizeGb != nil {
+			quantity := resource.NewScaledQuantity(int64(*nodePoolOption.DiskSizeGb), resource.Giga)
+
+			nodePool.Spec.Resources[corev1.ResourceStorage] = *quantity
+		}
+
+		if nodePoolOption.RamSizeMb != nil {
+			quantity := resource.NewScaledQuantity(int64(*nodePoolOption.RamSizeMb), resource.Mega)
+
+			nodePool.Spec.Resources[corev1.ResourceMemory] = *quantity
 		}
 
 		err := h.controllerClient.Create(ctx, &nodePool)
