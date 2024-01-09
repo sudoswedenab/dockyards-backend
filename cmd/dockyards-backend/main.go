@@ -76,9 +76,11 @@ func main() {
 	var logLevel string
 	var collectMetricsInterval int
 	var ginMode string
+	var enableWebhooks bool
 	flag.StringVar(&logLevel, "log-level", "info", "log level")
 	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
+	flag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
 	flag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -261,18 +263,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = (&v1alpha1.Organization{}).SetupWebhookWithManager(manager)
-	if err != nil {
-		logger.Error("error creating organization webhook", "err", err)
+	if enableWebhooks {
+		err = (&v1alpha1.Organization{}).SetupWebhookWithManager(manager)
+		if err != nil {
+			logger.Error("error creating organization webhook", "err", err)
 
-		os.Exit(1)
-	}
+			os.Exit(1)
+		}
 
-	err = (&v1alpha2.Organization{}).SetupWebhookWithManager(manager)
-	if err != nil {
-		logger.Error("error creating organization webhook", "err", err)
+		err = (&v1alpha2.Organization{}).SetupWebhookWithManager(manager)
+		if err != nil {
+			logger.Error("error creating organization webhook", "err", err)
 
-		os.Exit(1)
+			os.Exit(1)
+		}
 	}
 
 	err = manager.Start(context.Background())
