@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -151,7 +152,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 	m.logger.Debug("collecting prometheus metrics")
 
-	var organizationList v1alpha1.OrganizationList
+	var organizationList v1alpha2.OrganizationList
 	err := m.controllerClient.List(ctx, &organizationList)
 	if err != nil {
 		m.logger.Error("error listing organizations in kubernetes", "err", err)
