@@ -51,6 +51,8 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 			return ctrl.Result{}, err
 		}
+
+		return ctrl.Result{}, nil
 	}
 
 	if organization.Status.NamespaceRef == "" {
