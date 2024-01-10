@@ -32,10 +32,8 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	var organization v1alpha2.Organization
 	err := r.Get(ctx, req.NamespacedName, &organization)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting organization", "err", err)
-
-		return ctrl.Result{}, err
+	if err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if !organization.DeletionTimestamp.IsZero() {
