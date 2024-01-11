@@ -179,6 +179,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 				Quantity:     1,
 				ControlPlane: util.Ptr(true),
 				Etcd:         util.Ptr(true),
+				LoadBalancer: util.Ptr(true),
 			},
 		})
 	}
