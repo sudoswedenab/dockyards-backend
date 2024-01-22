@@ -167,7 +167,21 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	if nodePoolOptions == nil || len(*nodePoolOptions) == 0 {
 		h.logger.Debug("using recommended node pool options")
 
-		nodePoolOptions = util.Ptr(getRecommendedNodePools(nil))
+		objectKey := client.ObjectKey{
+			Name:      "recommended",
+			Namespace: h.namespace,
+		}
+
+		var clusterTemplate v1alpha1.ClusterTemplate
+		err := h.controllerClient.Get(ctx, objectKey, &clusterTemplate)
+		if err != nil {
+			h.logger.Error("error getting cluster template", "err", err)
+
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		nodePoolOptions = util.Ptr(getRecommendedNodePools(&clusterTemplate))
 	}
 
 	if clusterOptions.SingleNode != nil && *clusterOptions.SingleNode {

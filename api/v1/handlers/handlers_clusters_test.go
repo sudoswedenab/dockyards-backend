@@ -64,6 +64,62 @@ func TestPostOrgClusters(t *testing.T) {
 						},
 					},
 				},
+				&v1alpha1.ClusterTemplateList{
+					Items: []v1alpha1.ClusterTemplate{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "recommended",
+							},
+							Spec: v1alpha1.ClusterTemplateSpec{
+								NodePoolTemplates: []v1alpha1.NodePool{
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "control-plane",
+										},
+										Spec: v1alpha1.NodePoolSpec{
+											Replicas:      util.Ptr(int32(3)),
+											ControlPlane:  true,
+											DedicatedRole: true,
+											Resources: corev1.ResourceList{
+												corev1.ResourceCPU:     resource.MustParse("2"),
+												corev1.ResourceMemory:  resource.MustParse("4096M"),
+												corev1.ResourceStorage: resource.MustParse("100G"),
+											},
+										},
+									},
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "worker",
+										},
+										Spec: v1alpha1.NodePoolSpec{
+											Replicas: util.Ptr(int32(2)),
+											Resources: corev1.ResourceList{
+												corev1.ResourceCPU:     resource.MustParse("4"),
+												corev1.ResourceMemory:  resource.MustParse("8192M"),
+												corev1.ResourceStorage: resource.MustParse("100G"),
+											},
+										},
+									},
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "load-balancer",
+										},
+										Spec: v1alpha1.NodePoolSpec{
+											Replicas:      util.Ptr(int32(2)),
+											LoadBalancer:  true,
+											DedicatedRole: true,
+											Resources: corev1.ResourceList{
+												corev1.ResourceCPU:     resource.MustParse("2"),
+												corev1.ResourceMemory:  resource.MustParse("4096M"),
+												corev1.ResourceStorage: resource.MustParse("100G"),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 			clusterOptions: v1.ClusterOptions{
 				Name: "test",
