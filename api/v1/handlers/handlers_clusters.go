@@ -192,7 +192,6 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 				Name:         "single-node",
 				Quantity:     1,
 				ControlPlane: util.Ptr(true),
-				Etcd:         util.Ptr(true),
 				LoadBalancer: util.Ptr(true),
 			},
 		})
@@ -225,10 +224,6 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 		if nodePoolOption.ControlPlane != nil {
 			nodePool.Spec.ControlPlane = *nodePoolOption.ControlPlane
-		}
-
-		if nodePoolOption.Etcd != nil {
-			nodePool.Spec.ControlPlane = *nodePoolOption.Etcd
 		}
 
 		if nodePoolOption.LoadBalancer != nil {

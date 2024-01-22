@@ -512,8 +512,6 @@ components:
           type: boolean
         control_plane_components_only:
           type: boolean
-        etcd:
-          type: boolean
         load_balancer:
           type: boolean
         quantity:
@@ -544,8 +542,6 @@ components:
         control_plane:
           type: boolean
         control_plane_components_only:
-          type: boolean
-        etcd:
           type: boolean
         load_balancer:
           type: boolean

@@ -260,7 +260,6 @@ func TestGetNodePool(t *testing.T) {
 				Id:           "4386082b-cabe-4235-b6be-a857706ed6f4",
 				ClusterId:    "3fac0683-34bf-4f8a-908b-28db92cf20a0",
 				ControlPlane: util.Ptr(true),
-				Etcd:         util.Ptr(true),
 				DiskSizeGb:   123,
 				Name:         "test-complex",
 				Quantity:     3,

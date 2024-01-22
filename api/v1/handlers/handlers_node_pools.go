@@ -44,7 +44,6 @@ func (h *handler) toV1NodePool(nodePool *v1alpha1.NodePool, cluster *v1alpha1.Cl
 
 	if nodePool.Spec.ControlPlane {
 		v1NodePool.ControlPlane = &nodePool.Spec.ControlPlane
-		v1NodePool.Etcd = &nodePool.Spec.ControlPlane
 	}
 
 	if nodePool.Spec.LoadBalancer {
@@ -246,10 +245,6 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 
 	if nodePoolOptions.ControlPlane != nil {
 		nodePool.Spec.ControlPlane = *nodePoolOptions.ControlPlane
-	}
-
-	if nodePoolOptions.Etcd != nil {
-		nodePool.Spec.ControlPlane = *nodePoolOptions.Etcd
 	}
 
 	if nodePoolOptions.LoadBalancer != nil {

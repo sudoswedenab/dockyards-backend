@@ -138,7 +138,6 @@ type NodePool struct {
 	ControlPlaneComponentsOnly *bool  `json:"control_plane_components_only,omitempty"`
 	CpuCount                   int    `json:"cpu_count"`
 	DiskSizeGb                 int    `json:"disk_size_gb"`
-	Etcd                       *bool  `json:"etcd,omitempty"`
 	Id                         string `json:"id"`
 	LoadBalancer               *bool  `json:"load_balancer,omitempty"`
 	Name                       string `json:"name"`
@@ -153,7 +152,6 @@ type NodePoolOptions struct {
 	ControlPlaneComponentsOnly *bool  `json:"control_plane_components_only,omitempty"`
 	CpuCount                   *int   `json:"cpu_count,omitempty"`
 	DiskSizeGb                 *int   `json:"disk_size_gb,omitempty"`
-	Etcd                       *bool  `json:"etcd,omitempty"`
 	LoadBalancer               *bool  `json:"load_balancer,omitempty"`
 	Name                       string `json:"name"`
 	Quantity                   int    `json:"quantity"`
