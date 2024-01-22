@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: dockyards-backend
+    app.kubernetes.io/part-of: dockyards
+  name: dockyards-backend
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dockyards-backend
+subjects:
+- kind: ServiceAccount
+  name: dockyards-backend

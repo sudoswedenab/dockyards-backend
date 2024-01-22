@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- dockyards.io_apps.yaml
+- dockyards.io_clusters.yaml
+- dockyards.io_containerimagedeployments.yaml
+- dockyards.io_deployments.yaml
+- dockyards.io_helmdeployments.yaml
+- dockyards.io_kustomizedeployments.yaml
+- dockyards.io_nodepools.yaml
+- dockyards.io_nodes.yaml
+- dockyards.io_organizations.yaml
+- dockyards.io_releases.yaml
+- dockyards.io_users.yaml
+- dockyards.io_clustertemplates.yaml

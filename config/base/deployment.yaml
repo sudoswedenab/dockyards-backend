@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dockyards-backend
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dockyards-backend
+      app.kubernetes.io/part-of: dockyards
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9001"
+      labels:
+        app.kubernetes.io/name: dockyards-backend
+        app.kubernetes.io/part-of: dockyards
+      name: dockyards-backend
+    spec:
+      containers:
+      - args:
+        - --log-level=debug
+        - --gin-mode=release
+        image: dockyards-backend
+        imagePullPolicy: IfNotPresent
+        name: dockyards-backend
+        ports:
+        - containerPort: 9000
+          name: public
+          protocol: TCP
+        - containerPort: 9001
+          name: private
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      imagePullSecrets:
+      - name: dockyards-registry
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: dockyards-backend
