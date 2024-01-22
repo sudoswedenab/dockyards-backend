@@ -44,10 +44,11 @@ rules:
 - apiGroups:
   - dockyards.io
   resources:
-  - clusters
-  - organizations
+  - clustertemplates
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - dockyards.io
   resources:
@@ -98,32 +99,6 @@ rules:
   - nodepools
   verbs:
   - create
-  - get
-  - list
-  - patch
-  - watch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - nodepools/status
-  verbs:
-  - patch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - nodes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - nodes/status
-  verbs:
-  - patch
 - apiGroups:
   - dockyards.io
   resources:
@@ -147,12 +122,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - releases/status
-  verbs:
-  - patch
 - apiGroups:
   - dockyards.io
   resources:

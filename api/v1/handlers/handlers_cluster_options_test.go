@@ -10,9 +10,12 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,13 +46,79 @@ func TestGetClusterOptions(t *testing.T) {
 						},
 					},
 				},
+				&v1alpha1.ClusterTemplateList{
+					Items: []v1alpha1.ClusterTemplate{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "recommended",
+								Namespace: "testing",
+							},
+							Spec: v1alpha1.ClusterTemplateSpec{
+								NodePoolTemplates: []v1alpha1.NodePool{
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "cp",
+										},
+										Spec: v1alpha1.NodePoolSpec{
+											Replicas:     util.Ptr(int32(3)),
+											ControlPlane: true,
+											Resources: corev1.ResourceList{
+												corev1.ResourceCPU:    resource.MustParse("2"),
+												corev1.ResourceMemory: resource.MustParse("4096M"),
+											},
+										},
+									},
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "lb",
+										},
+										Spec: v1alpha1.NodePoolSpec{
+											Replicas:      util.Ptr(int32(2)),
+											LoadBalancer:  true,
+											DedicatedRole: true,
+										},
+									},
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "w",
+										},
+										Spec: v1alpha1.NodePoolSpec{
+											Resources: corev1.ResourceList{
+												corev1.ResourceStorage: resource.MustParse("123G"),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 			expected: v1.Options{
 				SingleNode: false,
 				Version: []string{
 					"v1.2.3",
 				},
-				NodePoolOptions: getRecommendedNodePools(),
+				NodePoolOptions: []v1.NodePoolOptions{
+					{
+						Name:         "cp",
+						Quantity:     3,
+						ControlPlane: util.Ptr(true),
+						CpuCount:     util.Ptr(2),
+						RamSizeMb:    util.Ptr(4096),
+					},
+					{
+						Name:                       "lb",
+						Quantity:                   2,
+						LoadBalancer:               util.Ptr(true),
+						ControlPlaneComponentsOnly: util.Ptr(true),
+					},
+					{
+						Name:       "w",
+						Quantity:   1,
+						DiskSizeGb: util.Ptr(123),
+					},
+				},
 			},
 		},
 	}
