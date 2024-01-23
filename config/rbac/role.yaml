@@ -99,6 +99,17 @@ rules:
   - nodepools
   verbs:
   - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - dockyards.io
   resources:

@@ -16,6 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=create;get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=nodes,verbs=get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
+
 func (h *handler) toV1NodePool(nodePool *v1alpha1.NodePool, cluster *v1alpha1.Cluster, nodeList *v1alpha1.NodeList) *v1.NodePool {
 	v1NodePool := v1.NodePool{
 		Id:         string(nodePool.UID),
