@@ -101,3 +101,30 @@ func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*v
 
 	return nil, nil
 }
+
+func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (*v1alpha1.Deployment, error) {
+	for _, ownerReference := range o.GetOwnerReferences() {
+		if ownerReference.Kind != v1alpha1.DeploymentKind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupVersion.Group != v1alpha1.GroupVersion.Group {
+			continue
+		}
+
+		var deployment v1alpha1.Deployment
+		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
+		if err != nil {
+			return nil, err
+		}
+
+		return &deployment, nil
+	}
+
+	return nil, nil
+}
