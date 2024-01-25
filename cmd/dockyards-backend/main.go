@@ -132,7 +132,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, object := range []client.Object{&v1alpha1.User{}, &v1alpha1.Cluster{}, &v1alpha1.NodePool{}, &v1alpha1.Node{}, &v1alpha1.Deployment{}, &v1alpha1.App{}} {
+	for _, object := range []client.Object{&v1alpha1.User{}, &v1alpha1.Cluster{}, &v1alpha1.NodePool{}, &v1alpha1.Node{}, &v1alpha1.Deployment{}, &v1alpha1.App{}, &corev1.Secret{}} {
 		err = manager.GetFieldIndexer().IndexField(ctx, object, index.UIDIndexKey, index.UIDIndexer)
 		if err != nil {
 			logger.Error("error adding uid indexer to manager", "err", err)

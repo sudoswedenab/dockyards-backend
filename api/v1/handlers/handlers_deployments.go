@@ -13,6 +13,7 @@ import (
 	utildeployment "bitbucket.org/sudosweden/dockyards-backend/pkg/util/deployment"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -24,6 +25,7 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=containerimagedeployments,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=helmdeployments,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=kustomizedeployments,verbs=get;list;watch;create;update;patch
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
 
 func (h *handler) PostClusterDeployments(c *gin.Context) {
 	ctx := context.Background()
@@ -153,6 +155,41 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 		if v1Deployment.Port != nil {
 			containerImageDeployment.Spec.Port = int32(*v1Deployment.Port)
+		}
+
+		if v1Deployment.CredentialId != nil {
+			matchingFields := client.MatchingFields{
+				index.UIDIndexKey: *v1Deployment.CredentialId,
+			}
+
+			var secretList corev1.SecretList
+			err := h.controllerClient.List(ctx, &secretList, matchingFields)
+			if err != nil {
+				h.logger.Error("error listing secrets", "err", err)
+
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+
+			if len(secretList.Items) != 1 {
+				h.logger.Error("expected exactly one secret", "count", len(secretList.Items))
+
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
+
+			secret := secretList.Items[0]
+
+			if secret.Type != DockyardsSecretTypeCredential {
+				h.logger.Error("secret is not type credential", "type", secret.Type)
+
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
+
+			containerImageDeployment.Spec.CredentialRef = &corev1.LocalObjectReference{
+				Name: secret.Name,
+			}
 		}
 
 		err := h.controllerClient.Create(ctx, &containerImageDeployment)

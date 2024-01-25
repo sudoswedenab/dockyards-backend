@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -902,6 +903,47 @@ func TestPostClusterDeployments(t *testing.T) {
 				}),
 			},
 		},
+		{
+			name:      "test container image with credential",
+			clusterID: "07ce5009-c89e-458a-b2b5-07390f6e6d28",
+			deployment: v1.Deployment{
+				Name:           util.Ptr("test"),
+				ContainerImage: util.Ptr("test"),
+				CredentialId:   util.Ptr("74e1819c-8b20-4187-b464-17f9d2c229a8"),
+			},
+			lists: []client.ObjectList{
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "07ce5009-c89e-458a-b2b5-07390f6e6d28",
+							},
+						},
+					},
+				},
+				&corev1.SecretList{
+					Items: []corev1.Secret{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "74e1819c-8b20-4187-b464-17f9d2c229a8",
+							},
+							Type: DockyardsSecretTypeCredential,
+						},
+					},
+				},
+			},
+			expected: v1.Deployment{
+				Type:           v1.DeploymentTypeContainerImage,
+				ClusterId:      "07ce5009-c89e-458a-b2b5-07390f6e6d28",
+				Name:           util.Ptr("test"),
+				Namespace:      util.Ptr("test"),
+				ContainerImage: util.Ptr("docker.io/library/test"),
+			},
+		},
 	}
 
 	gin.SetMode(gin.TestMode)
@@ -912,7 +954,11 @@ func TestPostClusterDeployments(t *testing.T) {
 
 			scheme := scheme.Scheme
 			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).WithLists(tc.lists...).
+				WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).
+				WithIndex(&corev1.Secret{}, index.UIDIndexKey, index.UIDIndexer).
+				Build()
 
 			h := handler{
 				logger:           logger,
