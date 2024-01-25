@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -9,8 +10,9 @@ const (
 )
 
 type ContainerImageDeploymentSpec struct {
-	Image string `json:"image"`
-	Port  int32  `json:"port,omitempty"`
+	Image         string                       `json:"image"`
+	Port          int32                        `json:"port,omitempty"`
+	CredentialRef *corev1.LocalObjectReference `json:"credentialRef,omitempty"`
 }
 
 type ContainerImageDeploymentStatus struct {
