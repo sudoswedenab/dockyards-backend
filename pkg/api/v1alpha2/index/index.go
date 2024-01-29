@@ -31,5 +31,9 @@ func DockyardsOrganizationByCloudRef(o client.Object) []string {
 		return nil
 	}
 
+	if organization.Spec.Cloud.ProjectRef == nil {
+		return nil
+	}
+
 	return []string{CloudRefValue(organization.Spec.Cloud.ProjectRef)}
 }
