@@ -7,6 +7,7 @@ import (
 
 const (
 	MemberRefsIndexKey = ".spec.memberRefs.uid"
+	CloudProjectRefKey = ".spec.cloud.projectRef"
 )
 
 func MemberRefsIndexer(object client.Object) []string {
@@ -18,4 +19,17 @@ func MemberRefsIndexer(object client.Object) []string {
 	}
 
 	return memberUIDs
+}
+
+func CloudRefValue(ref *v1alpha2.NamespacedObjectReference) string {
+	return ref.Kind + "/" + ref.Namespace + "/" + ref.Name
+}
+
+func DockyardsOrganizationByCloudRef(o client.Object) []string {
+	organization, ok := o.(*v1alpha2.Organization)
+	if !ok {
+		return nil
+	}
+
+	return []string{CloudRefValue(organization.Spec.Cloud.ProjectRef)}
 }
