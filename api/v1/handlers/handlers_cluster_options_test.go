@@ -35,7 +35,7 @@ func TestGetClusterOptions(t *testing.T) {
 					Items: []v1alpha1.Release{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "supported-versions",
+								Name:      "supported-kubernetes-releases",
 								Namespace: "testing",
 							},
 							Status: v1alpha1.ReleaseStatus{
