@@ -22,7 +22,7 @@ import (
 	"github.com/gin-gonic/gin"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-logr/logr/slogr"
+	"github.com/go-logr/logr"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -89,8 +89,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	logr := slogr.NewLogr(logger.Handler())
-	ctrl.SetLogger(logr)
+	slogr := logr.FromSlogHandler(logger.Handler())
+	ctrl.SetLogger(slogr)
 
 	kubeconfig, err := config.GetConfig()
 	if err != nil {
