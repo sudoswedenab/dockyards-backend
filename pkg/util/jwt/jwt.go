@@ -94,7 +94,7 @@ func GetOrGenerateTokens(ctx context.Context, controllerClient client.Client, lo
 
 func GetOrGenerateKeys(ctx context.Context, controllerClient client.Client, logger *slog.Logger) (*ecdsa.PrivateKey, *ecdsa.PrivateKey, error) {
 	objectKey := client.ObjectKey{
-		Name:      "dockyards-jwt",
+		Name:      "dockyards-backend-jwt",
 		Namespace: defaultDockyardsNamespace,
 	}
 
@@ -144,7 +144,7 @@ func GetOrGenerateKeys(ctx context.Context, controllerClient client.Client, logg
 
 		secret = corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dockyards-jwt",
+				Name:      "dockyards-backend-jwt",
 				Namespace: defaultDockyardsNamespace,
 			},
 			Data: map[string][]byte{
@@ -174,7 +174,7 @@ func GetOrGenerateKeys(ctx context.Context, controllerClient client.Client, logg
 
 		configMap := corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dockyards-jwt",
+				Name:      "dockyards-backend-jwt",
 				Namespace: defaultDockyardsNamespace,
 			},
 			Data: map[string]string{
