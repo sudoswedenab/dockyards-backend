@@ -14,6 +14,7 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/joho/godotenv v1.4.0
 	github.com/prometheus/client_golang v1.16.0
+	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.12.0
 	k8s.io/api v0.28.2
 	k8s.io/apiextensions-apiserver v0.28.0
@@ -70,7 +71,6 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.10.1 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	golang.org/x/arch v0.4.0 // indirect

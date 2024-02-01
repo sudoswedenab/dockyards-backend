@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"log/slog"
@@ -26,6 +25,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -77,11 +77,11 @@ func main() {
 	var collectMetricsInterval int
 	var ginMode string
 	var enableWebhooks bool
-	flag.StringVar(&logLevel, "log-level", "info", "log level")
-	flag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
-	flag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
-	flag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
-	flag.Parse()
+	pflag.StringVar(&logLevel, "log-level", "info", "log level")
+	pflag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
+	pflag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
+	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
+	pflag.Parse()
 
 	logger, err := newLogger(logLevel)
 	if err != nil {
