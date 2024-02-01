@@ -31,6 +31,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var (
@@ -77,10 +78,12 @@ func main() {
 	var collectMetricsInterval int
 	var ginMode string
 	var enableWebhooks bool
+	var metricsBindAddress string
 	pflag.StringVar(&logLevel, "log-level", "info", "log level")
 	pflag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	pflag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
+	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
 	pflag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -112,8 +115,12 @@ func main() {
 	}
 
 	managerOptions := ctrl.Options{
-		Scheme: scheme,
-		Client: client.Options{},
+		Scheme:                 scheme,
+		Client:                 client.Options{},
+		HealthProbeBindAddress: "0",
+		Metrics: metricsserver.Options{
+			BindAddress: metricsBindAddress,
+		},
 	}
 
 	manager, err := ctrl.NewManager(kubeconfig, managerOptions)
