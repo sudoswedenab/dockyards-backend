@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
@@ -79,11 +78,13 @@ func main() {
 	var ginMode string
 	var enableWebhooks bool
 	var metricsBindAddress string
+	var allowOrigins []string
 	pflag.StringVar(&logLevel, "log-level", "info", "log level")
 	pflag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	pflag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
 	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
+	pflag.StringSliceVar(&allowOrigins, "allow-origin", []string{"http://localhost"}, "allow origin")
 	pflag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -207,20 +208,16 @@ func main() {
 
 	r := gin.Default()
 
-	if corsAllowOrigins != "" {
-		allowOrigins := strings.Split(corsAllowOrigins, ",")
+	logger.Debug("configuring cors middleware", "origins", allowOrigins)
 
-		logger.Debug("configuring cors middleware", "origins", allowOrigins)
-
-		r.Use(cors.New(cors.Config{
-			AllowOrigins:     allowOrigins,
-			AllowMethods:     []string{"POST", "PUT", "GET", "DELETE"},
-			AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-			ExposeHeaders:    []string{"Content-Length"},
-			AllowCredentials: true,
-			MaxAge:           12 * time.Hour,
-		}))
-	}
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     allowOrigins,
+		AllowMethods:     []string{"POST", "PUT", "GET", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	accessKey, refreshKey, err := jwt.GetOrGenerateKeys(ctx, controllerClient, logger)
 	if err != nil {
