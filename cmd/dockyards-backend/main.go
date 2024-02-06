@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -21,7 +20,6 @@ import (
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-logr/logr"
-	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/pflag"
@@ -32,14 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
-
-var (
-	corsAllowOrigins string
-)
-
-func init() {
-	loadEnvVariables()
-}
 
 func newLogger(logLevel string) (*slog.Logger, error) {
 	var level slog.Level
@@ -61,15 +51,6 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 	}
 
 	return slog.New(slog.NewTextHandler(os.Stdout, &handlerOptions)), nil
-}
-
-func loadEnvVariables() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("could not load .env file")
-	}
-
-	corsAllowOrigins = os.Getenv("CORS_ALLOW_ORIGINS")
 }
 
 func main() {
