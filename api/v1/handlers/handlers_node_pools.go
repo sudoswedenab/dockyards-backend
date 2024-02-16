@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -229,6 +231,35 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 
 	name := cluster.Name + "-" + nodePoolOptions.Name
 
+	resources := make(corev1.ResourceList)
+
+	if nodePoolOptions.RamSizeMb != nil {
+		quantity := fmt.Sprintf("%dMi", *nodePoolOptions.RamSizeMb)
+
+		memory, err := resource.ParseQuantity(quantity)
+		if err != nil {
+			panic(err)
+		}
+
+		resources[corev1.ResourceMemory] = memory
+	}
+
+	if nodePoolOptions.CpuCount != nil {
+		cpu := resource.NewQuantity(int64(*nodePoolOptions.CpuCount), resource.DecimalSI)
+		resources[corev1.ResourceCPU] = *cpu
+	}
+
+	if nodePoolOptions.DiskSizeGb != nil {
+		quantity := fmt.Sprintf("%dGi", *nodePoolOptions.DiskSizeGb)
+
+		storage, err := resource.ParseQuantity(quantity)
+		if err != nil {
+			panic(err)
+		}
+
+		resources[corev1.ResourceStorage] = storage
+	}
+
 	nodePool := v1alpha1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -244,7 +275,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		},
 		Spec: v1alpha1.NodePoolSpec{
 			Replicas:  util.Ptr(int32(nodePoolOptions.Quantity)),
-			Resources: corev1.ResourceList{},
+			Resources: resources,
 		},
 	}
 
