@@ -4,3 +4,4 @@
 /dockyards-backend
 # ignore coverprofiles
 *.out
+/config/kustomization.yaml

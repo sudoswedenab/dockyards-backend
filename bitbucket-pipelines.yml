@@ -5,9 +5,8 @@ definitions:
   - step: &environment
       name: environment
       script:
-      - echo "export VERSION=$BITBUCKET_BRANCH-$(git describe --always --dirty)-$(date +%s)" >> env.sh
+      - echo "export VERSION=$(git branch --show-current)-$(git rev-parse --short HEAD)-$(date +%s)" >> env.sh
       - echo "export IMAGE=075899289117.dkr.ecr.eu-north-1.amazonaws.com/dockyards-backend" >> env.sh
-      - cat env.sh
       artifacts:
       - env.sh
   - step: &test
@@ -18,25 +17,23 @@ definitions:
       name: build
       script:
       - source env.sh
+      - go install cuelang.org/go/cmd/cue@v0.7.1
       - docker build . --file Containerfile --tag dockyards-backend
       - docker save dockyards-backend --output dockyards-backend.tar
+      - cue eval hack/kustomization.cue --inject "name=${IMAGE}" --inject "tag=${VERSION}" --out yaml --outfile config/kustomization.yaml
       services:
       - docker
       caches:
       - docker
       artifacts:
       - dockyards-backend.tar
+      - config/kustomization.yaml
   - step: &push
       name: push
-      image: docker.io/amazon/aws-cli:2.11.8
-      oidc: true
       script:
+      - cat env.sh
       - source env.sh
-      - echo $BITBUCKET_STEP_OIDC_TOKEN > /tmp/web-identity-token
-      - aws configure --profile bitbucket set region eu-north-1
-      - aws configure --profile bitbucket set role_arn arn:aws:iam::075899289117:role/BitbucketPipelinesBackend
-      - aws configure --profile bitbucket set web_identity_token_file /tmp/web-identity-token
-      - aws ecr get-login-password --profile bitbucket | docker login --username "AWS" --password-stdin "075899289117.dkr.ecr.eu-north-1.amazonaws.com"
+      - echo "${TOKEN}" | docker login --username "AWS" --password-stdin "075899289117.dkr.ecr.eu-north-1.amazonaws.com"
       - docker load --input dockyards-backend.tar
       - docker tag dockyards-backend "${IMAGE}:${VERSION}"
       - docker push "${IMAGE}:${VERSION}"
@@ -50,11 +47,31 @@ definitions:
       - go mod vendor
       artifacts:
       - vendor/**
+  - step: &ecr-login
+      name: ecr-login
+      oidc: true
+      image: docker.io/amazon/aws-cli:2.11.8
+      script:
+      - echo $BITBUCKET_STEP_OIDC_TOKEN > /tmp/web-identity-token
+      - aws configure --profile bitbucket set region eu-north-1
+      - aws configure --profile bitbucket set role_arn arn:aws:iam::075899289117:role/BitbucketPipelinesBackend
+      - aws configure --profile bitbucket set web_identity_token_file /tmp/web-identity-token
+      - echo "export TOKEN=$(aws ecr get-login-password --profile bitbucket)" >> env.sh
+      artifacts:
+      - env.sh
+  - step: &flux
+      name: flux
+      image: ghcr.io/fluxcd/flux-cli:v2.2.3
+      script:
+      - source env.sh
+      - flux push artifact "oci://${IMAGE}:${VERSION}-manifests" --path config --source "$BITBUCKET_GIT_HTTP_ORIGIN" --revision "${VERSION}" --creds "AWS:${TOKEN}"
 
 pipelines:
   default:
   - step: *environment
   - step: *vendor
+  - step: *ecr-login
   - step: *test
   - step: *build
   - step: *push
+  - step: *flux
