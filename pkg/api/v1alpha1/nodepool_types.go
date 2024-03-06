@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -9,12 +10,20 @@ const (
 	NodePoolKind = "NodePool"
 )
 
+type NodePoolStorageResource struct {
+	Name     string            `json:"name"`
+	Type     string            `json:"type,omitempty"`
+	Quantity resource.Quantity `json:"quantity"`
+}
+
 type NodePoolSpec struct {
-	Replicas      *int32              `json:"replicas,omitempty"`
-	ControlPlane  bool                `json:"controlPlane,omitempty"`
-	LoadBalancer  bool                `json:"loadBalancer,omitempty"`
-	DedicatedRole bool                `json:"dedicatedRole,omitempty"`
-	Resources     corev1.ResourceList `json:"resources,omitempty"`
+	Replicas         *int32                    `json:"replicas,omitempty"`
+	ControlPlane     bool                      `json:"controlPlane,omitempty"`
+	LoadBalancer     bool                      `json:"loadBalancer,omitempty"`
+	DedicatedRole    bool                      `json:"dedicatedRole,omitempty"`
+	Resources        corev1.ResourceList       `json:"resources,omitempty"`
+	Storage          bool                      `json:"storage,omitempty"`
+	StorageResources []NodePoolStorageResource `json:"storageResources,omitempty"`
 }
 
 type NodePoolStatus struct {

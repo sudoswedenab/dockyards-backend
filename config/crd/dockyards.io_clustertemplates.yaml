@@ -87,6 +87,26 @@ spec:
                           description: ResourceList is a set of (resource name, quantity)
                             pairs.
                           type: object
+                        storage:
+                          type: boolean
+                        storageResources:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              quantity:
+                                anyOf:
+                                - type: integer
+                                - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              type:
+                                type: string
+                            required:
+                            - name
+                            - quantity
+                            type: object
+                          type: array
                       type: object
                     status:
                       properties:
