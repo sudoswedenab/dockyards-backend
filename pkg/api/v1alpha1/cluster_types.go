@@ -9,7 +9,8 @@ const (
 )
 
 type ClusterSpec struct {
-	Version string `json:"version,omitempty"`
+	Version                  string `json:"version,omitempty"`
+	NoDefaultIngressProvider bool   `json:"noDefaultIngressProvider,omitempty"`
 }
 
 type ClusterStatus struct {

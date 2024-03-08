@@ -39,6 +39,8 @@ spec:
             type: object
           spec:
             properties:
+              noDefaultIngressProvider:
+                type: boolean
               version:
                 type: string
             type: object
