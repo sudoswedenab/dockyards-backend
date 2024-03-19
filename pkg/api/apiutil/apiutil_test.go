@@ -314,3 +314,70 @@ func TestGetOwnerNodePool(t *testing.T) {
 		})
 	}
 }
+
+func TestIsFeatureEnabled(t *testing.T) {
+	tt := []struct {
+		name        string
+		featureName v1alpha1.FeatureName
+		lists       []client.ObjectList
+		expected    bool
+	}{
+		{
+			name:     "test empty",
+			expected: false,
+		},
+		{
+			name:        "test load balancer role",
+			featureName: v1alpha1.LoadBalancerRoleFeature,
+			lists: []client.ObjectList{
+				&v1alpha1.FeatureList{
+					Items: []v1alpha1.Feature{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      string(v1alpha1.LoadBalancerRoleFeature),
+								Namespace: "testing",
+							},
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name:        "test undefined role",
+			featureName: v1alpha1.FeatureName("undefined-role"),
+			lists: []client.ObjectList{
+				&v1alpha1.FeatureList{
+					Items: []v1alpha1.Feature{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      string(v1alpha1.LoadBalancerRoleFeature),
+								Namespace: "testing",
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			scheme := scheme.Scheme
+			v1alpha2.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+
+			actual, err := apiutil.IsFeatureEnabled(ctx, fakeClient, tc.featureName, "testing")
+			if err != nil {
+				t.Fatalf("unexpected error testing feature: %s", err)
+			}
+
+			if actual != tc.expected {
+				t.Errorf("expected %t, got %t", tc.expected, actual)
+			}
+		})
+	}
+}

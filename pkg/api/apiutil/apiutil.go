@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -127,4 +128,18 @@ func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (
 	}
 
 	return nil, nil
+}
+
+func IsFeatureEnabled(ctx context.Context, c client.Client, featureName v1alpha1.FeatureName, namespace string) (bool, error) {
+	var feature v1alpha1.Feature
+	err := c.Get(ctx, client.ObjectKey{Name: string(featureName), Namespace: namespace}, &feature)
+	if client.IgnoreNotFound(err) != nil {
+		return false, err
+	}
+
+	if apierrors.IsNotFound(err) {
+		return false, nil
+	}
+
+	return true, nil
 }
