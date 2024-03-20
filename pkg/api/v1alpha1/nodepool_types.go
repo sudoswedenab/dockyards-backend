@@ -51,6 +51,14 @@ type NodePoolList struct {
 	Items []NodePool `json:"items,omitempty"`
 }
 
+func (p *NodePool) GetConditions() []metav1.Condition {
+	return p.Status.Conditions
+}
+
+func (p *NodePool) SetConditions(conditions []metav1.Condition) {
+	p.Status.Conditions = conditions
+}
+
 func init() {
 	SchemeBuilder.Register(&NodePool{}, &NodePoolList{})
 }

@@ -42,6 +42,14 @@ type NodeList struct {
 	Items []Node `json:"items,omitempty"`
 }
 
+func (n *Node) GetConditions() []metav1.Condition {
+	return n.Status.Conditions
+}
+
+func (n *Node) SetConditions(conditions []metav1.Condition) {
+	n.Status.Conditions = conditions
+}
+
 func init() {
 	SchemeBuilder.Register(&Node{}, &NodeList{})
 }

@@ -38,6 +38,14 @@ type DeploymentList struct {
 	Items []Deployment `json:"items"`
 }
 
+func (d *Deployment) GetConditions() []metav1.Condition {
+	return d.Status.Conditions
+}
+
+func (d *Deployment) SetConditions(conditions []metav1.Condition) {
+	d.Status.Conditions = conditions
+}
+
 func init() {
 	SchemeBuilder.Register(&Deployment{}, &DeploymentList{})
 }

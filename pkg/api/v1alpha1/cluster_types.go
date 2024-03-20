@@ -40,6 +40,14 @@ type ClusterList struct {
 	Items []Cluster `json:"items,omitempty"`
 }
 
+func (c *Cluster) GetConditions() []metav1.Condition {
+	return c.Status.Conditions
+}
+
+func (c *Cluster) SetConditions(conditions []metav1.Condition) {
+	c.Status.Conditions = conditions
+}
+
 func init() {
 	SchemeBuilder.Register(&Cluster{}, &ClusterList{})
 }
