@@ -45,6 +45,14 @@ type OrganizationList struct {
 	Items []Organization `json:"items"`
 }
 
+func (o *Organization) GetConditions() []metav1.Condition {
+	return o.Status.Conditions
+}
+
+func (o *Organization) SetConditions(conditions []metav1.Condition) {
+	o.Status.Conditions = conditions
+}
+
 func init() {
 	SchemeBuilder.Register(&Organization{}, &OrganizationList{})
 }
