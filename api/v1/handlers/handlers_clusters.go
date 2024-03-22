@@ -150,6 +150,10 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		Spec: v1alpha1.ClusterSpec{},
 	}
 
+	if clusterOptions.Version != nil {
+		cluster.Spec.Version = *clusterOptions.Version
+	}
+
 	err = h.controllerClient.Create(ctx, &cluster)
 	if err != nil {
 		h.logger.Error("error creating cluster", "err", err)
