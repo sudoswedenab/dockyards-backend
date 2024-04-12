@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/middleware"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/types"

@@ -3,7 +3,7 @@ package deployment
 import (
 	"path"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/containers/image/v5/docker/reference"
 )

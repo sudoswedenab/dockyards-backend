@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"

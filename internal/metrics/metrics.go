@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"runtime/debug"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
