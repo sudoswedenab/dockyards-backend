@@ -11,6 +11,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
@@ -259,6 +260,13 @@ func main() {
 		err = (&v1alpha2.Organization{}).SetupWebhookWithManager(manager)
 		if err != nil {
 			logger.Error("error creating organization webhook", "err", err)
+
+			os.Exit(1)
+		}
+
+		err = (&webhooks.DockyardsNodePool{}).SetupWebhookWithManager(manager)
+		if err != nil {
+			logger.Error("error creating nodepool webhook", "err", err)
 
 			os.Exit(1)
 		}

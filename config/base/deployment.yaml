@@ -31,6 +31,9 @@ spec:
         - containerPort: 9001
           name: private
           protocol: TCP
+        - containerPort: 9443
+          name: webhook
+          protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

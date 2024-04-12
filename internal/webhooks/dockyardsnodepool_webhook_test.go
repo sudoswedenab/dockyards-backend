@@ -1,0 +1,184 @@
+package webhooks_test
+
+import (
+	"context"
+	"testing"
+
+	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"github.com/google/go-cmp/cmp"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+)
+
+func TestDockyardsNodePoolValidateCreate(t *testing.T) {
+	tt := []struct {
+		name              string
+		dockyardsNodePool dockyardsv1.NodePool
+		features          dockyardsv1.FeatureList
+		expected          error
+	}{
+		{
+			name: "test storage role disabled",
+			dockyardsNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "storage-role",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					Storage: true,
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"storage-role",
+				field.ErrorList{
+					field.Invalid(field.NewPath("spec", "storage"), true, "feature is not enabled"),
+				},
+			),
+		},
+		{
+			name: "test storage role enabled",
+			dockyardsNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "storage-role",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					Storage: true,
+				},
+			},
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      string(dockyardsv1.StorageRoleFeature),
+							Namespace: "testing",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test storage resources disabled",
+			dockyardsNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "storage-resources",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					StorageResources: []dockyardsv1.NodePoolStorageResource{
+						{
+							Name:     "test",
+							Quantity: resource.MustParse("123"),
+						},
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"storage-resources",
+				field.ErrorList{
+					field.Invalid(
+						field.NewPath("spec", "storageResources"),
+						[]dockyardsv1.NodePoolStorageResource{
+							{
+								Name:     "test",
+								Quantity: resource.MustParse("123"),
+							},
+						},
+						"feature is not enabled",
+					),
+				},
+			),
+		},
+		{
+			name: "test storage resources enabled",
+			dockyardsNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "storage-resources",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					StorageResources: []dockyardsv1.NodePoolStorageResource{
+						{
+							Name:     "test",
+							Quantity: resource.MustParse("123"),
+						},
+					},
+				},
+			},
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      string(dockyardsv1.StorageRoleFeature),
+							Namespace: "testing",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test load-balancer role disabled",
+			dockyardsNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "load-balancer-role",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					LoadBalancer: true,
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"load-balancer-role",
+				field.ErrorList{
+					field.Invalid(field.NewPath("spec", "loadBalancer"), true, "feature is not enabled"),
+				},
+			),
+		},
+		{
+			name: "test load-balancer role enabled",
+			dockyardsNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "load-balancer-role",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					LoadBalancer: true,
+				},
+			},
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      string(dockyardsv1.LoadBalancerRoleFeature),
+							Namespace: "testing",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, item := range tc.features.Items {
+				feature.Enable(dockyardsv1.FeatureName(item.Name))
+
+				defer feature.Disable(dockyardsv1.FeatureName(item.Name))
+			}
+
+			webhook := webhooks.DockyardsNodePool{}
+
+			_, actual := webhook.ValidateCreate(context.Background(), &tc.dockyardsNodePool)
+			if !cmp.Equal(actual, tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}

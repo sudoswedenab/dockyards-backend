@@ -11,6 +11,7 @@ resources: [
 	"base",
 	"crd",
 	"rbac",
+	"webhook",
 ]
 images: [
 	{
