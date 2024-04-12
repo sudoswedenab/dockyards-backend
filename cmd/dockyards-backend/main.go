@@ -249,6 +249,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = (&controller.FeatureReconciler{
+		Client: manager.GetClient(),
+	}).SetupWithManager(manager)
+	if err != nil {
+		logger.Error("error creating new feature reconciler", "err", err)
+
+		os.Exit(1)
+	}
+
 	if enableWebhooks {
 		err = (&v1alpha1.Organization{}).SetupWebhookWithManager(manager)
 		if err != nil {
