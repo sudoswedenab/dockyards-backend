@@ -381,3 +381,67 @@ func TestIsFeatureEnabled(t *testing.T) {
 		})
 	}
 }
+
+func TestGetNamespaceOrganization(t *testing.T) {
+	tt := []struct {
+		name          string
+		organizations v1alpha2.OrganizationList
+		namespace     string
+		expected      *v1alpha2.Organization
+	}{
+		{
+			name: "test empty",
+		},
+		{
+			name: "test organization with namespace",
+			organizations: v1alpha2.OrganizationList{
+				Items: []v1alpha2.Organization{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test",
+						},
+						Status: v1alpha2.OrganizationStatus{
+							NamespaceRef: "testing",
+						},
+					},
+				},
+			},
+			namespace: "testing",
+			expected: &v1alpha2.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "test",
+					ResourceVersion: "999",
+				},
+				Status: v1alpha2.OrganizationStatus{
+					NamespaceRef: "testing",
+				},
+			},
+		},
+		{
+			name:      "test namespace without organization",
+			namespace: "testing",
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			scheme := scheme.Scheme
+			v1alpha2.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(&tc.organizations).
+				Build()
+
+			actual, err := apiutil.GetNamespaceOrganization(ctx, fakeClient, tc.namespace)
+			if err != nil {
+				t.Fatalf("error getting namespace organization: %s", err)
+			}
+
+			if !cmp.Equal(actual, tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}

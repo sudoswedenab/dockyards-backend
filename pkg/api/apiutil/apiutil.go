@@ -143,3 +143,19 @@ func IsFeatureEnabled(ctx context.Context, c client.Client, featureName v1alpha1
 
 	return true, nil
 }
+
+func GetNamespaceOrganization(ctx context.Context, c client.Client, namespace string) (*v1alpha2.Organization, error) {
+	var organizationList v1alpha2.OrganizationList
+	err := c.List(ctx, &organizationList)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, organization := range organizationList.Items {
+		if organization.Status.NamespaceRef == namespace {
+			return &organization, nil
+		}
+	}
+
+	return nil, nil
+}
