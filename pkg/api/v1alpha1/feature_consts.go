@@ -17,3 +17,7 @@ const (
 const (
 	MetricsFeature FeatureName = "metrics"
 )
+
+const (
+	SafespringElasticNetworksFeature = "safespring-elastic-networks"
+)
