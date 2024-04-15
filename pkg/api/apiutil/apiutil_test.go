@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/google/go-cmp/cmp"
@@ -318,7 +319,7 @@ func TestGetOwnerNodePool(t *testing.T) {
 func TestIsFeatureEnabled(t *testing.T) {
 	tt := []struct {
 		name        string
-		featureName v1alpha1.FeatureName
+		featureName featurenames.FeatureName
 		lists       []client.ObjectList
 		expected    bool
 	}{
@@ -328,13 +329,13 @@ func TestIsFeatureEnabled(t *testing.T) {
 		},
 		{
 			name:        "test load balancer role",
-			featureName: v1alpha1.LoadBalancerRoleFeature,
+			featureName: featurenames.FeatureLoadBalancerRole,
 			lists: []client.ObjectList{
 				&v1alpha1.FeatureList{
 					Items: []v1alpha1.Feature{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      string(v1alpha1.LoadBalancerRoleFeature),
+								Name:      string(featurenames.FeatureLoadBalancerRole),
 								Namespace: "testing",
 							},
 						},
@@ -345,13 +346,13 @@ func TestIsFeatureEnabled(t *testing.T) {
 		},
 		{
 			name:        "test undefined role",
-			featureName: v1alpha1.FeatureName("undefined-role"),
+			featureName: featurenames.FeatureName("undefined-role"),
 			lists: []client.ObjectList{
 				&v1alpha1.FeatureList{
 					Items: []v1alpha1.Feature{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      string(v1alpha1.LoadBalancerRoleFeature),
+								Name:      string(featurenames.FeatureLoadBalancerRole),
 								Namespace: "testing",
 							},
 						},
