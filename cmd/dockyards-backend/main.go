@@ -61,12 +61,14 @@ func main() {
 	var enableWebhooks bool
 	var metricsBindAddress string
 	var allowOrigins []string
+	var dockyardsNamespace string
 	pflag.StringVar(&logLevel, "log-level", "info", "log level")
 	pflag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	pflag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
 	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
 	pflag.StringSliceVar(&allowOrigins, "allow-origin", []string{"http://localhost"}, "allow origin")
+	pflag.StringVar(&dockyardsNamespace, "dockyards-namespace", "dockyards", "dockyards namespace")
 	pflag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -210,7 +212,7 @@ func main() {
 
 	handlerOptions := []handlers.HandlerOption{
 		handlers.WithManager(manager),
-		handlers.WithNamespace("dockyards"),
+		handlers.WithNamespace(dockyardsNamespace),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
 	}
 
@@ -250,7 +252,8 @@ func main() {
 	}
 
 	err = (&controller.FeatureReconciler{
-		Client: manager.GetClient(),
+		Client:             manager.GetClient(),
+		DockyardsNamespace: dockyardsNamespace,
 	}).SetupWithManager(manager)
 	if err != nil {
 		logger.Error("error creating new feature reconciler", "err", err)
