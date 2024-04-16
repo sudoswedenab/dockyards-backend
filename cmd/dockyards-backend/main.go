@@ -282,6 +282,13 @@ func main() {
 
 			os.Exit(1)
 		}
+
+		err = (&webhooks.DockyardsCluster{}).SetupWebhookWithManager(manager)
+		if err != nil {
+			logger.Error("error creating cluster webhook", "err", err)
+
+			os.Exit(1)
+		}
 	}
 
 	err = manager.Start(context.Background())
