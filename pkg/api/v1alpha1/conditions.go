@@ -1,9 +1,10 @@
 package v1alpha1
 
 const (
-	ReadyCondition       string = "Ready"
-	VerifiedCondition    string = "Verified"
-	ProvisionedCondition string = "Provisioned"
+	ReadyCondition            string = "Ready"
+	VerifiedCondition         string = "Verified"
+	ProvisionedCondition      string = "Provisioned"
+	CloudConfigReadyCondition string = "CloudConfigReady"
 )
 
 const (
