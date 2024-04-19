@@ -36,6 +36,8 @@ spec:
                 type: string
               repository:
                 type: string
+              skipNamespace:
+                type: boolean
               values:
                 x-kubernetes-preserve-unknown-fields: true
               version:

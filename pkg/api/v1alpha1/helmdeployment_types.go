@@ -10,10 +10,11 @@ const (
 )
 
 type HelmDeploymentSpec struct {
-	Chart      string                `json:"chart"`
-	Repository string                `json:"repository"`
-	Version    string                `json:"version"`
-	Values     *apiextensionsv1.JSON `json:"values,omitempty"`
+	Chart         string                `json:"chart"`
+	Repository    string                `json:"repository"`
+	Version       string                `json:"version"`
+	Values        *apiextensionsv1.JSON `json:"values,omitempty"`
+	SkipNamespace bool                  `json:"skipNamespace,omitempty"`
 }
 
 // +kubebuilder:object:root=true
