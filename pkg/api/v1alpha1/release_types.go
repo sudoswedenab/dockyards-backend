@@ -10,7 +10,8 @@ const (
 )
 
 type ReleaseSpec struct {
-	Type string `json:"type"`
+	Type   string   `json:"type"`
+	Ranges []string `json:"ranges,omitempty"`
 }
 
 type ReleaseStatus struct {

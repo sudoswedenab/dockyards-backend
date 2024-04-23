@@ -32,6 +32,10 @@ spec:
             type: object
           spec:
             properties:
+              ranges:
+                items:
+                  type: string
+                type: array
               type:
                 type: string
             required:
