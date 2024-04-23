@@ -1,24 +1,25 @@
 package feature
 
 import (
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 )
 
 var (
-	enabledFeatures = map[dockyardsv1.FeatureName]bool{
-		dockyardsv1.LoadBalancerRoleFeature: false,
-		dockyardsv1.StorageRoleFeature:      false,
+	enabledFeatures = map[featurenames.FeatureName]bool{
+		featurenames.FeatureLoadBalancerRole:       false,
+		featurenames.FeatureStorageRole:            false,
+		featurenames.FeatureOrganizationAutoAssign: false,
 	}
 )
 
-func Enable(featureName dockyardsv1.FeatureName) {
+func Enable(featureName featurenames.FeatureName) {
 	enabledFeatures[featureName] = true
 }
 
-func Disable(featureName dockyardsv1.FeatureName) {
+func Disable(featureName featurenames.FeatureName) {
 	enabledFeatures[featureName] = false
 }
 
-func IsEnabled(featureName dockyardsv1.FeatureName) bool {
+func IsEnabled(featureName featurenames.FeatureName) bool {
 	return enabledFeatures[featureName]
 }

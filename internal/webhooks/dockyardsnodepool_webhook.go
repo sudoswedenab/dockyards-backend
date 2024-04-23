@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -51,17 +52,17 @@ func (webhook *DockyardsNodePool) ValidateDelete(ctx context.Context, obj runtim
 func (wehook *DockyardsNodePool) validate(dockyardsNodePool *dockyardsv1.NodePool) error {
 	var errorList field.ErrorList
 
-	if dockyardsNodePool.Spec.Storage && !feature.IsEnabled(dockyardsv1.StorageRoleFeature) {
+	if dockyardsNodePool.Spec.Storage && !feature.IsEnabled(featurenames.FeatureStorageRole) {
 		invalid := field.Invalid(field.NewPath("spec", "storage"), dockyardsNodePool.Spec.Storage, "feature is not enabled")
 		errorList = append(errorList, invalid)
 	}
 
-	if dockyardsNodePool.Spec.StorageResources != nil && !feature.IsEnabled(dockyardsv1.StorageRoleFeature) {
+	if dockyardsNodePool.Spec.StorageResources != nil && !feature.IsEnabled(featurenames.FeatureStorageRole) {
 		invalid := field.Invalid(field.NewPath("spec", "storageResources"), dockyardsNodePool.Spec.StorageResources, "feature is not enabled")
 		errorList = append(errorList, invalid)
 	}
 
-	if dockyardsNodePool.Spec.LoadBalancer && !feature.IsEnabled(dockyardsv1.LoadBalancerRoleFeature) {
+	if dockyardsNodePool.Spec.LoadBalancer && !feature.IsEnabled(featurenames.FeatureLoadBalancerRole) {
 		invalid := field.Invalid(field.NewPath("spec", "loadBalancer"), dockyardsNodePool.Spec.LoadBalancer, "feature is not enabled")
 		errorList = append(errorList, invalid)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,14 +28,14 @@ func (r *FeatureReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if !dockyardsFeature.DeletionTimestamp.IsZero() {
-		feature.Disable(dockyardsv1.FeatureName(dockyardsFeature.Name))
+		feature.Disable(featurenames.FeatureName(dockyardsFeature.Name))
 
 		logger.Info("disabled feature")
 
 		return ctrl.Result{}, nil
 	}
 
-	feature.Enable(dockyardsv1.FeatureName(dockyardsFeature.Name))
+	feature.Enable(featurenames.FeatureName(dockyardsFeature.Name))
 
 	logger.Info("enabled feature")
 

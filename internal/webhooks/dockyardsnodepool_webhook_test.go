@@ -6,6 +6,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,7 +56,7 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 				Items: []dockyardsv1.Feature{
 					{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      string(dockyardsv1.StorageRoleFeature),
+							Name:      string(featurenames.FeatureStorageRole),
 							Namespace: "testing",
 						},
 					},
@@ -115,7 +116,7 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 				Items: []dockyardsv1.Feature{
 					{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      string(dockyardsv1.StorageRoleFeature),
+							Name:      string(featurenames.FeatureStorageRole),
 							Namespace: "testing",
 						},
 					},
@@ -156,7 +157,7 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 				Items: []dockyardsv1.Feature{
 					{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      string(dockyardsv1.LoadBalancerRoleFeature),
+							Name:      string(featurenames.FeatureLoadBalancerRole),
 							Namespace: "testing",
 						},
 					},
@@ -168,9 +169,9 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, item := range tc.features.Items {
-				feature.Enable(dockyardsv1.FeatureName(item.Name))
+				feature.Enable(featurenames.FeatureName(item.Name))
 
-				defer feature.Disable(dockyardsv1.FeatureName(item.Name))
+				defer feature.Disable(featurenames.FeatureName(item.Name))
 			}
 
 			webhook := webhooks.DockyardsNodePool{}
