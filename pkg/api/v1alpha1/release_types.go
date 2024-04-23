@@ -5,8 +5,9 @@ import (
 )
 
 const (
-	ReleaseKind           = "Release"
-	ReleaseTypeKubernetes = "KubernetesReleases"
+	ReleaseKind               = "Release"
+	ReleaseTypeKubernetes     = "KubernetesReleases"
+	ReleaseTypeTalosInstaller = "TalosInstaller"
 )
 
 type ReleaseSpec struct {
