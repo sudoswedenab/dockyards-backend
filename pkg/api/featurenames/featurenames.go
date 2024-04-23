@@ -21,3 +21,7 @@ const (
 const (
 	FeatureSafespringElasticNetworks = "safespring-elastic-networks"
 )
+
+const (
+	FeatureOrganizationAutoAssign = "organization-auto-assign"
+)
