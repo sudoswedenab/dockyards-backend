@@ -309,6 +309,8 @@ spec:
                   type: object
                 minItems: 1
                 type: array
+              skipAutoAssign:
+                type: boolean
             required:
             - memberRefs
             type: object

@@ -21,6 +21,8 @@ type OrganizationSpec struct {
 
 	BillingRef *NamespacedObjectReference `json:"billingRef,omitempty"`
 	Cloud      Cloud                      `json:"cloud,omitempty"`
+
+	SkipAutoAssign bool `json:"skipAutoAssign,omitempty"`
 }
 
 type OrganizationStatus struct {
