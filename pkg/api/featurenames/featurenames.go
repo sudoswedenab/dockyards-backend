@@ -25,3 +25,7 @@ const (
 const (
 	FeatureOrganizationAutoAssign = "organization-auto-assign"
 )
+
+const (
+	FeatureCostEstimates = "cost-estimates"
+)
