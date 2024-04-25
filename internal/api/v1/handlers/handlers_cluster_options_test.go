@@ -121,6 +121,80 @@ func TestGetClusterOptions(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test binary format",
+			lists: []client.ObjectList{
+				&v1alpha1.ReleaseList{
+					Items: []v1alpha1.Release{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "supported-kubernetes-releases",
+								Namespace: "testing",
+							},
+							Status: v1alpha1.ReleaseStatus{
+								Versions: []string{
+									"v1.2.3",
+								},
+							},
+						},
+					},
+				},
+				&v1alpha1.ClusterTemplateList{
+					Items: []v1alpha1.ClusterTemplate{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "recommended",
+								Namespace: "testing",
+							},
+							Spec: v1alpha1.ClusterTemplateSpec{
+								NodePoolTemplates: []v1alpha1.NodePool{
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "cp",
+										},
+										Spec: v1alpha1.NodePoolSpec{
+											ControlPlane: true,
+											Resources: corev1.ResourceList{
+												corev1.ResourceMemory: resource.MustParse("4Gi"),
+											},
+										},
+									},
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "w",
+										},
+										Spec: v1alpha1.NodePoolSpec{
+											Resources: corev1.ResourceList{
+												corev1.ResourceStorage: resource.MustParse("123Gi"),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: v1.Options{
+				SingleNode: false,
+				Version: []string{
+					"v1.2.3",
+				},
+				NodePoolOptions: []v1.NodePoolOptions{
+					{
+						Name:         "cp",
+						Quantity:     1,
+						ControlPlane: util.Ptr(true),
+						RamSizeMb:    util.Ptr(4096),
+					},
+					{
+						Name:       "w",
+						Quantity:   1,
+						DiskSizeGb: util.Ptr(123),
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {

@@ -53,15 +53,25 @@ func getRecommendedNodePools(clusterTemplate *v1alpha1.ClusterTemplate) []v1.Nod
 		}
 
 		resourceMemory := nodePoolTemplate.Spec.Resources.Memory()
-		if resourceMemory != nil && resourceMemory.Value() != 0 {
-			scaledValue := resourceMemory.ScaledValue(resource.Mega)
-			nodePoolOptions[i].RamSizeMb = util.Ptr(int(scaledValue))
+		if !resourceMemory.IsZero() {
+			if resourceMemory.Format == resource.DecimalSI {
+				scaledValue := resourceMemory.ScaledValue(resource.Mega)
+				nodePoolOptions[i].RamSizeMb = util.Ptr(int(scaledValue))
+			} else {
+				value := resourceMemory.Value() / 1024 / 1024
+				nodePoolOptions[i].RamSizeMb = util.Ptr(int(value))
+			}
 		}
 
 		resourceStorage := nodePoolTemplate.Spec.Resources.Storage()
-		if resourceStorage != nil && resourceStorage.Value() != 0 {
-			scaledValue := resourceStorage.ScaledValue(resource.Giga)
-			nodePoolOptions[i].DiskSizeGb = util.Ptr(int(scaledValue))
+		if !resourceStorage.IsZero() {
+			if resourceStorage.Format == resource.DecimalSI {
+				scaledValue := resourceStorage.ScaledValue(resource.Giga)
+				nodePoolOptions[i].DiskSizeGb = util.Ptr(int(scaledValue))
+			} else {
+				value := resourceStorage.Value() / 1024 / 1024 / 1024
+				nodePoolOptions[i].DiskSizeGb = util.Ptr(int(value))
+			}
 		}
 	}
 
