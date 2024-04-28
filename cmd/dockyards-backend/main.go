@@ -243,7 +243,6 @@ func main() {
 
 	err = (&controller.OrganizationReconciler{
 		Client: manager.GetClient(),
-		Logger: logger.With("reconciler", "organization"),
 	}).SetupWithManager(manager)
 	if err != nil {
 		logger.Error("error creating new organization reconciler", "err", err)

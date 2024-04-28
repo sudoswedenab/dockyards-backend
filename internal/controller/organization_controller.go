@@ -2,11 +2,10 @@ package controller
 
 import (
 	"context"
-	"log/slog"
 
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	dockyardsv1alpha1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -20,17 +19,16 @@ const (
 
 type OrganizationReconciler struct {
 	client.Client
-	Logger *slog.Logger
 }
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;patch;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations/status,verbs=patch
-// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create
+// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=create;get;list;watch
 
 func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := r.Logger.With("name", req.Name)
+	logger := ctrl.LoggerFrom(ctx)
 
-	var organization v1alpha2.Organization
+	var organization dockyardsv1.Organization
 	err := r.Get(ctx, req.NamespacedName, &organization)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -47,7 +45,7 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 		err := r.Patch(ctx, &organization, patch)
 		if err != nil {
-			logger.Error("error adding finalizer", "err", err)
+			logger.Error(err, "error adding finalizer")
 
 			return ctrl.Result{}, err
 		}
@@ -63,8 +61,8 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				GenerateName: organization.Name + "-",
 				OwnerReferences: []metav1.OwnerReference{
 					{
-						APIVersion: v1alpha2.GroupVersion.String(),
-						Kind:       v1alpha2.OrganizationKind,
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
 						Name:       organization.Name,
 						UID:        organization.UID,
 					},
@@ -74,7 +72,7 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 		err := r.Create(ctx, &namespace)
 		if err != nil {
-			logger.Error("error creating namespace", "err", err)
+			logger.Error(err, "error creating namespace")
 
 			return ctrl.Result{}, err
 		}
@@ -85,12 +83,12 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 		err = r.Status().Patch(ctx, &organization, patch)
 		if err != nil {
-			logger.Error("error patching organization status", "err", err)
+			logger.Error(err, "error patching organization status")
 
 			return ctrl.Result{}, err
 		}
 
-		logger.Debug("created namespace for organization")
+		logger.Info("created namespace for organization")
 
 		return ctrl.Result{}, nil
 	}
@@ -98,17 +96,17 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	return ctrl.Result{}, nil
 }
 
-func (r *OrganizationReconciler) reconcileDelete(ctx context.Context, organization *v1alpha2.Organization) (ctrl.Result, error) {
-	logger := r.Logger.With("name", organization.Name)
+func (r *OrganizationReconciler) reconcileDelete(ctx context.Context, organization *dockyardsv1.Organization) (ctrl.Result, error) {
+	logger := ctrl.LoggerFrom(ctx)
 
 	matchingFields := client.MatchingFields{
 		index.OwnerRefsIndexKey: string(organization.UID),
 	}
 
-	var clusterList v1alpha1.ClusterList
+	var clusterList dockyardsv1alpha1.ClusterList
 	err := r.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		logger.Error("error listing clusters", "err", err)
+		logger.Error(err, "error listing clusters")
 
 		return ctrl.Result{}, err
 	}
@@ -125,7 +123,7 @@ func (r *OrganizationReconciler) reconcileDelete(ctx context.Context, organizati
 
 	err = r.Patch(ctx, organization, patch)
 	if err != nil {
-		logger.Error("error removing finalizer", "err", err)
+		logger.Error(err, "error removing finalizer")
 
 		return ctrl.Result{}, err
 	}
@@ -135,7 +133,7 @@ func (r *OrganizationReconciler) reconcileDelete(ctx context.Context, organizati
 
 func (r *OrganizationReconciler) SetupWithManager(manager ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(manager).
-		For(&v1alpha2.Organization{}).
-		Owns(&v1alpha1.Cluster{}).
+		For(&dockyardsv1.Organization{}).
+		Owns(&dockyardsv1alpha1.Cluster{}).
 		Complete(r)
 }
