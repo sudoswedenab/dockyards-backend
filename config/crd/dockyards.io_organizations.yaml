@@ -218,6 +218,9 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="Ready")].status
       name: Ready
       type: string
+    - jsonPath: .status.namespaceRef
+      name: Namespace
+      type: string
     name: v1alpha2
     schema:
       openAPIV3Schema:

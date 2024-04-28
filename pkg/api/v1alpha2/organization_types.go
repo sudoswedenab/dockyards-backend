@@ -34,6 +34,7 @@ type OrganizationStatus struct {
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
+// +kubebuilder:printcolumn:name="Namespace",type=string,JSONPath=".status.namespaceRef"
 // +kubebuilder:storageversion
 type Organization struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -10,6 +10,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -442,6 +443,55 @@ func TestGetNamespaceOrganization(t *testing.T) {
 
 			if !cmp.Equal(actual, tc.expected) {
 				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
+
+func TestCanUserGet(t *testing.T) {
+	tt := []struct {
+		name           string
+		user           v1alpha1.User
+		namespacedName types.NamespacedName
+		lists          []client.ObjectList
+		expected       bool
+	}{
+		{
+			name: "test dockyards cluster",
+			user: v1alpha1.User{
+				ObjectMeta: metav1.ObjectMeta{},
+			},
+			namespacedName: types.NamespacedName{
+				Namespace: "testing",
+				Name:      "test",
+			},
+			lists: []client.ObjectList{
+				&v1alpha1.ClusterList{
+					Items: []v1alpha1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+							},
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			scheme := scheme.Scheme
+			_ = v1alpha1.AddToScheme(scheme)
+			_ = v1alpha2.AddToScheme(scheme)
+
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+
+			actual, _ := apiutil.CanUserGet(context.Background(), fakeClient, &tc.user, tc.namespacedName)
+			if actual != tc.expected {
+				t.Errorf("expected %t, got %t", tc.expected, actual)
 			}
 		})
 	}

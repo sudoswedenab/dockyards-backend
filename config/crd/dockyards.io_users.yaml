@@ -15,11 +15,11 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .metadata.creationTimestamp
-      name: Age
-      type: date
     - jsonPath: .status.conditions[?(@.type=="Verified")].status
       name: Verified
+      type: string
+    - jsonPath: .metadata.uid
+      name: UID
       type: string
     name: v1alpha1
     schema:

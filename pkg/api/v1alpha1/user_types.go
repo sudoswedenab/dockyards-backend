@@ -23,8 +23,8 @@ type UserStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name=Age,type=date,JSONPath=.metadata.creationTimestamp
 // +kubebuilder:printcolumn:name="Verified",type=string,JSONPath=".status.conditions[?(@.type==\"Verified\")].status"
+// +kubebuilder:printcolumn:name="UID",type=string,JSONPath=".metadata.uid"
 type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
