@@ -29,3 +29,7 @@ const (
 const (
 	FeatureCostEstimates = "cost-estimates"
 )
+
+const (
+	FeatureAPIExplanations = "api-explanations"
+)
