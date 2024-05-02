@@ -33,3 +33,7 @@ const (
 const (
 	FeatureAPIExplanations = "api-explanations"
 )
+
+const (
+	FeatureDNSZones = "dns-zones"
+)
