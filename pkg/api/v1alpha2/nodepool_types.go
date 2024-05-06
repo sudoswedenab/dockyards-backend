@@ -1,4 +1,4 @@
-package v1alpha1
+package v1alpha2
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	// Deprecated: superseded by v1alpha2.NodePoolKind
 	NodePoolKind = "NodePool"
 )
 
@@ -34,10 +33,9 @@ type NodePoolStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
-// Deprecated: superseded by v1alpha2.NodePool
 type NodePool struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -47,7 +45,6 @@ type NodePool struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.NodePoolList
 type NodePoolList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
