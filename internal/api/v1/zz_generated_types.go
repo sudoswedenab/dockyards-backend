@@ -137,25 +137,25 @@ type NodePool struct {
 	ControlPlane               *bool  `json:"control_plane,omitempty"`
 	ControlPlaneComponentsOnly *bool  `json:"control_plane_components_only,omitempty"`
 	CpuCount                   int    `json:"cpu_count"`
-	DiskSizeGb                 int    `json:"disk_size_gb"`
+	DiskSize                   string `json:"disk_size"`
 	Id                         string `json:"id"`
 	LoadBalancer               *bool  `json:"load_balancer,omitempty"`
 	Name                       string `json:"name"`
 	Nodes                      []Node `json:"nodes"`
 	Quantity                   int    `json:"quantity"`
-	RamSizeMb                  int    `json:"ram_size_mb"`
+	RamSize                    string `json:"ram_size"`
 }
 
 // NodePoolOptions defines model for node_pool_options.
 type NodePoolOptions struct {
-	ControlPlane               *bool  `json:"control_plane,omitempty"`
-	ControlPlaneComponentsOnly *bool  `json:"control_plane_components_only,omitempty"`
-	CpuCount                   *int   `json:"cpu_count,omitempty"`
-	DiskSizeGb                 *int   `json:"disk_size_gb,omitempty"`
-	LoadBalancer               *bool  `json:"load_balancer,omitempty"`
-	Name                       string `json:"name"`
-	Quantity                   int    `json:"quantity"`
-	RamSizeMb                  *int   `json:"ram_size_mb,omitempty"`
+	ControlPlane               *bool   `json:"control_plane,omitempty"`
+	ControlPlaneComponentsOnly *bool   `json:"control_plane_components_only,omitempty"`
+	CpuCount                   *int    `json:"cpu_count,omitempty"`
+	DiskSize                   *string `json:"disk_size,omitempty"`
+	LoadBalancer               *bool   `json:"load_balancer,omitempty"`
+	Name                       string  `json:"name"`
+	Quantity                   int     `json:"quantity"`
+	RamSize                    *string `json:"ram_size,omitempty"`
 }
 
 // Options defines model for options.

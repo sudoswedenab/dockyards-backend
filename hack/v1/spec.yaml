@@ -518,10 +518,10 @@ components:
           type: integer
         cpu_count:
           type: integer
-        ram_size_mb:
-          type: integer
-        disk_size_gb:
-          type: integer
+        ram_size:
+          type: string
+        disk_size:
+          type: string
         nodes:
           type: array
           items:
@@ -532,8 +532,8 @@ components:
       - name
       - quantity
       - cpu_count
-      - ram_size_mb
-      - disk_size_gb
+      - ram_size
+      - disk_size
       - nodes
     node_pool_options:
       properties:
@@ -549,10 +549,10 @@ components:
           type: integer
         cpu_count:
           type: integer
-        ram_size_mb:
-          type: integer
-        disk_size_gb:
-          type: integer
+        ram_size:
+          type: string
+        disk_size:
+          type: string
       required:
       - name
       - quantity

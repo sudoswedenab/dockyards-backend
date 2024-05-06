@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
@@ -25,12 +24,20 @@ import (
 
 func (h *handler) toV1NodePool(nodePool *v1alpha1.NodePool, cluster *v1alpha1.Cluster, nodeList *v1alpha1.NodeList) *v1.NodePool {
 	v1NodePool := v1.NodePool{
-		Id:         string(nodePool.UID),
-		ClusterId:  string(cluster.UID),
-		Name:       nodePool.Name,
-		DiskSizeGb: int(nodePool.Status.Resources.Storage().Value() / 1024 / 1024 / 1024),
-		CpuCount:   int(nodePool.Status.Resources.Cpu().Value()),
-		RamSizeMb:  int(nodePool.Status.Resources.Memory().Value()),
+		Id:        string(nodePool.UID),
+		ClusterId: string(cluster.UID),
+		Name:      nodePool.Name,
+		CpuCount:  int(nodePool.Status.Resources.Cpu().Value()),
+	}
+
+	resourceStorage := nodePool.Status.Resources.Storage()
+	if !resourceStorage.IsZero() {
+		v1NodePool.DiskSize = resourceStorage.String()
+	}
+
+	resourceMemory := nodePool.Status.Resources.Memory()
+	if !resourceMemory.IsZero() {
+		v1NodePool.RamSize = resourceMemory.String()
 	}
 
 	if nodePool.Spec.Replicas != nil {
@@ -233,12 +240,13 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 
 	resources := make(corev1.ResourceList)
 
-	if nodePoolOptions.RamSizeMb != nil {
-		quantity := fmt.Sprintf("%dMi", *nodePoolOptions.RamSizeMb)
-
-		memory, err := resource.ParseQuantity(quantity)
+	if nodePoolOptions.RamSize != nil {
+		memory, err := resource.ParseQuantity(*nodePoolOptions.RamSize)
 		if err != nil {
-			panic(err)
+			h.logger.Error("error parsing ram size quantity", "err", err)
+
+			c.AbortWithStatus(http.StatusUnprocessableEntity)
+			return
 		}
 
 		resources[corev1.ResourceMemory] = memory
@@ -249,12 +257,13 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		resources[corev1.ResourceCPU] = *cpu
 	}
 
-	if nodePoolOptions.DiskSizeGb != nil {
-		quantity := fmt.Sprintf("%dGi", *nodePoolOptions.DiskSizeGb)
-
-		storage, err := resource.ParseQuantity(quantity)
+	if nodePoolOptions.DiskSize != nil {
+		storage, err := resource.ParseQuantity(*nodePoolOptions.DiskSize)
 		if err != nil {
-			panic(err)
+			h.logger.Error("error parsing disk size quantity", "err", err)
+
+			c.AbortWithStatus(http.StatusUnprocessableEntity)
+			return
 		}
 
 		resources[corev1.ResourceStorage] = storage

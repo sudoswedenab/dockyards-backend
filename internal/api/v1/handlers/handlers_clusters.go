@@ -246,16 +246,28 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 			nodePool.Spec.Resources[corev1.ResourceCPU] = *quantity
 		}
 
-		if nodePoolOption.DiskSizeGb != nil {
-			quantity := resource.NewScaledQuantity(int64(*nodePoolOption.DiskSizeGb), resource.Giga)
+		if nodePoolOption.DiskSize != nil {
+			quantity, err := resource.ParseQuantity(*nodePoolOption.DiskSize)
+			if err != nil {
+				h.logger.Error("error parsing disk size quantity", "err", err)
 
-			nodePool.Spec.Resources[corev1.ResourceStorage] = *quantity
+				hasErrors = true
+				break
+			}
+
+			nodePool.Spec.Resources[corev1.ResourceStorage] = quantity
 		}
 
-		if nodePoolOption.RamSizeMb != nil {
-			quantity := resource.NewScaledQuantity(int64(*nodePoolOption.RamSizeMb), resource.Mega)
+		if nodePoolOption.RamSize != nil {
+			quantity, err := resource.ParseQuantity(*nodePoolOption.RamSize)
+			if err != nil {
+				h.logger.Error("error parsing ram size quantity", "err", err)
 
-			nodePool.Spec.Resources[corev1.ResourceMemory] = *quantity
+				hasErrors = true
+				break
+			}
+
+			nodePool.Spec.Resources[corev1.ResourceMemory] = quantity
 		}
 
 		err := h.controllerClient.Create(ctx, &nodePool)

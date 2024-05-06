@@ -260,7 +260,7 @@ func TestGetNodePool(t *testing.T) {
 				Id:           "4386082b-cabe-4235-b6be-a857706ed6f4",
 				ClusterId:    "3fac0683-34bf-4f8a-908b-28db92cf20a0",
 				ControlPlane: util.Ptr(true),
-				DiskSizeGb:   123,
+				DiskSize:     "123Gi",
 				Name:         "test-complex",
 				Quantity:     3,
 				Nodes: []v1.Node{
@@ -603,9 +603,9 @@ func TestPostClusterNodePools(t *testing.T) {
 				Quantity:                   3,
 				LoadBalancer:               util.Ptr(true),
 				ControlPlaneComponentsOnly: util.Ptr(true),
-				RamSizeMb:                  util.Ptr(1234),
+				RamSize:                    util.Ptr("1234M"),
 				CpuCount:                   util.Ptr(12),
-				DiskSizeGb:                 util.Ptr(123),
+				DiskSize:                   util.Ptr("123Gi"),
 			},
 			sub: "940b43ee-39d3-4ecb-a6bd-be25245d7eca",
 			lists: []client.ObjectList{
