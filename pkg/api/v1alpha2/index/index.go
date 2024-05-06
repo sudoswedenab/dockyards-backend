@@ -7,16 +7,26 @@ import (
 )
 
 const (
-	MemberRefsIndexKey   = ".spec.memberRefs.uid"
-	CloudProjectRefKey   = ".spec.cloud.projectRef"
-	EmailField           = ".spec.email"
-	UIDField             = ".metadata.uid"
-	OwnerReferencesField = ".metadata.ownerReferences"
-	SecretTypeField      = ".type"
+	// Deprecated: use MemberReferencesField
+	MemberRefsIndexKey = ".spec.memberRefs.uid"
+	// Deprecated: use CloudProjectReferenceField
+	CloudProjectRefKey = ".spec.cloud.projectRef"
+
+	CloudProjectReferenceField = ".spec.cloud.projectRef"
+	MemberReferencesField      = ".spec.memberRefs.uid"
+	EmailField                 = ".spec.email"
+	UIDField                   = ".metadata.uid"
+	OwnerReferencesField       = ".metadata.ownerReferences"
+	SecretTypeField            = ".type"
 )
 
-func MemberRefsIndexer(object client.Object) []string {
-	organization := object.(*v1alpha2.Organization)
+// Deprecated: use ByMemberReferences
+func MemberRefsIndexer(o client.Object) []string {
+	return ByMemberReferences(o)
+}
+
+func ByMemberReferences(o client.Object) []string {
+	organization := o.(*v1alpha2.Organization)
 
 	memberUIDs := make([]string, len(organization.Spec.MemberRefs))
 	for i, memberRef := range organization.Spec.MemberRefs {
@@ -30,7 +40,12 @@ func CloudRefValue(ref *v1alpha2.NamespacedObjectReference) string {
 	return ref.Kind + "/" + ref.Namespace + "/" + ref.Name
 }
 
+// Deprecated: user ByCloudProjectReference
 func DockyardsOrganizationByCloudRef(o client.Object) []string {
+	return ByCloudProjectReference(o)
+}
+
+func ByCloudProjectReference(o client.Object) []string {
 	organization, ok := o.(*v1alpha2.Organization)
 	if !ok {
 		return nil
@@ -67,8 +82,8 @@ func ByOwnerReferences(o client.Object) []string {
 	return ownerUIDs
 }
 
-func BySecretType(object client.Object) []string {
-	secret := object.(*corev1.Secret)
+func BySecretType(o client.Object) []string {
+	secret := o.(*corev1.Secret)
 
 	return []string{
 		string(secret.Type),

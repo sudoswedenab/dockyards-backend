@@ -143,7 +143,7 @@ func main() {
 		}
 	}
 
-	err = manager.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer)
+	err = manager.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Organization{}, index.MemberReferencesField, index.ByMemberReferences)
 	if err != nil {
 		logger.Error("error adding member refs indexer to manager", "err", err)
 
