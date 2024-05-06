@@ -1,11 +1,10 @@
-package v1alpha1
+package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	// Deprecated: superseded by v1alpha2.ClusterKind
 	ClusterKind = "Cluster"
 )
 
@@ -22,12 +21,11 @@ type ClusterStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="Version",type=string,JSONPath=".status.version"
-// Deprecated: superseded by v1alpha2.Cluster
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -37,7 +35,6 @@ type Cluster struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.ClusterList
 type ClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
