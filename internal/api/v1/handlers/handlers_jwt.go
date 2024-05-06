@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,10 +62,10 @@ func (h *handler) PostRefresh(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: subject,
+		index.UIDField: subject,
 	}
 
-	var userList v1alpha1.UserList
+	var userList dockyardsv1.UserList
 	err = h.controllerClient.List(ctx, &userList, matchingFields)
 	if err != nil {
 		h.logger.Error("", "err", err)
@@ -94,7 +94,7 @@ func (h *handler) PostRefresh(c *gin.Context) {
 	c.JSON(http.StatusOK, tokens)
 }
 
-func (h *handler) generateTokens(user v1alpha1.User) (*v1.Tokens, error) {
+func (h *handler) generateTokens(user dockyardsv1.User) (*v1.Tokens, error) {
 	claims := jwt.RegisteredClaims{
 		Subject:   string(user.UID),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),

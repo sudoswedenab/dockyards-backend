@@ -13,8 +13,8 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,22 +37,22 @@ func TestLogin(t *testing.T) {
 		{
 			name: "test valid user",
 			lists: []client.ObjectList{
-				&v1alpha1.UserList{
-					Items: []v1alpha1.User{
+				&dockyardsv1.UserList{
+					Items: []dockyardsv1.User{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 							},
-							Spec: v1alpha1.UserSpec{
+							Spec: dockyardsv1.UserSpec{
 								Email:    "test@dockyards.dev",
 								Password: string(hash),
 							},
-							Status: v1alpha1.UserStatus{
+							Status: dockyardsv1.UserStatus{
 								Conditions: []metav1.Condition{
 									{
-										Type:   v1alpha1.VerifiedCondition,
+										Type:   dockyardsv1.ReadyCondition,
 										Status: metav1.ConditionTrue,
-										Reason: v1alpha1.UserVerifiedReason,
+										Reason: "testing",
 									},
 								},
 							},
@@ -68,22 +68,22 @@ func TestLogin(t *testing.T) {
 		{
 			name: "test multiple users",
 			lists: []client.ObjectList{
-				&v1alpha1.UserList{
-					Items: []v1alpha1.User{
+				&dockyardsv1.UserList{
+					Items: []dockyardsv1.User{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test1",
 							},
-							Spec: v1alpha1.UserSpec{
+							Spec: dockyardsv1.UserSpec{
 								Email:    "test1@dockyards.dev",
 								Password: string(hash),
 							},
-							Status: v1alpha1.UserStatus{
+							Status: dockyardsv1.UserStatus{
 								Conditions: []metav1.Condition{
 									{
-										Type:   v1alpha1.VerifiedCondition,
+										Type:   dockyardsv1.ReadyCondition,
 										Status: metav1.ConditionTrue,
-										Reason: v1alpha1.UserVerifiedReason,
+										Reason: "testing",
 									},
 								},
 							},
@@ -92,16 +92,16 @@ func TestLogin(t *testing.T) {
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test2",
 							},
-							Spec: v1alpha1.UserSpec{
+							Spec: dockyardsv1.UserSpec{
 								Email:    "test2@dockyards.dev",
 								Password: string(hash),
 							},
-							Status: v1alpha1.UserStatus{
+							Status: dockyardsv1.UserStatus{
 								Conditions: []metav1.Condition{
 									{
-										Type:   v1alpha1.VerifiedCondition,
+										Type:   dockyardsv1.ReadyCondition,
 										Status: metav1.ConditionTrue,
-										Reason: v1alpha1.UserVerifiedReason,
+										Reason: "testing",
 									},
 								},
 							},
@@ -110,16 +110,16 @@ func TestLogin(t *testing.T) {
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test3",
 							},
-							Spec: v1alpha1.UserSpec{
+							Spec: dockyardsv1.UserSpec{
 								Email:    "test3@dockyards.dev",
 								Password: string(hash),
 							},
-							Status: v1alpha1.UserStatus{
+							Status: dockyardsv1.UserStatus{
 								Conditions: []metav1.Condition{
 									{
-										Type:   v1alpha1.VerifiedCondition,
+										Type:   dockyardsv1.ReadyCondition,
 										Status: metav1.ConditionTrue,
-										Reason: v1alpha1.UserVerifiedReason,
+										Reason: "testing",
 									},
 								},
 							},
@@ -144,8 +144,12 @@ func TestLogin(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, index.EmailIndexKey, index.EmailIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.User{}, index.EmailField, index.ByEmail).
+				Build()
 
 			h := handler{
 				logger:               logger,
@@ -193,22 +197,22 @@ func TestLoginErrors(t *testing.T) {
 		{
 			name: "test incorrect password",
 			lists: []client.ObjectList{
-				&v1alpha1.UserList{
-					Items: []v1alpha1.User{
+				&dockyardsv1.UserList{
+					Items: []dockyardsv1.User{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 							},
-							Spec: v1alpha1.UserSpec{
+							Spec: dockyardsv1.UserSpec{
 								Email:    "test@dockyards.dev",
 								Password: string(hash),
 							},
-							Status: v1alpha1.UserStatus{
+							Status: dockyardsv1.UserStatus{
 								Conditions: []metav1.Condition{
 									{
-										Type:   v1alpha1.VerifiedCondition,
+										Type:   dockyardsv1.ReadyCondition,
 										Status: metav1.ConditionTrue,
-										Reason: v1alpha1.UserVerifiedReason,
+										Reason: "testing",
 									},
 								},
 							},
@@ -233,17 +237,17 @@ func TestLoginErrors(t *testing.T) {
 		{
 			name: "test unverified user",
 			lists: []client.ObjectList{
-				&v1alpha1.UserList{
-					Items: []v1alpha1.User{
+				&dockyardsv1.UserList{
+					Items: []dockyardsv1.User{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 							},
-							Spec: v1alpha1.UserSpec{
+							Spec: dockyardsv1.UserSpec{
 								Email:    "test@dockyards.dev",
 								Password: string(hash),
 							},
-							Status: v1alpha1.UserStatus{},
+							Status: dockyardsv1.UserStatus{},
 						},
 					},
 				},
@@ -263,8 +267,12 @@ func TestLoginErrors(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, index.EmailIndexKey, index.EmailIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.User{}, index.EmailField, index.ByEmail).
+				Build()
 
 			h := handler{
 				logger:           logger,

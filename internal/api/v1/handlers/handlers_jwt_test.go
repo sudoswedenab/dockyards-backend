@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,22 +36,22 @@ func TestPostRefresh(t *testing.T) {
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 5)),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.UserList{
-					Items: []v1alpha1.User{
+				&dockyardsv1.UserList{
+					Items: []dockyardsv1.User{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 								UID:  "24449fef-e181-42f3-a9c6-10d920024090",
 							},
-							Spec: v1alpha1.UserSpec{
+							Spec: dockyardsv1.UserSpec{
 								Email: "test@dockyards.dev",
 							},
-							Status: v1alpha1.UserStatus{
+							Status: dockyardsv1.UserStatus{
 								Conditions: []metav1.Condition{
 									{
-										Type:   v1alpha1.VerifiedCondition,
+										Type:   dockyardsv1.ReadyCondition,
 										Status: metav1.ConditionTrue,
-										Reason: v1alpha1.UserVerifiedReason,
+										Reason: "testing",
 									},
 								},
 							},
@@ -76,8 +76,12 @@ func TestPostRefresh(t *testing.T) {
 			}
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, index.UIDIndexKey, index.UIDIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.User{}, index.UIDField, index.ByUID).
+				Build()
 
 			h := handler{
 				logger:               logger,
@@ -135,22 +139,22 @@ func TestPostRefreshErrors(t *testing.T) {
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.UserList{
-					Items: []v1alpha1.User{
+				&dockyardsv1.UserList{
+					Items: []dockyardsv1.User{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 								UID:  "0ad28a56-3f6d-40bf-a3e6-0807f2fd6f86",
 							},
-							Spec: v1alpha1.UserSpec{
+							Spec: dockyardsv1.UserSpec{
 								Email: "test@dockyards.dev",
 							},
-							Status: v1alpha1.UserStatus{
+							Status: dockyardsv1.UserStatus{
 								Conditions: []metav1.Condition{
 									{
-										Type:   v1alpha1.VerifiedCondition,
+										Type:   dockyardsv1.ReadyCondition,
 										Status: metav1.ConditionTrue,
-										Reason: v1alpha1.UserVerifiedReason,
+										Reason: "testing",
 									},
 								},
 							},
@@ -176,8 +180,12 @@ func TestPostRefreshErrors(t *testing.T) {
 			}
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.User{}, index.UIDIndexKey, index.UIDIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.User{}, index.UIDField, index.ByUID).
+				Build()
 
 			h := handler{
 				logger:               logger,

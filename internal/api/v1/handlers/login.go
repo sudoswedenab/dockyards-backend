@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -24,10 +24,10 @@ func (h *handler) Login(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		index.EmailIndexKey: body.Email,
+		index.EmailField: body.Email,
 	}
 
-	var userList v1alpha1.UserList
+	var userList dockyardsv1.UserList
 	err := h.controllerClient.List(ctx, &userList, matchingFields)
 	if err != nil {
 		h.logger.Error("error getting user from kubernetes", "err", err)
@@ -45,9 +45,9 @@ func (h *handler) Login(c *gin.Context) {
 
 	user := userList.Items[0]
 
-	condition := meta.FindStatusCondition(user.Status.Conditions, v1alpha1.VerifiedCondition)
+	condition := meta.FindStatusCondition(user.Status.Conditions, dockyardsv1.ReadyCondition)
 	if condition == nil || condition.Status != metav1.ConditionTrue {
-		h.logger.Error("user is not verified")
+		h.logger.Error("user is not ready")
 
 		c.AbortWithStatus(http.StatusForbidden)
 		return
