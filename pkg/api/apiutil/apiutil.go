@@ -5,15 +5,15 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetOwnerOrganization(ctx context.Context, c client.Client, o client.Object) (*v1alpha2.Organization, error) {
+func GetOwnerOrganization(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Organization, error) {
 	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != v1alpha2.OrganizationKind {
+		if ownerReference.Kind != dockyardsv1.OrganizationKind {
 			continue
 		}
 
@@ -22,12 +22,12 @@ func GetOwnerOrganization(ctx context.Context, c client.Client, o client.Object)
 			return nil, err
 		}
 
-		if groupVersion.Group == v1alpha2.GroupVersion.Group {
+		if groupVersion.Group == dockyardsv1.GroupVersion.Group {
 			objectKey := client.ObjectKey{
 				Name: ownerReference.Name,
 			}
 
-			var organization v1alpha2.Organization
+			var organization dockyardsv1.Organization
 			err := c.Get(ctx, objectKey, &organization)
 			if err != nil {
 				return nil, err
@@ -39,9 +39,9 @@ func GetOwnerOrganization(ctx context.Context, c client.Client, o client.Object)
 	return nil, nil
 }
 
-func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*v1alpha1.Cluster, error) {
+func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Cluster, error) {
 	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != v1alpha1.ClusterKind {
+		if ownerReference.Kind != dockyardsv1.ClusterKind {
 			continue
 		}
 
@@ -54,13 +54,13 @@ func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*v1
 			continue
 		}
 
-		if groupVersion.Group == v1alpha2.GroupVersion.Group {
+		if groupVersion.Group == dockyardsv1.GroupVersion.Group {
 			objectKey := client.ObjectKey{
 				Name:      ownerReference.Name,
 				Namespace: o.GetNamespace(),
 			}
 
-			var cluster v1alpha1.Cluster
+			var cluster dockyardsv1.Cluster
 			err := c.Get(ctx, objectKey, &cluster)
 			if err != nil {
 				return nil, err
@@ -72,9 +72,9 @@ func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*v1
 	return nil, nil
 }
 
-func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*v1alpha1.NodePool, error) {
+func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.NodePool, error) {
 	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != v1alpha1.NodePoolKind {
+		if ownerReference.Kind != dockyardsv1.NodePoolKind {
 			continue
 		}
 
@@ -92,7 +92,7 @@ func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*v
 			Namespace: o.GetNamespace(),
 		}
 
-		var nodePool v1alpha1.NodePool
+		var nodePool dockyardsv1.NodePool
 		err = c.Get(ctx, objectKey, &nodePool)
 		if err != nil {
 			return nil, err
@@ -145,8 +145,8 @@ func IsFeatureEnabled(ctx context.Context, c client.Client, featureName featuren
 	return true, nil
 }
 
-func GetNamespaceOrganization(ctx context.Context, c client.Client, namespace string) (*v1alpha2.Organization, error) {
-	var organizationList v1alpha2.OrganizationList
+func GetNamespaceOrganization(ctx context.Context, c client.Client, namespace string) (*dockyardsv1.Organization, error) {
+	var organizationList dockyardsv1.OrganizationList
 	err := c.List(ctx, &organizationList)
 	if err != nil {
 		return nil, err
