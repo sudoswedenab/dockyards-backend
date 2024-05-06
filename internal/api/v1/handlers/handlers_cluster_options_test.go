@@ -11,7 +11,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -31,14 +31,14 @@ func TestGetClusterOptions(t *testing.T) {
 		{
 			name: "test simple",
 			lists: []client.ObjectList{
-				&v1alpha1.ReleaseList{
-					Items: []v1alpha1.Release{
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "supported-kubernetes-releases",
 								Namespace: "testing",
 							},
-							Status: v1alpha1.ReleaseStatus{
+							Status: dockyardsv1.ReleaseStatus{
 								Versions: []string{
 									"v1.2.3",
 								},
@@ -46,20 +46,20 @@ func TestGetClusterOptions(t *testing.T) {
 						},
 					},
 				},
-				&v1alpha1.ClusterTemplateList{
-					Items: []v1alpha1.ClusterTemplate{
+				&dockyardsv1.ClusterTemplateList{
+					Items: []dockyardsv1.ClusterTemplate{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "recommended",
 								Namespace: "testing",
 							},
-							Spec: v1alpha1.ClusterTemplateSpec{
-								NodePoolTemplates: []v1alpha1.NodePool{
+							Spec: dockyardsv1.ClusterTemplateSpec{
+								NodePoolTemplates: []dockyardsv1.NodePool{
 									{
 										ObjectMeta: metav1.ObjectMeta{
 											Name: "cp",
 										},
-										Spec: v1alpha1.NodePoolSpec{
+										Spec: dockyardsv1.NodePoolSpec{
 											Replicas:     util.Ptr(int32(3)),
 											ControlPlane: true,
 											Resources: corev1.ResourceList{
@@ -72,7 +72,7 @@ func TestGetClusterOptions(t *testing.T) {
 										ObjectMeta: metav1.ObjectMeta{
 											Name: "lb",
 										},
-										Spec: v1alpha1.NodePoolSpec{
+										Spec: dockyardsv1.NodePoolSpec{
 											Replicas:      util.Ptr(int32(2)),
 											LoadBalancer:  true,
 											DedicatedRole: true,
@@ -82,7 +82,7 @@ func TestGetClusterOptions(t *testing.T) {
 										ObjectMeta: metav1.ObjectMeta{
 											Name: "w",
 										},
-										Spec: v1alpha1.NodePoolSpec{
+										Spec: dockyardsv1.NodePoolSpec{
 											Resources: corev1.ResourceList{
 												corev1.ResourceStorage: resource.MustParse("123G"),
 											},
@@ -124,14 +124,14 @@ func TestGetClusterOptions(t *testing.T) {
 		{
 			name: "test binary format",
 			lists: []client.ObjectList{
-				&v1alpha1.ReleaseList{
-					Items: []v1alpha1.Release{
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "supported-kubernetes-releases",
 								Namespace: "testing",
 							},
-							Status: v1alpha1.ReleaseStatus{
+							Status: dockyardsv1.ReleaseStatus{
 								Versions: []string{
 									"v1.2.3",
 								},
@@ -139,20 +139,20 @@ func TestGetClusterOptions(t *testing.T) {
 						},
 					},
 				},
-				&v1alpha1.ClusterTemplateList{
-					Items: []v1alpha1.ClusterTemplate{
+				&dockyardsv1.ClusterTemplateList{
+					Items: []dockyardsv1.ClusterTemplate{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "recommended",
 								Namespace: "testing",
 							},
-							Spec: v1alpha1.ClusterTemplateSpec{
-								NodePoolTemplates: []v1alpha1.NodePool{
+							Spec: dockyardsv1.ClusterTemplateSpec{
+								NodePoolTemplates: []dockyardsv1.NodePool{
 									{
 										ObjectMeta: metav1.ObjectMeta{
 											Name: "cp",
 										},
-										Spec: v1alpha1.NodePoolSpec{
+										Spec: dockyardsv1.NodePoolSpec{
 											ControlPlane: true,
 											Resources: corev1.ResourceList{
 												corev1.ResourceMemory: resource.MustParse("4Gi"),
@@ -163,7 +163,7 @@ func TestGetClusterOptions(t *testing.T) {
 										ObjectMeta: metav1.ObjectMeta{
 											Name: "w",
 										},
-										Spec: v1alpha1.NodePoolSpec{
+										Spec: dockyardsv1.NodePoolSpec{
 											Resources: corev1.ResourceList{
 												corev1.ResourceStorage: resource.MustParse("123Gi"),
 											},
@@ -202,7 +202,7 @@ func TestGetClusterOptions(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
+			dockyardsv1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{

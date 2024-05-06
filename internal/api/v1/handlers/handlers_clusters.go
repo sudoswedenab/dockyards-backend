@@ -6,8 +6,9 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -24,7 +25,7 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=create
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
 
-func (h *handler) toV1Cluster(organization *v1alpha1.Organization, cluster *v1alpha1.Cluster, nodePoolList *v1alpha1.NodePoolList) *v1.Cluster {
+func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *dockyardsv1.Cluster, nodePoolList *dockyardsv1.NodePoolList) *v1.Cluster {
 	v1Cluster := v1.Cluster{
 		Id:           string(cluster.UID),
 		Name:         cluster.Name,
@@ -33,7 +34,7 @@ func (h *handler) toV1Cluster(organization *v1alpha1.Organization, cluster *v1al
 		Version:      cluster.Status.Version,
 	}
 
-	condition := meta.FindStatusCondition(cluster.Status.Conditions, v1alpha1.ReadyCondition)
+	condition := meta.FindStatusCondition(cluster.Status.Conditions, dockyardsv1.ReadyCondition)
 	if condition != nil {
 		v1Cluster.State = condition.Message
 	}
@@ -63,7 +64,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		Name: org,
 	}
 
-	var organization v1alpha1.Organization
+	var organization dockyardsv1.Organization
 	err := h.controllerClient.Get(ctx, objectKey, &organization)
 	if err != nil {
 		h.logger.Error("error getting organization from kubernetes", "err", err)
@@ -133,21 +134,21 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 	}
 
-	cluster := v1alpha1.Cluster{
+	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterOptions.Name,
 			Namespace: organization.Status.NamespaceRef,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         v1alpha1.GroupVersion.String(),
-					Kind:               v1alpha1.OrganizationKind,
+					APIVersion:         dockyardsv1.GroupVersion.String(),
+					Kind:               dockyardsv1.OrganizationKind,
 					Name:               organization.Name,
 					UID:                organization.UID,
 					BlockOwnerDeletion: util.Ptr(true),
 				},
 			},
 		},
-		Spec: v1alpha1.ClusterSpec{},
+		Spec: dockyardsv1.ClusterSpec{},
 	}
 
 	if clusterOptions.Version != nil {
@@ -176,7 +177,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 			Namespace: h.namespace,
 		}
 
-		var clusterTemplate v1alpha1.ClusterTemplate
+		var clusterTemplate dockyardsv1.ClusterTemplate
 		err := h.controllerClient.Get(ctx, objectKey, &clusterTemplate)
 		if err != nil {
 			h.logger.Error("error getting cluster template", "err", err)
@@ -201,27 +202,27 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		})
 	}
 
-	nodePoolList := v1alpha1.NodePoolList{
-		Items: make([]v1alpha1.NodePool, len(*nodePoolOptions)),
+	nodePoolList := dockyardsv1.NodePoolList{
+		Items: make([]dockyardsv1.NodePool, len(*nodePoolOptions)),
 	}
 
 	hasErrors := false
 	for i, nodePoolOption := range *nodePoolOptions {
-		nodePool := v1alpha1.NodePool{
+		nodePool := dockyardsv1.NodePool{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + nodePoolOption.Name,
 				Namespace: cluster.Namespace,
 				OwnerReferences: []metav1.OwnerReference{
 					{
-						APIVersion:         v1alpha1.GroupVersion.String(),
-						Kind:               v1alpha1.ClusterKind,
+						APIVersion:         dockyardsv1.GroupVersion.String(),
+						Kind:               dockyardsv1.ClusterKind,
 						Name:               cluster.Name,
 						UID:                cluster.UID,
 						BlockOwnerDeletion: util.Ptr(true),
 					},
 				},
 			},
-			Spec: v1alpha1.NodePoolSpec{
+			Spec: dockyardsv1.NodePoolSpec{
 				Replicas: util.Ptr(int32(nodePoolOption.Quantity)),
 			},
 		}
@@ -307,10 +308,10 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: clusterID,
+		index.UIDField: clusterID,
 	}
 
-	var clusterList v1alpha1.ClusterList
+	var clusterList dockyardsv1.ClusterList
 	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
@@ -328,7 +329,7 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := h.getOwnerOrganization(ctx, &cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 
@@ -396,10 +397,10 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: clusterID,
+		index.UIDField: clusterID,
 	}
 
-	var clusterList v1alpha1.ClusterList
+	var clusterList dockyardsv1.ClusterList
 	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
@@ -417,7 +418,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := h.getOwnerOrganization(ctx, &cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 	}
@@ -466,7 +467,7 @@ func (h *handler) GetClusters(c *gin.Context) {
 		index.MemberRefsIndexKey: subject,
 	}
 
-	var organizationList v1alpha1.OrganizationList
+	var organizationList dockyardsv1.OrganizationList
 	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing organizations", "err", err)
@@ -478,7 +479,7 @@ func (h *handler) GetClusters(c *gin.Context) {
 	clusters := []v1.Cluster{}
 
 	for _, organization := range organizationList.Items {
-		var clusterList v1alpha1.ClusterList
+		var clusterList dockyardsv1.ClusterList
 		err = h.controllerClient.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef))
 		if err != nil {
 			h.logger.Error("error listing clusters", "err", err)
@@ -507,10 +508,10 @@ func (h *handler) GetCluster(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: clusterID,
+		index.UIDField: clusterID,
 	}
 
-	var clusterList v1alpha1.ClusterList
+	var clusterList dockyardsv1.ClusterList
 	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
@@ -528,7 +529,7 @@ func (h *handler) GetCluster(c *gin.Context) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := h.getOwnerOrganization(ctx, &cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 
@@ -558,10 +559,10 @@ func (h *handler) GetCluster(c *gin.Context) {
 	}
 
 	matchingFields = client.MatchingFields{
-		index.OwnerRefsIndexKey: clusterID,
+		index.OwnerReferencesField: clusterID,
 	}
 
-	var nodePoolList v1alpha1.NodePoolList
+	var nodePoolList dockyardsv1.NodePoolList
 	err = h.controllerClient.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing node pools", "err", err)

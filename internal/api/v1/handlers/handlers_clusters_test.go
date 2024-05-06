@@ -16,8 +16,8 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -44,39 +44,39 @@ func TestPostOrgClusters(t *testing.T) {
 			organizationName: "test-org",
 			sub:              "fec813fc-7938-4cb9-ba12-bb28f6b1f5d9",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test-org",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "fec813fc-7938-4cb9-ba12-bb28f6b1f5d9",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterTemplateList{
-					Items: []v1alpha1.ClusterTemplate{
+				&dockyardsv1.ClusterTemplateList{
+					Items: []dockyardsv1.ClusterTemplate{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "recommended",
 							},
-							Spec: v1alpha1.ClusterTemplateSpec{
-								NodePoolTemplates: []v1alpha1.NodePool{
+							Spec: dockyardsv1.ClusterTemplateSpec{
+								NodePoolTemplates: []dockyardsv1.NodePool{
 									{
 										ObjectMeta: metav1.ObjectMeta{
 											Name: "control-plane",
 										},
-										Spec: v1alpha1.NodePoolSpec{
+										Spec: dockyardsv1.NodePoolSpec{
 											Replicas:      util.Ptr(int32(3)),
 											ControlPlane:  true,
 											DedicatedRole: true,
@@ -91,7 +91,7 @@ func TestPostOrgClusters(t *testing.T) {
 										ObjectMeta: metav1.ObjectMeta{
 											Name: "worker",
 										},
-										Spec: v1alpha1.NodePoolSpec{
+										Spec: dockyardsv1.NodePoolSpec{
 											Replicas: util.Ptr(int32(2)),
 											Resources: corev1.ResourceList{
 												corev1.ResourceCPU:     resource.MustParse("4"),
@@ -104,7 +104,7 @@ func TestPostOrgClusters(t *testing.T) {
 										ObjectMeta: metav1.ObjectMeta{
 											Name: "load-balancer",
 										},
-										Spec: v1alpha1.NodePoolSpec{
+										Spec: dockyardsv1.NodePoolSpec{
 											Replicas:      util.Ptr(int32(2)),
 											LoadBalancer:  true,
 											DedicatedRole: true,
@@ -125,10 +125,10 @@ func TestPostOrgClusters(t *testing.T) {
 				Name: "test",
 			},
 			expected: []client.Object{
-				&v1alpha1.Cluster{
+				&dockyardsv1.Cluster{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: v1alpha1.GroupVersion.String(),
-						Kind:       v1alpha1.ClusterKind,
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.ClusterKind,
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "test",
@@ -136,18 +136,18 @@ func TestPostOrgClusters(t *testing.T) {
 						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         v1alpha1.GroupVersion.String(),
-								Kind:               v1alpha1.OrganizationKind,
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.OrganizationKind,
 								Name:               "test-org",
 								BlockOwnerDeletion: util.Ptr(true),
 							},
 						},
 					},
 				},
-				&v1alpha1.NodePool{
+				&dockyardsv1.NodePool{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: v1alpha1.GroupVersion.String(),
-						Kind:       v1alpha1.NodePoolKind,
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.NodePoolKind,
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "test-control-plane",
@@ -155,14 +155,14 @@ func TestPostOrgClusters(t *testing.T) {
 						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         v1alpha1.GroupVersion.String(),
-								Kind:               v1alpha1.ClusterKind,
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.ClusterKind,
 								Name:               "test",
 								BlockOwnerDeletion: util.Ptr(true),
 							},
 						},
 					},
-					Spec: v1alpha1.NodePoolSpec{
+					Spec: dockyardsv1.NodePoolSpec{
 						Replicas:      util.Ptr(int32(3)),
 						ControlPlane:  true,
 						DedicatedRole: true,
@@ -173,10 +173,10 @@ func TestPostOrgClusters(t *testing.T) {
 						},
 					},
 				},
-				&v1alpha1.NodePool{
+				&dockyardsv1.NodePool{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: v1alpha1.GroupVersion.String(),
-						Kind:       v1alpha1.NodePoolKind,
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.NodePoolKind,
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "test-load-balancer",
@@ -184,14 +184,14 @@ func TestPostOrgClusters(t *testing.T) {
 						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         v1alpha1.GroupVersion.String(),
-								Kind:               v1alpha1.ClusterKind,
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.ClusterKind,
 								Name:               "test",
 								BlockOwnerDeletion: util.Ptr(true),
 							},
 						},
 					},
-					Spec: v1alpha1.NodePoolSpec{
+					Spec: dockyardsv1.NodePoolSpec{
 						Replicas:      util.Ptr(int32(2)),
 						LoadBalancer:  true,
 						DedicatedRole: true,
@@ -202,10 +202,10 @@ func TestPostOrgClusters(t *testing.T) {
 						},
 					},
 				},
-				&v1alpha1.NodePool{
+				&dockyardsv1.NodePool{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: v1alpha1.GroupVersion.String(),
-						Kind:       v1alpha1.NodePoolKind,
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.NodePoolKind,
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "test-worker",
@@ -213,14 +213,14 @@ func TestPostOrgClusters(t *testing.T) {
 						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         v1alpha1.GroupVersion.String(),
-								Kind:               v1alpha1.ClusterKind,
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.ClusterKind,
 								Name:               "test",
 								BlockOwnerDeletion: util.Ptr(true),
 							},
 						},
 					},
-					Spec: v1alpha1.NodePoolSpec{
+					Spec: dockyardsv1.NodePoolSpec{
 						Replicas: util.Ptr(int32(2)),
 						Resources: corev1.ResourceList{
 							corev1.ResourceCPU:     resource.MustParse("4"),
@@ -240,7 +240,7 @@ func TestPostOrgClusters(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
+			dockyardsv1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
@@ -284,8 +284,8 @@ func TestPostOrgClusters(t *testing.T) {
 					Namespace: e.GetNamespace(),
 				}
 				switch x := e.(type) {
-				case *v1alpha1.Cluster:
-					var actual v1alpha1.Cluster
+				case *dockyardsv1.Cluster:
+					var actual dockyardsv1.Cluster
 					err := fakeClient.Get(ctx, objectKey, &actual)
 					if err != nil {
 						t.Errorf("error getting expected cluster: %s", err)
@@ -294,8 +294,8 @@ func TestPostOrgClusters(t *testing.T) {
 					if !cmp.Equal(x, &actual) {
 						t.Errorf("diff: %s", cmp.Diff(x, &actual))
 					}
-				case *v1alpha1.NodePool:
-					var actual v1alpha1.NodePool
+				case *dockyardsv1.NodePool:
+					var actual dockyardsv1.NodePool
 					err := fakeClient.Get(ctx, objectKey, &actual)
 					if err != nil {
 						t.Errorf("error getting expected node pool: %s", err)
@@ -331,14 +331,14 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			organizationName: "test-org",
 			sub:              "82aaf116-666f-4846-9e10-defa79a4df3d",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test-org",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "82aaf116-666f-4846-9e10-defa79a4df3d",
@@ -359,14 +359,14 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			organizationName: "test-org",
 			sub:              "e7282b48-f8b6-4042-8f4c-12ec59fe3a87",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test-org",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "e7282b48-f8b6-4042-8f4c-12ec59fe3a87",
@@ -392,15 +392,15 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			organizationName: "test-org",
 			sub:              "62034914-3f46-4c71-810f-14ab985399bc",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test-org",
 								Namespace: "test",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "af510e3e-e667-4500-8a73-12f2163f849e",
@@ -418,28 +418,28 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			organizationName: "test-org",
 			sub:              "c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test-org",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test-cluster",
@@ -459,14 +459,14 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			organizationName: "test-org",
 			sub:              "7a7d8423-c9e7-46f3-958a-e68fb97b4417",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test-org",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "7a7d8423-c9e7-46f3-958a-e68fb97b4417",
@@ -497,7 +497,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
+			dockyardsv1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
@@ -548,29 +548,29 @@ func TestDeleteCluster(t *testing.T) {
 			clusterID: "43257a3d-426d-458b-af8e-4aefad29d442",
 			sub:       "7994b631-399a-41e6-9c6c-200391f8f87d",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test-org",
 								UID:  "10659cb0-fce0-4155-b8c6-4b6b825b6da9",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "7994b631-399a-41e6-9c6c-200391f8f87d",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -578,8 +578,8 @@ func TestDeleteCluster(t *testing.T) {
 								UID:       "43257a3d-426d-458b-af8e-4aefad29d442",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.OrganizationKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
 										Name:       "test-org",
 										UID:        "10659cb0-fce0-4155-b8c6-4b6b825b6da9",
 									},
@@ -599,8 +599,8 @@ func TestDeleteCluster(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).Build()
 
 			h := handler{
 				logger:           logger,
@@ -653,15 +653,15 @@ func TestDeleteClusterErrors(t *testing.T) {
 			clusterID: "cluster-123",
 			sub:       "f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test-org",
 								Namespace: "test",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3",
@@ -679,15 +679,15 @@ func TestDeleteClusterErrors(t *testing.T) {
 			clusterID: "cluster-123",
 			sub:       "8ce52ca1-1931-49a1-8ddf-62bf3870a4bf",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test-org",
 								Namespace: "test",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "0b8f6617-eba7-4360-b73a-11dac2286a40",
@@ -709,7 +709,7 @@ func TestDeleteClusterErrors(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
+			dockyardsv1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
@@ -760,29 +760,29 @@ func TestGetCluster(t *testing.T) {
 			clusterID: "26836276-22c6-41bc-bb40-78cdf141e302",
 			sub:       "f235721e-8e34-4b57-a6aa-8f6d31162a41",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test-org",
 								UID:  "fca014c1-a753-4867-9ed3-9d59a4cb89d3",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "f235721e-8e34-4b57-a6aa-8f6d31162a41",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:              "test",
@@ -791,19 +791,19 @@ func TestGetCluster(t *testing.T) {
 								CreationTimestamp: now,
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.OrganizationKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
 										Name:       "test-org",
 										UID:        "fca014c1-a753-4867-9ed3-9d59a4cb89d3",
 									},
 								},
 							},
-							Status: v1alpha1.ClusterStatus{
+							Status: dockyardsv1.ClusterStatus{
 								Conditions: []metav1.Condition{
 									{
-										Type:    v1alpha1.ReadyCondition,
+										Type:    dockyardsv1.ReadyCondition,
 										Status:  metav1.ConditionTrue,
-										Reason:  v1alpha1.ClusterReadyReason,
+										Reason:  "testing",
 										Message: "active",
 									},
 								},
@@ -812,16 +812,16 @@ func TestGetCluster(t *testing.T) {
 						},
 					},
 				},
-				&v1alpha1.NodePoolList{
-					Items: []v1alpha1.NodePool{
+				&dockyardsv1.NodePoolList{
+					Items: []dockyardsv1.NodePool{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test-pool",
 								UID:  "14edb8e7-b76a-48c7-bfd8-81588d243c33",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.ClusterKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
 										Name:       "test",
 										UID:        "26836276-22c6-41bc-bb40-78cdf141e302",
 									},
@@ -856,10 +856,10 @@ func TestGetCluster(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
+			dockyardsv1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).
-				WithIndex(&v1alpha1.NodePool{}, index.OwnerRefsIndexKey, index.OwnerRefsIndexer).
+				WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).
+				WithIndex(&dockyardsv1.NodePool{}, index.OwnerReferencesField, index.ByOwnerReferences).
 				Build()
 
 			h := handler{
@@ -932,30 +932,30 @@ func TestGetClusterErrors(t *testing.T) {
 			clusterID: "f8d06eb3-e43d-4057-b200-97062c6d96cc",
 			sub:       "f6f6531f-ab6c-4237-b1cb-76133674465f",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test-org",
 								Namespace: "test",
 								UID:       "aa1e5599-1cf4-4b50-9020-79b4492a5545",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "afb03005-d51d-4387-9857-83125ff505d5",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -963,8 +963,8 @@ func TestGetClusterErrors(t *testing.T) {
 								UID:       "f8d06eb3-e43d-4057-b200-97062c6d96cc",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.OrganizationKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
 										Name:       "test-org",
 										UID:        "aa1e5599-1cf4-4b50-9020-79b4492a5545",
 									},
@@ -985,8 +985,12 @@ func TestGetClusterErrors(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).
+				Build()
 
 			h := handler{
 				logger:           logger,
@@ -1034,29 +1038,29 @@ func TestGetClusterKubeconfig(t *testing.T) {
 			clusterID: "8fa24e25-eb7a-428f-a750-e6e8aeee8c93",
 			sub:       "9eb06ff5-4299-480c-b957-0b10485d873c",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
 								Name: "test-org",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "9eb06ff5-4299-480c-b957-0b10485d873c",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -1064,14 +1068,14 @@ func TestGetClusterKubeconfig(t *testing.T) {
 								UID:       "8fa24e25-eb7a-428f-a750-e6e8aeee8c93",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.OrganizationKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
 										Name:       "test-org",
 										UID:        "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
 									},
 								},
 							},
-							Status: v1alpha1.ClusterStatus{
+							Status: dockyardsv1.ClusterStatus{
 								ClusterServiceID: "cluster-123",
 							},
 						},
@@ -1104,8 +1108,12 @@ func TestGetClusterKubeconfig(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).
+				Build()
 
 			h := handler{
 				logger:           logger,
@@ -1165,16 +1173,16 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 			clusterID: "3152f6b4-23fd-4e11-8482-2fb38ddf03bd",
 			sub:       "83a44759-56b8-480a-9575-ad0f3519f73a",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								UID:       "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
 								Name:      "test-org",
 								Namespace: "test",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "83a44759-56b8-480a-9575-ad0f3519f73a",
@@ -1192,29 +1200,29 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 			clusterID: "a6b450d8-4bb0-4aa0-83c3-b30cb55460d2",
 			sub:       "ef418237-2fd1-4977-861a-2031094a6ae5",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								UID:  "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
 								Name: "test-org",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "7180bc06-66c1-4494-b53e-e9cc878995a9",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -1222,8 +1230,8 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 								UID:       "a6b450d8-4bb0-4aa0-83c3-b30cb55460d2",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.OrganizationKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
 										Name:       "test-org",
 										UID:        "7a11a699-fd6f-4d7f-838a-266c1d33a0b8",
 									},
@@ -1242,8 +1250,12 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).
+				Build()
 
 			h := handler{
 				logger:           logger,
@@ -1291,29 +1303,29 @@ func TestGetClusters(t *testing.T) {
 			name: "test single cluster",
 			sub:  "7945098c-e2ef-451b-8cbf-d9674bddd031",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								UID:  "e7f0fc59-5cae-4208-a97b-a8e46c999821",
 								Name: "test",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "7945098c-e2ef-451b-8cbf-d9674bddd031",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								UID:               "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
@@ -1322,14 +1334,14 @@ func TestGetClusters(t *testing.T) {
 								CreationTimestamp: now,
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.OrganizationKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
 										Name:       "test",
 										UID:        "e7f0fc59-5cae-4208-a97b-a8e46c999821",
 									},
 								},
 							},
-							Status: v1alpha1.ClusterStatus{
+							Status: dockyardsv1.ClusterStatus{
 								Version: "v1.2.3",
 							},
 						},
@@ -1350,15 +1362,15 @@ func TestGetClusters(t *testing.T) {
 			name: "test cluster without organization",
 			sub:  "9142a815-562b-4b1e-b5fd-2163845cced5",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								UID:  "391aa7e8-999d-4f41-9815-29bd39e94c41",
 								Name: "test-org",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "9142a815-562b-4b1e-b5fd-2163845cced5",
@@ -1378,8 +1390,8 @@ func TestGetClusters(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&dockyardsv1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer).Build()
 
 			h := handler{
 				logger:           logger,

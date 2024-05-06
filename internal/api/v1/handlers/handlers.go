@@ -9,6 +9,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -130,7 +131,7 @@ func (h *handler) getSubjectFromContext(c *gin.Context) (string, error) {
 	return sub, nil
 }
 
-func (h *handler) isMember(subject string, organization *v1alpha1.Organization) bool {
+func (h *handler) isMember(subject string, organization *dockyardsv1.Organization) bool {
 	for _, memberRef := range organization.Spec.MemberRefs {
 		if memberRef.UID == types.UID(subject) {
 			return true

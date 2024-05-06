@@ -6,7 +6,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/gin-gonic/gin"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -14,7 +14,7 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=clustertemplates,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
 
-func getRecommendedNodePools(clusterTemplate *v1alpha1.ClusterTemplate) []v1.NodePoolOptions {
+func getRecommendedNodePools(clusterTemplate *dockyardsv1.ClusterTemplate) []v1.NodePoolOptions {
 	if clusterTemplate == nil {
 		return []v1.NodePoolOptions{}
 	}
@@ -73,7 +73,7 @@ func (h *handler) GetClusterOptions(c *gin.Context) {
 		Namespace: h.namespace,
 	}
 
-	var release v1alpha1.Release
+	var release dockyardsv1.Release
 	err := h.controllerClient.Get(ctx, objectKey, &release)
 	if err != nil {
 		h.logger.Error("error getting release", "err", err)
@@ -87,7 +87,7 @@ func (h *handler) GetClusterOptions(c *gin.Context) {
 		Namespace: h.namespace,
 	}
 
-	var clusterTemplate v1alpha1.ClusterTemplate
+	var clusterTemplate dockyardsv1.ClusterTemplate
 	err = h.controllerClient.Get(ctx, objectKey, &clusterTemplate)
 	if err != nil {
 		h.logger.Error("error getting cluster template", "err", err)

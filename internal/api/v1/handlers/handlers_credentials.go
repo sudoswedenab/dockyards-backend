@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,10 +33,10 @@ func (h *handler) GetOrgCredentials(c *gin.Context) {
 
 	organizationID := c.Param("org")
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: organizationID,
+		index.UIDField: organizationID,
 	}
 
-	var organizationList v1alpha1.OrganizationList
+	var organizationList dockyardsv1.OrganizationList
 	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error getting organizations from kubernetes", "err", err)
@@ -59,7 +60,7 @@ func (h *handler) GetOrgCredentials(c *gin.Context) {
 	}
 
 	matchingFields = client.MatchingFields{
-		index.SecretTypeIndexKey: DockyardsSecretTypeCredential,
+		index.SecretTypeField: DockyardsSecretTypeCredential,
 	}
 
 	var secretList corev1.SecretList
@@ -103,10 +104,10 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: organizationID,
+		index.UIDField: organizationID,
 	}
 
-	var organizationList v1alpha1.OrganizationList
+	var organizationList dockyardsv1.OrganizationList
 	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing organizations", "err", err)
@@ -141,8 +142,8 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 			Namespace: organization.Status.NamespaceRef,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: v1alpha1.GroupVersion.String(),
-					Kind:       v1alpha1.OrganizationKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
+					Kind:       dockyardsv1.OrganizationKind,
 					Name:       organization.Name,
 					UID:        organization.UID,
 				},
@@ -172,7 +173,7 @@ func (h *handler) DeleteCredential(c *gin.Context) {
 	credentialID := c.Param("credentialID")
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: credentialID,
+		index.UIDField: credentialID,
 	}
 
 	var secretList corev1.SecretList
@@ -193,7 +194,7 @@ func (h *handler) DeleteCredential(c *gin.Context) {
 
 	secret := secretList.Items[0]
 
-	organization, err := h.getOwnerOrganization(ctx, &secret)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &secret)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 
@@ -238,7 +239,7 @@ func (h *handler) GetCredential(c *gin.Context) {
 	credentialID := c.Param("credentialID")
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: credentialID,
+		index.UIDField: credentialID,
 	}
 
 	var secretList corev1.SecretList
@@ -259,7 +260,7 @@ func (h *handler) GetCredential(c *gin.Context) {
 
 	secret := secretList.Items[0]
 
-	organization, err := h.getOwnerOrganization(ctx, &secret)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &secret)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 

@@ -6,8 +6,9 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +23,7 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 
-func (h *handler) toV1NodePool(nodePool *v1alpha1.NodePool, cluster *v1alpha1.Cluster, nodeList *v1alpha1.NodeList) *v1.NodePool {
+func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyardsv1.Cluster, nodeList *dockyardsv1.NodeList) *v1.NodePool {
 	v1NodePool := v1.NodePool{
 		Id:        string(nodePool.UID),
 		ClusterId: string(cluster.UID),
@@ -77,10 +78,10 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	nodePoolID := c.Param("nodePoolID")
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: nodePoolID,
+		index.UIDField: nodePoolID,
 	}
 
-	var nodePoolList v1alpha1.NodePoolList
+	var nodePoolList dockyardsv1.NodePoolList
 	err := h.controllerClient.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing node pools in kubernetes", "err", err)
@@ -98,7 +99,7 @@ func (h *handler) GetNodePool(c *gin.Context) {
 
 	nodePool := nodePoolList.Items[0]
 
-	cluster, err := h.getOwnerCluster(ctx, &nodePool)
+	cluster, err := apiutil.GetOwnerCluster(ctx, h.controllerClient, &nodePool)
 	if err != nil {
 		h.logger.Error("error getting owner cluster", "err", err)
 
@@ -106,7 +107,7 @@ func (h *handler) GetNodePool(c *gin.Context) {
 		return
 	}
 
-	organization, err := h.getOwnerOrganization(ctx, cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, cluster)
 	if err != nil {
 		h.logger.Error("error getting owner cluster owner organization", "err", err)
 
@@ -131,10 +132,10 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	}
 
 	matchingFields = client.MatchingFields{
-		index.OwnerRefsIndexKey: nodePoolID,
+		index.OwnerReferencesField: nodePoolID,
 	}
 
-	var nodeList v1alpha1.NodeList
+	var nodeList dockyardsv1.NodeList
 	err = h.controllerClient.List(ctx, &nodeList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing nodes", "err", err)
@@ -184,10 +185,10 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: clusterID,
+		index.UIDField: clusterID,
 	}
 
-	var clusterList v1alpha1.ClusterList
+	var clusterList dockyardsv1.ClusterList
 	err = h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
@@ -205,7 +206,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := h.getOwnerOrganization(ctx, &cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 
@@ -269,20 +270,20 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		resources[corev1.ResourceStorage] = storage
 	}
 
-	nodePool := v1alpha1.NodePool{
+	nodePool := dockyardsv1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: v1alpha1.GroupVersion.String(),
-					Kind:       v1alpha1.ClusterKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
+					Kind:       dockyardsv1.ClusterKind,
 					Name:       cluster.Name,
 					UID:        cluster.UID,
 				},
 			},
 		},
-		Spec: v1alpha1.NodePoolSpec{
+		Spec: dockyardsv1.NodePoolSpec{
 			Replicas:  util.Ptr(int32(nodePoolOptions.Quantity)),
 			Resources: resources,
 		},
@@ -324,10 +325,10 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 	nodePoolID := c.Param("nodePoolID")
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: nodePoolID,
+		index.UIDField: nodePoolID,
 	}
 
-	var nodePoolList v1alpha1.NodePoolList
+	var nodePoolList dockyardsv1.NodePoolList
 	err := h.controllerClient.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing node pools", "err", err)
@@ -345,7 +346,7 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 
 	nodePool := nodePoolList.Items[0]
 
-	cluster, err := h.getOwnerCluster(ctx, &nodePool)
+	cluster, err := apiutil.GetOwnerCluster(ctx, h.controllerClient, &nodePool)
 	if err != nil {
 		h.logger.Error("error getting owner cluster", "err", err)
 
@@ -365,7 +366,7 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 		return
 	}
 
-	organization, err := h.getOwnerOrganization(ctx, cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 

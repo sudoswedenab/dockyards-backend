@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -33,20 +33,20 @@ func TestGetOrgCredentials(t *testing.T) {
 			name: "test single credential",
 			sub:  "654202f2-44f6-4fa6-873b-0b9817d3957c",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										UID: "654202f2-44f6-4fa6-873b-0b9817d3957c",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
@@ -77,20 +77,20 @@ func TestGetOrgCredentials(t *testing.T) {
 			name: "test several secret types",
 			sub:  "41ae3267-da66-4be0-b2ac-57a60549ff57",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										UID: "41ae3267-da66-4be0-b2ac-57a60549ff57",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
@@ -150,10 +150,10 @@ func TestGetOrgCredentials(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
+			dockyardsv1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Organization{}, index.UIDIndexKey, index.UIDIndexer).
-				WithIndex(&corev1.Secret{}, index.SecretTypeIndexKey, index.SecretTypeIndexer).
+				WithIndex(&dockyardsv1.Organization{}, index.UIDField, index.ByUID).
+				WithIndex(&corev1.Secret{}, index.SecretTypeField, index.BySecretType).
 				Build()
 
 			h := handler{
