@@ -1,4 +1,4 @@
-package v1alpha1
+package v1alpha2
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -6,7 +6,6 @@ import (
 )
 
 const (
-	// Deprecated: superseded by v1alpha2.NodeKind
 	NodeKind = "Node"
 )
 
@@ -21,14 +20,13 @@ type NodeStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="CPU",type=string,JSONPath=".status.resources.cpu"
 // +kubebuilder:printcolumn:name="Memory",type=string,JSONPath=".status.resources.memory"
 // +kubebuilder:printcolumn:name="Storage",type=string,JSONPath=".status.resources.storage"
-// Deprecated: superseded by v1alpha2.Node
 type Node struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -38,7 +36,6 @@ type Node struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.NodeList
 type NodeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
