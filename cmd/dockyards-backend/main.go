@@ -13,8 +13,9 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	v1alpha1index "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -88,9 +89,9 @@ func main() {
 	}
 
 	scheme := runtime.NewScheme()
-	v1alpha1.AddToScheme(scheme)
-	v1alpha2.AddToScheme(scheme)
-	corev1.AddToScheme(scheme)
+	_ = v1alpha1.AddToScheme(scheme)
+	_ = dockyardsv1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
 
 	controllerClient, err := client.New(kubeconfig, client.Options{Scheme: scheme})
 	if err != nil {
@@ -117,15 +118,15 @@ func main() {
 
 	ctx := context.Background()
 
-	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.User{}, index.EmailIndexKey, index.EmailIndexer)
+	err = manager.GetFieldIndexer().IndexField(ctx, &dockyardsv1.User{}, index.EmailField, index.ByEmail)
 	if err != nil {
 		logger.Error("error adding email indexer to manager", "err", err)
 
 		os.Exit(1)
 	}
 
-	for _, object := range []client.Object{&v1alpha1.User{}, &v1alpha1.Cluster{}, &v1alpha1.NodePool{}, &v1alpha1.Node{}, &v1alpha1.Deployment{}, &v1alpha1.App{}, &corev1.Secret{}} {
-		err = manager.GetFieldIndexer().IndexField(ctx, object, index.UIDIndexKey, index.UIDIndexer)
+	for _, object := range []client.Object{&v1alpha1.Deployment{}, &v1alpha1.App{}} {
+		err = manager.GetFieldIndexer().IndexField(ctx, object, v1alpha1index.UIDIndexKey, v1alpha1index.UIDIndexer)
 		if err != nil {
 			logger.Error("error adding uid indexer to manager", "err", err)
 
@@ -133,7 +134,16 @@ func main() {
 		}
 	}
 
-	err = manager.GetFieldIndexer().IndexField(ctx, &v1alpha1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer)
+	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Cluster{}, &dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &corev1.Secret{}} {
+		err = manager.GetFieldIndexer().IndexField(ctx, object, index.UIDField, index.ByUID)
+		if err != nil {
+			logger.Error("error adding uid indexer to manager", "err", err)
+
+			os.Exit(1)
+		}
+	}
+
+	err = manager.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer)
 	if err != nil {
 		logger.Error("error adding member refs indexer to manager", "err", err)
 
@@ -141,7 +151,7 @@ func main() {
 	}
 
 	for _, object := range []client.Object{&v1alpha1.NodePool{}, &v1alpha1.Node{}, &v1alpha1.Deployment{}, &v1alpha1.Cluster{}} {
-		err = manager.GetFieldIndexer().IndexField(ctx, object, index.OwnerRefsIndexKey, index.OwnerRefsIndexer)
+		err = manager.GetFieldIndexer().IndexField(ctx, object, v1alpha1index.OwnerRefsIndexKey, v1alpha1index.OwnerRefsIndexer)
 		if err != nil {
 			logger.Error("error adding owner refs indexer to manager", "err", err)
 
@@ -149,7 +159,16 @@ func main() {
 		}
 	}
 
-	err = manager.GetFieldIndexer().IndexField(ctx, &corev1.Secret{}, index.SecretTypeIndexKey, index.SecretTypeIndexer)
+	for _, object := range []client.Object{&dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &dockyardsv1.Cluster{}} {
+		err = manager.GetFieldIndexer().IndexField(ctx, object, index.OwnerReferencesField, index.ByOwnerReferences)
+		if err != nil {
+			logger.Error("error adding owner refs indexer to manager", "err", err)
+
+			os.Exit(1)
+		}
+	}
+
+	err = manager.GetFieldIndexer().IndexField(ctx, &corev1.Secret{}, index.SecretTypeField, index.BySecretType)
 	if err != nil {
 		logger.Error("error adding secret type indexer to manager", "err", err)
 
@@ -268,7 +287,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		err = (&v1alpha2.Organization{}).SetupWebhookWithManager(manager)
+		err = (&dockyardsv1.Organization{}).SetupWebhookWithManager(manager)
 		if err != nil {
 			logger.Error("error creating organization webhook", "err", err)
 
