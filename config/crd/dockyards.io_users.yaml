@@ -129,8 +129,8 @@ spec:
     subresources:
       status: {}
   - additionalPrinterColumns:
-    - jsonPath: .status.conditions[?(@.type=="Verified")].status
-      name: Verified
+    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+      name: Ready
       type: string
     - jsonPath: .metadata.uid
       name: UID

@@ -22,7 +22,7 @@ type UserStatus struct {
 // +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Verified",type=string,JSONPath=".status.conditions[?(@.type==\"Verified\")].status"
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="UID",type=string,JSONPath=".metadata.uid"
 type User struct {
 	metav1.TypeMeta   `json:",inline"`
