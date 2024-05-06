@@ -1,20 +1,17 @@
-package v1alpha1
+package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	// Deprecated: superseded by v1alpha2.UserKind
 	UserKind = "User"
 )
 
 type UserSpec struct {
 	Email       string `json:"email"`
 	DisplayName string `json:"displayName,omitempty"`
-
-	// +kubebuilder:validation:Pattern="^\\$2a\\$10\\$[\\.\\/A-Za-z0-9]{53}$"
-	Password string `json:"password"`
+	Password    string `json:"password"`
 }
 
 type UserStatus struct {
@@ -22,12 +19,11 @@ type UserStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Verified",type=string,JSONPath=".status.conditions[?(@.type==\"Verified\")].status"
 // +kubebuilder:printcolumn:name="UID",type=string,JSONPath=".metadata.uid"
-// Deprecated: superseded by v1alpha2.User
 type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -37,7 +33,6 @@ type User struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.UserList
 type UserList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
