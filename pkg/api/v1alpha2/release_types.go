@@ -1,15 +1,12 @@
-package v1alpha1
+package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	// Deprecated: superseded by v1alpha2.ReleaseKind
-	ReleaseKind = "Release"
-	// Deprecated: superseded by v1alpha2.ReleaseTypeKubernetes
-	ReleaseTypeKubernetes = "KubernetesReleases"
-	// Deprecated: superseded by v1alpha2.ReleaseTypeTalosInstaller
+	ReleaseKind               = "Release"
+	ReleaseTypeKubernetes     = "KubernetesReleases"
 	ReleaseTypeTalosInstaller = "TalosInstaller"
 )
 
@@ -19,13 +16,14 @@ type ReleaseSpec struct {
 }
 
 type ReleaseStatus struct {
-	Versions []string `json:"versions,omitempty"`
+	LatestVersion string   `json:"latestVersion,omitempty"`
+	Versions      []string `json:"versions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
 // +kubebuilder:subresource:status
-// Deprecated: superseded by v1alpha2.Release
+// +kubebuilder:printcolumn:name="Latest",type=string,JSONPath=".status.latestVersion"
+// +kubebuilder:storageversion
 type Release struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -35,7 +33,6 @@ type Release struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.Release
 type ReleaseList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
