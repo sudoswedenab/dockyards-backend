@@ -1,7 +1,11 @@
-package v1alpha1
+package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	FeatureKind = "Feature"
 )
 
 type FeatureSpec struct{}
@@ -9,9 +13,8 @@ type FeatureSpec struct{}
 type FeatureStatus struct{}
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-// Deprecated: superseded by v1alpha2.Feature
 type Feature struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -21,7 +24,6 @@ type Feature struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.FeatureList
 type FeatureList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
