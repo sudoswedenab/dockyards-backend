@@ -16,8 +16,8 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -44,35 +44,36 @@ func TestGetDeployment(t *testing.T) {
 			name:         "test container image",
 			deploymentId: "9f72e4e6-412c-47a9-b3e8-8704e129db57",
 			lists: []client.ObjectList{
-				&v1alpha1.ContainerImageDeploymentList{
-					Items: []v1alpha1.ContainerImageDeployment{
+				&dockyardsv1.ContainerImageDeploymentList{
+					Items: []dockyardsv1.ContainerImageDeployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
 								Namespace: "testing",
 								UID:       "d175e475-f22e-470a-883b-07915401c88b",
 							},
-							Spec: v1alpha1.ContainerImageDeploymentSpec{
+							Spec: dockyardsv1.ContainerImageDeploymentSpec{
 								Image: "docker.io/library/nginx:latest",
 								Port:  1234,
 							},
 						},
 					},
 				},
-				&v1alpha1.DeploymentList{
-					Items: []v1alpha1.Deployment{
+				&dockyardsv1.DeploymentList{
+					Items: []dockyardsv1.Deployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
 								Namespace: "testing",
 								UID:       "9f72e4e6-412c-47a9-b3e8-8704e129db57",
 							},
-							Spec: v1alpha1.DeploymentSpec{
-								DeploymentRef: v1alpha1.DeploymentReference{
-									APIVersion: v1alpha1.GroupVersion.String(),
-									Kind:       v1alpha1.ContainerImageDeploymentKind,
-									Name:       "test",
-									UID:        "d175e475-f22e-470a-883b-07915401c88b",
+							Spec: dockyardsv1.DeploymentSpec{
+								DeploymentRefs: []corev1.TypedLocalObjectReference{
+									{
+										APIGroup: &dockyardsv1.GroupVersion.Group,
+										Kind:     dockyardsv1.ContainerImageDeploymentKind,
+										Name:     "test",
+									},
 								},
 							},
 						},
@@ -90,15 +91,15 @@ func TestGetDeployment(t *testing.T) {
 			name:         "test helm chart with values",
 			deploymentId: "5621d3b0-0d4e-4265-9d92-56a580bcdd74",
 			lists: []client.ObjectList{
-				&v1alpha1.HelmDeploymentList{
-					Items: []v1alpha1.HelmDeployment{
+				&dockyardsv1.HelmDeploymentList{
+					Items: []dockyardsv1.HelmDeployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
 								Namespace: "testing",
 								UID:       "27636906-3857-4445-8b9f-7ab30306a27a",
 							},
-							Spec: v1alpha1.HelmDeploymentSpec{
+							Spec: dockyardsv1.HelmDeploymentSpec{
 								Chart:      "test-chart",
 								Repository: "http://localhost",
 								Version:    "v1.2.3",
@@ -108,20 +109,21 @@ func TestGetDeployment(t *testing.T) {
 							},
 						}},
 				},
-				&v1alpha1.DeploymentList{
-					Items: []v1alpha1.Deployment{
+				&dockyardsv1.DeploymentList{
+					Items: []dockyardsv1.Deployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
 								Namespace: "testing",
 								UID:       "5621d3b0-0d4e-4265-9d92-56a580bcdd74",
 							},
-							Spec: v1alpha1.DeploymentSpec{
-								DeploymentRef: v1alpha1.DeploymentReference{
-									APIVersion: v1alpha1.GroupVersion.String(),
-									Kind:       v1alpha1.HelmDeploymentKind,
-									Name:       "test",
-									UID:        "27636906-3857-4445-8b9f-7ab30306a27a",
+							Spec: dockyardsv1.DeploymentSpec{
+								DeploymentRefs: []corev1.TypedLocalObjectReference{
+									{
+										APIGroup: &dockyardsv1.GroupVersion.Group,
+										Kind:     dockyardsv1.HelmDeploymentKind,
+										Name:     "test",
+									},
 								},
 							},
 						},
@@ -144,42 +146,44 @@ func TestGetDeployment(t *testing.T) {
 			name:         "test deployment with single status",
 			deploymentId: "63f4b165-d9e4-4653-a2a4-92b14ff6153e",
 			lists: []client.ObjectList{
-				&v1alpha1.ContainerImageDeploymentList{
-					Items: []v1alpha1.ContainerImageDeployment{
+				&dockyardsv1.ContainerImageDeploymentList{
+					Items: []dockyardsv1.ContainerImageDeployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
 								Namespace: "testing",
 								UID:       "166da931-27c5-4044-bedd-ecf4dd01d6ee",
 							},
-							Spec: v1alpha1.ContainerImageDeploymentSpec{
+							Spec: dockyardsv1.ContainerImageDeploymentSpec{
 								Image: "test",
 							},
 						},
 					},
 				},
-				&v1alpha1.DeploymentList{
-					Items: []v1alpha1.Deployment{
+				&dockyardsv1.DeploymentList{
+					Items: []dockyardsv1.Deployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
 								Namespace: "testing",
 								UID:       "63f4b165-d9e4-4653-a2a4-92b14ff6153e",
 							},
-							Spec: v1alpha1.DeploymentSpec{
-								DeploymentRef: v1alpha1.DeploymentReference{
-									APIVersion: v1alpha1.GroupVersion.String(),
-									Kind:       v1alpha1.ContainerImageDeploymentKind,
-									Name:       "test",
+							Spec: dockyardsv1.DeploymentSpec{
+								DeploymentRefs: []corev1.TypedLocalObjectReference{
+									{
+										APIGroup: &dockyardsv1.GroupVersion.Group,
+										Kind:     dockyardsv1.ContainerImageDeploymentKind,
+										Name:     "test",
+									},
 								},
 							},
-							Status: v1alpha1.DeploymentStatus{
+							Status: dockyardsv1.DeploymentStatus{
 								Conditions: []metav1.Condition{
 									{
 										LastTransitionTime: metav1.Time{Time: now},
-										Type:               v1alpha1.ReadyCondition,
+										Type:               dockyardsv1.ReadyCondition,
 										Status:             metav1.ConditionFalse,
-										Reason:             v1alpha1.DeploymentReadyReason,
+										Reason:             "testing",
 										Message:            "testing",
 									},
 								},
@@ -203,15 +207,15 @@ func TestGetDeployment(t *testing.T) {
 			name:         "test kustomize",
 			deploymentId: "c12c2313-662c-4895-86c2-49837c845086",
 			lists: []client.ObjectList{
-				&v1alpha1.KustomizeDeploymentList{
-					Items: []v1alpha1.KustomizeDeployment{
+				&dockyardsv1.KustomizeDeploymentList{
+					Items: []dockyardsv1.KustomizeDeployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
 								Namespace: "testing",
 								UID:       "15776a26-a83e-4354-bc1d-df9ae6865e45",
 							},
-							Spec: v1alpha1.KustomizeDeploymentSpec{
+							Spec: dockyardsv1.KustomizeDeploymentSpec{
 								Kustomize: map[string][]byte{
 									"kustomization.yaml": []byte("kustomize"),
 									"test.yaml":          []byte("hello"),
@@ -220,19 +224,21 @@ func TestGetDeployment(t *testing.T) {
 						},
 					},
 				},
-				&v1alpha1.DeploymentList{
-					Items: []v1alpha1.Deployment{
+				&dockyardsv1.DeploymentList{
+					Items: []dockyardsv1.Deployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
 								Namespace: "testing",
 								UID:       "c12c2313-662c-4895-86c2-49837c845086",
 							},
-							Spec: v1alpha1.DeploymentSpec{
-								DeploymentRef: v1alpha1.DeploymentReference{
-									APIVersion: v1alpha1.GroupVersion.String(),
-									Kind:       v1alpha1.KustomizeDeploymentKind,
-									Name:       "test",
+							Spec: dockyardsv1.DeploymentSpec{
+								DeploymentRefs: []corev1.TypedLocalObjectReference{
+									{
+										APIGroup: &dockyardsv1.GroupVersion.Group,
+										Kind:     dockyardsv1.KustomizeDeploymentKind,
+										Name:     "test",
+									},
 								},
 							},
 						},
@@ -257,9 +263,11 @@ func TestGetDeployment(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Deployment{}, index.UIDIndexKey, index.UIDIndexer).
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Deployment{}, index.UIDField, index.ByUID).
 				Build()
 
 			h := handler{
@@ -321,8 +329,12 @@ func TestGetDeploymentErrors(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Deployment{}, index.UIDIndexKey, index.UIDIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Deployment{}, index.UIDField, index.ByUID).
+				Build()
 
 			h := handler{
 				logger:           logger,
@@ -361,29 +373,29 @@ func TestGetClusterDeployments(t *testing.T) {
 			name:      "test single deployment",
 			clusterId: "9746d1c6-01d3-4d24-b552-7888d5119a7e",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 								UID:  "b4715218-c084-4c1e-b59f-29a0c5848681",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "05658865-b26f-485c-a1bf-b008552aa7ce",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -391,8 +403,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "9746d1c6-01d3-4d24-b552-7888d5119a7e",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.OrganizationKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
 										Name:       "test",
 										UID:        "b4715218-c084-4c1e-b59f-29a0c5848681",
 									},
@@ -401,8 +413,8 @@ func TestGetClusterDeployments(t *testing.T) {
 						},
 					},
 				},
-				&v1alpha1.DeploymentList{
-					Items: []v1alpha1.Deployment{
+				&dockyardsv1.DeploymentList{
+					Items: []dockyardsv1.Deployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test-test",
@@ -410,8 +422,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "115590c5-c5f5-48d3-95b4-5fd6a1d3e77f",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.ClusterKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
 										Name:       "test",
 										UID:        "9746d1c6-01d3-4d24-b552-7888d5119a7e",
 									},
@@ -433,29 +445,29 @@ func TestGetClusterDeployments(t *testing.T) {
 			name:      "test multiple deployments",
 			clusterId: "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 								UID:  "d7efe04a-517b-4726-b84b-6cec573c3601",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "1ef182bf-2b0a-46ec-ae6d-13c0c62cd1c9",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "cluster-123",
@@ -463,8 +475,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.OrganizationKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
 										Name:       "test",
 										UID:        "d7efe04a-517b-4726-b84b-6cec573c3601",
 									},
@@ -478,8 +490,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "8bf6e7fa-2492-4e8a-9597-0041fc49d3ee",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.OrganizationKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
 										Name:       "test",
 										UID:        "d7efe04a-517b-4726-b84b-6cec573c3601",
 									},
@@ -488,8 +500,8 @@ func TestGetClusterDeployments(t *testing.T) {
 						},
 					},
 				},
-				&v1alpha1.DeploymentList{
-					Items: []v1alpha1.Deployment{
+				&dockyardsv1.DeploymentList{
+					Items: []dockyardsv1.Deployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "cluster-123-test1",
@@ -497,8 +509,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "9f5be117-7a87-4b14-8788-42b595cd7679",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.ClusterKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
 										Name:       "cluster-123",
 										UID:        "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 									},
@@ -512,8 +524,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "d40c37d3-7465-4bc6-bfbf-19669f05a16a",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.ClusterKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
 										Name:       "cluster-234",
 										UID:        "8bf6e7fa-2492-4e8a-9597-0041fc49d3ee",
 									},
@@ -527,8 +539,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "a7743bee-d4cc-4342-b7bd-d149fa26f38f",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.ClusterKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
 										Name:       "cluster-123",
 										UID:        "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 									},
@@ -555,29 +567,29 @@ func TestGetClusterDeployments(t *testing.T) {
 			name:      "test cluster without deployments",
 			clusterId: "d1359b49-9190-45f0-b586-b5240fea847c",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 								UID:  "bf876395-0282-4e5f-8eec-48db0ddfff12",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "465cef30-6793-422a-9b50-bd081353ea22",
 									},
 								},
 							},
-							Status: v1alpha1.OrganizationStatus{
+							Status: dockyardsv1.OrganizationStatus{
 								NamespaceRef: "testing",
 							},
 						},
 					},
 				},
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -585,8 +597,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "d1359b49-9190-45f0-b586-b5240fea847c",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.OrganizationKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
 										Name:       "test",
 										UID:        "bf876395-0282-4e5f-8eec-48db0ddfff12",
 									},
@@ -595,8 +607,8 @@ func TestGetClusterDeployments(t *testing.T) {
 						},
 					},
 				},
-				&v1alpha1.DeploymentList{
-					Items: []v1alpha1.Deployment{
+				&dockyardsv1.DeploymentList{
+					Items: []dockyardsv1.Deployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test1",
@@ -604,8 +616,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "b6cf669a-601f-4543-9a3c-d65da2d176d2",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.ClusterKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
 										Name:       "cluster-123",
 										UID:        "6b446452-2522-45db-aee3-4c3df0acc181",
 									},
@@ -619,8 +631,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "1748bcf1-92c7-482e-a07c-a808701b2d84",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.ClusterKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
 										Name:       "cluster-234",
 										UID:        "8bf6e7fa-2492-4e8a-9597-0041fc49d3ee",
 									},
@@ -634,8 +646,8 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:       "fd9786ad-6722-4ac4-9e18-6a128472eb60",
 								OwnerReferences: []metav1.OwnerReference{
 									{
-										APIVersion: v1alpha1.GroupVersion.String(),
-										Kind:       v1alpha1.ClusterKind,
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
 										Name:       "cluster-345",
 										UID:        "fcf10d81-9e9b-4792-ab61-3cb668497529",
 									},
@@ -664,8 +676,8 @@ func TestGetClusterDeployments(t *testing.T) {
 				},
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -692,10 +704,12 @@ func TestGetClusterDeployments(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).
-				WithIndex(&v1alpha1.Deployment{}, index.OwnerRefsIndexKey, index.OwnerRefsIndexer).
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).
+				WithIndex(&dockyardsv1.Deployment{}, index.OwnerReferencesField, index.ByOwnerReferences).
 				Build()
 
 			h := handler{
@@ -750,8 +764,8 @@ func TestDeleteDeployment(t *testing.T) {
 			name:         "test single",
 			deploymentId: "33de82a0-4133-45dc-b319-ab6a8a1daebc",
 			lists: []client.ObjectList{
-				&v1alpha1.DeploymentList{
-					Items: []v1alpha1.Deployment{
+				&dockyardsv1.DeploymentList{
+					Items: []dockyardsv1.Deployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test-123",
@@ -770,8 +784,11 @@ func TestDeleteDeployment(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Deployment{}, index.UIDIndexKey, index.UIDIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Deployment{}, index.UIDField, index.ByUID).
+				Build()
 
 			h := handler{
 				logger:           logger,
@@ -796,7 +813,7 @@ func TestDeleteDeployment(t *testing.T) {
 				t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
 			}
 
-			var deployment v1alpha1.Deployment
+			var deployment dockyardsv1.Deployment
 			err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: "test-123", Namespace: "testing"}, &deployment)
 			if !apierrors.IsNotFound(err) {
 				t.Errorf("expected is not found error, got '%s'", err)
@@ -822,8 +839,8 @@ func TestPostClusterDeployments(t *testing.T) {
 				HelmVersion:    util.Ptr("v1.2.3"),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -851,8 +868,8 @@ func TestPostClusterDeployments(t *testing.T) {
 				ContainerImage: util.Ptr("test"),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -881,8 +898,8 @@ func TestPostClusterDeployments(t *testing.T) {
 				}),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -912,8 +929,8 @@ func TestPostClusterDeployments(t *testing.T) {
 				CredentialId:   util.Ptr("74e1819c-8b20-4187-b464-17f9d2c229a8"),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -953,11 +970,11 @@ func TestPostClusterDeployments(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
+			dockyardsv1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().
 				WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).
-				WithIndex(&corev1.Secret{}, index.UIDIndexKey, index.UIDIndexer).
+				WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).
+				WithIndex(&corev1.Secret{}, index.UIDField, index.ByUID).
 				Build()
 
 			h := handler{
@@ -1019,8 +1036,8 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 				Name: util.Ptr("InvalidName"),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -1037,8 +1054,8 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 			name:      "test invalid container image",
 			clusterID: "58705bd3-fe06-4c67-8651-a61294bcff8e",
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -1062,8 +1079,8 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 				Name: util.Ptr("test"),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -1073,8 +1090,8 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 						},
 					},
 				},
-				&v1alpha1.DeploymentList{
-					Items: []v1alpha1.Deployment{
+				&dockyardsv1.DeploymentList{
+					Items: []dockyardsv1.Deployment{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test-test",
@@ -1094,8 +1111,12 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).
+				Build()
 
 			h := handler{
 				logger:           logger,
@@ -1142,8 +1163,8 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 				ContainerImage: util.Ptr("test"),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -1163,8 +1184,8 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 				Port:           util.Ptr(1234),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -1186,8 +1207,8 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 				}),
 			},
 			lists: []client.ObjectList{
-				&v1alpha1.ClusterList{
-					Items: []v1alpha1.Cluster{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test",
@@ -1208,9 +1229,11 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&v1alpha1.Cluster{}, index.UIDIndexKey, index.UIDIndexer).
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).
 				Build()
 
 			h := handler{

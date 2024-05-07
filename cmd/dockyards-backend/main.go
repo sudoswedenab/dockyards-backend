@@ -125,7 +125,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, object := range []client.Object{&v1alpha1.Deployment{}, &v1alpha1.App{}} {
+	for _, object := range []client.Object{&v1alpha1.App{}} {
 		err = manager.GetFieldIndexer().IndexField(ctx, object, v1alpha1index.UIDIndexKey, v1alpha1index.UIDIndexer)
 		if err != nil {
 			logger.Error("error adding uid indexer to manager", "err", err)
@@ -134,7 +134,7 @@ func main() {
 		}
 	}
 
-	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Cluster{}, &dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &corev1.Secret{}} {
+	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Cluster{}, &dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &corev1.Secret{}, &dockyardsv1.Deployment{}} {
 		err = manager.GetFieldIndexer().IndexField(ctx, object, index.UIDField, index.ByUID)
 		if err != nil {
 			logger.Error("error adding uid indexer to manager", "err", err)
