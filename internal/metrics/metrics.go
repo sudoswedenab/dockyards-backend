@@ -6,9 +6,8 @@ import (
 	"runtime/debug"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/handlers"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -152,7 +151,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 	m.logger.Debug("collecting prometheus metrics")
 
-	var organizationList v1alpha2.OrganizationList
+	var organizationList dockyardsv1.OrganizationList
 	err := m.controllerClient.List(ctx, &organizationList)
 	if err != nil {
 		m.logger.Error("error listing organizations in kubernetes", "err", err)
@@ -172,7 +171,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 	m.userMetric.Reset()
 
-	var userList v1alpha1.UserList
+	var userList dockyardsv1.UserList
 	err = m.controllerClient.List(ctx, &userList)
 	if err != nil {
 		m.logger.Error("error finding users in kubernetes", "err", err)
@@ -190,7 +189,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 	m.deploymentMetric.Reset()
 
-	var deploymentList v1alpha1.DeploymentList
+	var deploymentList dockyardsv1.DeploymentList
 	err = m.controllerClient.List(ctx, &deploymentList)
 	if err != nil {
 		m.logger.Error("error listing deployments", "err", err)
@@ -217,7 +216,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 	m.credentialMetric.Reset()
 
 	matchingFields := client.MatchingFields{
-		index.SecretTypeIndexKey: handlers.DockyardsSecretTypeCredential,
+		index.SecretTypeField: handlers.DockyardsSecretTypeCredential,
 	}
 
 	var secretList corev1.SecretList
@@ -244,7 +243,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 		m.credentialMetric.With(labels).Set(1)
 	}
 
-	var clusterList v1alpha1.ClusterList
+	var clusterList dockyardsv1.ClusterList
 	err = m.controllerClient.List(ctx, &clusterList)
 	if err != nil {
 		m.logger.Error("error listing clusters", "err", err)
@@ -274,11 +273,11 @@ func (m *prometheusMetrics) CollectMetrics() error {
 func getOwnerClusterUID(object client.Object) string {
 	ownerReferences := object.GetOwnerReferences()
 	for _, ownerReference := range ownerReferences {
-		if ownerReference.APIVersion != v1alpha1.GroupVersion.String() {
+		if ownerReference.APIVersion != dockyardsv1.GroupVersion.String() {
 			continue
 		}
 
-		if ownerReference.Kind != v1alpha1.ClusterKind {
+		if ownerReference.Kind != dockyardsv1.ClusterKind {
 			continue
 		}
 
@@ -291,11 +290,11 @@ func getOwnerClusterUID(object client.Object) string {
 func getOwnerOrganizationName(object client.Object) string {
 	ownerReferences := object.GetOwnerReferences()
 	for _, ownerReference := range ownerReferences {
-		if ownerReference.APIVersion != v1alpha1.GroupVersion.String() {
+		if ownerReference.APIVersion != dockyardsv1.GroupVersion.String() {
 			continue
 		}
 
-		if ownerReference.Kind != v1alpha1.OrganizationKind {
+		if ownerReference.Kind != dockyardsv1.OrganizationKind {
 			continue
 		}
 
