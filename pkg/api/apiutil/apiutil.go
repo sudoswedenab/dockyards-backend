@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -50,7 +49,7 @@ func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*do
 			return nil, err
 		}
 
-		if groupVersion.Group != v1alpha1.GroupVersion.Group {
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
 			continue
 		}
 
@@ -83,7 +82,7 @@ func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*d
 			return nil, err
 		}
 
-		if groupVersion.Group != v1alpha1.GroupVersion.Group {
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
 			continue
 		}
 
@@ -104,9 +103,9 @@ func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*d
 	return nil, nil
 }
 
-func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (*v1alpha1.Deployment, error) {
+func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Deployment, error) {
 	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != v1alpha1.DeploymentKind {
+		if ownerReference.Kind != dockyardsv1.DeploymentKind {
 			continue
 		}
 
@@ -115,11 +114,11 @@ func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (
 			return nil, err
 		}
 
-		if groupVersion.Group != v1alpha1.GroupVersion.Group {
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
 			continue
 		}
 
-		var deployment v1alpha1.Deployment
+		var deployment dockyardsv1.Deployment
 		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
 		if err != nil {
 			return nil, err
@@ -132,7 +131,7 @@ func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (
 }
 
 func IsFeatureEnabled(ctx context.Context, c client.Client, featureName featurenames.FeatureName, namespace string) (bool, error) {
-	var feature v1alpha1.Feature
+	var feature dockyardsv1.Feature
 	err := c.Get(ctx, client.ObjectKey{Name: string(featureName), Namespace: namespace}, &feature)
 	if client.IgnoreNotFound(err) != nil {
 		return false, err
