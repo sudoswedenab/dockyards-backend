@@ -1,14 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"errors"
 	"log/slog"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/types"
@@ -139,48 +137,4 @@ func (h *handler) isMember(subject string, organization *dockyardsv1.Organizatio
 	}
 
 	return false
-}
-
-func (h *handler) getOwnerOrganization(ctx context.Context, object client.Object) (*v1alpha1.Organization, error) {
-	for _, ownerReference := range object.GetOwnerReferences() {
-		if ownerReference.APIVersion != v1alpha1.GroupVersion.String() {
-			continue
-		}
-
-		if ownerReference.Kind != v1alpha1.OrganizationKind {
-			continue
-		}
-
-		var organization v1alpha1.Organization
-		err := h.controllerClient.Get(ctx, client.ObjectKey{Name: ownerReference.Name}, &organization)
-		if err != nil {
-			return nil, err
-		}
-
-		return &organization, nil
-	}
-
-	return nil, nil
-}
-
-func (h *handler) getOwnerCluster(ctx context.Context, object client.Object) (*v1alpha1.Cluster, error) {
-	for _, ownerReference := range object.GetOwnerReferences() {
-		if ownerReference.APIVersion != v1alpha1.GroupVersion.String() {
-			continue
-		}
-
-		if ownerReference.Kind != v1alpha1.ClusterKind {
-			continue
-		}
-
-		var cluster v1alpha1.Cluster
-		err := h.controllerClient.Get(ctx, client.ObjectKey{Name: ownerReference.Name, Namespace: object.GetNamespace()}, &cluster)
-		if err != nil {
-			return nil, err
-		}
-
-		return &cluster, nil
-	}
-
-	return nil, nil
 }
