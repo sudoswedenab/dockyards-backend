@@ -1,4 +1,4 @@
-package v1alpha1
+package v1alpha2
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -6,7 +6,6 @@ import (
 )
 
 const (
-	// Deprecated: superseded by v1alpha2.ContainerImageDeploymentKind
 	ContainerImageDeploymentKind = "ContainerImageDeployment"
 )
 
@@ -22,9 +21,8 @@ type ContainerImageDeploymentStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-// Deprecated: superseded by v1alpha2.ContainerImageDeployment
 type ContainerImageDeployment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -34,7 +32,6 @@ type ContainerImageDeployment struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.ContainerImageDeploymentList
 type ContainerImageDeploymentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

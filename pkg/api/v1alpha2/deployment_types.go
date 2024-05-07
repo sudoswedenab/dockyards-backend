@@ -1,17 +1,17 @@
-package v1alpha1
+package v1alpha2
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	// Deprecated: superseded by v1alpha2.DeploymentKind
 	DeploymentKind = "Deployment"
 )
 
 type DeploymentSpec struct {
-	TargetNamespace string              `json:"targetNamespace,omitempty"`
-	DeploymentRef   DeploymentReference `json:"deploymentRef,omitempty"`
+	TargetNamespace string                             `json:"targetNamespace,omitempty"`
+	DeploymentRefs  []corev1.TypedLocalObjectReference `json:"deploymentRefs,omitempty"`
 }
 
 type DeploymentStatus struct {
@@ -20,11 +20,10 @@ type DeploymentStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="URL",type=string,JSONPath=".status.urls[0]"
-// Deprecated: superseded by v1alpha2.Deployment
 type Deployment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -34,7 +33,6 @@ type Deployment struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.DeploymentList
 type DeploymentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

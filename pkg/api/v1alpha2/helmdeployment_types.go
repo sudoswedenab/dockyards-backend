@@ -1,4 +1,4 @@
-package v1alpha1
+package v1alpha2
 
 import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -6,7 +6,6 @@ import (
 )
 
 const (
-	// Deprecated: superseded by v1alpha1.HelmDeploymentKind
 	HelmDeploymentKind = "HelmDeployment"
 )
 
@@ -19,8 +18,7 @@ type HelmDeploymentSpec struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
-// Deprecated: superseded by v1alpha2.HelmDeployment
+// +kubebuilder:storageversion
 type HelmDeployment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -29,7 +27,6 @@ type HelmDeployment struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.HelmDeploymentList
 type HelmDeploymentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
