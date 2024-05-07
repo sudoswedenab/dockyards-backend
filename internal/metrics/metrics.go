@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/handlers"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/prometheus/client_golang/prometheus"
@@ -198,8 +199,14 @@ func (m *prometheusMetrics) CollectMetrics() error {
 	}
 
 	for _, deployment := range deploymentList.Items {
-		ownerClusterUID := getOwnerClusterUID(&deployment)
-		if ownerClusterUID == "" {
+		ownerCluster, err := apiutil.GetOwnerCluster(ctx, m.controllerClient, &deployment)
+		if err != nil {
+			m.logger.Warn("error getting owner cluster")
+
+			continue
+		}
+
+		if ownerCluster == nil {
 			m.logger.Warn("deployment has no owner cluster", "name", deployment.Name)
 
 			continue
@@ -207,7 +214,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 		labels := prometheus.Labels{
 			"name":       deployment.Name,
-			"cluster_id": ownerClusterUID,
+			"cluster_id": string(ownerCluster.UID),
 		}
 
 		m.deploymentMetric.With(labels).Set(1)
@@ -228,8 +235,14 @@ func (m *prometheusMetrics) CollectMetrics() error {
 	}
 
 	for _, secret := range secretList.Items {
-		ownerOrganizationName := getOwnerOrganizationName(&secret)
-		if ownerOrganizationName == "" {
+		ownerOrganization, err := apiutil.GetOwnerOrganization(ctx, m.controllerClient, &secret)
+		if err != nil {
+			m.logger.Warn("error getting owner organization", "err", err)
+
+			continue
+		}
+
+		if ownerOrganization == nil {
 			m.logger.Warn("secret has no owner organization", "name", secret.Name)
 
 			continue
@@ -237,7 +250,7 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 		labels := prometheus.Labels{
 			"name":              secret.Name,
-			"organization_name": ownerOrganizationName,
+			"organization_name": ownerOrganization.Name,
 		}
 
 		m.credentialMetric.With(labels).Set(1)
@@ -252,8 +265,14 @@ func (m *prometheusMetrics) CollectMetrics() error {
 	m.clusterMetric.Reset()
 
 	for _, cluster := range clusterList.Items {
-		ownerOrganizationName := getOwnerOrganizationName(&cluster)
-		if ownerOrganizationName == "" {
+		ownerOrganization, err := apiutil.GetOwnerOrganization(ctx, m.controllerClient, &cluster)
+		if err != nil {
+			m.logger.Warn("error getting owner organization", "err", err)
+
+			continue
+		}
+
+		if ownerOrganization == nil {
 			m.logger.Warn("cluster has no owner organization", "name", cluster.Name)
 
 			continue
@@ -261,45 +280,11 @@ func (m *prometheusMetrics) CollectMetrics() error {
 
 		labels := prometheus.Labels{
 			"name":              cluster.Name,
-			"organization_name": ownerOrganizationName,
+			"organization_name": ownerOrganization.Name,
 		}
 
 		m.clusterMetric.With(labels).Set(1)
 	}
 
 	return nil
-}
-
-func getOwnerClusterUID(object client.Object) string {
-	ownerReferences := object.GetOwnerReferences()
-	for _, ownerReference := range ownerReferences {
-		if ownerReference.APIVersion != dockyardsv1.GroupVersion.String() {
-			continue
-		}
-
-		if ownerReference.Kind != dockyardsv1.ClusterKind {
-			continue
-		}
-
-		return string(ownerReference.UID)
-	}
-
-	return ""
-}
-
-func getOwnerOrganizationName(object client.Object) string {
-	ownerReferences := object.GetOwnerReferences()
-	for _, ownerReference := range ownerReferences {
-		if ownerReference.APIVersion != dockyardsv1.GroupVersion.String() {
-			continue
-		}
-
-		if ownerReference.Kind != dockyardsv1.OrganizationKind {
-			continue
-		}
-
-		return ownerReference.Name
-	}
-
-	return ""
 }
