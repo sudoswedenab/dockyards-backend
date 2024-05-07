@@ -103,7 +103,6 @@ func RegisterRoutes(r *gin.Engine, logger *slog.Logger, handlerOptions ...Handle
 	g.GET("/credentials/:credentialID", h.GetCredential)
 	g.DELETE("credentials/:credentialID", h.DeleteCredential)
 
-	g.GET("/overview", h.GetOverview)
 	g.GET("/whoami", h.GetWhoami)
 
 	g.GET("/apps", h.GetApps)
