@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/gin-gonic/gin"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,10 +22,10 @@ func (h *handler) GetWhoami(c *gin.Context) {
 	ctx := context.Background()
 
 	matchingFields := client.MatchingFields{
-		index.UIDIndexKey: sub,
+		index.UIDField: sub,
 	}
 
-	var userList v1alpha1.UserList
+	var userList dockyardsv1.UserList
 	err = h.controllerClient.List(ctx, &userList, matchingFields)
 	if err != nil {
 		h.logger.Error("error getting user from kubernetes", "err", err)
