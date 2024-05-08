@@ -3,9 +3,8 @@ package controller
 import (
 	"context"
 
-	dockyardsv1alpha1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -290,7 +289,7 @@ func (r *OrganizationReconciler) reconcileUserRoleAndBinding(ctx context.Context
 					"watch",
 				},
 				APIGroups: []string{
-					dockyardsv1alpha1.GroupVersion.Group,
+					dockyardsv1.GroupVersion.Group,
 				},
 				Resources: []string{
 					"*",
@@ -492,7 +491,7 @@ func (r *OrganizationReconciler) reconcileReaderRoleAndBinding(ctx context.Conte
 					"watch",
 				},
 				APIGroups: []string{
-					dockyardsv1alpha1.GroupVersion.Group,
+					dockyardsv1.GroupVersion.Group,
 				},
 				Resources: []string{
 					"*",
@@ -558,10 +557,10 @@ func (r *OrganizationReconciler) reconcileDelete(ctx context.Context, organizati
 	logger := ctrl.LoggerFrom(ctx)
 
 	matchingFields := client.MatchingFields{
-		index.OwnerRefsIndexKey: string(organization.UID),
+		index.OwnerReferencesField: string(organization.UID),
 	}
 
-	var clusterList dockyardsv1alpha1.ClusterList
+	var clusterList dockyardsv1.ClusterList
 	err := r.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		logger.Error(err, "error listing clusters")
@@ -594,11 +593,10 @@ func (r *OrganizationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	_ = rbacv1.AddToScheme(scheme)
 	_ = dockyardsv1.AddToScheme(scheme)
-	_ = dockyardsv1alpha1.AddToScheme(scheme)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dockyardsv1.Organization{}).
-		Owns(&dockyardsv1alpha1.Cluster{}).
+		Owns(&dockyardsv1.Cluster{}).
 		Owns(&rbacv1.RoleBinding{}).
 		Complete(r)
 }

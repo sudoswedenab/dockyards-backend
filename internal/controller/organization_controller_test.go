@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
-	dockyardsv1alpha1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -44,19 +43,19 @@ func TestOrganizationController(t *testing.T) {
 				Spec: dockyardsv1.OrganizationSpec{
 					MemberRefs: []dockyardsv1.MemberReference{
 						{
-							Kind: dockyardsv1alpha1.UserKind,
+							Kind: dockyardsv1.UserKind,
 							Role: dockyardsv1.MemberRoleSuperUser,
 							Name: "superuser",
 							UID:  "cffbcc36-fd31-4c1a-8d44-fce8b0d69688",
 						},
 						{
-							Kind: dockyardsv1alpha1.UserKind,
+							Kind: dockyardsv1.UserKind,
 							Role: dockyardsv1.MemberRoleUser,
 							Name: "user",
 							UID:  "57dc0194-cecd-403a-901a-74dcb4e954e3",
 						},
 						{
-							Kind: dockyardsv1alpha1.UserKind,
+							Kind: dockyardsv1.UserKind,
 							Role: dockyardsv1.MemberRoleReader,
 							Name: "reader",
 							UID:  "aa725fea-0907-4ca8-be03-6a3728afd704",
@@ -288,7 +287,7 @@ func TestOrganizationController(t *testing.T) {
 							},
 						},
 					},
-					expected: true,
+					expected: false,
 				},
 				{
 					name: "test reader deleting cluster",
