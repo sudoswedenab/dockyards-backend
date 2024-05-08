@@ -7,7 +7,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	dockyardsv1alpha1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/google/go-cmp/cmp"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -19,7 +18,7 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 	tt := []struct {
 		name                  string
 		dockyardsOrganization dockyardsv1.Organization
-		features              dockyardsv1alpha1.FeatureList
+		features              dockyardsv1.FeatureList
 		expected              error
 	}{
 		{
@@ -44,8 +43,8 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 					Name: "auto-assign",
 				},
 			},
-			features: dockyardsv1alpha1.FeatureList{
-				Items: []dockyardsv1alpha1.Feature{
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      featurenames.FeatureOrganizationAutoAssign,
@@ -76,8 +75,8 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 					SkipAutoAssign: true,
 				},
 			},
-			features: dockyardsv1alpha1.FeatureList{
-				Items: []dockyardsv1alpha1.Feature{
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      featurenames.FeatureOrganizationAutoAssign,

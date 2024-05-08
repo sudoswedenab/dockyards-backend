@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	dockyardsv1alpha2 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/google/go-cmp/cmp"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,8 +26,8 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 					Namespace: "testing",
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion: dockyardsv1alpha2.GroupVersion.String(),
-							Kind:       dockyardsv1alpha2.OrganizationKind,
+							APIVersion: dockyardsv1.GroupVersion.String(),
+							Kind:       dockyardsv1.OrganizationKind,
 							Name:       "testing",
 							UID:        "8004bcb8-146c-445d-a95d-0ab7842184d8",
 						},
