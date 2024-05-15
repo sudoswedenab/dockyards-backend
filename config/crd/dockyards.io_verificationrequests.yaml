@@ -37,11 +37,17 @@ spec:
             type: object
           spec:
             properties:
+              bodyHTML:
+                type: string
+              bodyText:
+                type: string
               code:
                 type: string
               user:
                 type: string
             required:
+            - bodyHTML
+            - bodyText
             - code
             - user
             type: object

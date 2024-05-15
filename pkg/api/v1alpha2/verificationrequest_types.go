@@ -5,8 +5,10 @@ import (
 )
 
 type VerificationRequestSpec struct {
-    User string `json:"user"`
-    Code string `json:"code"`
+	User     string `json:"user"`
+	Code     string `json:"code"`
+	BodyHTML string `json:"bodyHTML"`
+	BodyText string `json:"bodyText"`
 }
 
 type VerificationRequestStatus struct {
