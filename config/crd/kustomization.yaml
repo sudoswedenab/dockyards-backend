@@ -14,3 +14,4 @@ resources:
 - dockyards.io_users.yaml
 - dockyards.io_clustertemplates.yaml
 - dockyards.io_features.yaml
+- dockyards.io_verificationrequests.yaml
