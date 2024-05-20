@@ -31,9 +31,14 @@ const (
 )
 
 const (
+	// Deprecated: use FeatureAPIEquivalents
 	FeatureAPIExplanations = "api-explanations"
 )
 
 const (
 	FeatureDNSZones = "dns-zones"
+)
+
+const (
+	FeatureAPIEquivalents = "api-equivalents"
 )
