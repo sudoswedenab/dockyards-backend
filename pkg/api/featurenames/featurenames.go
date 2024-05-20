@@ -42,3 +42,7 @@ const (
 const (
 	FeatureAPIEquivalents = "api-equivalents"
 )
+
+const (
+	FeatureClusterUpgrades = "cluster-upgrades"
+)
