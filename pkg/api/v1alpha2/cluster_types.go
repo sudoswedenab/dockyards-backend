@@ -8,9 +8,14 @@ const (
 	ClusterKind = "Cluster"
 )
 
+type ClusterUpgrade struct {
+	To string `json:"to"`
+}
+
 type ClusterSpec struct {
-	Version                  string `json:"version,omitempty"`
-	NoDefaultIngressProvider bool   `json:"noDefaultIngressProvider,omitempty"`
+	Version                  string           `json:"version,omitempty"`
+	NoDefaultIngressProvider bool             `json:"noDefaultIngressProvider,omitempty"`
+	Upgrades                 []ClusterUpgrade `json:"upgrades,omitempty"`
 }
 
 type ClusterStatus struct {
