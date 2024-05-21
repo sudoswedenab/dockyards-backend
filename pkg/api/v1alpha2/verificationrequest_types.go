@@ -34,6 +34,14 @@ type VerificationRequestList struct {
 	Items []VerificationRequest `json:"items"`
 }
 
+func (r *VerificationRequest) GetConditions() []metav1.Condition {
+	return r.Status.Conditions
+}
+
+func (r *VerificationRequest) SetConditions(conditions []metav1.Condition) {
+	r.Status.Conditions = conditions
+}
+
 func init() {
 	SchemeBuilder.Register(&VerificationRequest{}, &VerificationRequestList{})
 }
