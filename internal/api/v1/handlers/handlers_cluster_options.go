@@ -69,7 +69,7 @@ func (h *handler) GetClusterOptions(c *gin.Context) {
 	ctx := context.Background()
 
 	objectKey := client.ObjectKey{
-		Name:      "supported-kubernetes-releases",
+		Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
 		Namespace: h.namespace,
 	}
 

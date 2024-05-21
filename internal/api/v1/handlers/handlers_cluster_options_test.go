@@ -35,7 +35,7 @@ func TestGetClusterOptions(t *testing.T) {
 					Items: []dockyardsv1.Release{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "supported-kubernetes-releases",
+								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
 								Namespace: "testing",
 							},
 							Status: dockyardsv1.ReleaseStatus{
@@ -128,7 +128,7 @@ func TestGetClusterOptions(t *testing.T) {
 					Items: []dockyardsv1.Release{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "supported-kubernetes-releases",
+								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
 								Namespace: "testing",
 							},
 							Status: dockyardsv1.ReleaseStatus{

@@ -10,6 +10,11 @@ const (
 	ReleaseTypeTalosInstaller = "TalosInstaller"
 )
 
+const (
+	ReleaseNameSupportedKubernetesVersions = "supported-kubernetes-versions"
+	ReleaseNameCurrentTalosInstaller       = "current-talos-installer"
+)
+
 type ReleaseSpec struct {
 	Type   string   `json:"type"`
 	Ranges []string `json:"ranges,omitempty"`
