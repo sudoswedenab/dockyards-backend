@@ -126,10 +126,6 @@ func TestPostOrgClusters(t *testing.T) {
 			},
 			expected: []client.Object{
 				&dockyardsv1.Cluster{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind:       dockyardsv1.ClusterKind,
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "test",
 						Namespace:       "testing",
@@ -145,10 +141,6 @@ func TestPostOrgClusters(t *testing.T) {
 					},
 				},
 				&dockyardsv1.NodePool{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind:       dockyardsv1.NodePoolKind,
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "test-control-plane",
 						Namespace:       "testing",
@@ -174,10 +166,6 @@ func TestPostOrgClusters(t *testing.T) {
 					},
 				},
 				&dockyardsv1.NodePool{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind:       dockyardsv1.NodePoolKind,
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "test-load-balancer",
 						Namespace:       "testing",
@@ -203,10 +191,6 @@ func TestPostOrgClusters(t *testing.T) {
 					},
 				},
 				&dockyardsv1.NodePool{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind:       dockyardsv1.NodePoolKind,
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "test-worker",
 						Namespace:       "testing",
