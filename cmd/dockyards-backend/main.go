@@ -270,6 +270,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = (&controller.ClusterReconciler{
+		Client:             manager.GetClient(),
+		DockyardsNamespace: dockyardsNamespace,
+	}).SetupWithManager(manager)
+	if err != nil {
+		logger.Error("error creating new cluster reconciler", "err", err)
+
+		os.Exit(1)
+	}
+
 	if enableWebhooks {
 		err = (&v1alpha1.Organization{}).SetupWebhookWithManager(manager)
 		if err != nil {
