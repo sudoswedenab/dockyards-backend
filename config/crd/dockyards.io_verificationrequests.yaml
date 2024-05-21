@@ -75,7 +75,6 @@ spec:
             - bodyText
             - code
             - subject
-            - user
             - userRef
             type: object
           status:

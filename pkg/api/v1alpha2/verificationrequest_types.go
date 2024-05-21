@@ -7,7 +7,7 @@ import (
 
 type VerificationRequestSpec struct {
 	// Deprecated: use UserRef
-	User     string                           `json:"user"`
+	User     string                           `json:"user,omitempty"`
 	Code     string                           `json:"code"`
 	Subject  string                           `json:"subject"`
 	BodyHTML string                           `json:"bodyHTML"`
