@@ -1,14 +1,18 @@
 package v1alpha2
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type VerificationRequestSpec struct {
-	User     string `json:"user"`
-	Code     string `json:"code"`
-	BodyHTML string `json:"bodyHTML"`
-	BodyText string `json:"bodyText"`
+	// Deprecated: use UserRef
+	User     string                           `json:"user"`
+	Code     string                           `json:"code"`
+	Subject  string                           `json:"subject"`
+	BodyHTML string                           `json:"bodyHTML"`
+	BodyText string                           `json:"bodyText"`
+	UserRef  corev1.TypedLocalObjectReference `json:"userRef"`
 }
 
 type VerificationRequestStatus struct {
