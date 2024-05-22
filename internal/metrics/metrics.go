@@ -150,7 +150,7 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 func (m *prometheusMetrics) CollectMetrics() error {
 	ctx := context.Background()
 
-	m.logger.Debug("collecting prometheus metrics")
+	m.logger.Log(ctx, slog.LevelDebug+1, "collecting prometheus metrics")
 
 	var organizationList dockyardsv1.OrganizationList
 	err := m.controllerClient.List(ctx, &organizationList)
