@@ -16,6 +16,7 @@ type ClusterSpec struct {
 	Version                  string           `json:"version,omitempty"`
 	NoDefaultIngressProvider bool             `json:"noDefaultIngressProvider,omitempty"`
 	Upgrades                 []ClusterUpgrade `json:"upgrades,omitempty"`
+	BlockDeletion            bool             `json:"blockDeletion,omitempty"`
 }
 
 type ClusterStatus struct {
@@ -28,7 +29,6 @@ type ClusterStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="Version",type=string,JSONPath=".status.version"
 type Cluster struct {

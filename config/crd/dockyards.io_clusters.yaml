@@ -140,9 +140,6 @@ spec:
     subresources:
       status: {}
   - additionalPrinterColumns:
-    - jsonPath: .metadata.creationTimestamp
-      name: Age
-      type: date
     - jsonPath: .status.conditions[?(@.type=="Ready")].status
       name: Ready
       type: string
@@ -172,6 +169,8 @@ spec:
             type: object
           spec:
             properties:
+              blockDeletion:
+                type: boolean
               noDefaultIngressProvider:
                 type: boolean
               upgrades:
