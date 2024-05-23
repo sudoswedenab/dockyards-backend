@@ -20,6 +20,7 @@ webhooks:
     - v1alpha2
     operations:
     - CREATE
+    - DELETE
     - UPDATE
     resources:
     - clusters
