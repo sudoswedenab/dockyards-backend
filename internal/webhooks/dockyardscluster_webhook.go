@@ -32,7 +32,29 @@ func (webhook *DockyardsCluster) ValidateCreate(ctx context.Context, obj runtime
 	return nil, webhook.validate(dockyardsCluster)
 }
 
-func (webhook *DockyardsCluster) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsCluster) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+	dockyardsCluster, ok := obj.(*dockyardsv1.Cluster)
+	if !ok {
+		return nil, nil
+	}
+
+	if dockyardsCluster.Spec.BlockDeletion {
+		forbidden := field.Forbidden(
+			field.NewPath("spec", "blockDeletion"),
+			"deletion is blocked",
+		)
+
+		qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind()
+
+		return nil, apierrors.NewInvalid(
+			qualifiedKind,
+			dockyardsCluster.Name,
+			field.ErrorList{
+				forbidden,
+			},
+		)
+	}
+
 	return nil, nil
 }
 

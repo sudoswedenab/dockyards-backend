@@ -67,3 +67,52 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 		})
 	}
 }
+
+func TestDockyardsClusterValidateDelete(t *testing.T) {
+	tt := []struct {
+		name             string
+		dockyardsCluster dockyardsv1.Cluster
+		expected         error
+	}{
+		{
+			name: "test empty cluster",
+			dockyardsCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "empty",
+					Namespace: "testing",
+				},
+			},
+		},
+		{
+			name: "test cluster with block deletion",
+			dockyardsCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "block-deletion",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.ClusterSpec{
+					BlockDeletion: true,
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(),
+				"block-deletion",
+				field.ErrorList{
+					field.Forbidden(
+						field.NewPath("spec", "blockDeletion"),
+						"deletion is blocked",
+					),
+				},
+			),
+		},
+	}
+
+	for _, tc := range tt {
+		webhook := webhooks.DockyardsCluster{}
+
+		_, actual := webhook.ValidateDelete(context.Background(), &tc.dockyardsCluster)
+		if !cmp.Equal(actual, tc.expected) {
+			t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+		}
+	}
+}
