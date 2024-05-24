@@ -152,6 +152,9 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="Ready")].status
       name: Ready
       type: string
+    - jsonPath: .spec.clusterComponent
+      name: ClusterComponent
+      type: boolean
     - jsonPath: .status.urls[0]
       name: URL
       type: string
@@ -178,6 +181,8 @@ spec:
             type: object
           spec:
             properties:
+              clusterComponent:
+                type: boolean
               deploymentRefs:
                 items:
                   description: |-

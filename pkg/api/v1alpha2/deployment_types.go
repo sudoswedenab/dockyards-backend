@@ -10,8 +10,9 @@ const (
 )
 
 type DeploymentSpec struct {
-	TargetNamespace string                             `json:"targetNamespace,omitempty"`
-	DeploymentRefs  []corev1.TypedLocalObjectReference `json:"deploymentRefs,omitempty"`
+	TargetNamespace  string                             `json:"targetNamespace,omitempty"`
+	DeploymentRefs   []corev1.TypedLocalObjectReference `json:"deploymentRefs,omitempty"`
+	ClusterComponent bool                               `json:"clusterComponent,omitempty"`
 }
 
 type DeploymentStatus struct {
@@ -23,6 +24,7 @@ type DeploymentStatus struct {
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
+// +kubebuilder:printcolumn:name="ClusterComponent",type=boolean,JSONPath=".spec.clusterComponent"
 // +kubebuilder:printcolumn:name="URL",type=string,JSONPath=".status.urls[0]"
 type Deployment struct {
 	metav1.TypeMeta   `json:",inline"`
