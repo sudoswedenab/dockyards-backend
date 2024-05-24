@@ -141,6 +141,9 @@ spec:
     - jsonPath: .metadata.uid
       name: UID
       type: string
+    - jsonPath: .spec.email
+      name: Email
+      type: string
     name: v1alpha2
     schema:
       openAPIV3Schema:
