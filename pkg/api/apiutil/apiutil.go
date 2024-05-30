@@ -159,3 +159,84 @@ func GetNamespaceOrganization(ctx context.Context, c client.Client, namespace st
 
 	return nil, nil
 }
+
+func GetOwnerHelmDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.HelmDeployment, error) {
+	for _, ownerReference := range o.GetOwnerReferences() {
+		if ownerReference.Kind != dockyardsv1.HelmDeploymentKind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
+			continue
+		}
+
+		var deployment dockyardsv1.HelmDeployment
+		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
+		if err != nil {
+			return nil, err
+		}
+
+		return &deployment, nil
+	}
+
+	return nil, nil
+}
+
+func GetOwnerKustomizeDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.KustomizeDeployment, error) {
+	for _, ownerReference := range o.GetOwnerReferences() {
+		if ownerReference.Kind != dockyardsv1.KustomizeDeploymentKind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
+			continue
+		}
+
+		var deployment dockyardsv1.KustomizeDeployment
+		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
+		if err != nil {
+			return nil, err
+		}
+
+		return &deployment, nil
+	}
+
+	return nil, nil
+}
+
+func GetOwnerContainerImageDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.ContainerImageDeployment, error) {
+	for _, ownerReference := range o.GetOwnerReferences() {
+		if ownerReference.Kind != dockyardsv1.ContainerImageDeploymentKind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
+			continue
+		}
+
+		var deployment dockyardsv1.ContainerImageDeployment
+		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
+		if err != nil {
+			return nil, err
+		}
+
+		return &deployment, nil
+	}
+
+	return nil, nil
+}
