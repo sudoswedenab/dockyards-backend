@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,15 +32,15 @@ func TestGetOrgs(t *testing.T) {
 		{
 			name: "test single",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
 								UID:  "03582042-318e-4c1e-9728-755c5eaf4267",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "test",
 										UID:  "89a3e0aa-7744-49af-ae7e-1461004c1598",
@@ -62,15 +62,15 @@ func TestGetOrgs(t *testing.T) {
 		{
 			name: "test multiple organizations",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test1",
 								UID:  "58c282c0-6a68-4ec8-9032-83d33f259bbe",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "user1",
 										UID:  "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
@@ -87,8 +87,8 @@ func TestGetOrgs(t *testing.T) {
 								Name: "test2",
 								UID:  "d327da4c-f8fe-4f85-93a1-258b729a40d2",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "user2",
 										UID:  "5cf0ed84-82f4-43fe-a3fb-b91f2ec7f0b1",
@@ -101,8 +101,8 @@ func TestGetOrgs(t *testing.T) {
 								Name: "test3",
 								UID:  "5c13be53-fecd-467d-9546-d8ba3bb68103",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "user1",
 										UID:  "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
@@ -128,15 +128,15 @@ func TestGetOrgs(t *testing.T) {
 		{
 			name: "test subject without organizations",
 			lists: []client.ObjectList{
-				&v1alpha1.OrganizationList{
-					Items: []v1alpha1.Organization{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test1",
 								UID:  "57236ef2-304c-4fa7-9aa7-e8019dfa3070",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "user1",
 										UID:  "92770876-ae7f-493f-b3f8-7d9f0a45b656",
@@ -153,8 +153,8 @@ func TestGetOrgs(t *testing.T) {
 								Name: "test2",
 								UID:  "d327da4c-f8fe-4f85-93a1-258b729a40d2",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "user3",
 										UID:  "df8ab98f-7866-4f4d-a9a6-7426879b7032",
@@ -167,8 +167,8 @@ func TestGetOrgs(t *testing.T) {
 								Name: "test3",
 								UID:  "5c13be53-fecd-467d-9546-d8ba3bb68103",
 							},
-							Spec: v1alpha1.OrganizationSpec{
-								MemberRefs: []v1alpha1.UserReference{
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
 									{
 										Name: "user4",
 										UID:  "d734d20f-e03e-44a8-89a5-8bd7f5d176d3",
@@ -188,8 +188,11 @@ func TestGetOrgs(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
-			v1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer).Build()
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Organization{}, index.MemberReferencesField, index.ByMemberReferences).
+				Build()
 
 			h := handler{
 				logger:           logger,
