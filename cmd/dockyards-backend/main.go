@@ -19,8 +19,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	chi "github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -232,19 +230,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	privateRouter := chi.NewRouter()
-	privateRouter.Use(middleware.Logger)
+	privateMux := http.NewServeMux()
 
 	promHandlerOpts := promhttp.HandlerOpts{
 		Registry: registry,
 	}
 	promHandler := promhttp.HandlerFor(registry, promHandlerOpts)
 
-	privateRouter.Handle("/metrics", promHandler)
-	privateRouter.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {})
+	privateMux.Handle("/metrics", promHandler)
+	privateMux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {})
 
 	privateServer := &http.Server{
-		Handler: privateRouter,
+		Handler: privateMux,
 		Addr:    ":9001",
 	}
 

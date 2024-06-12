@@ -12,7 +12,6 @@ require (
 	github.com/fluxcd/pkg/runtime v0.47.1
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-logr/logr v1.4.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/google/go-cmp v0.6.0
