@@ -226,8 +226,11 @@ spec:
       name: Ready
       type: string
     - jsonPath: .status.namespaceRef
-      name: Namespace
+      name: NamespaceReference
       type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     name: v1alpha2
     schema:
       openAPIV3Schema:

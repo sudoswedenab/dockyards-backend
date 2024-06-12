@@ -22,11 +22,11 @@ type NodeStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="CPU",type=string,JSONPath=".status.resources.cpu"
 // +kubebuilder:printcolumn:name="Memory",type=string,JSONPath=".status.resources.memory"
 // +kubebuilder:printcolumn:name="Storage",type=string,JSONPath=".status.resources.storage"
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type Node struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

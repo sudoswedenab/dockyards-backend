@@ -212,7 +212,11 @@ spec:
         type: object
     served: true
     storage: false
-  - name: v1alpha2
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha2
     schema:
       openAPIV3Schema:
         properties:
@@ -407,3 +411,4 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}

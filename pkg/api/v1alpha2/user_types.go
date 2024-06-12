@@ -25,6 +25,7 @@ type UserStatus struct {
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="UID",type=string,JSONPath=".metadata.uid"
 // +kubebuilder:printcolumn:name="Email",type=string,JSONPath=".spec.email"
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

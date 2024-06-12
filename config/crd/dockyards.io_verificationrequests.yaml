@@ -14,7 +14,11 @@ spec:
     singular: verificationrequest
   scope: Cluster
   versions:
-  - name: v1alpha2
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha2
     schema:
       openAPIV3Schema:
         properties:
