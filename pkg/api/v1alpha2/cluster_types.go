@@ -2,9 +2,9 @@ package v1alpha2
 
 import (
 	"fmt"
+	"net"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/net"
 )
 
 const (
@@ -26,7 +26,7 @@ func (e *ClusterAPIEndpoint) IsValid() bool {
 
 func (e *ClusterAPIEndpoint) String() string {
 	port := fmt.Sprintf("%d", e.Port)
-	return net.JoinSchemeNamePort("https", e.Host, port)
+	return "https://" + net.JoinHostPort(e.Host, port)
 }
 
 type ClusterSpec struct {
