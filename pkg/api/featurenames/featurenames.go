@@ -46,3 +46,7 @@ const (
 const (
 	FeatureClusterUpgrades = "cluster-upgrades"
 )
+
+const (
+	FeatureImmutableResources = "immutable-resources"
+)
