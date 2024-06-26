@@ -2,7 +2,15 @@ package handlers
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math"
+	"math/big"
 	"net/http"
+	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
@@ -18,6 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -361,30 +371,174 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
+	if !cluster.Status.APIEndpoint.IsValid() {
+		h.logger.Info("cluster does not have a valid api endpoint", "uid", cluster.UID)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
 	objectKey := client.ObjectKey{
-		Name:      cluster.Name + "-kubeconfig",
+		Name:      cluster.Name + "-ca",
 		Namespace: cluster.Namespace,
 	}
 
 	var secret corev1.Secret
 	err = h.controllerClient.Get(ctx, objectKey, &secret)
 	if err != nil {
-		h.logger.Error("error getting kubeconfig", "err", err)
-
-		if apierrors.IsNotFound(err) {
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}
-
+		h.logger.Error("error getting cluster certificate authority", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
-	kubeconfig, hasValue := secret.Data["value"]
-	if !hasValue {
-		h.logger.Debug("kubeconfig secret has no value")
-
+	caCertificatePEM, has := secret.Data[corev1.TLSCertKey]
+	if !has {
+		h.logger.Info("cluster certificate authority has no tls certificate")
 		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	signingKeyPEM, has := secret.Data[corev1.TLSPrivateKeyKey]
+	if !has {
+		h.logger.Info("cluster certificate authority has to tls private key")
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	block, _ := pem.Decode(caCertificatePEM)
+	if block == nil {
+		h.logger.Info("unable to decode ca certificate as pem")
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	caCertificate, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		h.logger.Error("error parsing ca certificate", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	block, _ = pem.Decode(signingKeyPEM)
+
+	signingKey, err := x509.ParseECPrivateKey(block.Bytes)
+	if err != nil {
+		h.logger.Error("error parsing signing key", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	matchingFields = client.MatchingFields{
+		index.UIDField: subject,
+	}
+
+	var userList dockyardsv1.UserList
+	err = h.controllerClient.List(ctx, &userList, matchingFields)
+	if err != nil {
+		h.logger.Error("error listing users", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	if len(userList.Items) != 1 {
+		h.logger.Info("unexpected users count", "count", len(userList.Items))
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	user := userList.Items[0]
+
+	contextName := user.Name + "@" + cluster.Name
+
+	serial, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+	if err != nil {
+		h.logger.Error("error generating random serial number", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	tmpl := x509.Certificate{
+		Subject: pkix.Name{
+			CommonName: user.Name,
+			Organization: []string{
+				"system:masters",
+			},
+		},
+		NotBefore:    caCertificate.NotBefore,
+		NotAfter:     time.Now().Add(time.Hour * 12),
+		SerialNumber: serial,
+		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageClientAuth,
+		},
+	}
+
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		h.logger.Error("error generating private rsa key", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	certificate, err := x509.CreateCertificate(rand.Reader, &tmpl, caCertificate, privateKey.Public(), signingKey)
+	if err != nil {
+		h.logger.Error("error creating certificate", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	block = &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: certificate,
+	}
+
+	certificatePEM := pem.EncodeToMemory(block)
+
+	block = &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	}
+
+	privateKeyPEM := pem.EncodeToMemory(block)
+
+	cfg := api.Config{
+		Clusters: map[string]*api.Cluster{
+			cluster.Name: {
+				Server:                   cluster.Status.APIEndpoint.String(),
+				CertificateAuthorityData: caCertificatePEM,
+			},
+		},
+		Contexts: map[string]*api.Context{
+			contextName: {
+				Cluster:  cluster.Name,
+				AuthInfo: user.Name,
+			},
+		},
+		AuthInfos: map[string]*api.AuthInfo{
+			user.Name: {
+				ClientCertificateData: certificatePEM,
+				ClientKeyData:         privateKeyPEM,
+			},
+		},
+		CurrentContext: contextName,
+	}
+
+	kubeconfig, err := clientcmd.Write(cfg)
+	if err != nil {
+		h.logger.Error("error marshalling kubeconfig", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
