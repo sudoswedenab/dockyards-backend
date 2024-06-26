@@ -1,7 +1,10 @@
 package v1alpha2
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/net"
 )
 
 const (
@@ -10,6 +13,20 @@ const (
 
 type ClusterUpgrade struct {
 	To string `json:"to"`
+}
+
+type ClusterAPIEndpoint struct {
+	Host string `json:"host"`
+	Port int32  `json:"port"`
+}
+
+func (e *ClusterAPIEndpoint) IsValid() bool {
+	return e.Host != "" && e.Port != 0
+}
+
+func (e *ClusterAPIEndpoint) String() string {
+	port := fmt.Sprintf("%d", e.Port)
+	return net.JoinSchemeNamePort("https", e.Host, port)
 }
 
 type ClusterSpec struct {
@@ -24,6 +41,7 @@ type ClusterStatus struct {
 	ClusterServiceID string             `json:"clusterServiceID,omitempty"`
 	Version          string             `json:"version,omitempty"`
 	DNSZones         []string           `json:"dnsZones,omitempty"`
+	APIEndpoint      ClusterAPIEndpoint `json:"apiEndpoint,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -190,6 +190,17 @@ spec:
             type: object
           status:
             properties:
+              apiEndpoint:
+                properties:
+                  host:
+                    type: string
+                  port:
+                    format: int32
+                    type: integer
+                required:
+                - host
+                - port
+                type: object
               clusterServiceID:
                 type: string
               conditions:
