@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	authorizationv1 "k8s.io/api/authorization/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -239,4 +240,20 @@ func GetOwnerContainerImageDeployment(ctx context.Context, c client.Client, o cl
 	}
 
 	return nil, nil
+}
+
+func IsSubjectAllowed(ctx context.Context, c client.Client, subject string, resourceAttributes *authorizationv1.ResourceAttributes) (bool, error) {
+	accessReview := authorizationv1.SubjectAccessReview{
+		Spec: authorizationv1.SubjectAccessReviewSpec{
+			User:               subject,
+			ResourceAttributes: resourceAttributes,
+		},
+	}
+
+	err := c.Create(ctx, &accessReview)
+	if err != nil {
+		return false, err
+	}
+
+	return accessReview.Status.Allowed, nil
 }
