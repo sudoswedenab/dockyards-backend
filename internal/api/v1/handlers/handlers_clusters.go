@@ -12,6 +12,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -20,10 +21,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
+// +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;watch;create;delete
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=create
-// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 
 func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *dockyardsv1.Cluster, nodePoolList *dockyardsv1.NodePoolList) *v1.Cluster {
 	v1Cluster := v1.Cluster{
@@ -329,18 +331,6 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &cluster)
-	if err != nil {
-		h.logger.Error("error getting owner organization", "err", err)
-
-		if apierrors.IsNotFound(err) {
-			c.AbortWithStatus(http.StatusUnauthorized)
-		}
-
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error fetching user from context", "err", err)
@@ -349,11 +339,25 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		return
 	}
 
-	isMember := h.isMember(subject, organization)
-	if !isMember {
-		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
+	resourceAttributes := authorizationv1.ResourceAttributes{
+		Verb:      "get",
+		Resource:  "clusters",
+		Group:     "dockyards.io",
+		Namespace: cluster.Namespace,
+	}
 
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.controllerClient, subject, &resourceAttributes)
+	if err != nil {
+		h.logger.Error("error reviewing subject", "err", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
+	}
+
+	if !allowed {
+		h.logger.Debug("subject is not allowed to get cluster", "subject", subject, "cluster", cluster.Name, "namespace", cluster.Namespace)
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 

@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/pflag"
+	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -90,6 +91,7 @@ func main() {
 	_ = v1alpha1.AddToScheme(scheme)
 	_ = dockyardsv1.AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)
+	_ = authorizationv1.AddToScheme(scheme)
 
 	controllerClient, err := client.New(kubeconfig, client.Options{Scheme: scheme})
 	if err != nil {
