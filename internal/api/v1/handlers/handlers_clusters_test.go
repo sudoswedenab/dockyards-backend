@@ -27,6 +27,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/yaml"
 )
 
@@ -1010,6 +1011,10 @@ func TestGetClusterErrors(t *testing.T) {
 }
 
 func TestGetClusterKubeconfig(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
 	tt := []struct {
 		name      string
 		clusterID string
@@ -1091,38 +1096,55 @@ func TestGetClusterKubeconfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
+			_, cancel := context.WithCancel(context.TODO())
+
+			environment := envtest.Environment{
+				CRDDirectoryPaths: []string{
+					"../../config/crd",
+				},
+			}
+
+			cfg, err := environment.Start()
+			if err != nil {
+				t.Fatalf("error starting test environment: %s", err)
+			}
+
+			t.Cleanup(func() {
+				cancel()
+				environment.Stop()
+			})
+
 			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithLists(tc.lists...).
-				WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).
-				Build()
+			_ = dockyardsv1.AddToScheme(scheme)
+
+			c, err := client.New(cfg, client.Options{Scheme: scheme})
+			if err != nil {
+				t.Fatalf("error creating test client: %s", err)
+			}
 
 			h := handler{
 				logger:           logger,
-				controllerClient: fakeClient,
+				controllerClient: c,
 			}
 
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+			ginContext, _ := gin.CreateTestContext(w)
 
-			c.Params = []gin.Param{
+			ginContext.Params = []gin.Param{
 				{Key: "clusterID", Value: tc.clusterID},
 			}
-			c.Set("sub", tc.sub)
+			ginContext.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID, "kubeconfig"),
 			}
 
-			var err error
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
+			ginContext.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
 			if err != nil {
 				t.Fatalf("unexpected error preparing test request: %s", err)
 			}
 
-			h.GetClusterKubeconfig(c)
+			h.GetClusterKubeconfig(ginContext)
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
@@ -1141,6 +1163,10 @@ func TestGetClusterKubeconfig(t *testing.T) {
 }
 
 func TestGetClusterKubeconfigErrors(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
 	tt := []struct {
 		name      string
 		clusterID string
