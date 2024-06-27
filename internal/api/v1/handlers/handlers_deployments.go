@@ -107,6 +107,9 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 					UID:        cluster.UID,
 				},
 			},
+			Labels: map[string]string{
+				dockyardsv1.LabelClusterName: cluster.Name,
+			},
 		},
 		Spec: dockyardsv1.DeploymentSpec{
 			TargetNamespace: *v1Deployment.Namespace,
@@ -147,6 +150,9 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 						Name:       deployment.Name,
 						UID:        deployment.UID,
 					},
+				},
+				Labels: map[string]string{
+					dockyardsv1.LabelClusterName: cluster.Name,
 				},
 			},
 			Spec: dockyardsv1.ContainerImageDeploymentSpec{
@@ -226,6 +232,9 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 						UID:        deployment.UID,
 					},
 				},
+				Labels: map[string]string{
+					dockyardsv1.LabelClusterName: cluster.Name,
+				},
 			},
 			Spec: dockyardsv1.KustomizeDeploymentSpec{
 				Kustomize: *v1Deployment.Kustomize,
@@ -264,6 +273,9 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 						Name:       deployment.Name,
 						UID:        deployment.UID,
 					},
+				},
+				Labels: map[string]string{
+					dockyardsv1.LabelClusterName: cluster.Name,
 				},
 			},
 			Spec: dockyardsv1.HelmDeploymentSpec{
