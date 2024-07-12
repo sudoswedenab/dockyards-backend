@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"github.com/google/go-cmp/cmp"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -33,43 +34,55 @@ func (webhook *DockyardsNodePool) ValidateCreate(ctx context.Context, obj runtim
 		return nil, nil
 	}
 
-	return nil, webhook.validate(dockyardsNodePool)
+	return nil, webhook.validate(nil, dockyardsNodePool)
 }
 
 func (webhook *DockyardsNodePool) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	dockyardsNodePool, ok := newObj.(*dockyardsv1.NodePool)
+	oldNodePool, ok := oldObj.(*dockyardsv1.NodePool)
 	if !ok {
 		return nil, nil
 	}
 
-	return nil, webhook.validate(dockyardsNodePool)
+	newNodePool, ok := newObj.(*dockyardsv1.NodePool)
+	if !ok {
+		return nil, nil
+	}
+
+	return nil, webhook.validate(oldNodePool, newNodePool)
 }
 
 func (webhook *DockyardsNodePool) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func (wehook *DockyardsNodePool) validate(dockyardsNodePool *dockyardsv1.NodePool) error {
+func (wehook *DockyardsNodePool) validate(oldNodePool, newNodePool *dockyardsv1.NodePool) error {
 	var errorList field.ErrorList
 
-	if dockyardsNodePool.Spec.Storage && !feature.IsEnabled(featurenames.FeatureStorageRole) {
-		invalid := field.Invalid(field.NewPath("spec", "storage"), dockyardsNodePool.Spec.Storage, "feature is not enabled")
+	if newNodePool.Spec.Storage && !feature.IsEnabled(featurenames.FeatureStorageRole) {
+		invalid := field.Invalid(field.NewPath("spec", "storage"), newNodePool.Spec.Storage, "feature is not enabled")
 		errorList = append(errorList, invalid)
 	}
 
-	if dockyardsNodePool.Spec.StorageResources != nil && !feature.IsEnabled(featurenames.FeatureStorageRole) {
-		invalid := field.Invalid(field.NewPath("spec", "storageResources"), dockyardsNodePool.Spec.StorageResources, "feature is not enabled")
+	if newNodePool.Spec.StorageResources != nil && !feature.IsEnabled(featurenames.FeatureStorageRole) {
+		invalid := field.Invalid(field.NewPath("spec", "storageResources"), newNodePool.Spec.StorageResources, "feature is not enabled")
 		errorList = append(errorList, invalid)
 	}
 
-	if dockyardsNodePool.Spec.LoadBalancer && !feature.IsEnabled(featurenames.FeatureLoadBalancerRole) {
-		invalid := field.Invalid(field.NewPath("spec", "loadBalancer"), dockyardsNodePool.Spec.LoadBalancer, "feature is not enabled")
+	if newNodePool.Spec.LoadBalancer && !feature.IsEnabled(featurenames.FeatureLoadBalancerRole) {
+		invalid := field.Invalid(field.NewPath("spec", "loadBalancer"), newNodePool.Spec.LoadBalancer, "feature is not enabled")
 		errorList = append(errorList, invalid)
+	}
+
+	if oldNodePool != nil && feature.IsEnabled(featurenames.FeatureImmutableResources) {
+		if !cmp.Equal(oldNodePool.Spec.Resources, newNodePool.Spec.Resources) {
+			forbidden := field.Forbidden(field.NewPath("spec", "resources"), "immutable-resources feature is enabled")
+			errorList = append(errorList, forbidden)
+		}
 	}
 
 	if len(errorList) > 0 {
 		qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind()
-		return apierrors.NewInvalid(qualifiedKind, dockyardsNodePool.Name, errorList)
+		return apierrors.NewInvalid(qualifiedKind, newNodePool.Name, errorList)
 	}
 
 	return nil

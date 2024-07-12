@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/google/go-cmp/cmp"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -177,6 +178,109 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 			webhook := webhooks.DockyardsNodePool{}
 
 			_, actual := webhook.ValidateCreate(context.Background(), &tc.dockyardsNodePool)
+			if !cmp.Equal(actual, tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
+
+func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
+	tt := []struct {
+		name        string
+		oldNodePool dockyardsv1.NodePool
+		newNodePool dockyardsv1.NodePool
+		features    dockyardsv1.FeatureList
+		expected    error
+	}{
+		{
+			name: "test resources update",
+			oldNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-resources-update",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					Resources: corev1.ResourceList{
+						corev1.ResourceCPU:     resource.MustParse("1"),
+						corev1.ResourceMemory:  resource.MustParse("2Gi"),
+						corev1.ResourceStorage: resource.MustParse("3G"),
+					},
+				},
+			},
+			newNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-resources-update",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					Resources: corev1.ResourceList{
+						corev1.ResourceCPU:     resource.MustParse("2"),
+						corev1.ResourceMemory:  resource.MustParse("3Gi"),
+						corev1.ResourceStorage: resource.MustParse("4G"),
+					},
+				},
+			},
+		},
+		{
+			name: "test immutable-resources feature",
+			oldNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-immutable-resources-feature",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					Resources: corev1.ResourceList{
+						corev1.ResourceCPU:     resource.MustParse("1"),
+						corev1.ResourceMemory:  resource.MustParse("2Gi"),
+						corev1.ResourceStorage: resource.MustParse("3G"),
+					},
+				},
+			},
+			newNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-immutable-resources-feature",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					Resources: corev1.ResourceList{
+						corev1.ResourceCPU:     resource.MustParse("2"),
+						corev1.ResourceMemory:  resource.MustParse("3Gi"),
+						corev1.ResourceStorage: resource.MustParse("4G"),
+					},
+				},
+			},
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      string(featurenames.FeatureImmutableResources),
+							Namespace: "testing",
+						},
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"test-immutable-resources-feature",
+				field.ErrorList{
+					field.Forbidden(field.NewPath("spec", "resources"), "immutable-resources feature is enabled"),
+				},
+			),
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, item := range tc.features.Items {
+				feature.Enable(featurenames.FeatureName(item.Name))
+
+				defer feature.Disable(featurenames.FeatureName(item.Name))
+			}
+
+			webhook := webhooks.DockyardsNodePool{}
+
+			_, actual := webhook.ValidateUpdate(context.Background(), &tc.oldNodePool, &tc.newNodePool)
 			if !cmp.Equal(actual, tc.expected) {
 				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
 			}
