@@ -50,3 +50,7 @@ const (
 const (
 	FeatureImmutableResources = "immutable-resources"
 )
+
+const (
+	FeatureCloudDirectorAPITokens = "cloud-director-api-tokens"
+)
