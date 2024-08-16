@@ -50,14 +50,37 @@ func (webhook *DockyardsOrganization) ValidateDelete(ctx context.Context, obj ru
 }
 
 func (webhook *DockyardsOrganization) validate(dockyardsOrganization *dockyardsv1.Organization) error {
+	var errorList field.ErrorList
+
 	if !dockyardsOrganization.Spec.SkipAutoAssign && !feature.IsEnabled(featurenames.FeatureOrganizationAutoAssign) {
 		invalid := field.Invalid(field.NewPath("spec", "skipAutoAssign"), dockyardsOrganization.Spec.SkipAutoAssign, "feature is not enabled")
+
+		errorList = append(errorList, invalid)
+	}
+
+	superUsers := 0
+	for _, memberRef := range dockyardsOrganization.Spec.MemberRefs {
+		if memberRef.Role == dockyardsv1.MemberRoleSuperUser {
+			superUsers = superUsers + 1
+		}
+	}
+
+	if superUsers < 1 {
+		required := field.Required(
+			field.NewPath("spec", "memberRefs"),
+			"must have at least one super user",
+		)
+
+		errorList = append(errorList, required)
+	}
+
+	if len(errorList) > 0 {
 		qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.OrganizationKind).GroupKind()
 
 		return apierrors.NewInvalid(
 			qualifiedKind,
 			dockyardsOrganization.Name,
-			field.ErrorList{invalid},
+			errorList,
 		)
 	}
 
