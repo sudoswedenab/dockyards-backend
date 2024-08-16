@@ -89,3 +89,20 @@ func BySecretType(o client.Object) []string {
 		string(secret.Type),
 	}
 }
+
+func CloudSecretRef(ref *v1alpha2.NamespacedSecretReference) string {
+	return ref.Namespace + ref.Name
+}
+
+func ByCloudSecretRef(obj client.Object) []string {
+	organization, ok := obj.(*v1alpha2.Organization)
+	if !ok {
+		return nil
+	}
+
+	if organization.Spec.Cloud.SecretRef == nil {
+		return nil
+	}
+
+	return []string{CloudSecretRef(organization.Spec.Cloud.SecretRef)}
+}
