@@ -18,6 +18,7 @@ const (
 	UIDField                   = ".metadata.uid"
 	OwnerReferencesField       = ".metadata.ownerReferences"
 	SecretTypeField            = ".type"
+	CloudSecretReferenceField  = ".spec.cloud.secretRef"
 )
 
 // Deprecated: use ByMemberReferences
