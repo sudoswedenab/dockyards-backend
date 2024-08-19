@@ -631,7 +631,7 @@ func (h *handler) GetClusters(c *gin.Context) {
 	}
 
 	matchingFields := client.MatchingFields{
-		index.MemberRefsIndexKey: subject,
+		index.MemberReferencesField: subject,
 	}
 
 	var organizationList dockyardsv1.OrganizationList
