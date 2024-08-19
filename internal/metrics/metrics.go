@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type prometheusMetrics struct {
+type PrometheusMetrics struct {
 	logger             *slog.Logger
 	registry           *prometheus.Registry
 	organizationMetric *prometheus.GaugeVec
@@ -26,16 +26,16 @@ type prometheusMetrics struct {
 	clusterMetric      *prometheus.GaugeVec
 }
 
-type PrometheusMetricsOption func(*prometheusMetrics)
+type PrometheusMetricsOption func(*PrometheusMetrics)
 
 func WithLogger(logger *slog.Logger) PrometheusMetricsOption {
-	return func(m *prometheusMetrics) {
+	return func(m *PrometheusMetrics) {
 		m.logger = logger
 	}
 }
 
 func WithPrometheusRegistry(registry *prometheus.Registry) PrometheusMetricsOption {
-	return func(m *prometheusMetrics) {
+	return func(m *PrometheusMetrics) {
 		m.registry = registry
 	}
 }
@@ -43,12 +43,12 @@ func WithPrometheusRegistry(registry *prometheus.Registry) PrometheusMetricsOpti
 func WithManager(manager ctrl.Manager) PrometheusMetricsOption {
 	controllerClient := manager.GetClient()
 
-	return func(m *prometheusMetrics) {
+	return func(m *PrometheusMetrics) {
 		m.controllerClient = controllerClient
 	}
 }
 
-func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (*prometheusMetrics, error) {
+func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (*PrometheusMetrics, error) {
 	organizationMetric := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "dockyards_backend_organization",
@@ -97,7 +97,7 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 		},
 	)
 
-	m := prometheusMetrics{
+	m := PrometheusMetrics{
 		organizationMetric: organizationMetric,
 		userMetric:         userMetric,
 		deploymentMetric:   deploymentMetric,
@@ -105,8 +105,8 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 		clusterMetric:      clusterMetric,
 	}
 
-	for _, prometheusMetricsOption := range prometheusMetricsOptions {
-		prometheusMetricsOption(&m)
+	for _, PrometheusMetricsOption := range prometheusMetricsOptions {
+		PrometheusMetricsOption(&m)
 	}
 
 	m.registry.MustRegister(m.organizationMetric)
@@ -147,7 +147,7 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 	return &m, nil
 }
 
-func (m *prometheusMetrics) CollectMetrics() error {
+func (m *PrometheusMetrics) CollectMetrics() error {
 	ctx := context.Background()
 
 	m.logger.Log(ctx, slog.LevelDebug+1, "collecting prometheus metrics")
