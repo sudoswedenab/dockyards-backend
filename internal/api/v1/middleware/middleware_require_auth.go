@@ -36,7 +36,6 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 		c.AbortWithStatus(http.StatusUnauthorized)
 
 		return
-
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {

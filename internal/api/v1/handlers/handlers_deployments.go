@@ -324,7 +324,6 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		createdDeployment.HelmChart = &helmDeployment.Spec.Chart
 		createdDeployment.HelmRepository = &helmDeployment.Spec.Repository
 		createdDeployment.HelmVersion = &helmDeployment.Spec.Version
-
 	}
 
 	err = h.controllerClient.Patch(ctx, &deployment, patch)

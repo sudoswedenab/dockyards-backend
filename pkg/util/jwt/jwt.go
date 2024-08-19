@@ -120,7 +120,6 @@ func GetOrGenerateKeys(ctx context.Context, controllerClient client.Client, logg
 			accessTokenPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 			if err != nil {
 				return err
-
 			}
 
 			b, err := x509.MarshalECPrivateKey(accessTokenPrivateKey)
@@ -136,7 +135,6 @@ func GetOrGenerateKeys(ctx context.Context, controllerClient client.Client, logg
 			accessTokenPrivateKeyPEM = pem.EncodeToMemory(&block)
 
 			secret.Data[AccessTokenPrivateKeyKey] = accessTokenPrivateKeyPEM
-
 		}
 
 		refreshTokenPrivateKeyPEM, has = secret.Data[RefreshTokenPrivateKeyKey]
