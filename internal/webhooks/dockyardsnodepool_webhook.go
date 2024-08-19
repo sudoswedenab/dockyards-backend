@@ -55,7 +55,7 @@ func (webhook *DockyardsNodePool) ValidateDelete(ctx context.Context, obj runtim
 	return nil, nil
 }
 
-func (wehook *DockyardsNodePool) validate(oldNodePool, newNodePool *dockyardsv1.NodePool) error {
+func (webhook *DockyardsNodePool) validate(oldNodePool, newNodePool *dockyardsv1.NodePool) error {
 	var errorList field.ErrorList
 
 	if newNodePool.Spec.Storage && !feature.IsEnabled(featurenames.FeatureStorageRole) {
