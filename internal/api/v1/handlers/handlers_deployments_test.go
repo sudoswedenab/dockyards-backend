@@ -926,7 +926,7 @@ func TestPostClusterDeployments(t *testing.T) {
 			deployment: v1.Deployment{
 				Name:           util.Ptr("test"),
 				ContainerImage: util.Ptr("test"),
-				CredentialId:   util.Ptr("74e1819c-8b20-4187-b464-17f9d2c229a8"),
+				CredentialName: util.Ptr("test-123"),
 			},
 			lists: []client.ObjectList{
 				&dockyardsv1.ClusterList{
@@ -944,7 +944,7 @@ func TestPostClusterDeployments(t *testing.T) {
 					Items: []corev1.Secret{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
+								Name:      "test-123",
 								Namespace: "testing",
 								UID:       "74e1819c-8b20-4187-b464-17f9d2c229a8",
 							},

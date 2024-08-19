@@ -145,28 +145,20 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 	var credentialRef *corev1.LocalObjectReference
 
-	if v1Deployment.CredentialId != nil {
-		matchingFields := client.MatchingFields{
-			index.UIDField: *v1Deployment.CredentialId,
+	if v1Deployment.CredentialName != nil {
+		objectKey := client.ObjectKey{
+			Name:      *v1Deployment.CredentialName,
+			Namespace: cluster.Namespace,
 		}
 
-		var secretList corev1.SecretList
-		err := h.controllerClient.List(ctx, &secretList, matchingFields)
+		var secret corev1.Secret
+		err := h.controllerClient.Get(ctx, objectKey, &secret)
 		if err != nil {
 			h.logger.Error("error listing secrets", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 
 			return
 		}
-
-		if len(secretList.Items) != 1 {
-			h.logger.Error("expected exactly one secret", "count", len(secretList.Items))
-			c.AbortWithStatus(http.StatusForbidden)
-
-			return
-		}
-
-		secret := secretList.Items[0]
 
 		if secret.Type != DockyardsSecretTypeCredential {
 			h.logger.Error("secret is not type credential", "type", secret.Type)

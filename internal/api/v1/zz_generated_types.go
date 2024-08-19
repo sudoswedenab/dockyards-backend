@@ -82,7 +82,7 @@ type Credential struct {
 type Deployment struct {
 	ClusterId      string                  `json:"cluster_id"`
 	ContainerImage *string                 `json:"container_image,omitempty"`
-	CredentialId   *string                 `json:"credential_id,omitempty"`
+	CredentialName *string                 `json:"credential_name,omitempty"`
 	HelmChart      *string                 `json:"helm_chart,omitempty"`
 	HelmRepository *string                 `json:"helm_repository,omitempty"`
 	HelmValues     *map[string]interface{} `json:"helm_values,omitempty"`

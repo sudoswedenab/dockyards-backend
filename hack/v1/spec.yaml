@@ -479,7 +479,7 @@ components:
           type: string
         helm_values:
           type: object
-        credential_id:
+        credential_name:
           type: string
         port:
           type: integer
