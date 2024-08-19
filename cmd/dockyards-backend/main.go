@@ -185,13 +185,19 @@ func main() {
 
 		logger.Debug("creating prometheus metrics goroutine", "interval", interval)
 
-		prometheusMetrics.CollectMetrics()
+		err := prometheusMetrics.CollectMetrics()
+		if err != nil {
+			logger.Error("error collecting prometheus metrics", "err", err)
+		}
 
 		ticker := time.NewTicker(interval)
 		for {
 			select {
 			case <-ticker.C:
-				prometheusMetrics.CollectMetrics()
+				err := prometheusMetrics.CollectMetrics()
+				if err != nil {
+					logger.Error("error collecting prometheus metrics", "err", err)
+				}
 			}
 		}
 	}()
@@ -247,8 +253,23 @@ func main() {
 		Addr:    ":9001",
 	}
 
-	go privateServer.ListenAndServe()
-	go r.Run(":9000")
+	go func() {
+		err := privateServer.ListenAndServe()
+		if err != nil {
+			logger.Error("error running private server", "err", err)
+
+			os.Exit(1)
+		}
+	}()
+
+	go func() {
+		err := r.Run(":9000")
+		if err != nil {
+			logger.Error("error running public server", "err", err)
+
+			os.Exit(1)
+		}
+	}()
 
 	err = (&controller.OrganizationReconciler{
 		Client: manager.GetClient(),

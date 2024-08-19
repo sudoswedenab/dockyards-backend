@@ -415,6 +415,9 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 	}
 
 	err = h.controllerClient.Delete(ctx, &nodePool, &deleteOptions)
+	if err != nil {
+		h.logger.Error("error deleting node pool", "err", err)
+	}
 
 	c.JSON(http.StatusNoContent, nil)
 }
