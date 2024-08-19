@@ -15,8 +15,9 @@ func (h *handler) GetWhoami(c *gin.Context) {
 	sub, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error getting subject from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
+		return
 	}
 
 	ctx := context.Background()
@@ -29,13 +30,14 @@ func (h *handler) GetWhoami(c *gin.Context) {
 	err = h.controllerClient.List(ctx, &userList, matchingFields)
 	if err != nil {
 		h.logger.Error("error getting user from kubernetes", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(userList.Items) != 1 {
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 

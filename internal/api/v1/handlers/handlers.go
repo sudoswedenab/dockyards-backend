@@ -28,6 +28,7 @@ type HandlerOption func(*handler)
 
 func WithManager(manager ctrl.Manager) HandlerOption {
 	controllerClient := manager.GetClient()
+
 	return func(h *handler) {
 		h.controllerClient = controllerClient
 	}

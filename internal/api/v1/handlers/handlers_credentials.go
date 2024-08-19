@@ -26,8 +26,8 @@ func (h *handler) GetOrgCredentials(c *gin.Context) {
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error getting subject from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -40,15 +40,15 @@ func (h *handler) GetOrgCredentials(c *gin.Context) {
 	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error getting organizations from kubernetes", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(organizationList.Items) != 1 {
 		h.logger.Debug("expected exactly one organization", "count", len(organizationList.Items))
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -56,6 +56,7 @@ func (h *handler) GetOrgCredentials(c *gin.Context) {
 
 	if !h.isMember(subject, &organization) {
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -67,8 +68,8 @@ func (h *handler) GetOrgCredentials(c *gin.Context) {
 	err = h.controllerClient.List(ctx, &secretList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing secrets", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -91,6 +92,7 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 	organizationID := c.Param("org")
 	if organizationID == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
+
 		return
 	}
 
@@ -98,8 +100,8 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 	err := c.BindJSON(&credential)
 	if err != nil {
 		h.logger.Error("error binding request json to credential", "err", err)
-
 		c.AbortWithStatus(http.StatusUnprocessableEntity)
+
 		return
 	}
 
@@ -111,15 +113,15 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing organizations", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(organizationList.Items) != 1 {
 		h.logger.Debug("expected exactly one organization", "count", len(organizationList.Items))
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -128,8 +130,8 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error getting subject from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -154,8 +156,8 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 	err = h.controllerClient.Create(ctx, &secret)
 	if err != nil {
 		h.logger.Error("error creating secret", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -180,15 +182,15 @@ func (h *handler) DeleteCredential(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &secretList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing secrets", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(secretList.Items) != 1 {
 		h.logger.Debug("expected exactly one secret", "count", len(secretList.Items))
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -197,36 +199,37 @@ func (h *handler) DeleteCredential(c *gin.Context) {
 	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &secret)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if organization == nil {
 		h.logger.Debug("secret is not owned by organization")
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error getting subject from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if !h.isMember(subject, organization) {
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	err = h.controllerClient.Delete(ctx, &secret)
 	if err != nil {
 		h.logger.Error("error deleting secret", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -246,15 +249,15 @@ func (h *handler) GetCredential(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &secretList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing secrets", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(secretList.Items) != 1 {
 		h.logger.Debug("expected exactly one secret", "count", len(secretList.Items))
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -263,28 +266,29 @@ func (h *handler) GetCredential(c *gin.Context) {
 	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &secret)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if organization == nil {
 		h.logger.Debug("secret is not owned by organization")
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error getting subject from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if !h.isMember(subject, organization) {
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 

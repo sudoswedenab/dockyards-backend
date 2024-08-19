@@ -20,8 +20,8 @@ func (h *handler) GetApps(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &appList)
 	if err != nil {
 		h.logger.Error("error listing apps", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -50,8 +50,8 @@ func (h *handler) GetApp(c *gin.Context) {
 	appID := c.Param("appID")
 	if appID == "" {
 		h.logger.Error("empty app id")
-
 		c.AbortWithStatus(http.StatusBadRequest)
+
 		return
 	}
 
@@ -63,15 +63,15 @@ func (h *handler) GetApp(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &appList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing apps", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(appList.Items) != 1 {
 		h.logger.Debug("expected exactly one app", "count", len(appList.Items))
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 

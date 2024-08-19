@@ -77,8 +77,8 @@ func (h *handler) GetClusterOptions(c *gin.Context) {
 	err := h.controllerClient.Get(ctx, objectKey, &release)
 	if err != nil {
 		h.logger.Error("error getting release", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -91,8 +91,8 @@ func (h *handler) GetClusterOptions(c *gin.Context) {
 	err = h.controllerClient.Get(ctx, objectKey, &clusterTemplate)
 	if err != nil {
 		h.logger.Error("error getting cluster template", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 

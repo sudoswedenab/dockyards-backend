@@ -69,6 +69,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	org := c.Param("org")
 	if org == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
+
 		return
 	}
 
@@ -80,24 +81,24 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	err := h.controllerClient.Get(ctx, objectKey, &organization)
 	if err != nil {
 		h.logger.Error("error getting organization from kubernetes", "err", err)
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Debug("error fetching subject from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	isMember := h.isMember(subject, &organization)
 	if !isMember {
 		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -106,6 +107,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read Body",
 		})
+
 		return
 	}
 
@@ -118,6 +120,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 			"name":    clusterOptions.Name,
 			"details": details,
 		})
+
 		return
 	}
 
@@ -130,6 +133,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 					"name":    nodePoolOptions.Name,
 					"details": details,
 				})
+
 				return
 			}
 
@@ -141,6 +145,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 					"quantity": nodePoolOptions.Quantity,
 					"details":  "quantity must be lower than 9",
 				})
+
 				return
 			}
 		}
@@ -173,10 +178,12 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 		if apierrors.IsAlreadyExists(err) {
 			c.AbortWithStatus(http.StatusConflict)
+
 			return
 		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -193,8 +200,8 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		err := h.controllerClient.Get(ctx, objectKey, &clusterTemplate)
 		if err != nil {
 			h.logger.Error("error getting cluster template", "err", err)
-
 			c.AbortWithStatus(http.StatusInternalServerError)
+
 			return
 		}
 
@@ -263,8 +270,8 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 			quantity, err := resource.ParseQuantity(*nodePoolOption.DiskSize)
 			if err != nil {
 				h.logger.Error("error parsing disk size quantity", "err", err)
-
 				hasErrors = true
+
 				break
 			}
 
@@ -275,8 +282,8 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 			quantity, err := resource.ParseQuantity(*nodePoolOption.RamSize)
 			if err != nil {
 				h.logger.Error("error parsing ram size quantity", "err", err)
-
 				hasErrors = true
+
 				break
 			}
 
@@ -286,8 +293,8 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		err := h.controllerClient.Create(ctx, &nodePool)
 		if err != nil {
 			h.logger.Error("error creating node pool", "err", err)
-
 			hasErrors = true
+
 			break
 		}
 
@@ -298,8 +305,8 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 	if hasErrors {
 		h.logger.Error("deleting cluster", "id", cluster.UID)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -316,6 +323,7 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	clusterID := c.Param("clusterID")
 	if clusterID == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
+
 		return
 	}
 
@@ -327,15 +335,15 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
 		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -344,8 +352,8 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error fetching user from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -551,6 +559,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	clusterID := c.Param("clusterID")
 	if clusterID == "" {
 		c.AbortWithStatus(http.StatusBadRequest)
+
 		return
 	}
 
@@ -562,15 +571,15 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
 		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -584,24 +593,24 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Debug("error fetching user from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	isMember := h.isMember(subject, organization)
 	if !isMember {
 		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	err = h.controllerClient.Delete(ctx, &cluster, client.PropagationPolicy(metav1.DeletePropagationForeground))
 	if err != nil {
 		h.logger.Error("error deleting cluster", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -616,8 +625,8 @@ func (h *handler) GetClusters(c *gin.Context) {
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Debug("error getting subject from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -629,8 +638,8 @@ func (h *handler) GetClusters(c *gin.Context) {
 	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing organizations", "err", err)
-
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -641,8 +650,8 @@ func (h *handler) GetClusters(c *gin.Context) {
 		err = h.controllerClient.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef))
 		if err != nil {
 			h.logger.Error("error listing clusters", "err", err)
-
 			c.AbortWithStatus(http.StatusInternalServerError)
+
 			return
 		}
 
@@ -660,8 +669,8 @@ func (h *handler) GetCluster(c *gin.Context) {
 	clusterID := c.Param("clusterID")
 	if clusterID == "" {
 		h.logger.Error("empty cluster id")
-
 		c.AbortWithStatus(http.StatusBadRequest)
+
 		return
 	}
 
@@ -673,15 +682,15 @@ func (h *handler) GetCluster(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
 		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -693,26 +702,28 @@ func (h *handler) GetCluster(c *gin.Context) {
 
 		if apierrors.IsNotFound(err) {
 			c.AbortWithStatus(http.StatusUnauthorized)
+
 			return
 		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error fetching user from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	isMember := h.isMember(subject, organization)
 	if !isMember {
 		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -724,8 +735,8 @@ func (h *handler) GetCluster(c *gin.Context) {
 	err = h.controllerClient.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing node pools", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 

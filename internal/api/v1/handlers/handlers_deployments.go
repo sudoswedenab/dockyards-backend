@@ -34,8 +34,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	clusterID := c.Param("clusterID")
 	if clusterID == "" {
 		h.logger.Debug("cluster empty")
-
 		c.AbortWithStatus(http.StatusBadRequest)
+
 		return
 	}
 
@@ -47,8 +47,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -57,10 +57,12 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 		if len(clusterList.Items) == 0 {
 			c.AbortWithStatus(http.StatusUnauthorized)
+
 			return
 		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -70,8 +72,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	err = c.BindJSON(&v1Deployment)
 	if err != nil {
 		h.logger.Error("failed to read body", "err", err)
-
 		c.AbortWithStatus(http.StatusUnprocessableEntity)
+
 		return
 	}
 
@@ -80,8 +82,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	err = utildeployment.AddNormalizedName(&v1Deployment)
 	if err != nil {
 		h.logger.Error("error adding deployment name", "err", err)
-
 		c.AbortWithStatus(http.StatusUnprocessableEntity)
+
 		return
 	}
 
@@ -92,6 +94,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			"name":    v1Deployment.Name,
 			"details": details,
 		})
+
 		return
 	}
 
@@ -122,10 +125,12 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 		if apierrors.IsAlreadyExists(err) {
 			c.AbortWithStatus(http.StatusConflict)
+
 			return
 		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -173,15 +178,15 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			err := h.controllerClient.List(ctx, &secretList, matchingFields)
 			if err != nil {
 				h.logger.Error("error listing secrets", "err", err)
-
 				c.AbortWithStatus(http.StatusInternalServerError)
+
 				return
 			}
 
 			if len(secretList.Items) != 1 {
 				h.logger.Error("expected exactly one secret", "count", len(secretList.Items))
-
 				c.AbortWithStatus(http.StatusForbidden)
+
 				return
 			}
 
@@ -189,8 +194,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 			if secret.Type != DockyardsSecretTypeCredential {
 				h.logger.Error("secret is not type credential", "type", secret.Type)
-
 				c.AbortWithStatus(http.StatusForbidden)
+
 				return
 			}
 
@@ -202,8 +207,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		err := h.controllerClient.Create(ctx, &containerImageDeployment)
 		if err != nil {
 			h.logger.Error("error creating container image deployment", "err", err)
-
 			c.AbortWithStatus(http.StatusInternalServerError)
+
 			return
 		}
 
@@ -244,8 +249,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		err := h.controllerClient.Create(ctx, &kustomizeDeployment)
 		if err != nil {
 			h.logger.Error("error creating kustomize deployment", "err", err)
-
 			c.AbortWithStatus(http.StatusInternalServerError)
+
 			return
 		}
 
@@ -289,8 +294,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			b, err := json.Marshal(*v1Deployment.HelmValues)
 			if err != nil {
 				h.logger.Error("error marshalling helm values", "err", err)
-
 				c.AbortWithStatus(http.StatusInternalServerError)
+
 				return
 			}
 
@@ -302,8 +307,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		err := h.controllerClient.Create(ctx, &helmDeployment)
 		if err != nil {
 			h.logger.Error("error creating helm deployment", "err", err)
-
 			c.AbortWithStatus(http.StatusInternalServerError)
+
 			return
 		}
 
@@ -325,8 +330,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	err = h.controllerClient.Patch(ctx, &deployment, patch)
 	if err != nil {
 		h.logger.Error("error patching deployment", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -346,15 +351,15 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
 		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -366,17 +371,19 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 
 		if apierrors.IsNotFound(err) {
 			c.AbortWithStatus(http.StatusUnauthorized)
+
 			return
 		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if organization == nil {
 		h.logger.Debug("cluster has no owner organization")
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -388,8 +395,8 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 	err = h.controllerClient.List(ctx, &deploymentList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing deployments", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -427,8 +434,8 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 	deploymentID := c.Param("deploymentID")
 	if deploymentID == "" {
 		h.logger.Debug("deployment id empty")
-
 		c.AbortWithStatus(http.StatusBadRequest)
+
 		return
 	}
 
@@ -440,8 +447,8 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &deploymentList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing deployments", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -450,10 +457,12 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 
 		if len(deploymentList.Items) == 0 {
 			c.AbortWithStatus(http.StatusUnauthorized)
+
 			return
 		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -462,8 +471,8 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 	err = h.controllerClient.Delete(ctx, &deployment)
 	if err != nil {
 		h.logger.Error("error deleting deployment", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -485,8 +494,8 @@ func (h *handler) GetDeployment(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &deploymentList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing deployment", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -495,10 +504,12 @@ func (h *handler) GetDeployment(c *gin.Context) {
 
 		if len(deploymentList.Items) == 0 {
 			c.AbortWithStatus(http.StatusUnauthorized)
+
 			return
 		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -520,8 +531,8 @@ func (h *handler) GetDeployment(c *gin.Context) {
 		err := h.controllerClient.Get(ctx, objectKey, &containerImageDeployment)
 		if err != nil {
 			h.logger.Error("error getting container image deployment", "err", err)
-
 			c.AbortWithStatus(http.StatusInternalServerError)
+
 			return
 		}
 
@@ -535,8 +546,8 @@ func (h *handler) GetDeployment(c *gin.Context) {
 		err := h.controllerClient.Get(ctx, objectKey, &helmDeployment)
 		if err != nil {
 			h.logger.Error("error getting helm deployment", "err", err)
-
 			c.AbortWithStatus(http.StatusInternalServerError)
+
 			return
 		}
 
@@ -549,8 +560,8 @@ func (h *handler) GetDeployment(c *gin.Context) {
 			err = json.Unmarshal(helmDeployment.Spec.Values.Raw, &values)
 			if err != nil {
 				h.logger.Error("error unmarshalling helm values", "err", err)
-
 				c.AbortWithStatus(http.StatusInternalServerError)
+
 				return
 			}
 
@@ -561,16 +572,16 @@ func (h *handler) GetDeployment(c *gin.Context) {
 		err := h.controllerClient.Get(ctx, objectKey, &kustomizeDeployment)
 		if err != nil {
 			h.logger.Error("error getting kustomize deployment", "err", err)
-
 			c.AbortWithStatus(http.StatusInternalServerError)
+
 			return
 		}
 
 		v1Deployment.Kustomize = &kustomizeDeployment.Spec.Kustomize
 	default:
 		h.logger.Error("deployment has unsupported deployment kind", "kind", deployment.Spec.DeploymentRefs[0].Kind)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 

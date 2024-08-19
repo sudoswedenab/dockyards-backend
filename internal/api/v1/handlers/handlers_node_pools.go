@@ -85,15 +85,15 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing node pools in kubernetes", "err", err)
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	if len(nodePoolList.Items) != 1 {
 		h.logger.Debug("expected exactly one node pool", "length", len(nodePoolList.Items))
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -102,32 +102,32 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	cluster, err := apiutil.GetOwnerCluster(ctx, h.controllerClient, &nodePool)
 	if err != nil {
 		h.logger.Error("error getting owner cluster", "err", err)
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, cluster)
 	if err != nil {
 		h.logger.Error("error getting owner cluster owner organization", "err", err)
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error getting subject from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	isMember := h.isMember(subject, organization)
 	if !isMember {
 		h.logger.Debug("user is not a member of organization", "subject", subject)
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -139,8 +139,8 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	err = h.controllerClient.List(ctx, &nodeList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing nodes", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -158,8 +158,8 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	err := c.BindJSON(&nodePoolOptions)
 	if err != nil {
 		h.logger.Error("failed bind node pool options from request body", "err", err)
-
 		c.AbortWithStatus(http.StatusUnprocessableEntity)
+
 		return
 	}
 
@@ -170,6 +170,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
 			"details": details,
 		})
+
 		return
 	}
 
@@ -181,6 +182,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 			"quantity": nodePoolOptions.Quantity,
 			"details":  "quantity must be lower than 9",
 		})
+
 		return
 	}
 
@@ -192,15 +194,15 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	err = h.controllerClient.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
 		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -209,31 +211,31 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if organization == nil {
 		h.logger.Debug("node pool has no organization owner")
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error getting subject from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	isMember := h.isMember(subject, organization)
 	if !isMember {
 		h.logger.Error("subject is not a member of organization")
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -245,8 +247,8 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		memory, err := resource.ParseQuantity(*nodePoolOptions.RamSize)
 		if err != nil {
 			h.logger.Error("error parsing ram size quantity", "err", err)
-
 			c.AbortWithStatus(http.StatusUnprocessableEntity)
+
 			return
 		}
 
@@ -262,8 +264,8 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		storage, err := resource.ParseQuantity(*nodePoolOptions.DiskSize)
 		if err != nil {
 			h.logger.Error("error parsing disk size quantity", "err", err)
-
 			c.AbortWithStatus(http.StatusUnprocessableEntity)
+
 			return
 		}
 
@@ -307,10 +309,12 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 
 		if apierrors.IsAlreadyExists(err) {
 			c.AbortWithStatus(http.StatusConflict)
+
 			return
 		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -332,15 +336,15 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 	err := h.controllerClient.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing node pools", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if len(nodePoolList.Items) != 1 {
 		h.logger.Debug("expected exactly one node pool", "count", len(nodePoolList.Items))
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -352,17 +356,19 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 
 		if apierrors.IsNotFound(err) {
 			c.AbortWithStatus(http.StatusUnauthorized)
+
 			return
 		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if cluster == nil {
 		h.logger.Debug("node pool has no owner cluster")
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -372,33 +378,35 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 
 		if apierrors.IsNotFound(err) {
 			c.AbortWithStatus(http.StatusUnauthorized)
+
 			return
 		}
 
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	if organization == nil {
 		h.logger.Debug("node pool has no owner organization")
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Error("error getting subject from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
 	isMember := h.isMember(subject, organization)
 	if !isMember {
 		h.logger.Debug("subject is not a member of organization")
-
 		c.AbortWithStatus(http.StatusUnauthorized)
+
 		return
 	}
 

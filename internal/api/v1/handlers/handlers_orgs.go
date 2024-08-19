@@ -17,8 +17,8 @@ func (h *handler) GetOrgs(c *gin.Context) {
 	subject, err := h.getSubjectFromContext(c)
 	if err != nil {
 		h.logger.Debug("error fetching user from context", "err", err)
-
 		c.AbortWithStatus(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -30,8 +30,8 @@ func (h *handler) GetOrgs(c *gin.Context) {
 	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing organizations in kubernetes", "err", err)
-
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
 

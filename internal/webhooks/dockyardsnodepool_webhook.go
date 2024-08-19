@@ -82,6 +82,7 @@ func (wehook *DockyardsNodePool) validate(oldNodePool, newNodePool *dockyardsv1.
 
 	if len(errorList) > 0 {
 		qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind()
+
 		return apierrors.NewInvalid(qualifiedKind, newNodePool.Name, errorList)
 	}
 
