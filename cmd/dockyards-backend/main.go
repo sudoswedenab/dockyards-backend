@@ -219,7 +219,7 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	accessKey, refreshKey, err := jwt.GetOrGenerateKeys(ctx, controllerClient, logger)
+	accessKey, refreshKey, err := jwt.GetOrGenerateKeys(ctx, controllerClient)
 	if err != nil {
 		logger.Error("error getting private keys for jwt", "err", err)
 
@@ -246,7 +246,7 @@ func main() {
 	promHandler := promhttp.HandlerFor(registry, promHandlerOpts)
 
 	privateMux.Handle("/metrics", promHandler)
-	privateMux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {})
+	privateMux.HandleFunc("GET /healthz", func(_ http.ResponseWriter, _ *http.Request) {})
 
 	privateServer := &http.Server{
 		Handler: privateMux,

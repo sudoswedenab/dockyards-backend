@@ -27,7 +27,7 @@ func (webhook *DockyardsOrganization) SetupWebhookWithManager(mgr ctrl.Manager) 
 		Complete()
 }
 
-func (webhook *DockyardsOrganization) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsOrganization) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	dockyardsOrganization, ok := obj.(*dockyardsv1.Organization)
 	if !ok {
 		return nil, nil
@@ -36,7 +36,7 @@ func (webhook *DockyardsOrganization) ValidateCreate(ctx context.Context, obj ru
 	return nil, webhook.validate(dockyardsOrganization)
 }
 
-func (webhook *DockyardsOrganization) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsOrganization) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
 	dockyardsOrganization, ok := newObj.(*dockyardsv1.Organization)
 	if !ok {
 		return nil, nil
@@ -45,7 +45,7 @@ func (webhook *DockyardsOrganization) ValidateUpdate(ctx context.Context, oldObj
 	return nil, webhook.validate(dockyardsOrganization)
 }
 
-func (webhook *DockyardsOrganization) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsOrganization) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 

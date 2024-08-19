@@ -96,7 +96,7 @@ func GetOrGenerateTokens(ctx context.Context, controllerClient client.Client, lo
 	return accessToken, refreshToken, nil
 }
 
-func GetOrGenerateKeys(ctx context.Context, controllerClient client.Client, logger *slog.Logger) (*ecdsa.PrivateKey, *ecdsa.PrivateKey, error) {
+func GetOrGenerateKeys(ctx context.Context, controllerClient client.Client) (*ecdsa.PrivateKey, *ecdsa.PrivateKey, error) {
 	var (
 		accessTokenPrivateKeyPEM  []byte
 		refreshTokenPrivateKeyPEM []byte

@@ -23,7 +23,7 @@ func (webhook *DockyardsCluster) SetupWebhookWithManager(m ctrl.Manager) error {
 		Complete()
 }
 
-func (webhook *DockyardsCluster) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsCluster) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	dockyardsCluster, ok := obj.(*dockyardsv1.Cluster)
 	if !ok {
 		return nil, nil
@@ -58,7 +58,7 @@ func (webhook *DockyardsCluster) ValidateDelete(_ context.Context, obj runtime.O
 	return nil, nil
 }
 
-func (webhook *DockyardsCluster) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsCluster) ValidateUpdate(_ context.Context, _ runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
 	dockyardsCluster, ok := newObj.(*dockyardsv1.Cluster)
 	if !ok {
 		return nil, nil

@@ -28,7 +28,7 @@ func (webhook *DockyardsNodePool) SetupWebhookWithManager(m ctrl.Manager) error 
 		Complete()
 }
 
-func (webhook *DockyardsNodePool) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsNodePool) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	dockyardsNodePool, ok := obj.(*dockyardsv1.NodePool)
 	if !ok {
 		return nil, nil
@@ -37,7 +37,7 @@ func (webhook *DockyardsNodePool) ValidateCreate(ctx context.Context, obj runtim
 	return nil, webhook.validate(nil, dockyardsNodePool)
 }
 
-func (webhook *DockyardsNodePool) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsNodePool) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	oldNodePool, ok := oldObj.(*dockyardsv1.NodePool)
 	if !ok {
 		return nil, nil
@@ -51,7 +51,7 @@ func (webhook *DockyardsNodePool) ValidateUpdate(ctx context.Context, oldObj, ne
 	return nil, webhook.validate(oldNodePool, newNodePool)
 }
 
-func (webhook *DockyardsNodePool) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsNodePool) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
