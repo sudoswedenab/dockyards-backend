@@ -54,6 +54,38 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 	return slog.New(slog.NewTextHandler(os.Stdout, &handlerOptions)), nil
 }
 
+func setupWebhooks(mgr ctrl.Manager) error {
+	err := (&v1alpha1.Organization{}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		//logger.Error("error creating organization webhook", "err", err)
+		return err
+	}
+
+	err = (&dockyardsv1.Organization{}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		//logger.Error("error creating organization webhook", "err", err)
+
+		return err
+	}
+
+	err = (&webhooks.DockyardsNodePool{}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		return err
+	}
+
+	err = (&webhooks.DockyardsCluster{}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		return err
+	}
+
+	err = (&webhooks.DockyardsOrganization{}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func main() {
 	var logLevel string
 	var collectMetricsInterval int
@@ -191,13 +223,10 @@ func main() {
 		}
 
 		ticker := time.NewTicker(interval)
-		for {
-			select {
-			case <-ticker.C:
-				err := prometheusMetrics.CollectMetrics()
-				if err != nil {
-					logger.Error("error collecting prometheus metrics", "err", err)
-				}
+		for range ticker.C {
+			err := prometheusMetrics.CollectMetrics()
+			if err != nil {
+				logger.Error("error collecting prometheus metrics", "err", err)
 			}
 		}
 	}()
@@ -301,37 +330,9 @@ func main() {
 	}
 
 	if enableWebhooks {
-		err = (&v1alpha1.Organization{}).SetupWebhookWithManager(manager)
+		err := setupWebhooks(manager)
 		if err != nil {
-			logger.Error("error creating organization webhook", "err", err)
-
-			os.Exit(1)
-		}
-
-		err = (&dockyardsv1.Organization{}).SetupWebhookWithManager(manager)
-		if err != nil {
-			logger.Error("error creating organization webhook", "err", err)
-
-			os.Exit(1)
-		}
-
-		err = (&webhooks.DockyardsNodePool{}).SetupWebhookWithManager(manager)
-		if err != nil {
-			logger.Error("error creating nodepool webhook", "err", err)
-
-			os.Exit(1)
-		}
-
-		err = (&webhooks.DockyardsCluster{}).SetupWebhookWithManager(manager)
-		if err != nil {
-			logger.Error("error creating cluster webhook", "err", err)
-
-			os.Exit(1)
-		}
-
-		err = (&webhooks.DockyardsOrganization{}).SetupWebhookWithManager(manager)
-		if err != nil {
-			logger.Error("error creating organization webhook", "err", err)
+			logger.Error("error creating webhooks", "err", err)
 
 			os.Exit(1)
 		}

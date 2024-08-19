@@ -143,6 +143,43 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		Namespace: &deployment.Spec.TargetNamespace,
 	}
 
+	var credentialRef *corev1.LocalObjectReference
+
+	if v1Deployment.CredentialId != nil {
+		matchingFields := client.MatchingFields{
+			index.UIDField: *v1Deployment.CredentialId,
+		}
+
+		var secretList corev1.SecretList
+		err := h.controllerClient.List(ctx, &secretList, matchingFields)
+		if err != nil {
+			h.logger.Error("error listing secrets", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+
+			return
+		}
+
+		if len(secretList.Items) != 1 {
+			h.logger.Error("expected exactly one secret", "count", len(secretList.Items))
+			c.AbortWithStatus(http.StatusForbidden)
+
+			return
+		}
+
+		secret := secretList.Items[0]
+
+		if secret.Type != DockyardsSecretTypeCredential {
+			h.logger.Error("secret is not type credential", "type", secret.Type)
+			c.AbortWithStatus(http.StatusForbidden)
+
+			return
+		}
+
+		credentialRef = &corev1.LocalObjectReference{
+			Name: secret.Name,
+		}
+	}
+
 	if v1Deployment.ContainerImage != nil {
 		containerImageDeployment := dockyardsv1.ContainerImageDeployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -169,39 +206,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			containerImageDeployment.Spec.Port = int32(*v1Deployment.Port)
 		}
 
-		if v1Deployment.CredentialId != nil {
-			matchingFields := client.MatchingFields{
-				index.UIDField: *v1Deployment.CredentialId,
-			}
-
-			var secretList corev1.SecretList
-			err := h.controllerClient.List(ctx, &secretList, matchingFields)
-			if err != nil {
-				h.logger.Error("error listing secrets", "err", err)
-				c.AbortWithStatus(http.StatusInternalServerError)
-
-				return
-			}
-
-			if len(secretList.Items) != 1 {
-				h.logger.Error("expected exactly one secret", "count", len(secretList.Items))
-				c.AbortWithStatus(http.StatusForbidden)
-
-				return
-			}
-
-			secret := secretList.Items[0]
-
-			if secret.Type != DockyardsSecretTypeCredential {
-				h.logger.Error("secret is not type credential", "type", secret.Type)
-				c.AbortWithStatus(http.StatusForbidden)
-
-				return
-			}
-
-			containerImageDeployment.Spec.CredentialRef = &corev1.LocalObjectReference{
-				Name: secret.Name,
-			}
+		if credentialRef != nil {
+			containerImageDeployment.Spec.CredentialRef = credentialRef
 		}
 
 		err := h.controllerClient.Create(ctx, &containerImageDeployment)
