@@ -136,6 +136,9 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 	}
 
 	if !h.isMember(subject, &organization) {
+		c.AbortWithStatus(http.StatusUnauthorized)
+
+		return
 	}
 
 	secret := corev1.Secret{
