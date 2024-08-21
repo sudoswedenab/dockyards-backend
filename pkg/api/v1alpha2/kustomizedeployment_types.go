@@ -37,6 +37,14 @@ type KustomizeDeploymentList struct {
 	Items []KustomizeDeployment `json:"items"`
 }
 
+func (d *KustomizeDeployment) GetConditions() []metav1.Condition {
+	return d.Status.Conditions
+}
+
+func (d *KustomizeDeployment) SetConditions(conditions []metav1.Condition) {
+	d.Status.Conditions = conditions
+}
+
 func init() {
 	SchemeBuilder.Register(&KustomizeDeployment{}, &KustomizeDeploymentList{})
 }

@@ -40,6 +40,14 @@ type ContainerImageDeploymentList struct {
 	Items []ContainerImageDeployment `json:"items"`
 }
 
+func (d *ContainerImageDeployment) GetConditions() []metav1.Condition {
+	return d.Status.Conditions
+}
+
+func (d *ContainerImageDeployment) SetConditions(conditions []metav1.Condition) {
+	d.Status.Conditions = conditions
+}
+
 func init() {
 	SchemeBuilder.Register(&ContainerImageDeployment{}, &ContainerImageDeploymentList{})
 }
