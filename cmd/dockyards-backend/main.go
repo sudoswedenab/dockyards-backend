@@ -182,7 +182,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, object := range []client.Object{&dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &dockyardsv1.Cluster{}} {
+	for _, object := range []client.Object{&dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &dockyardsv1.Cluster{}, &dockyardsv1.Deployment{}} {
 		err = manager.GetFieldIndexer().IndexField(ctx, object, index.OwnerReferencesField, index.ByOwnerReferences)
 		if err != nil {
 			logger.Error("error adding owner refs indexer to manager", "err", err)
