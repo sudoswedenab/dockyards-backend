@@ -92,6 +92,7 @@ type Deployment struct {
 	Name           *string                 `json:"name,omitempty"`
 	Namespace      *string                 `json:"namespace,omitempty"`
 	Port           *int                    `json:"port,omitempty"`
+	Provenience    *string                 `json:"provenience,omitempty"`
 	Status         *DeploymentStatus       `json:"status,omitempty"`
 	Type           DeploymentType          `json:"type"`
 }

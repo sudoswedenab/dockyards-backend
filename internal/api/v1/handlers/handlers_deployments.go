@@ -115,6 +115,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			},
 		},
 		Spec: dockyardsv1.DeploymentSpec{
+			Provenience:     dockyardsv1.ProvenienceUser,
 			TargetNamespace: *v1Deployment.Namespace,
 		},
 	}
@@ -415,10 +416,11 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 		}
 
 		deployments[i] = v1.Deployment{
-			Id:        string(deployment.UID),
-			ClusterId: string(cluster.UID),
-			Name:      &name,
-			Type:      deploymentType,
+			Id:          string(deployment.UID),
+			ClusterId:   string(cluster.UID),
+			Provenience: &deployment.Spec.Provenience,
+			Name:        &name,
+			Type:        deploymentType,
 		}
 	}
 
@@ -513,8 +515,9 @@ func (h *handler) GetDeployment(c *gin.Context) {
 	deployment := deploymentList.Items[0]
 
 	v1Deployment := v1.Deployment{
-		Id:   string(deployment.UID),
-		Name: &deployment.Name,
+		Id:          string(deployment.UID),
+		Provenience: &deployment.Spec.Provenience,
+		Name:        &deployment.Name,
 	}
 
 	objectKey := client.ObjectKey{

@@ -68,6 +68,7 @@ func TestGetDeployment(t *testing.T) {
 								UID:       "9f72e4e6-412c-47a9-b3e8-8704e129db57",
 							},
 							Spec: dockyardsv1.DeploymentSpec{
+								Provenience: dockyardsv1.ProvenienceUser,
 								DeploymentRefs: []corev1.TypedLocalObjectReference{
 									{
 										APIGroup: &dockyardsv1.GroupVersion.Group,
@@ -82,6 +83,7 @@ func TestGetDeployment(t *testing.T) {
 			},
 			expected: v1.Deployment{
 				Id:             "9f72e4e6-412c-47a9-b3e8-8704e129db57",
+				Provenience:    util.Ptr(dockyardsv1.ProvenienceUser),
 				Name:           util.Ptr("test"),
 				ContainerImage: util.Ptr("docker.io/library/nginx:latest"),
 				Port:           util.Ptr(1234),
@@ -118,6 +120,7 @@ func TestGetDeployment(t *testing.T) {
 								UID:       "5621d3b0-0d4e-4265-9d92-56a580bcdd74",
 							},
 							Spec: dockyardsv1.DeploymentSpec{
+								Provenience: dockyardsv1.ProvenienceDockyards,
 								DeploymentRefs: []corev1.TypedLocalObjectReference{
 									{
 										APIGroup: &dockyardsv1.GroupVersion.Group,
@@ -132,6 +135,7 @@ func TestGetDeployment(t *testing.T) {
 			},
 			expected: v1.Deployment{
 				Id:             "5621d3b0-0d4e-4265-9d92-56a580bcdd74",
+				Provenience:    util.Ptr(dockyardsv1.ProvenienceDockyards),
 				Name:           util.Ptr("test"),
 				HelmChart:      util.Ptr("test-chart"),
 				HelmRepository: util.Ptr("http://localhost"),
@@ -169,6 +173,7 @@ func TestGetDeployment(t *testing.T) {
 								UID:       "63f4b165-d9e4-4653-a2a4-92b14ff6153e",
 							},
 							Spec: dockyardsv1.DeploymentSpec{
+								Provenience: dockyardsv1.ProvenienceUser,
 								DeploymentRefs: []corev1.TypedLocalObjectReference{
 									{
 										APIGroup: &dockyardsv1.GroupVersion.Group,
@@ -194,6 +199,7 @@ func TestGetDeployment(t *testing.T) {
 			},
 			expected: v1.Deployment{
 				Id:             "63f4b165-d9e4-4653-a2a4-92b14ff6153e",
+				Provenience:    util.Ptr(dockyardsv1.ProvenienceUser),
 				Name:           util.Ptr("test"),
 				ContainerImage: util.Ptr("test"),
 				Status: &v1.DeploymentStatus{
@@ -233,6 +239,7 @@ func TestGetDeployment(t *testing.T) {
 								UID:       "c12c2313-662c-4895-86c2-49837c845086",
 							},
 							Spec: dockyardsv1.DeploymentSpec{
+								Provenience: dockyardsv1.ProvenienceUser,
 								DeploymentRefs: []corev1.TypedLocalObjectReference{
 									{
 										APIGroup: &dockyardsv1.GroupVersion.Group,
@@ -246,8 +253,9 @@ func TestGetDeployment(t *testing.T) {
 				},
 			},
 			expected: v1.Deployment{
-				Id:   "c12c2313-662c-4895-86c2-49837c845086",
-				Name: util.Ptr("test"),
+				Id:          "c12c2313-662c-4895-86c2-49837c845086",
+				Provenience: util.Ptr(dockyardsv1.ProvenienceUser),
+				Name:        util.Ptr("test"),
 				Kustomize: util.Ptr(map[string][]byte{
 					"kustomization.yaml": []byte("kustomize"),
 					"test.yaml":          []byte("hello"),
@@ -429,15 +437,19 @@ func TestGetClusterDeployments(t *testing.T) {
 									},
 								},
 							},
+							Spec: dockyardsv1.DeploymentSpec{
+								Provenience: dockyardsv1.ProvenienceDockyards,
+							},
 						},
 					},
 				},
 			},
 			expected: []v1.Deployment{
 				{
-					Id:        "115590c5-c5f5-48d3-95b4-5fd6a1d3e77f",
-					Name:      util.Ptr("test"),
-					ClusterId: "9746d1c6-01d3-4d24-b552-7888d5119a7e",
+					Id:          "115590c5-c5f5-48d3-95b4-5fd6a1d3e77f",
+					Provenience: util.Ptr(dockyardsv1.ProvenienceDockyards),
+					Name:        util.Ptr("test"),
+					ClusterId:   "9746d1c6-01d3-4d24-b552-7888d5119a7e",
 				},
 			},
 		},
@@ -516,6 +528,9 @@ func TestGetClusterDeployments(t *testing.T) {
 									},
 								},
 							},
+							Spec: dockyardsv1.DeploymentSpec{
+								Provenience: dockyardsv1.ProvenienceDockyards,
+							},
 						},
 						{
 							ObjectMeta: metav1.ObjectMeta{
@@ -530,6 +545,9 @@ func TestGetClusterDeployments(t *testing.T) {
 										UID:        "8bf6e7fa-2492-4e8a-9597-0041fc49d3ee",
 									},
 								},
+							},
+							Spec: dockyardsv1.DeploymentSpec{
+								Provenience: dockyardsv1.ProvenienceDockyards,
 							},
 						},
 						{
@@ -546,20 +564,25 @@ func TestGetClusterDeployments(t *testing.T) {
 									},
 								},
 							},
+							Spec: dockyardsv1.DeploymentSpec{
+								Provenience: dockyardsv1.ProvenienceUser,
+							},
 						},
 					},
 				},
 			},
 			expected: []v1.Deployment{
 				{
-					Id:        "9f5be117-7a87-4b14-8788-42b595cd7679",
-					Name:      util.Ptr("test1"),
-					ClusterId: "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
+					Id:          "9f5be117-7a87-4b14-8788-42b595cd7679",
+					Provenience: util.Ptr(dockyardsv1.ProvenienceDockyards),
+					Name:        util.Ptr("test1"),
+					ClusterId:   "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 				},
 				{
-					Id:        "a7743bee-d4cc-4342-b7bd-d149fa26f38f",
-					Name:      util.Ptr("test3"),
-					ClusterId: "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
+					Id:          "a7743bee-d4cc-4342-b7bd-d149fa26f38f",
+					Provenience: util.Ptr(dockyardsv1.ProvenienceUser),
+					Name:        util.Ptr("test3"),
+					ClusterId:   "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 				},
 			},
 		},
