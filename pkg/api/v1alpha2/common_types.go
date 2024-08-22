@@ -25,3 +25,8 @@ const (
 	LabelDeploymentName   = "dockyards.io/deployment-name"
 	LabelReleaseName      = "dockyards.io/release-name"
 )
+
+const (
+	ProvenienceDockyards = "Dockyards"
+	ProvenienceUser      = "User"
+)

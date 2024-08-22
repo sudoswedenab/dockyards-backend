@@ -13,6 +13,9 @@ type DeploymentSpec struct {
 	TargetNamespace  string                             `json:"targetNamespace,omitempty"`
 	DeploymentRefs   []corev1.TypedLocalObjectReference `json:"deploymentRefs,omitempty"`
 	ClusterComponent bool                               `json:"clusterComponent,omitempty"`
+
+	// +kubebuilder:validation:Enum=Dockyards;User
+	Provenience string `json:"provenience"`
 }
 
 type DeploymentStatus struct {
@@ -24,8 +27,9 @@ type DeploymentStatus struct {
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
+// +kubebuilder:printcolumn:name="Provenience",type=string,JSONPath=".spec.provenience"
 // +kubebuilder:printcolumn:name="ClusterComponent",type=boolean,JSONPath=".spec.clusterComponent"
-// +kubebuilder:printcolumn:name="URL",type=string,JSONPath=".status.urls[0]"
+// +kubebuilder:printcolumn:name="URL",type=string,priority=1,JSONPath=".status.urls[0]"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type Deployment struct {
 	metav1.TypeMeta   `json:",inline"`

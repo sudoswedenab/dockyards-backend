@@ -152,11 +152,15 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="Ready")].status
       name: Ready
       type: string
+    - jsonPath: .spec.provenience
+      name: Provenience
+      type: string
     - jsonPath: .spec.clusterComponent
       name: ClusterComponent
       type: boolean
     - jsonPath: .status.urls[0]
       name: URL
+      priority: 1
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -210,8 +214,15 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              provenience:
+                enum:
+                - Dockyards
+                - User
+                type: string
               targetNamespace:
                 type: string
+            required:
+            - provenience
             type: object
           status:
             properties:
