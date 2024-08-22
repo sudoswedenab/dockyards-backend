@@ -98,6 +98,40 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		return
 	}
 
+	var credentialRef *corev1.LocalObjectReference
+
+	if v1Deployment.CredentialName != nil {
+		objectKey := client.ObjectKey{
+			Name:      *v1Deployment.CredentialName,
+			Namespace: cluster.Namespace,
+		}
+
+		var secret corev1.Secret
+		err := h.controllerClient.Get(ctx, objectKey, &secret)
+		if client.IgnoreNotFound(err) != nil {
+			h.logger.Error("error listing secrets", "err", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+
+			return
+		}
+
+		if apierrors.IsNotFound(err) {
+			c.AbortWithStatus(http.StatusForbidden)
+
+			return
+		}
+
+		if secret.Type != DockyardsSecretTypeCredential {
+			c.AbortWithStatus(http.StatusForbidden)
+
+			return
+		}
+
+		credentialRef = &corev1.LocalObjectReference{
+			Name: secret.Name,
+		}
+	}
+
 	deployment := dockyardsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cluster.Name + "-" + *v1Deployment.Name,
@@ -142,35 +176,6 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		ClusterId: string(cluster.UID),
 		Name:      util.Ptr(strings.TrimPrefix(deployment.Name, cluster.Name+"-")),
 		Namespace: &deployment.Spec.TargetNamespace,
-	}
-
-	var credentialRef *corev1.LocalObjectReference
-
-	if v1Deployment.CredentialName != nil {
-		objectKey := client.ObjectKey{
-			Name:      *v1Deployment.CredentialName,
-			Namespace: cluster.Namespace,
-		}
-
-		var secret corev1.Secret
-		err := h.controllerClient.Get(ctx, objectKey, &secret)
-		if err != nil {
-			h.logger.Error("error listing secrets", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
-
-			return
-		}
-
-		if secret.Type != DockyardsSecretTypeCredential {
-			h.logger.Error("secret is not type credential", "type", secret.Type)
-			c.AbortWithStatus(http.StatusForbidden)
-
-			return
-		}
-
-		credentialRef = &corev1.LocalObjectReference{
-			Name: secret.Name,
-		}
 	}
 
 	if v1Deployment.ContainerImage != nil {

@@ -1127,6 +1127,28 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 			},
 			expected: http.StatusConflict,
 		},
+		{
+			name:      "test invalid credential name",
+			clusterID: "1a62c42f-a021-4fef-92d6-664a0be27e27",
+			deployment: v1.Deployment{
+				Name:           util.Ptr("test"),
+				CredentialName: util.Ptr("invalid-credential"),
+			},
+			lists: []client.ObjectList{
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								UID:       "1a62c42f-a021-4fef-92d6-664a0be27e27",
+							},
+						},
+					},
+				},
+			},
+			expected: http.StatusForbidden,
+		},
 	}
 
 	for _, tc := range tt {
