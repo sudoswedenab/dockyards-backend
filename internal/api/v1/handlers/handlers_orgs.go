@@ -27,7 +27,7 @@ func (h *handler) GetOrgs(c *gin.Context) {
 	}
 
 	var organizationList dockyardsv1.OrganizationList
-	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
+	err = h.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing organizations in kubernetes", "err", err)
 		c.Status(http.StatusInternalServerError)

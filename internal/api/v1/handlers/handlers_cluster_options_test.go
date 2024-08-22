@@ -206,9 +206,9 @@ func TestGetClusterOptions(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
-				namespace:        "testing",
+				logger:    logger,
+				Client:    fakeClient,
+				namespace: "testing",
 			}
 
 			w := httptest.NewRecorder()

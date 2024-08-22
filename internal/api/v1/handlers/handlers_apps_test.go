@@ -113,8 +113,8 @@ func TestGetApps(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -345,8 +345,8 @@ func TestGetApp(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.App{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()

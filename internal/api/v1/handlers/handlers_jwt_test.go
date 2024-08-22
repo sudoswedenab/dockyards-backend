@@ -85,7 +85,7 @@ func TestPostRefresh(t *testing.T) {
 
 			h := handler{
 				logger:               logger,
-				controllerClient:     fakeClient,
+				Client:               fakeClient,
 				jwtAccessPrivateKey:  accessPrivateKey,
 				jwtRefreshPrivateKey: refreshPrivateKey,
 				jwtRefreshPublicKey:  &refreshPrivateKey.PublicKey,
@@ -189,7 +189,7 @@ func TestPostRefreshErrors(t *testing.T) {
 
 			h := handler{
 				logger:               logger,
-				controllerClient:     fakeClient,
+				Client:               fakeClient,
 				jwtAccessPrivateKey:  accessPrivateKey,
 				jwtRefreshPrivateKey: refreshPrivateKey,
 				jwtRefreshPublicKey:  &refreshPrivateKey.PublicKey,

@@ -15,8 +15,9 @@ import (
 )
 
 type handler struct {
+	client.Client
+
 	logger               *slog.Logger
-	controllerClient     client.Client
 	namespace            string
 	jwtAccessPrivateKey  *ecdsa.PrivateKey
 	jwtRefreshPrivateKey *ecdsa.PrivateKey
@@ -30,7 +31,7 @@ func WithManager(manager ctrl.Manager) HandlerOption {
 	controllerClient := manager.GetClient()
 
 	return func(h *handler) {
-		h.controllerClient = controllerClient
+		h.Client = controllerClient
 	}
 }
 

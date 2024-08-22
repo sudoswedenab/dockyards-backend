@@ -295,8 +295,8 @@ func TestGetNodePool(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -500,8 +500,8 @@ func TestGetNodePoolErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -674,8 +674,8 @@ func TestPostClusterNodePools(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -924,8 +924,8 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -1051,8 +1051,8 @@ func TestDeleteNodePool(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -1240,8 +1240,8 @@ func TestDeleteNodePoolErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()

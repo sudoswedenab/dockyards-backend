@@ -74,7 +74,7 @@ func (h *handler) GetClusterOptions(c *gin.Context) {
 	}
 
 	var release dockyardsv1.Release
-	err := h.controllerClient.Get(ctx, objectKey, &release)
+	err := h.Get(ctx, objectKey, &release)
 	if err != nil {
 		h.logger.Error("error getting release", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -88,7 +88,7 @@ func (h *handler) GetClusterOptions(c *gin.Context) {
 	}
 
 	var clusterTemplate dockyardsv1.ClusterTemplate
-	err = h.controllerClient.Get(ctx, objectKey, &clusterTemplate)
+	err = h.Get(ctx, objectKey, &clusterTemplate)
 	if err != nil {
 		h.logger.Error("error getting cluster template", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)

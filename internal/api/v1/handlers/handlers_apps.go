@@ -17,7 +17,7 @@ func (h *handler) GetApps(c *gin.Context) {
 	ctx := context.Background()
 
 	var appList v1alpha1.AppList
-	err := h.controllerClient.List(ctx, &appList)
+	err := h.List(ctx, &appList)
 	if err != nil {
 		h.logger.Error("error listing apps", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -60,7 +60,7 @@ func (h *handler) GetApp(c *gin.Context) {
 	}
 
 	var appList v1alpha1.AppList
-	err := h.controllerClient.List(ctx, &appList, matchingFields)
+	err := h.List(ctx, &appList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing apps", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)

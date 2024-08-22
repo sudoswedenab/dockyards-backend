@@ -82,7 +82,7 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	}
 
 	var nodePoolList dockyardsv1.NodePoolList
-	err := h.controllerClient.List(ctx, &nodePoolList, matchingFields)
+	err := h.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing node pools in kubernetes", "err", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -99,7 +99,7 @@ func (h *handler) GetNodePool(c *gin.Context) {
 
 	nodePool := nodePoolList.Items[0]
 
-	cluster, err := apiutil.GetOwnerCluster(ctx, h.controllerClient, &nodePool)
+	cluster, err := apiutil.GetOwnerCluster(ctx, h.Client, &nodePool)
 	if err != nil {
 		h.logger.Error("error getting owner cluster", "err", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -107,7 +107,7 @@ func (h *handler) GetNodePool(c *gin.Context) {
 		return
 	}
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
 	if err != nil {
 		h.logger.Error("error getting owner cluster owner organization", "err", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -136,7 +136,7 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	}
 
 	var nodeList dockyardsv1.NodeList
-	err = h.controllerClient.List(ctx, &nodeList, matchingFields)
+	err = h.List(ctx, &nodeList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing nodes", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -191,7 +191,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	}
 
 	var clusterList dockyardsv1.ClusterList
-	err = h.controllerClient.List(ctx, &clusterList, matchingFields)
+	err = h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -208,7 +208,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -303,7 +303,7 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 		nodePool.Spec.DedicatedRole = *nodePoolOptions.ControlPlaneComponentsOnly
 	}
 
-	err = h.controllerClient.Create(ctx, &nodePool)
+	err = h.Create(ctx, &nodePool)
 	if err != nil {
 		h.logger.Error("error creating node pool", "err", err)
 
@@ -333,7 +333,7 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 	}
 
 	var nodePoolList dockyardsv1.NodePoolList
-	err := h.controllerClient.List(ctx, &nodePoolList, matchingFields)
+	err := h.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing node pools", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -350,7 +350,7 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 
 	nodePool := nodePoolList.Items[0]
 
-	cluster, err := apiutil.GetOwnerCluster(ctx, h.controllerClient, &nodePool)
+	cluster, err := apiutil.GetOwnerCluster(ctx, h.Client, &nodePool)
 	if err != nil {
 		h.logger.Error("error getting owner cluster", "err", err)
 
@@ -372,7 +372,7 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 		return
 	}
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 
@@ -414,7 +414,7 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 		PropagationPolicy: util.Ptr(metav1.DeletePropagationBackground),
 	}
 
-	err = h.controllerClient.Delete(ctx, &nodePool, &deleteOptions)
+	err = h.Delete(ctx, &nodePool, &deleteOptions)
 	if err != nil {
 		h.logger.Error("error deleting node pool", "err", err)
 	}

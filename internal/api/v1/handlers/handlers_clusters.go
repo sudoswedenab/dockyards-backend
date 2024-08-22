@@ -78,7 +78,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	var organization dockyardsv1.Organization
-	err := h.controllerClient.Get(ctx, objectKey, &organization)
+	err := h.Get(ctx, objectKey, &organization)
 	if err != nil {
 		h.logger.Error("error getting organization from kubernetes", "err", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -172,7 +172,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		cluster.Spec.Version = *clusterOptions.Version
 	}
 
-	err = h.controllerClient.Create(ctx, &cluster)
+	err = h.Create(ctx, &cluster)
 	if err != nil {
 		h.logger.Error("error creating cluster", "err", err)
 
@@ -197,7 +197,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		}
 
 		var clusterTemplate dockyardsv1.ClusterTemplate
-		err := h.controllerClient.Get(ctx, objectKey, &clusterTemplate)
+		err := h.Get(ctx, objectKey, &clusterTemplate)
 		if err != nil {
 			h.logger.Error("error getting cluster template", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -290,7 +290,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 			nodePool.Spec.Resources[corev1.ResourceMemory] = quantity
 		}
 
-		err := h.controllerClient.Create(ctx, &nodePool)
+		err := h.Create(ctx, &nodePool)
 		if err != nil {
 			h.logger.Error("error creating node pool", "err", err)
 			hasErrors = true
@@ -332,7 +332,7 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	}
 
 	var clusterList dockyardsv1.ClusterList
-	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
+	err := h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -364,7 +364,7 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		Namespace: cluster.Namespace,
 	}
 
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.controllerClient, subject, &resourceAttributes)
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
 	if err != nil {
 		h.logger.Error("error reviewing subject", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -392,7 +392,7 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	}
 
 	var secret corev1.Secret
-	err = h.controllerClient.Get(ctx, objectKey, &secret)
+	err = h.Get(ctx, objectKey, &secret)
 	if err != nil {
 		h.logger.Error("error getting cluster certificate authority", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -447,7 +447,7 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	}
 
 	var userList dockyardsv1.UserList
-	err = h.controllerClient.List(ctx, &userList, matchingFields)
+	err = h.List(ctx, &userList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing users", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -568,7 +568,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	}
 
 	var clusterList dockyardsv1.ClusterList
-	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
+	err := h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -585,7 +585,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 	}
@@ -606,7 +606,7 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 		return
 	}
 
-	err = h.controllerClient.Delete(ctx, &cluster, client.PropagationPolicy(metav1.DeletePropagationForeground))
+	err = h.Delete(ctx, &cluster, client.PropagationPolicy(metav1.DeletePropagationForeground))
 	if err != nil {
 		h.logger.Error("error deleting cluster", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -635,7 +635,7 @@ func (h *handler) GetClusters(c *gin.Context) {
 	}
 
 	var organizationList dockyardsv1.OrganizationList
-	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
+	err = h.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing organizations", "err", err)
 		c.Status(http.StatusInternalServerError)
@@ -647,7 +647,7 @@ func (h *handler) GetClusters(c *gin.Context) {
 
 	for _, organization := range organizationList.Items {
 		var clusterList dockyardsv1.ClusterList
-		err = h.controllerClient.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef))
+		err = h.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef))
 		if err != nil {
 			h.logger.Error("error listing clusters", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -679,7 +679,7 @@ func (h *handler) GetCluster(c *gin.Context) {
 	}
 
 	var clusterList dockyardsv1.ClusterList
-	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
+	err := h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -696,7 +696,7 @@ func (h *handler) GetCluster(c *gin.Context) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 
@@ -732,7 +732,7 @@ func (h *handler) GetCluster(c *gin.Context) {
 	}
 
 	var nodePoolList dockyardsv1.NodePoolList
-	err = h.controllerClient.List(ctx, &nodePoolList, matchingFields)
+	err = h.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing node pools", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)

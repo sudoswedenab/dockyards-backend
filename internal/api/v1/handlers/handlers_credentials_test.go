@@ -157,8 +157,8 @@ func TestGetOrgCredentials(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()

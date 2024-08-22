@@ -37,7 +37,7 @@ func (h *handler) GetOrgCredentials(c *gin.Context) {
 	}
 
 	var organizationList dockyardsv1.OrganizationList
-	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
+	err = h.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error getting organizations from kubernetes", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -65,7 +65,7 @@ func (h *handler) GetOrgCredentials(c *gin.Context) {
 	}
 
 	var secretList corev1.SecretList
-	err = h.controllerClient.List(ctx, &secretList, matchingFields)
+	err = h.List(ctx, &secretList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing secrets", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -110,7 +110,7 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 	}
 
 	var organizationList dockyardsv1.OrganizationList
-	err = h.controllerClient.List(ctx, &organizationList, matchingFields)
+	err = h.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing organizations", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -156,7 +156,7 @@ func (h *handler) PostOrgCredentials(c *gin.Context) {
 		},
 	}
 
-	err = h.controllerClient.Create(ctx, &secret)
+	err = h.Create(ctx, &secret)
 	if err != nil {
 		h.logger.Error("error creating secret", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -182,7 +182,7 @@ func (h *handler) DeleteCredential(c *gin.Context) {
 	}
 
 	var secretList corev1.SecretList
-	err := h.controllerClient.List(ctx, &secretList, matchingFields)
+	err := h.List(ctx, &secretList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing secrets", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -199,7 +199,7 @@ func (h *handler) DeleteCredential(c *gin.Context) {
 
 	secret := secretList.Items[0]
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &secret)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &secret)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -228,7 +228,7 @@ func (h *handler) DeleteCredential(c *gin.Context) {
 		return
 	}
 
-	err = h.controllerClient.Delete(ctx, &secret)
+	err = h.Delete(ctx, &secret)
 	if err != nil {
 		h.logger.Error("error deleting secret", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -249,7 +249,7 @@ func (h *handler) GetCredential(c *gin.Context) {
 	}
 
 	var secretList corev1.SecretList
-	err := h.controllerClient.List(ctx, &secretList, matchingFields)
+	err := h.List(ctx, &secretList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing secrets", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -266,7 +266,7 @@ func (h *handler) GetCredential(c *gin.Context) {
 
 	secret := secretList.Items[0]
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &secret)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &secret)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)

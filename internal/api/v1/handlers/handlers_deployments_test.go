@@ -279,8 +279,8 @@ func TestGetDeployment(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -345,8 +345,8 @@ func TestGetDeploymentErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -736,8 +736,8 @@ func TestGetClusterDeployments(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -814,8 +814,8 @@ func TestDeleteDeployment(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -1001,8 +1001,8 @@ func TestPostClusterDeployments(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -1164,8 +1164,8 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -1282,8 +1282,8 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()

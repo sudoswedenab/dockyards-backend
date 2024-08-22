@@ -229,8 +229,8 @@ func TestPostOrgClusters(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -486,8 +486,8 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -588,8 +588,8 @@ func TestDeleteCluster(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -698,8 +698,8 @@ func TestDeleteClusterErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -848,8 +848,8 @@ func TestGetCluster(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -978,8 +978,8 @@ func TestGetClusterErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -1123,8 +1123,8 @@ func TestGetClusterKubeconfig(t *testing.T) {
 			}
 
 			h := handler{
-				logger:           logger,
-				controllerClient: c,
+				logger: logger,
+				Client: c,
 			}
 
 			w := httptest.NewRecorder()
@@ -1268,8 +1268,8 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
@@ -1404,8 +1404,8 @@ func TestGetClusters(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&dockyardsv1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer).Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()

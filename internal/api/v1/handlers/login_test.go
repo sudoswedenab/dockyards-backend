@@ -153,7 +153,7 @@ func TestLogin(t *testing.T) {
 
 			h := handler{
 				logger:               logger,
-				controllerClient:     fakeClient,
+				Client:               fakeClient,
 				jwtAccessPrivateKey:  accessPrivateKey,
 				jwtRefreshPrivateKey: refreshPrivateKey,
 			}
@@ -275,8 +275,8 @@ func TestLoginErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger:           logger,
-				controllerClient: fakeClient,
+				logger: logger,
+				Client: fakeClient,
 			}
 
 			r := gin.New()

@@ -27,7 +27,7 @@ func (h *handler) GetWhoami(c *gin.Context) {
 	}
 
 	var userList dockyardsv1.UserList
-	err = h.controllerClient.List(ctx, &userList, matchingFields)
+	err = h.List(ctx, &userList, matchingFields)
 	if err != nil {
 		h.logger.Error("error getting user from kubernetes", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)

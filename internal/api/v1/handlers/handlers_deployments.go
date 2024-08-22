@@ -44,7 +44,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	}
 
 	var clusterList dockyardsv1.ClusterList
-	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
+	err := h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -107,7 +107,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		}
 
 		var secret corev1.Secret
-		err := h.controllerClient.Get(ctx, objectKey, &secret)
+		err := h.Get(ctx, objectKey, &secret)
 		if client.IgnoreNotFound(err) != nil {
 			h.logger.Error("error listing secrets", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -154,7 +154,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		},
 	}
 
-	err = h.controllerClient.Create(ctx, &deployment)
+	err = h.Create(ctx, &deployment)
 	if err != nil {
 		h.logger.Error("error creating deployment", "err", err)
 
@@ -208,7 +208,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			containerImageDeployment.Spec.CredentialRef = credentialRef
 		}
 
-		err := h.controllerClient.Create(ctx, &containerImageDeployment)
+		err := h.Create(ctx, &containerImageDeployment)
 		if err != nil {
 			h.logger.Error("error creating container image deployment", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -250,7 +250,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			},
 		}
 
-		err := h.controllerClient.Create(ctx, &kustomizeDeployment)
+		err := h.Create(ctx, &kustomizeDeployment)
 		if err != nil {
 			h.logger.Error("error creating kustomize deployment", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -308,7 +308,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 			}
 		}
 
-		err := h.controllerClient.Create(ctx, &helmDeployment)
+		err := h.Create(ctx, &helmDeployment)
 		if err != nil {
 			h.logger.Error("error creating helm deployment", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -330,7 +330,7 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		createdDeployment.HelmVersion = &helmDeployment.Spec.Version
 	}
 
-	err = h.controllerClient.Patch(ctx, &deployment, patch)
+	err = h.Patch(ctx, &deployment, patch)
 	if err != nil {
 		h.logger.Error("error patching deployment", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -351,7 +351,7 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 	}
 
 	var clusterList dockyardsv1.ClusterList
-	err := h.controllerClient.List(ctx, &clusterList, matchingFields)
+	err := h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing clusters", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -368,7 +368,7 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.controllerClient, &cluster)
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
 	if err != nil {
 		h.logger.Error("error getting owner organization", "err", err)
 
@@ -395,7 +395,7 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 	}
 
 	var deploymentList dockyardsv1.DeploymentList
-	err = h.controllerClient.List(ctx, &deploymentList, matchingFields)
+	err = h.List(ctx, &deploymentList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing deployments", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -448,7 +448,7 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 	}
 
 	var deploymentList dockyardsv1.DeploymentList
-	err := h.controllerClient.List(ctx, &deploymentList, matchingFields)
+	err := h.List(ctx, &deploymentList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing deployments", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -472,7 +472,7 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 
 	deployment := deploymentList.Items[0]
 
-	err = h.controllerClient.Delete(ctx, &deployment)
+	err = h.Delete(ctx, &deployment)
 	if err != nil {
 		h.logger.Error("error deleting deployment", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -495,7 +495,7 @@ func (h *handler) GetDeployment(c *gin.Context) {
 	}
 
 	var deploymentList dockyardsv1.DeploymentList
-	err := h.controllerClient.List(ctx, &deploymentList, matchingFields)
+	err := h.List(ctx, &deploymentList, matchingFields)
 	if err != nil {
 		h.logger.Error("error listing deployment", "err", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -533,7 +533,7 @@ func (h *handler) GetDeployment(c *gin.Context) {
 	switch deployment.Spec.DeploymentRefs[0].Kind {
 	case dockyardsv1.ContainerImageDeploymentKind:
 		var containerImageDeployment dockyardsv1.ContainerImageDeployment
-		err := h.controllerClient.Get(ctx, objectKey, &containerImageDeployment)
+		err := h.Get(ctx, objectKey, &containerImageDeployment)
 		if err != nil {
 			h.logger.Error("error getting container image deployment", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -548,7 +548,7 @@ func (h *handler) GetDeployment(c *gin.Context) {
 		}
 	case dockyardsv1.HelmDeploymentKind:
 		var helmDeployment dockyardsv1.HelmDeployment
-		err := h.controllerClient.Get(ctx, objectKey, &helmDeployment)
+		err := h.Get(ctx, objectKey, &helmDeployment)
 		if err != nil {
 			h.logger.Error("error getting helm deployment", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -574,7 +574,7 @@ func (h *handler) GetDeployment(c *gin.Context) {
 		}
 	case dockyardsv1.KustomizeDeploymentKind:
 		var kustomizeDeployment dockyardsv1.KustomizeDeployment
-		err := h.controllerClient.Get(ctx, objectKey, &kustomizeDeployment)
+		err := h.Get(ctx, objectKey, &kustomizeDeployment)
 		if err != nil {
 			h.logger.Error("error getting kustomize deployment", "err", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
