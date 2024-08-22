@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"net"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	ClusterKind = "Cluster"
+	ClusterKind                         = "Cluster"
+	ResourceCluster corev1.ResourceName = "cluster"
 )
 
 type ClusterUpgrade struct {
