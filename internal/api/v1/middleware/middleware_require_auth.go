@@ -13,7 +13,7 @@ import (
 func (h *Handler) RequireAuth(c *gin.Context) {
 	authorizationHeader := c.GetHeader("Authorization")
 	if authorizationHeader == "" {
-		h.Logger.Error("empty or missing authorization header")
+		h.Logger.Debug("empty or missing authorization header")
 		c.AbortWithStatus(http.StatusUnauthorized)
 
 		return
@@ -32,7 +32,7 @@ func (h *Handler) RequireAuth(c *gin.Context) {
 	})
 
 	if err != nil {
-		h.Logger.Error("error parsing bearer token", "err", err)
+		h.Logger.Debug("error parsing bearer token", "err", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
 
 		return
