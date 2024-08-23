@@ -17,14 +17,20 @@ type HelmDeploymentSpec struct {
 	SkipNamespace bool                  `json:"skipNamespace,omitempty"`
 }
 
+type HelmDeploymentStatus struct {
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type HelmDeployment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec HelmDeploymentSpec `json:"spec,omitempty"`
+	Spec   HelmDeploymentSpec   `json:"spec,omitempty"`
+	Status HelmDeploymentStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -33,6 +39,14 @@ type HelmDeploymentList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []HelmDeployment `json:"items"`
+}
+
+func (d *HelmDeployment) GetConditions() []metav1.Condition {
+	return d.Status.Conditions
+}
+
+func (d *HelmDeployment) SetConditions(conditions []metav1.Condition) {
+	d.Status.Conditions = conditions
 }
 
 func init() {
