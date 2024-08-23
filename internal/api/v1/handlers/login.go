@@ -1,45 +1,65 @@
 package handlers
 
 import (
-	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
-	"github.com/gin-gonic/gin"
+	//"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (h *handler) Login(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) UnmarshalBody(r *http.Request, v any) error {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
 
-	var body v1.Login
-	if c.BindJSON(&body) != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+	defer r.Body.Close()
+
+	err = json.Unmarshal(body, v)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logger := middleware.LoggerFrom(ctx)
+
+	var login v1.Login
+	if h.UnmarshalBody(r, &login) != nil {
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
 	matchingFields := client.MatchingFields{
-		index.EmailField: body.Email,
+		index.EmailField: login.Email,
 	}
 
 	var userList dockyardsv1.UserList
 	err := h.List(ctx, &userList, matchingFields)
 	if err != nil {
-		h.logger.Error("error getting user from kubernetes", "err", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("error getting user from kubernetes", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	if len(userList.Items) != 1 {
-		h.logger.Error("expected exactly one user from kubernetes", "users", len(userList.Items))
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("expected exactly one user from kubernetes", "users", len(userList.Items))
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -48,28 +68,39 @@ func (h *handler) Login(c *gin.Context) {
 
 	condition := meta.FindStatusCondition(user.Status.Conditions, dockyardsv1.ReadyCondition)
 	if condition == nil || condition.Status != metav1.ConditionTrue {
-		h.logger.Error("user is not ready")
-		c.AbortWithStatus(http.StatusForbidden)
+		logger.Error("user is not ready")
+		w.WriteHeader(http.StatusForbidden)
 
 		return
 	}
 
 	//Compare sent in pass with saved user pass hash
-	err = bcrypt.CompareHashAndPassword([]byte(user.Spec.Password), []byte(body.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Spec.Password), []byte(login.Password))
 	if err != nil {
-		h.logger.Error("error comparing password", "err", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("error comparing password", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	tokens, err := h.generateTokens(user)
 	if err != nil {
-		h.logger.Error("error generating tokens", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error generating tokens", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	c.JSON(http.StatusOK, tokens)
+	b, err := json.Marshal(&tokens)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }

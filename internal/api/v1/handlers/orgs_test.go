@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -12,9 +13,9 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
-	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -195,22 +196,20 @@ func TestGetOrgs(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Set("sub", tc.sub)
-			c.Request = &http.Request{
-				Method: http.MethodGet,
-				URL: &url.URL{
-					Path: path.Join("/v1/orgs"),
-				},
+			u := url.URL{
+				Path: path.Join("/v1/orgs"),
 			}
 
-			h.GetOrgs(c)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.GetOrgs(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -13,10 +14,10 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
-	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -281,8 +282,6 @@ func TestGetNodePool(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -295,25 +294,22 @@ func TestGetNodePool(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
+			u := url.URL{
+				Path: path.Join("/v1/node-pools", tc.nodePoolID),
+			}
+
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-			c.Set("sub", tc.sub)
-			c.Params = []gin.Param{
-				{Key: "nodePoolID", Value: tc.nodePoolID},
-			}
-			c.Request = &http.Request{
-				Method: http.MethodGet,
-				URL: &url.URL{
-					Path: path.Join("/v1/node-pools", tc.nodePoolID),
-				},
-			}
+			r.SetPathValue("nodePoolID", tc.nodePoolID)
 
-			h.GetNodePool(c)
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.GetNodePool(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
@@ -500,29 +496,22 @@ func TestGetNodePoolErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
-			}
-
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Set("sub", tc.sub)
-			c.Params = []gin.Param{
-				{Key: "nodePoolID", Value: tc.nodePoolID},
 			}
 
 			u := url.URL{
 				Path: path.Join("/v1/node-pools", tc.nodePoolID),
 			}
 
-			var err error
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
-			if err != nil {
-				t.Fatalf("unexpected error creating test request: %s", err)
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, nil)
 
-			h.GetNodePool(c)
+			r.SetPathValue("nodePoolID", tc.nodePoolID)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.GetNodePool(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
@@ -660,8 +649,6 @@ func TestPostClusterNodePools(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -674,34 +661,27 @@ func TestPostClusterNodePools(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Set("sub", tc.sub)
-			c.Params = []gin.Param{
-				{Key: "clusterID", Value: tc.clusterID},
+			u := url.URL{
+				Path: path.Join("/v1/clusters", tc.clusterID, "node-pools"),
 			}
 
 			b, err := json.Marshal(tc.nodePoolOptions)
 			if err != nil {
 				t.Fatalf("unexpected error marshalling test options: %s", err)
 			}
-			buf := bytes.NewBuffer(b)
 
-			u := url.URL{
-				Path: path.Join("/v1/clusters", tc.clusterID, "node-pools"),
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), buf)
-			if err != nil {
-				t.Fatalf("unxepected error creating test request: %s", err)
-			}
+			r.SetPathValue("clusterID", tc.clusterID)
 
-			h.PostClusterNodePools(c)
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.PostClusterNodePools(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusCreated {
@@ -909,8 +889,6 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
@@ -924,34 +902,27 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Set("sub", tc.sub)
-			c.Params = []gin.Param{
-				{Key: "clusterID", Value: tc.clusterID},
+			u := url.URL{
+				Path: path.Join("/v1/clusters", tc.clusterID, "node-pools"),
 			}
 
 			b, err := json.Marshal(tc.nodePoolOptions)
 			if err != nil {
 				t.Fatalf("unexpected error marshalling test options: %s", err)
 			}
-			buf := bytes.NewBuffer(b)
 
-			u := url.URL{
-				Path: path.Join("/v1/clusters", tc.clusterID, "node-pools"),
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), buf)
-			if err != nil {
-				t.Fatalf("unexpected error creating test request: %s", err)
-			}
+			r.SetPathValue("clusterID", tc.clusterID)
 
-			h.PostClusterNodePools(c)
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.PostClusterNodePools(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
@@ -1051,29 +1022,22 @@ func TestDeleteNodePool(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
-			}
-
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Set("sub", tc.sub)
-			c.Params = []gin.Param{
-				{Key: "nodePoolID", Value: tc.nodePoolID},
 			}
 
 			u := url.URL{
 				Path: path.Join("/v1/node-pools", tc.nodePoolID),
 			}
 
-			var err error
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
-			if err != nil {
-				t.Fatalf("unexpected error creating test request: %s", err)
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, nil)
 
-			h.DeleteNodePool(c)
+			r.SetPathValue("nodePoolID", tc.nodePoolID)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.DeleteNodePool(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
@@ -1240,29 +1204,22 @@ func TestDeleteNodePoolErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
-			}
-
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Set("sub", tc.sub)
-			c.Params = []gin.Param{
-				{Key: "nodePoolID", Value: tc.nodePoolID},
 			}
 
 			u := url.URL{
 				Path: path.Join("/v1/node-pools", tc.nodePoolID),
 			}
 
-			var err error
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
-			if err != nil {
-				t.Fatalf("unexpected error creating test request: %s", err)
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, nil)
 
-			h.DeleteNodePool(c)
+			r.SetPathValue("nodePoolID", tc.nodePoolID)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.DeleteNodePool(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {

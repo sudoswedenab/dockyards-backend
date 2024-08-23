@@ -2,13 +2,11 @@ package handlers
 
 import (
 	"crypto/ecdsa"
-	"errors"
 	"log/slog"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,81 +51,60 @@ func WithJWTPrivateKeys(accessKey, refreshKey *ecdsa.PrivateKey) HandlerOption {
 	}
 }
 
-func RegisterRoutes(r *gin.Engine, logger *slog.Logger, handlerOptions ...HandlerOption) error {
-	methodNotAllowed := func(c *gin.Context) {
-		c.Status(http.StatusMethodNotAllowed)
+func WithLogger(logger *slog.Logger) HandlerOption {
+	return func(h *handler) {
+		h.logger = logger
 	}
+}
 
-	h := handler{
-		logger: logger,
-	}
+func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
+	var h handler
 
 	for _, handlerOption := range handlerOptions {
 		handlerOption(&h)
 	}
 
 	if h.namespace == "" {
-		logger.Warn("using empty namespace")
+		h.logger.Warn("using empty namespace")
 	}
 
-	middlewareHandler := middleware.Handler{
-		Logger:          logger,
-		AccessPublicKey: h.jwtAccessPublicKey,
-	}
+	logger := middleware.NewLogger(h.logger).Handler
+	requireAuth := middleware.NewRequireAuth(h.jwtAccessPublicKey).Handler
 
-	r.POST("/v1/login", h.Login)
-	r.POST("/v1/refresh", h.PostRefresh)
+	mux.Handle("POST /v1/login", logger(http.HandlerFunc(h.Login)))
+	mux.Handle("POST /v1/refresh", logger(http.HandlerFunc(h.PostRefresh)))
 
-	g := r.Group("/v1", middlewareHandler.RequireAuth)
-	g.GET("/cluster-options", h.GetClusterOptions)
+	mux.Handle("GET /v1/cluster-options", logger(requireAuth(http.HandlerFunc(h.GetClusterOptions))))
 
-	g.GET("/clusters", h.GetClusters)
-	g.GET("/clusters/:clusterID", h.GetCluster)
-	g.DELETE("/clusters/:clusterID", h.DeleteCluster)
+	mux.Handle("DELETE /v1/clusters/{clusterID}", logger(requireAuth(http.HandlerFunc(h.DeleteCluster))))
+	mux.Handle("GET /v1/clusters", logger(requireAuth(http.HandlerFunc(h.GetClusters))))
+	mux.Handle("GET /v1/clusters/{clusterID}", logger(requireAuth(http.HandlerFunc(h.GetCluster))))
+	mux.Handle("GET /v1/clusters/{clusterID}/deployments", logger(requireAuth(http.HandlerFunc(h.GetClusterDeployments))))
+	mux.Handle("GET /v1/clusters/{clusterID}/kubeconfig", logger(requireAuth(http.HandlerFunc(h.GetClusterKubeconfig))))
+	mux.Handle("POST /v1/clusters/{clusterID}/deployments", logger(requireAuth(http.HandlerFunc(h.PostClusterDeployments))))
+	mux.Handle("POST /v1/clusters/{clusterID}/node-pools", logger(requireAuth(http.HandlerFunc(h.PostClusterNodePools))))
 
-	g.GET("/orgs", h.GetOrgs)
-	g.PUT("/orgs", methodNotAllowed)
-	g.DELETE("/orgs", methodNotAllowed)
+	mux.Handle("GET /v1/orgs", logger(requireAuth(http.HandlerFunc(h.GetOrgs))))
+	mux.Handle("GET /v1/orgs/{organizationID}/credentials", logger(requireAuth(http.HandlerFunc(h.GetOrgCredentials))))
+	mux.Handle("POST /v1/orgs/{organizationID}/clusters", logger(requireAuth(http.HandlerFunc(h.PostOrgClusters))))
+	mux.Handle("POST /v1/orgs/{organizationID}/credentials", logger(requireAuth(http.HandlerFunc(h.PostOrgCredentials))))
 
-	g.POST("/orgs/:org/clusters", h.PostOrgClusters)
+	mux.Handle("GET /v1/deployments/{deploymentID}", logger(requireAuth(http.HandlerFunc(h.GetDeployment))))
 
-	g.GET("/clusters/:clusterID/deployments", h.GetClusterDeployments)
-	g.POST("/clusters/:clusterID/deployments", h.PostClusterDeployments)
-	g.GET("/clusters/:clusterID/kubeconfig", h.GetClusterKubeconfig)
-	g.POST("/clusters/:clusterID/node-pools", h.PostClusterNodePools)
+	mux.Handle("GET /v1/credentials/{credentialID}", logger(requireAuth(http.HandlerFunc(h.GetCredential))))
+	mux.Handle("DELETE /v1/credentials/{credentialID}", logger(requireAuth(http.HandlerFunc(h.DeleteCredential))))
 
-	g.GET("/deployments/:deploymentID", h.GetDeployment)
-	g.DELETE("/deployments/:deploymentID", h.DeleteDeployment)
+	mux.Handle("GET /v1/whoami", logger(requireAuth(http.HandlerFunc(h.GetWhoami))))
 
-	g.GET("/orgs/:org/credentials", h.GetOrgCredentials)
-	g.POST("/orgs/:org/credentials", h.PostOrgCredentials)
+	mux.Handle("GET /v1/apps", logger(requireAuth(http.HandlerFunc(h.GetApps))))
+	mux.Handle("GET /v1/apps/{appID}", logger(requireAuth(http.HandlerFunc(h.GetApp))))
 
-	g.GET("/credentials/:credentialID", h.GetCredential)
-	g.DELETE("credentials/:credentialID", h.DeleteCredential)
+	mux.Handle("GET /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.GetNodePool))))
+	mux.Handle("DELETE /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.DeleteNodePool))))
 
-	g.GET("/whoami", h.GetWhoami)
-
-	g.GET("/apps", h.GetApps)
-	g.GET("/apps/:appID", h.GetApp)
-
-	g.GET("/node-pools/:nodePoolID", h.GetNodePool)
-	g.DELETE("/node-pools/:nodePoolID", h.DeleteNodePool)
+	mux.Handle("DELETE /v1/deployments/{deploymentID}", logger(requireAuth(http.HandlerFunc(h.DeleteDeployment))))
 
 	return nil
-}
-
-func (h *handler) getSubjectFromContext(c *gin.Context) (string, error) {
-	v, exists := c.Get("sub")
-	if !exists {
-		return "", errors.New("error fecthing subject from context")
-	}
-
-	sub, ok := v.(string)
-	if !ok {
-		return "", errors.New("error during type conversion")
-	}
-
-	return sub, nil
 }
 
 func (h *handler) isMember(subject string, organization *dockyardsv1.Organization) bool {

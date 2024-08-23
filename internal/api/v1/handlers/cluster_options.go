@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"context"
+	"encoding/json"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	"github.com/gin-gonic/gin"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,8 +65,10 @@ func getRecommendedNodePools(clusterTemplate *dockyardsv1.ClusterTemplate) []v1.
 	return nodePoolOptions
 }
 
-func (h *handler) GetClusterOptions(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logger := middleware.LoggerFrom(ctx)
 
 	objectKey := client.ObjectKey{
 		Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
@@ -76,8 +78,8 @@ func (h *handler) GetClusterOptions(c *gin.Context) {
 	var release dockyardsv1.Release
 	err := h.Get(ctx, objectKey, &release)
 	if err != nil {
-		h.logger.Error("error getting release", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error getting release", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -90,17 +92,30 @@ func (h *handler) GetClusterOptions(c *gin.Context) {
 	var clusterTemplate dockyardsv1.ClusterTemplate
 	err = h.Get(ctx, objectKey, &clusterTemplate)
 	if err != nil {
-		h.logger.Error("error getting cluster template", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error getting cluster template", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	recommendedNodePools := getRecommendedNodePools(&clusterTemplate)
 
-	c.JSON(http.StatusOK, v1.Options{
+	options := v1.Options{
 		SingleNode:      false,
 		Version:         release.Status.Versions,
 		NodePoolOptions: recommendedNodePools,
-	})
+	}
+
+	b, err := json.Marshal(&options)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }

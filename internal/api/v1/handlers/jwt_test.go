@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -13,9 +14,9 @@ import (
 	"testing"
 	"time"
 
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -91,23 +92,18 @@ func TestPostRefresh(t *testing.T) {
 				jwtRefreshPublicKey:  &refreshPrivateKey.PublicKey,
 			}
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
 			u := url.URL{
 				Path: path.Join("/v1/refresh"),
 			}
 
-			header := http.Header{}
-			header.Set("Authorization", "Bearer "+signedRefreshToken)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, nil)
 
-			c.Request = &http.Request{
-				Method: http.MethodPost,
-				URL:    &u,
-				Header: header,
-			}
+			r.Header.Set("Authorization", "Bearer "+signedRefreshToken)
 
-			h.PostRefresh(c)
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.PostRefresh(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
@@ -195,23 +191,18 @@ func TestPostRefreshErrors(t *testing.T) {
 				jwtRefreshPublicKey:  &refreshPrivateKey.PublicKey,
 			}
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
 			u := url.URL{
 				Path: path.Join("/v1/refresh"),
 			}
 
-			header := http.Header{}
-			header.Set("Authorization", "Bearer "+signedRefreshToken)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, nil)
 
-			c.Request = &http.Request{
-				Method: http.MethodPost,
-				URL:    &u,
-				Header: header,
-			}
+			r.Header.Set("Authorization", "Bearer "+signedRefreshToken)
 
-			h.PostRefresh(c)
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.PostRefresh(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {

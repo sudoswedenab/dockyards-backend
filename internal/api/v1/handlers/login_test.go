@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -13,9 +14,9 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
-	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -134,8 +135,6 @@ func TestLogin(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	accessPrivateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -158,22 +157,17 @@ func TestLogin(t *testing.T) {
 				jwtRefreshPrivateKey: refreshPrivateKey,
 			}
 
-			r := gin.New()
-			r.POST("/test", h.Login)
-
 			b, err := json.Marshal(tc.login)
 			if err != nil {
 				t.Fatalf("unexpected error marshalling: %s", err)
 			}
 
 			w := httptest.NewRecorder()
-			req, err := http.NewRequest("POST", "/test", bytes.NewBuffer(b))
-			if err != nil {
-				t.Fatalf("unexpected error preparing request: %s", err)
-			}
-			req.Header.Add("content-type", "application/json")
+			r := httptest.NewRequest(http.MethodPost, "/v1/login", bytes.NewBuffer(b))
 
-			r.ServeHTTP(w, req)
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.Login(w, r.Clone(ctx))
 
 			if w.Code != http.StatusOK {
 				t.Errorf("expected code %d, got %d", http.StatusOK, w.Code)
@@ -260,12 +254,10 @@ func TestLoginErrors(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+
 			scheme := scheme.Scheme
 			dockyardsv1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().
@@ -275,12 +267,8 @@ func TestLoginErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
-
-			r := gin.New()
-			r.POST("/test", h.Login)
 
 			b, err := json.Marshal(tc.login)
 			if err != nil {
@@ -288,13 +276,11 @@ func TestLoginErrors(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			req, err := http.NewRequest("POST", "/test", bytes.NewBuffer(b))
-			if err != nil {
-				t.Fatalf("unexpected error preparing request: %s", err)
-			}
-			req.Header.Add("content-type", "application/json")
+			r := httptest.NewRequest(http.MethodPost, "/v1/login", bytes.NewBuffer(b))
 
-			r.ServeHTTP(w, req)
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.Login(w, r.Clone(ctx))
 
 			if w.Code != tc.expected {
 				t.Errorf("expected code %d, got %d", tc.expected, w.Code)

@@ -1,26 +1,28 @@
 package handlers
 
 import (
-	"context"
+	"encoding/json"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
-	"github.com/gin-gonic/gin"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=apps,verbs=get;list;watch
 
-func (h *handler) GetApps(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) GetApps(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logger := middleware.LoggerFrom(ctx)
 
 	var appList v1alpha1.AppList
 	err := h.List(ctx, &appList)
 	if err != nil {
-		h.logger.Error("error listing apps", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing apps", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -41,16 +43,28 @@ func (h *handler) GetApps(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, apps)
+	b, err := json.Marshal(&apps)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }
 
-func (h *handler) GetApp(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) GetApp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	appID := c.Param("appID")
+	logger := middleware.LoggerFrom(ctx)
+
+	appID := r.PathValue("appID")
 	if appID == "" {
-		h.logger.Error("empty app id")
-		c.AbortWithStatus(http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -62,15 +76,15 @@ func (h *handler) GetApp(c *gin.Context) {
 	var appList v1alpha1.AppList
 	err := h.List(ctx, &appList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing apps", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing apps", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if len(appList.Items) != 1 {
-		h.logger.Debug("expected exactly one app", "count", len(appList.Items))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Debug("expected exactly one app", "count", len(appList.Items))
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -136,5 +150,16 @@ func (h *handler) GetApp(c *gin.Context) {
 
 	v1App.AppSteps = &appSteps
 
-	c.JSON(http.StatusOK, v1App)
+	b, err := json.Marshal(&v1App)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }

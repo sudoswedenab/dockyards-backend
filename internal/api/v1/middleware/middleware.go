@@ -1,11 +1,8 @@
 package middleware
 
-import (
-	"crypto/ecdsa"
-	"log/slog"
-)
+type key int
 
-type Handler struct {
-	Logger          *slog.Logger
-	AccessPublicKey *ecdsa.PublicKey
-}
+const (
+	sub key = iota
+	log
+)

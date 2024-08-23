@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
-	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
@@ -264,8 +264,6 @@ func TestGetDeployment(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -279,22 +277,21 @@ func TestGetDeployment(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
-			w := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(w)
-			r.GET("/v1/deployments/:deploymentID", h.GetDeployment)
-
-			c.Request = &http.Request{
-				Method: http.MethodGet,
-				URL: &url.URL{
-					Path: path.Join("/v1/deployments", tc.deploymentId),
-				},
+			u := url.URL{
+				Path: path.Join("/v1/deployments", tc.deploymentId),
 			}
 
-			r.ServeHTTP(w, c.Request)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+			r.SetPathValue("deploymentID", tc.deploymentId)
+
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.GetDeployment(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
@@ -330,8 +327,6 @@ func TestGetDeploymentErrors(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
@@ -345,22 +340,21 @@ func TestGetDeploymentErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
-			w := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(w)
-			r.GET("/v1/deployments/:deploymentID", h.GetDeployment)
-
-			c.Request = &http.Request{
-				Method: http.MethodGet,
-				URL: &url.URL{
-					Path: path.Join("/v1/deployments", tc.deploymentId),
-				},
+			u := url.URL{
+				Path: path.Join("/v1/deployments", tc.deploymentId),
 			}
 
-			r.ServeHTTP(w, c.Request)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+			r.SetPathValue("deploymentID", tc.deploymentId)
+
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.GetDeployment(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
@@ -720,8 +714,6 @@ func TestGetClusterDeployments(t *testing.T) {
 		},*/
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -736,22 +728,21 @@ func TestGetClusterDeployments(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
-			w := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(w)
-			r.GET("/v1/clusters/:clusterID/deployments", h.GetClusterDeployments)
-
-			c.Request = &http.Request{
-				Method: http.MethodGet,
-				URL: &url.URL{
-					Path: path.Join("/v1/clusters/", tc.clusterId, "deployments"),
-				},
+			u := url.URL{
+				Path: path.Join("/v1/clusters/", tc.clusterId, "deployments"),
 			}
 
-			r.ServeHTTP(w, c.Request)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+			r.SetPathValue("clusterID", tc.clusterId)
+
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.GetClusterDeployments(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
@@ -814,22 +805,21 @@ func TestDeleteDeployment(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
-			w := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(w)
-			r.DELETE("/v1/deployments/:deploymentID", h.DeleteDeployment)
-
-			c.Request = &http.Request{
-				Method: http.MethodDelete,
-				URL: &url.URL{
-					Path: path.Join("/v1/deployments", tc.deploymentId),
-				},
+			u := url.URL{
+				Path: path.Join("/v1/deployments", tc.deploymentId),
 			}
 
-			r.ServeHTTP(w, c.Request)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+			r.SetPathValue("deploymentID", tc.deploymentId)
+
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.DeleteDeployment(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusNoContent {
@@ -986,8 +976,6 @@ func TestPostClusterDeployments(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -1001,24 +989,26 @@ func TestPostClusterDeployments(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
-
-			w := httptest.NewRecorder()
-			_, r := gin.CreateTestContext(w)
-			r.POST("/v1/clusters/:clusterID/deployments", h.PostClusterDeployments)
-
-			b, err := json.Marshal(tc.deployment)
-			buf := bytes.NewBuffer(b)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID, "deployments"),
 			}
 
-			req, err := http.NewRequest(http.MethodPost, u.String(), buf)
+			b, err := json.Marshal(tc.deployment)
+			if err != nil {
+				t.Fatalf("%s", err)
+			}
 
-			r.ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+			r.SetPathValue("clusterID", tc.clusterID)
+
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.PostClusterDeployments(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusCreated {
@@ -1164,27 +1154,26 @@ func TestPostClusterDeploymentsErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
-
-			w := httptest.NewRecorder()
-			_, r := gin.CreateTestContext(w)
-			r.POST("/v1/clusters/:clusterID/deployments", h.PostClusterDeployments)
-
-			b, err := json.Marshal(tc.deployment)
-			if err != nil {
-				t.Fatalf("unexpected error marshalling test deployment: %s", err)
-			}
-			buf := bytes.NewBuffer(b)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID, "deployments"),
 			}
 
-			req, err := http.NewRequest(http.MethodPost, u.String(), buf)
+			b, err := json.Marshal(tc.deployment)
+			if err != nil {
+				t.Fatalf("unexpected error marshalling test deployment: %s", err)
+			}
 
-			r.ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+			r.SetPathValue("clusterID", tc.clusterID)
+
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.PostClusterDeployments(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
@@ -1267,8 +1256,6 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -1282,28 +1269,26 @@ func TestPostClusterDeploymentsContainerImage(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
-			w := httptest.NewRecorder()
-			_, r := gin.CreateTestContext(w)
-			r.POST("/v1/clusters/:clusterID/deployments", h.PostClusterDeployments)
+			u := url.URL{
+				Path: path.Join("/v1/clusters", tc.clusterID, "deployments"),
+			}
 
 			b, err := json.Marshal(tc.deployment)
 			if err != nil {
 				t.Fatalf("error marshalling deployment: %s", err)
 			}
 
-			buf := bytes.NewBuffer(b)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-			u := url.URL{
-				Path: path.Join("/v1/clusters", tc.clusterID, "deployments"),
-			}
+			r.SetPathValue("clusterID", tc.clusterID)
 
-			req, err := http.NewRequest(http.MethodPost, u.String(), buf)
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
 
-			r.ServeHTTP(w, req)
+			h.PostClusterDeployments(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusCreated {

@@ -1,19 +1,22 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"path"
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
-	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -102,8 +105,6 @@ func TestGetApps(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -113,14 +114,15 @@ func TestGetApps(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+			r := httptest.NewRequest(http.MethodGet, "/v1/apps", nil)
 
-			h.GetApps(c)
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.GetApps(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
@@ -345,17 +347,21 @@ func TestGetApp(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&v1alpha1.App{}, index.UIDIndexKey, index.UIDIndexer).Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-			c.Params = []gin.Param{
-				{Key: "appID", Value: tc.appID},
+			u := url.URL{
+				Path: path.Join("/v1/apps", tc.appID),
 			}
 
-			h.GetApp(c)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+			r.SetPathValue("appID", tc.appID)
+
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.GetApp(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {

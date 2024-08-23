@@ -17,8 +17,6 @@ import (
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -57,14 +55,11 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 func setupWebhooks(mgr ctrl.Manager) error {
 	err := (&v1alpha1.Organization{}).SetupWebhookWithManager(mgr)
 	if err != nil {
-		//logger.Error("error creating organization webhook", "err", err)
 		return err
 	}
 
 	err = (&dockyardsv1.Organization{}).SetupWebhookWithManager(mgr)
 	if err != nil {
-		//logger.Error("error creating organization webhook", "err", err)
-
 		return err
 	}
 
@@ -89,14 +84,12 @@ func setupWebhooks(mgr ctrl.Manager) error {
 func main() {
 	var logLevel string
 	var collectMetricsInterval int
-	var ginMode string
 	var enableWebhooks bool
 	var metricsBindAddress string
 	var allowOrigins []string
 	var dockyardsNamespace string
 	pflag.StringVar(&logLevel, "log-level", "info", "log level")
 	pflag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
-	pflag.StringVar(&ginMode, "gin-mode", gin.DebugMode, "gin mode")
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
 	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
 	pflag.StringSliceVar(&allowOrigins, "allow-origin", []string{"http://localhost", "http://localhost:8000"}, "allow origin")
@@ -166,7 +159,7 @@ func main() {
 		}
 	}
 
-	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Cluster{}, &dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &corev1.Secret{}, &dockyardsv1.Deployment{}} {
+	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Cluster{}, &dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &corev1.Secret{}, &dockyardsv1.Deployment{}, &dockyardsv1.Organization{}} {
 		err = manager.GetFieldIndexer().IndexField(ctx, object, index.UIDField, index.ByUID)
 		if err != nil {
 			logger.Error("error adding uid indexer to manager", "err", err)
@@ -231,23 +224,6 @@ func main() {
 		}
 	}()
 
-	logger.Debug("setting gin mode", "mode", ginMode)
-
-	gin.SetMode(ginMode)
-
-	r := gin.Default()
-
-	logger.Debug("configuring cors middleware", "origins", allowOrigins)
-
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     allowOrigins,
-		AllowMethods:     []string{"POST", "PUT", "GET", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
-
 	accessKey, refreshKey, err := jwt.GetOrGenerateKeys(ctx, controllerClient)
 	if err != nil {
 		logger.Error("error getting private keys for jwt", "err", err)
@@ -259,13 +235,30 @@ func main() {
 		handlers.WithManager(manager),
 		handlers.WithNamespace(dockyardsNamespace),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
+		handlers.WithLogger(logger),
 	}
 
-	err = handlers.RegisterRoutes(r, logger, handlerOptions...)
+	publicMux := http.NewServeMux()
+
+	err = handlers.RegisterRoutes(publicMux, handlerOptions...)
 	if err != nil {
 		logger.Error("error registering handler routes", "err", err)
 		os.Exit(1)
 	}
+
+	publicServer := &http.Server{
+		Handler: publicMux,
+		Addr:    ":9000",
+	}
+
+	go func() {
+		err := publicServer.ListenAndServe()
+		if err != nil {
+			logger.Error("error running public server", "err", err)
+
+			os.Exit(1)
+		}
+	}()
 
 	privateMux := http.NewServeMux()
 
@@ -286,15 +279,6 @@ func main() {
 		err := privateServer.ListenAndServe()
 		if err != nil {
 			logger.Error("error running private server", "err", err)
-
-			os.Exit(1)
-		}
-	}()
-
-	go func() {
-		err := r.Run(":9000")
-		if err != nil {
-			logger.Error("error running public server", "err", err)
 
 			os.Exit(1)
 		}

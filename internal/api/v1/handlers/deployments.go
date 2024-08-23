@@ -1,19 +1,19 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	utildeployment "bitbucket.org/sudosweden/dockyards-backend/pkg/util/deployment"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
-	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,13 +28,15 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=kustomizedeployments,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
 
-func (h *handler) PostClusterDeployments(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) PostClusterDeployments(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	clusterID := c.Param("clusterID")
+	logger := middleware.LoggerFrom(ctx)
+
+	clusterID := r.PathValue("clusterID")
 	if clusterID == "" {
-		h.logger.Debug("cluster empty")
-		c.AbortWithStatus(http.StatusBadRequest)
+		logger.Debug("cluster empty")
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -46,33 +48,42 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	var clusterList dockyardsv1.ClusterList
 	err := h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing clusters", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing clusters", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
-		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
+		logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
 
 		if len(clusterList.Items) == 0 {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
 
 			return
 		}
 
-		c.AbortWithStatus(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	cluster := clusterList.Items[0]
 
-	var v1Deployment v1.Deployment
-	err = c.BindJSON(&v1Deployment)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Error("failed to read body", "err", err)
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	r.Body.Close()
+
+	var v1Deployment v1.Deployment
+	err = json.Unmarshal(body, &v1Deployment)
+	if err != nil {
+		logger.Debug("failed to unmarshall body", "err", err)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		return
 	}
@@ -81,19 +92,15 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 	err = utildeployment.AddNormalizedName(&v1Deployment)
 	if err != nil {
-		h.logger.Error("error adding deployment name", "err", err)
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		logger.Error("error adding deployment name", "err", err)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		return
 	}
 
-	details, validName := name.IsValidName(*v1Deployment.Name)
+	_, validName := name.IsValidName(*v1Deployment.Name)
 	if !validName {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error":   "name is not valid",
-			"name":    v1Deployment.Name,
-			"details": details,
-		})
+		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		return
 	}
@@ -109,20 +116,20 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		var secret corev1.Secret
 		err := h.Get(ctx, objectKey, &secret)
 		if client.IgnoreNotFound(err) != nil {
-			h.logger.Error("error listing secrets", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			logger.Error("error getting secret", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
 
 		if apierrors.IsNotFound(err) {
-			c.AbortWithStatus(http.StatusForbidden)
+			w.WriteHeader(http.StatusForbidden)
 
 			return
 		}
 
 		if secret.Type != DockyardsSecretTypeCredential {
-			c.AbortWithStatus(http.StatusForbidden)
+			w.WriteHeader(http.StatusForbidden)
 
 			return
 		}
@@ -155,16 +162,15 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 	}
 
 	err = h.Create(ctx, &deployment)
-	if err != nil {
-		h.logger.Error("error creating deployment", "err", err)
+	if client.IgnoreAlreadyExists(err) != nil {
+		logger.Error("error creating deployment", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
-		if apierrors.IsAlreadyExists(err) {
-			c.AbortWithStatus(http.StatusConflict)
+		return
+	}
 
-			return
-		}
-
-		c.AbortWithStatus(http.StatusInternalServerError)
+	if apierrors.IsAlreadyExists(err) {
+		w.WriteHeader(http.StatusConflict)
 
 		return
 	}
@@ -210,8 +216,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 		err := h.Create(ctx, &containerImageDeployment)
 		if err != nil {
-			h.logger.Error("error creating container image deployment", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			logger.Error("error creating container image deployment", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
@@ -252,8 +258,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 		err := h.Create(ctx, &kustomizeDeployment)
 		if err != nil {
-			h.logger.Error("error creating kustomize deployment", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			logger.Error("error creating kustomize deployment", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
@@ -297,8 +303,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 		if v1Deployment.HelmValues != nil {
 			b, err := json.Marshal(*v1Deployment.HelmValues)
 			if err != nil {
-				h.logger.Error("error marshalling helm values", "err", err)
-				c.AbortWithStatus(http.StatusInternalServerError)
+				logger.Error("error marshalling helm values", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
 
 				return
 			}
@@ -310,8 +316,8 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 		err := h.Create(ctx, &helmDeployment)
 		if err != nil {
-			h.logger.Error("error creating helm deployment", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			logger.Error("error creating helm deployment", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
@@ -332,19 +338,37 @@ func (h *handler) PostClusterDeployments(c *gin.Context) {
 
 	err = h.Patch(ctx, &deployment, patch)
 	if err != nil {
-		h.logger.Error("error patching deployment", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error patching deployment", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	c.JSON(http.StatusCreated, createdDeployment)
+	b, err := json.Marshal(&createdDeployment)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }
 
-func (h *handler) GetClusterDeployments(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) GetClusterDeployments(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	clusterID := c.Param("clusterID")
+	logger := middleware.LoggerFrom(ctx)
+
+	clusterID := r.PathValue("clusterID")
+	if clusterID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
 
 	matchingFields := client.MatchingFields{
 		index.UIDField: clusterID,
@@ -353,15 +377,15 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 	var clusterList dockyardsv1.ClusterList
 	err := h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing clusters", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing clusters", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
-		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -369,23 +393,22 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 	cluster := clusterList.Items[0]
 
 	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
-	if err != nil {
-		h.logger.Error("error getting owner organization", "err", err)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting owner organization", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
-		if apierrors.IsNotFound(err) {
-			c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
 
-			return
-		}
-
-		c.AbortWithStatus(http.StatusInternalServerError)
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	if organization == nil {
-		h.logger.Debug("cluster has no owner organization")
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("cluster has no owner organization")
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -397,8 +420,8 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 	var deploymentList dockyardsv1.DeploymentList
 	err = h.List(ctx, &deploymentList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing deployments", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing deployments", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -429,16 +452,29 @@ func (h *handler) GetClusterDeployments(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, deployments)
+	b, err := json.Marshal(&deployments)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }
 
-func (h *handler) DeleteDeployment(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) DeleteDeployment(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	deploymentID := c.Param("deploymentID")
+	logger := middleware.LoggerFrom(ctx)
+
+	deploymentID := r.PathValue("deploymentID")
 	if deploymentID == "" {
-		h.logger.Debug("deployment id empty")
-		c.AbortWithStatus(http.StatusBadRequest)
+		logger.Debug("deployment id empty")
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -450,22 +486,22 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 	var deploymentList dockyardsv1.DeploymentList
 	err := h.List(ctx, &deploymentList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing deployments", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing deployments", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if len(deploymentList.Items) != 1 {
-		h.logger.Debug("expected exactly one deployment", "count", len(deploymentList.Items))
+		logger.Debug("expected exactly one deployment", "count", len(deploymentList.Items))
 
 		if len(deploymentList.Items) == 0 {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
 
 			return
 		}
 
-		c.AbortWithStatus(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -474,21 +510,28 @@ func (h *handler) DeleteDeployment(c *gin.Context) {
 
 	err = h.Delete(ctx, &deployment)
 	if err != nil {
-		h.logger.Error("error deleting deployment", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error deleting deployment", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	h.logger.Debug("deleted deployment", "id", deployment.UID)
+	logger.Debug("deleted deployment", "id", deployment.UID)
 
-	c.Status(http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *handler) GetDeployment(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) GetDeployment(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	deploymentID := c.Param("deploymentID")
+	logger := middleware.LoggerFrom(ctx)
+
+	deploymentID := r.PathValue("deploymentID")
+	if deploymentID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
 
 	matchingFields := client.MatchingFields{
 		index.UIDField: deploymentID,
@@ -497,22 +540,22 @@ func (h *handler) GetDeployment(c *gin.Context) {
 	var deploymentList dockyardsv1.DeploymentList
 	err := h.List(ctx, &deploymentList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing deployment", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing deployment", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if len(deploymentList.Items) != 1 {
-		h.logger.Debug("expected exactly one deployment", "count", len(deploymentList.Items))
+		logger.Debug("expected exactly one deployment", "count", len(deploymentList.Items))
 
 		if len(deploymentList.Items) == 0 {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
 
 			return
 		}
 
-		c.AbortWithStatus(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -535,8 +578,8 @@ func (h *handler) GetDeployment(c *gin.Context) {
 		var containerImageDeployment dockyardsv1.ContainerImageDeployment
 		err := h.Get(ctx, objectKey, &containerImageDeployment)
 		if err != nil {
-			h.logger.Error("error getting container image deployment", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			logger.Error("error getting container image deployment", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
@@ -550,8 +593,8 @@ func (h *handler) GetDeployment(c *gin.Context) {
 		var helmDeployment dockyardsv1.HelmDeployment
 		err := h.Get(ctx, objectKey, &helmDeployment)
 		if err != nil {
-			h.logger.Error("error getting helm deployment", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			logger.Error("error getting helm deployment", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
@@ -564,8 +607,8 @@ func (h *handler) GetDeployment(c *gin.Context) {
 			var values map[string]any
 			err = json.Unmarshal(helmDeployment.Spec.Values.Raw, &values)
 			if err != nil {
-				h.logger.Error("error unmarshalling helm values", "err", err)
-				c.AbortWithStatus(http.StatusInternalServerError)
+				logger.Error("error unmarshalling helm values", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
 
 				return
 			}
@@ -576,16 +619,16 @@ func (h *handler) GetDeployment(c *gin.Context) {
 		var kustomizeDeployment dockyardsv1.KustomizeDeployment
 		err := h.Get(ctx, objectKey, &kustomizeDeployment)
 		if err != nil {
-			h.logger.Error("error getting kustomize deployment", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			logger.Error("error getting kustomize deployment", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
 
 		v1Deployment.Kustomize = &kustomizeDeployment.Spec.Kustomize
 	default:
-		h.logger.Error("deployment has unsupported deployment kind", "kind", deployment.Spec.DeploymentRefs[0].Kind)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("deployment has unsupported deployment kind", "kind", deployment.Spec.DeploymentRefs[0].Kind)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -604,5 +647,16 @@ func (h *handler) GetDeployment(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, v1Deployment)
+	b, err := json.Marshal(&v1Deployment)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }

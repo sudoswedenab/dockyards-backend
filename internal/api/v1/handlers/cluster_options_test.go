@@ -12,7 +12,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -212,9 +211,9 @@ func TestGetClusterOptions(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+			r := httptest.NewRequest(http.MethodGet, "/v1/cluster-options", nil)
 
-			h.GetClusterOptions(c)
+			h.GetClusterOptions(w, r)
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {

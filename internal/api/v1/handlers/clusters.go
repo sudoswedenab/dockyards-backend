@@ -1,25 +1,25 @@
 package handlers
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/json"
 	"encoding/pem"
+	"io"
 	"math"
 	"math/big"
 	"net/http"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
-	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -63,88 +63,85 @@ func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *d
 	return &v1Cluster
 }
 
-func (h *handler) PostOrgClusters(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	org := c.Param("org")
-	if org == "" {
-		c.AbortWithStatus(http.StatusBadRequest)
+	logger := middleware.LoggerFrom(ctx)
+
+	organizationID := r.PathValue("organizationID")
+	if organizationID == "" {
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
 	objectKey := client.ObjectKey{
-		Name: org,
+		Name: organizationID,
 	}
 
 	var organization dockyardsv1.Organization
 	err := h.Get(ctx, objectKey, &organization)
 	if err != nil {
-		h.logger.Error("error getting organization from kubernetes", "err", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("error getting organization from kubernetes", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
-	subject, err := h.getSubjectFromContext(c)
+	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
-		h.logger.Debug("error fetching subject from context", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Debug("error fetching subject from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	isMember := h.isMember(subject, &organization)
 	if !isMember {
-		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	r.Body.Close()
 
 	var clusterOptions v1.ClusterOptions
-	if c.BindJSON(&clusterOptions) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to read Body",
-		})
+	err = json.Unmarshal(body, &clusterOptions)
+	if err != nil {
+		logger.Debug("error unmarshalling body", "err", err)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		return
 	}
 
-	h.logger.Debug("create cluster", "organization", organization.Name, "name", clusterOptions.Name, "version", clusterOptions.Version)
+	logger.Debug("create cluster", "organization", organization.Name, "name", clusterOptions.Name, "version", clusterOptions.Version)
 
-	details, validName := name.IsValidName(clusterOptions.Name)
+	_, validName := name.IsValidName(clusterOptions.Name)
 	if !validName {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error":   "name is not valid",
-			"name":    clusterOptions.Name,
-			"details": details,
-		})
+		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		return
 	}
 
 	if clusterOptions.NodePoolOptions != nil {
 		for _, nodePoolOptions := range *clusterOptions.NodePoolOptions {
-			details, validName := name.IsValidName(nodePoolOptions.Name)
+			_, validName := name.IsValidName(nodePoolOptions.Name)
 			if !validName {
-				c.JSON(http.StatusUnprocessableEntity, gin.H{
-					"error":   "node pool name is not valid",
-					"name":    nodePoolOptions.Name,
-					"details": details,
-				})
+				w.WriteHeader(http.StatusUnprocessableEntity)
 
 				return
 			}
 
 			if nodePoolOptions.Quantity > 9 {
-				h.logger.Debug("quantity too large", "quantity", nodePoolOptions.Quantity)
-
-				c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
-					"error":    "node pool quota exceeded",
-					"quantity": nodePoolOptions.Quantity,
-					"details":  "quantity must be lower than 9",
-				})
+				w.WriteHeader(http.StatusUnprocessableEntity)
 
 				return
 			}
@@ -173,23 +170,22 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	err = h.Create(ctx, &cluster)
-	if err != nil {
-		h.logger.Error("error creating cluster", "err", err)
+	if client.IgnoreAlreadyExists(err) != nil {
+		logger.Error("error creating cluster", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
-		if apierrors.IsAlreadyExists(err) {
-			c.AbortWithStatus(http.StatusConflict)
+		return
+	}
 
-			return
-		}
-
-		c.AbortWithStatus(http.StatusInternalServerError)
+	if apierrors.IsAlreadyExists(err) {
+		w.WriteHeader(http.StatusConflict)
 
 		return
 	}
 
 	nodePoolOptions := clusterOptions.NodePoolOptions
 	if nodePoolOptions == nil || len(*nodePoolOptions) == 0 {
-		h.logger.Debug("using recommended node pool options")
+		logger.Debug("using recommended node pool options")
 
 		objectKey := client.ObjectKey{
 			Name:      "recommended",
@@ -199,8 +195,8 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		var clusterTemplate dockyardsv1.ClusterTemplate
 		err := h.Get(ctx, objectKey, &clusterTemplate)
 		if err != nil {
-			h.logger.Error("error getting cluster template", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			logger.Error("error getting cluster template", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
@@ -209,7 +205,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 	}
 
 	if clusterOptions.SingleNode != nil && *clusterOptions.SingleNode {
-		h.logger.Debug("using single node pool")
+		logger.Debug("using single node pool")
 
 		nodePoolOptions = util.Ptr([]v1.NodePoolOptions{
 			{
@@ -269,7 +265,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		if nodePoolOption.DiskSize != nil {
 			quantity, err := resource.ParseQuantity(*nodePoolOption.DiskSize)
 			if err != nil {
-				h.logger.Error("error parsing disk size quantity", "err", err)
+				logger.Error("error parsing disk size quantity", "err", err)
 				hasErrors = true
 
 				break
@@ -281,7 +277,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		if nodePoolOption.RamSize != nil {
 			quantity, err := resource.ParseQuantity(*nodePoolOption.RamSize)
 			if err != nil {
-				h.logger.Error("error parsing ram size quantity", "err", err)
+				logger.Error("error parsing ram size quantity", "err", err)
 				hasErrors = true
 
 				break
@@ -292,7 +288,7 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 		err := h.Create(ctx, &nodePool)
 		if err != nil {
-			h.logger.Error("error creating node pool", "err", err)
+			logger.Error("error creating node pool", "err", err)
 			hasErrors = true
 
 			break
@@ -300,12 +296,12 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 
 		nodePoolList.Items[i] = nodePool
 
-		h.logger.Debug("created cluster node pool", "id", nodePool.UID)
+		logger.Debug("created cluster node pool", "id", nodePool.UID)
 	}
 
 	if hasErrors {
-		h.logger.Error("deleting cluster", "id", cluster.UID)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("deleting cluster", "id", cluster.UID)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -314,15 +310,28 @@ func (h *handler) PostOrgClusters(c *gin.Context) {
 		Id: string(cluster.UID),
 	}
 
-	c.JSON(http.StatusCreated, v1Cluster)
+	b, err := json.Marshal(&v1Cluster)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }
 
-func (h *handler) GetClusterKubeconfig(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	clusterID := c.Param("clusterID")
+	logger := middleware.LoggerFrom(ctx)
+
+	clusterID := r.PathValue("clusterID")
 	if clusterID == "" {
-		c.AbortWithStatus(http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -334,25 +343,25 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	var clusterList dockyardsv1.ClusterList
 	err := h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing clusters", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing clusters", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
-		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	cluster := clusterList.Items[0]
 
-	subject, err := h.getSubjectFromContext(c)
+	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
-		h.logger.Error("error fetching user from context", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error fetching user from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -366,22 +375,22 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 
 	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
 	if err != nil {
-		h.logger.Error("error reviewing subject", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error reviewing subject", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if !allowed {
-		h.logger.Debug("subject is not allowed to get cluster", "subject", subject, "cluster", cluster.Name, "namespace", cluster.Namespace)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("subject is not allowed to get cluster", "subject", subject, "cluster", cluster.Name, "namespace", cluster.Namespace)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	if !cluster.Status.APIEndpoint.IsValid() {
-		h.logger.Info("cluster does not have a valid api endpoint", "uid", cluster.UID)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Info("cluster does not have a valid api endpoint", "uid", cluster.UID)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -394,40 +403,40 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	var secret corev1.Secret
 	err = h.Get(ctx, objectKey, &secret)
 	if err != nil {
-		h.logger.Error("error getting cluster certificate authority", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error getting cluster certificate authority", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	caCertificatePEM, has := secret.Data[corev1.TLSCertKey]
 	if !has {
-		h.logger.Info("cluster certificate authority has no tls certificate")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Info("cluster certificate authority has no tls certificate")
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	signingKeyPEM, has := secret.Data[corev1.TLSPrivateKeyKey]
 	if !has {
-		h.logger.Info("cluster certificate authority has to tls private key")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Info("cluster certificate authority has to tls private key")
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	block, _ := pem.Decode(caCertificatePEM)
 	if block == nil {
-		h.logger.Info("unable to decode ca certificate as pem")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Info("unable to decode ca certificate as pem")
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	caCertificate, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		h.logger.Error("error parsing ca certificate", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error parsing ca certificate", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -436,8 +445,8 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 
 	signingKey, err := x509.ParseECPrivateKey(block.Bytes)
 	if err != nil {
-		h.logger.Error("error parsing signing key", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error parsing signing key", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -449,15 +458,15 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 	var userList dockyardsv1.UserList
 	err = h.List(ctx, &userList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing users", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing users", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if len(userList.Items) != 1 {
-		h.logger.Info("unexpected users count", "count", len(userList.Items))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Info("unexpected users count", "count", len(userList.Items))
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -468,8 +477,8 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 
 	serial, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
 	if err != nil {
-		h.logger.Error("error generating random serial number", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error generating random serial number", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -492,16 +501,16 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		h.logger.Error("error generating private rsa key", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error generating private rsa key", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	certificate, err := x509.CreateCertificate(rand.Reader, &tmpl, caCertificate, privateKey.Public(), signingKey)
 	if err != nil {
-		h.logger.Error("error creating certificate", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error creating certificate", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -542,23 +551,30 @@ func (h *handler) GetClusterKubeconfig(c *gin.Context) {
 		CurrentContext: contextName,
 	}
 
-	kubeconfig, err := clientcmd.Write(cfg)
+	b, err := clientcmd.Write(cfg)
 	if err != nil {
-		h.logger.Error("error marshalling kubeconfig", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error marshalling kubeconfig", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	c.Data(http.StatusOK, binding.MIMEYAML, kubeconfig)
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
+	//c.Data(http.StatusOK, binding.MIMEYAML, kubeconfig)
 }
 
-func (h *handler) DeleteCluster(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) DeleteCluster(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	clusterID := c.Param("clusterID")
+	logger := middleware.LoggerFrom(ctx)
+
+	clusterID := r.PathValue("clusterID")
 	if clusterID == "" {
-		c.AbortWithStatus(http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -570,15 +586,15 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 	var clusterList dockyardsv1.ClusterList
 	err := h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing clusters", "err", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("error listing clusters", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
-		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -587,45 +603,47 @@ func (h *handler) DeleteCluster(c *gin.Context) {
 
 	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
 	if err != nil {
-		h.logger.Error("error getting owner organization", "err", err)
+		logger.Error("error getting owner organization", "err", err)
 	}
 
-	subject, err := h.getSubjectFromContext(c)
+	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
-		h.logger.Debug("error fetching user from context", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Debug("error fetching user from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	isMember := h.isMember(subject, organization)
 	if !isMember {
-		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	err = h.Delete(ctx, &cluster, client.PropagationPolicy(metav1.DeletePropagationForeground))
 	if err != nil {
-		h.logger.Error("error deleting cluster", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error deleting cluster", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	h.logger.Debug("deleted cluster", "id", cluster.UID)
+	logger.Debug("deleted cluster", "id", cluster.UID)
 
-	c.JSON(http.StatusAccepted, gin.H{})
+	w.WriteHeader(http.StatusAccepted)
 }
 
-func (h *handler) GetClusters(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) GetClusters(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	subject, err := h.getSubjectFromContext(c)
+	logger := middleware.LoggerFrom(ctx)
+
+	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
-		h.logger.Debug("error getting subject from context", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Debug("error getting subject from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -637,8 +655,8 @@ func (h *handler) GetClusters(c *gin.Context) {
 	var organizationList dockyardsv1.OrganizationList
 	err = h.List(ctx, &organizationList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing organizations", "err", err)
-		c.Status(http.StatusInternalServerError)
+		logger.Error("error listing organizations", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -649,8 +667,8 @@ func (h *handler) GetClusters(c *gin.Context) {
 		var clusterList dockyardsv1.ClusterList
 		err = h.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef))
 		if err != nil {
-			h.logger.Error("error listing clusters", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			logger.Error("error listing clusters", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
@@ -660,16 +678,30 @@ func (h *handler) GetClusters(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, clusters)
+	b, err := json.Marshal(&clusters)
+	if err != nil {
+		logger.Debug("error marshalling response", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }
 
-func (h *handler) GetCluster(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) GetCluster(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	clusterID := c.Param("clusterID")
+	logger := middleware.LoggerFrom(ctx)
+
+	clusterID := r.PathValue("clusterID")
 	if clusterID == "" {
-		h.logger.Error("empty cluster id")
-		c.AbortWithStatus(http.StatusBadRequest)
+		logger.Error("empty cluster id")
+		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -681,15 +713,15 @@ func (h *handler) GetCluster(c *gin.Context) {
 	var clusterList dockyardsv1.ClusterList
 	err := h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing clusters", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing clusters", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
-		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -697,32 +729,31 @@ func (h *handler) GetCluster(c *gin.Context) {
 	cluster := clusterList.Items[0]
 
 	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
-	if err != nil {
-		h.logger.Error("error getting owner organization", "err", err)
-
-		if apierrors.IsNotFound(err) {
-			c.AbortWithStatus(http.StatusUnauthorized)
-
-			return
-		}
-
-		c.AbortWithStatus(http.StatusInternalServerError)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting owner organization", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	subject, err := h.getSubjectFromContext(c)
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
-		h.logger.Error("error fetching user from context", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error fetching user from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	isMember := h.isMember(subject, organization)
 	if !isMember {
-		h.logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -734,13 +765,24 @@ func (h *handler) GetCluster(c *gin.Context) {
 	var nodePoolList dockyardsv1.NodePoolList
 	err = h.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing node pools", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing node pools", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	v1Cluster := h.toV1Cluster(organization, &cluster, &nodePoolList)
 
-	c.JSON(http.StatusOK, v1Cluster)
+	b, err := json.Marshal(&v1Cluster)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }

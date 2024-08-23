@@ -1,16 +1,17 @@
 package handlers
 
 import (
-	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
-	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -72,10 +73,17 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyard
 	return &v1NodePool
 }
 
-func (h *handler) GetNodePool(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) GetNodePool(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	nodePoolID := c.Param("nodePoolID")
+	logger := middleware.LoggerFrom(ctx)
+
+	nodePoolID := r.PathValue("nodePoolID")
+	if nodePoolID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
 
 	matchingFields := client.MatchingFields{
 		index.UIDField: nodePoolID,
@@ -84,15 +92,15 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	var nodePoolList dockyardsv1.NodePoolList
 	err := h.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing node pools in kubernetes", "err", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("error listing node pools in kubernetes", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	if len(nodePoolList.Items) != 1 {
-		h.logger.Debug("expected exactly one node pool", "length", len(nodePoolList.Items))
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("expected exactly one node pool", "length", len(nodePoolList.Items))
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -101,32 +109,32 @@ func (h *handler) GetNodePool(c *gin.Context) {
 
 	cluster, err := apiutil.GetOwnerCluster(ctx, h.Client, &nodePool)
 	if err != nil {
-		h.logger.Error("error getting owner cluster", "err", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("error getting owner cluster", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
 	if err != nil {
-		h.logger.Error("error getting owner cluster owner organization", "err", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("error getting owner cluster owner organization", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
-	subject, err := h.getSubjectFromContext(c)
+	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
-		h.logger.Error("error getting subject from context", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error getting subject from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	isMember := h.isMember(subject, organization)
 	if !isMember {
-		h.logger.Debug("user is not a member of organization", "subject", subject)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("user is not a member of organization", "subject", subject)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -138,50 +146,69 @@ func (h *handler) GetNodePool(c *gin.Context) {
 	var nodeList dockyardsv1.NodeList
 	err = h.List(ctx, &nodeList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing nodes", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing nodes", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	v1NodePool := h.toV1NodePool(&nodePool, cluster, &nodeList)
 
-	c.JSON(http.StatusOK, v1NodePool)
-}
-
-func (h *handler) PostClusterNodePools(c *gin.Context) {
-	ctx := context.Background()
-
-	clusterID := c.Param("clusterID")
-
-	var nodePoolOptions v1.NodePoolOptions
-	err := c.BindJSON(&nodePoolOptions)
+	b, err := json.Marshal(&v1NodePool)
 	if err != nil {
-		h.logger.Error("failed bind node pool options from request body", "err", err)
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	details, isValidName := name.IsValidName(nodePoolOptions.Name)
-	if !isValidName {
-		h.logger.Error("node pool has invalid name", "name", nodePoolOptions.Name)
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
+}
 
-		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
-			"details": details,
-		})
+func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logger := middleware.LoggerFrom(ctx)
+
+	clusterID := r.PathValue("clusterID")
+	if clusterID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	r.Body.Close()
+
+	var nodePoolOptions v1.NodePoolOptions
+	err = json.Unmarshal(body, &nodePoolOptions)
+	if err != nil {
+		logger.Debug("error unmashalling body", "err", err)
+		w.WriteHeader(http.StatusUnprocessableEntity)
+
+		return
+	}
+
+	_, isValidName := name.IsValidName(nodePoolOptions.Name)
+	if !isValidName {
+		logger.Debug("node pool has invalid name", "name", nodePoolOptions.Name)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		return
 	}
 
 	if nodePoolOptions.Quantity > 9 {
-		h.logger.Debug("quantity too large", "quantity", nodePoolOptions.Quantity)
-
-		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
-			"error":    "node pool quota exceeded",
-			"quantity": nodePoolOptions.Quantity,
-			"details":  "quantity must be lower than 9",
-		})
+		logger.Debug("quantity too large", "quantity", nodePoolOptions.Quantity)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		return
 	}
@@ -193,15 +220,15 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	var clusterList dockyardsv1.ClusterList
 	err = h.List(ctx, &clusterList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing clusters", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing clusters", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if len(clusterList.Items) != 1 {
-		h.logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -210,31 +237,31 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 
 	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
 	if err != nil {
-		h.logger.Error("error getting owner organization", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error getting owner organization", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if organization == nil {
-		h.logger.Debug("node pool has no organization owner")
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("node pool has no organization owner")
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
-	subject, err := h.getSubjectFromContext(c)
+	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
-		h.logger.Error("error getting subject from context", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error getting subject from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	isMember := h.isMember(subject, organization)
 	if !isMember {
-		h.logger.Error("subject is not a member of organization")
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("subject is not a member of organization")
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -246,8 +273,8 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	if nodePoolOptions.RamSize != nil {
 		memory, err := resource.ParseQuantity(*nodePoolOptions.RamSize)
 		if err != nil {
-			h.logger.Error("error parsing ram size quantity", "err", err)
-			c.AbortWithStatus(http.StatusUnprocessableEntity)
+			logger.Debug("error parsing ram size quantity", "err", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 
 			return
 		}
@@ -263,8 +290,8 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	if nodePoolOptions.DiskSize != nil {
 		storage, err := resource.ParseQuantity(*nodePoolOptions.DiskSize)
 		if err != nil {
-			h.logger.Error("error parsing disk size quantity", "err", err)
-			c.AbortWithStatus(http.StatusUnprocessableEntity)
+			logger.Debug("error parsing disk size quantity", "err", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 
 			return
 		}
@@ -304,29 +331,46 @@ func (h *handler) PostClusterNodePools(c *gin.Context) {
 	}
 
 	err = h.Create(ctx, &nodePool)
-	if err != nil {
-		h.logger.Error("error creating node pool", "err", err)
+	if client.IgnoreAlreadyExists(err) != nil {
+		logger.Error("error creating node pool", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
-		if apierrors.IsAlreadyExists(err) {
-			c.AbortWithStatus(http.StatusConflict)
+		return
+	}
 
-			return
-		}
-
-		c.AbortWithStatus(http.StatusInternalServerError)
+	if apierrors.IsAlreadyExists(err) {
+		w.WriteHeader(http.StatusConflict)
 
 		return
 	}
 
 	v1NodePool := h.toV1NodePool(&nodePool, &cluster, nil)
 
-	c.JSON(http.StatusCreated, v1NodePool)
+	b, err := json.Marshal(&v1NodePool)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }
 
-func (h *handler) DeleteNodePool(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) DeleteNodePool(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	nodePoolID := c.Param("nodePoolID")
+	logger := middleware.LoggerFrom(ctx)
+
+	nodePoolID := r.PathValue("nodePoolID")
+	if nodePoolID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
 
 	matchingFields := client.MatchingFields{
 		index.UIDField: nodePoolID,
@@ -335,15 +379,15 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 	var nodePoolList dockyardsv1.NodePoolList
 	err := h.List(ctx, &nodePoolList, matchingFields)
 	if err != nil {
-		h.logger.Error("error listing node pools", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error listing node pools", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	if len(nodePoolList.Items) != 1 {
-		h.logger.Debug("expected exactly one node pool", "count", len(nodePoolList.Items))
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("expected exactly one node pool", "count", len(nodePoolList.Items))
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -351,61 +395,59 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 	nodePool := nodePoolList.Items[0]
 
 	cluster, err := apiutil.GetOwnerCluster(ctx, h.Client, &nodePool)
-	if err != nil {
-		h.logger.Error("error getting owner cluster", "err", err)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting owner cluster", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
-		if apierrors.IsNotFound(err) {
-			c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
 
-			return
-		}
-
-		c.AbortWithStatus(http.StatusInternalServerError)
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	if cluster == nil {
-		h.logger.Debug("node pool has no owner cluster")
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("node pool has no owner cluster")
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
-	if err != nil {
-		h.logger.Error("error getting owner organization", "err", err)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting owner organization", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
-		if apierrors.IsNotFound(err) {
-			c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
 
-			return
-		}
-
-		c.AbortWithStatus(http.StatusInternalServerError)
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	if organization == nil {
-		h.logger.Debug("node pool has no owner organization")
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("node pool has no owner organization")
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
-	subject, err := h.getSubjectFromContext(c)
+	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
-		h.logger.Error("error getting subject from context", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error getting subject from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	isMember := h.isMember(subject, organization)
 	if !isMember {
-		h.logger.Debug("subject is not a member of organization")
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("subject is not a member of organization")
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -416,8 +458,8 @@ func (h *handler) DeleteNodePool(c *gin.Context) {
 
 	err = h.Delete(ctx, &nodePool, &deleteOptions)
 	if err != nil {
-		h.logger.Error("error deleting node pool", "err", err)
+		logger.Error("error deleting node pool", "err", err)
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	w.WriteHeader(http.StatusNoContent)
 }

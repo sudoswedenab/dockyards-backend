@@ -1,29 +1,31 @@
 package handlers
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=users,verbs=get;list;watch
 
-func (h *handler) PostRefresh(c *gin.Context) {
-	ctx := context.Background()
+func (h *handler) PostRefresh(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	authorizationHeader := c.GetHeader("Authorization")
+	logger := middleware.LoggerFrom(ctx)
+
+	authorizationHeader := r.Header.Get("Authorization")
 	if authorizationHeader == "" {
-		h.logger.Debug("empty or missing authorization header during refresh")
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Debug("empty or missing authorization header during refresh")
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -39,24 +41,24 @@ func (h *handler) PostRefresh(c *gin.Context) {
 		return h.jwtRefreshPublicKey, nil
 	})
 	if err != nil {
-		h.logger.Error("error parsing token with claims", "err", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("error parsing token with claims", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	claims, ok := token.Claims.(*jwt.RegisteredClaims)
 	if !ok || !token.Valid {
-		h.logger.Error("invalid token claims")
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("invalid token claims")
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	subject, err := claims.GetSubject()
 	if err != nil {
-		h.logger.Error("error getting subject from claims", "err", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("error getting subject from claims", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -68,15 +70,15 @@ func (h *handler) PostRefresh(c *gin.Context) {
 	var userList dockyardsv1.UserList
 	err = h.List(ctx, &userList, matchingFields)
 	if err != nil {
-		h.logger.Error("", "err", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("error listing users", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
 	if len(userList.Items) != 1 {
-		h.logger.Error("expected exactly one user from kubernetes", "users", len(userList.Items))
-		c.AbortWithStatus(http.StatusUnauthorized)
+		logger.Error("expected exactly one user from kubernetes", "users", len(userList.Items))
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -85,13 +87,24 @@ func (h *handler) PostRefresh(c *gin.Context) {
 
 	tokens, err := h.generateTokens(user)
 	if err != nil {
-		h.logger.Error("error generating tokens", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("error generating tokens", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	c.JSON(http.StatusOK, tokens)
+	b, err := json.Marshal(&tokens)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
 }
 
 func (h *handler) generateTokens(user dockyardsv1.User) (*v1.Tokens, error) {

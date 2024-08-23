@@ -1,18 +1,21 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"path"
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
-	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,14 +33,16 @@ func TestGetOrgCredentials(t *testing.T) {
 		expected       []v1.Credential
 	}{
 		{
-			name: "test single credential",
-			sub:  "654202f2-44f6-4fa6-873b-0b9817d3957c",
+			name:           "test single credential",
+			sub:            "654202f2-44f6-4fa6-873b-0b9817d3957c",
+			organizationID: "af2224ee-fd4b-4e6c-8ff6-21c2d1ddcc5c",
 			lists: []client.ObjectList{
 				&dockyardsv1.OrganizationList{
 					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
+								UID:  "af2224ee-fd4b-4e6c-8ff6-21c2d1ddcc5c",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
 								MemberRefs: []dockyardsv1.MemberReference{
@@ -74,14 +79,16 @@ func TestGetOrgCredentials(t *testing.T) {
 			},
 		},
 		{
-			name: "test several secret types",
-			sub:  "41ae3267-da66-4be0-b2ac-57a60549ff57",
+			name:           "test several secret types",
+			sub:            "41ae3267-da66-4be0-b2ac-57a60549ff57",
+			organizationID: "8afac404-d43a-4253-a102-a90ff80fa13c",
 			lists: []client.ObjectList{
 				&dockyardsv1.OrganizationList{
 					Items: []dockyardsv1.Organization{
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "test",
+								UID:  "8afac404-d43a-4253-a102-a90ff80fa13c",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
 								MemberRefs: []dockyardsv1.MemberReference{
@@ -143,33 +150,36 @@ func TestGetOrgCredentials(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
 			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
 				WithIndex(&dockyardsv1.Organization{}, index.UIDField, index.ByUID).
 				WithIndex(&corev1.Secret{}, index.SecretTypeField, index.BySecretType).
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Params = []gin.Param{
-				{Key: "org", Value: tc.organizationID},
+			u := url.URL{
+				Path: path.Join("/v1/orgs", tc.organizationID, "credentials"),
 			}
-			c.Set("sub", tc.sub)
 
-			h.GetOrgCredentials(c)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+			r.SetPathValue("organizationID", tc.organizationID)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.GetOrgCredentials(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {

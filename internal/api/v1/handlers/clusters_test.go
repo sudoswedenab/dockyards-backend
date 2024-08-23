@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
-	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -218,8 +218,6 @@ func TestPostOrgClusters(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -229,7 +227,6 @@ func TestPostOrgClusters(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
@@ -238,23 +235,19 @@ func TestPostOrgClusters(t *testing.T) {
 				t.Fatalf("unexpected error marshalling test cluster options: %s", err)
 			}
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Params = []gin.Param{
-				{Key: "org", Value: tc.organizationName},
-			}
-			c.Set("sub", tc.sub)
-
 			u := url.URL{
 				Path: path.Join("/v1/orgs", tc.organizationName, "clusters"),
 			}
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(b))
-			if err != nil {
-				t.Fatalf("unexpected error preparing test request: %s", err)
-			}
 
-			h.PostOrgClusters(c)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+			r.SetPathValue("organizationID", tc.organizationName)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.PostOrgClusters(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusCreated {
@@ -475,8 +468,6 @@ func TestPostOrgClustersErrors(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
@@ -486,7 +477,6 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
 
@@ -495,23 +485,19 @@ func TestPostOrgClustersErrors(t *testing.T) {
 				t.Fatalf("unexpected error marshalling test cluster options: %s", err)
 			}
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Params = []gin.Param{
-				{Key: "org", Value: tc.organizationName},
-			}
-			c.Set("sub", tc.sub)
-
 			u := url.URL{
 				Path: path.Join("/v1/orgs", tc.organizationName, "clusters"),
 			}
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(b))
-			if err != nil {
-				t.Fatalf("unexpected error preparing test request: %s", err)
-			}
 
-			h.PostOrgClusters(c)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+			r.SetPathValue("organizationID", tc.organizationName)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.PostOrgClusters(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
@@ -577,8 +563,6 @@ func TestDeleteCluster(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -588,29 +572,22 @@ func TestDeleteCluster(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
-
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Params = []gin.Param{
-				{Key: "clusterID", Value: tc.clusterID},
-			}
-			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID),
 			}
 
-			var err error
-			c.Request, err = http.NewRequest(http.MethodDelete, u.String(), nil)
-			if err != nil {
-				t.Fatalf("unexpected error preparing test request: %s", err)
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-			h.DeleteCluster(c)
+			r.SetPathValue("clusterID", tc.clusterID)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.DeleteCluster(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusAccepted {
@@ -687,8 +664,6 @@ func TestDeleteClusterErrors(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
@@ -698,29 +673,22 @@ func TestDeleteClusterErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
-
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Params = []gin.Param{
-				{Key: "clusterID", Value: tc.clusterID},
-			}
-			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID),
 			}
 
-			var err error
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
-			if err != nil {
-				t.Fatalf("unexpected error preparing test request: %s", err)
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-			h.DeleteCluster(c)
+			r.SetPathValue("clusterID", tc.clusterID)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.DeleteCluster(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
@@ -834,43 +802,35 @@ func TestGetCluster(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 			scheme := scheme.Scheme
 			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).WithLists(tc.lists...).
 				WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).
 				WithIndex(&dockyardsv1.NodePool{}, index.OwnerReferencesField, index.ByOwnerReferences).
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
-
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Params = []gin.Param{
-				{Key: "clusterID", Value: tc.clusterID},
-			}
-			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID),
 			}
 
-			var err error
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
-			if err != nil {
-				t.Fatalf("unexpected error preparing test request: %s", err)
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-			h.GetCluster(c)
+			r.SetPathValue("clusterID", tc.clusterID)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.GetCluster(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
@@ -963,8 +923,6 @@ func TestGetClusterErrors(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
@@ -978,29 +936,22 @@ func TestGetClusterErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
-
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Params = []gin.Param{
-				{Key: "clusterID", Value: tc.clusterID},
-			}
-			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID),
 			}
 
-			var err error
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
-			if err != nil {
-				t.Fatalf("unexpected error preparing test request: %s", err)
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-			h.GetCluster(c)
+			r.SetPathValue("clusterID", tc.clusterID)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.GetCluster(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
@@ -1090,8 +1041,6 @@ func TestGetClusterKubeconfig(t *testing.T) {
 		},
 	}
 
-	gin.SetMode(gin.TestMode)
-
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -1123,28 +1072,22 @@ func TestGetClusterKubeconfig(t *testing.T) {
 			}
 
 			h := handler{
-				logger: logger,
 				Client: c,
 			}
-
-			w := httptest.NewRecorder()
-			ginContext, _ := gin.CreateTestContext(w)
-
-			ginContext.Params = []gin.Param{
-				{Key: "clusterID", Value: tc.clusterID},
-			}
-			ginContext.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID, "kubeconfig"),
 			}
 
-			ginContext.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
-			if err != nil {
-				t.Fatalf("unexpected error preparing test request: %s", err)
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-			h.GetClusterKubeconfig(ginContext)
+			r.SetPathValue("clusterID", tc.clusterID)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.GetClusterKubeconfig(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
@@ -1268,29 +1211,22 @@ func TestGetClusterKubeconfigErrors(t *testing.T) {
 				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
-
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Params = []gin.Param{
-				{Key: "clusterID", Value: tc.clusterID},
-			}
-			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters", tc.clusterID, "kubeconfig"),
 			}
 
-			var err error
-			c.Request, err = http.NewRequest(http.MethodPost, u.String(), nil)
-			if err != nil {
-				t.Fatalf("unexpected error preparing test request: %s", err)
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-			h.GetClusterKubeconfig(c)
+			r.SetPathValue("clusterID", tc.clusterID)
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.GetClusterKubeconfig(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
@@ -1397,33 +1333,31 @@ func TestGetClusters(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 			scheme := scheme.Scheme
 			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&dockyardsv1.Organization{}, index.MemberRefsIndexKey, index.MemberRefsIndexer).Build()
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.Organization{}, index.MemberReferencesField, index.ByMemberReferences).
+				Build()
 
 			h := handler{
-				logger: logger,
 				Client: fakeClient,
 			}
-
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-
-			c.Set("sub", tc.sub)
 
 			u := url.URL{
 				Path: path.Join("/v1/clusters"),
 			}
 
-			var err error
-			c.Request, err = http.NewRequest(http.MethodGet, u.String(), nil)
-			if err != nil {
-				t.Fatalf("unexpected error preparing test request: %s", err)
-			}
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-			h.GetClusters(c)
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.GetClusters(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
