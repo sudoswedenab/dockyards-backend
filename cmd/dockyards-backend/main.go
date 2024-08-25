@@ -207,9 +207,12 @@ func main() {
 	}
 
 	go func() {
-		interval := time.Second * time.Duration(collectMetricsInterval)
+		synced := mgr.GetCache().WaitForCacheSync(ctx)
+		if !synced {
+			logger.Warn("collecting metrics before cache is synced")
+		}
 
-		logger.Debug("creating prometheus metrics goroutine", "interval", interval)
+		interval := time.Second * time.Duration(collectMetricsInterval)
 
 		err := prometheusMetrics.CollectMetrics()
 		if err != nil {
