@@ -52,5 +52,6 @@ const (
 )
 
 const (
+	// Deprecated: superseded by CredentialTemplate type
 	FeatureCloudDirectorAPITokens = "cloud-director-api-tokens"
 )
