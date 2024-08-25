@@ -20,6 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/cors"
 	"github.com/spf13/pflag"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -86,13 +87,13 @@ func main() {
 	var collectMetricsInterval int
 	var enableWebhooks bool
 	var metricsBindAddress string
-	var allowOrigins []string
+	var allowedOrigins []string
 	var dockyardsNamespace string
 	pflag.StringVar(&logLevel, "log-level", "info", "log level")
 	pflag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
 	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
-	pflag.StringSliceVar(&allowOrigins, "allow-origin", []string{"http://localhost", "http://localhost:8000"}, "allow origin")
+	pflag.StringSliceVar(&allowedOrigins, "allow-origin", []string{"http://localhost", "http://localhost:8000"}, "allow origin")
 	pflag.StringVar(&dockyardsNamespace, "dockyards-namespace", "dockyards", "dockyards namespace")
 	pflag.Parse()
 
@@ -246,8 +247,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	corsOptions := cors.Options{
+		AllowedOrigins:   allowedOrigins,
+		AllowedMethods:   []string{http.MethodPost, http.MethodGet, http.MethodPut, http.MethodDelete},
+		AllowedHeaders:   []string{"Authorization", "Content-Type", "Origin"},
+		AllowCredentials: true,
+		ExposedHeaders:   []string{"Content-Length"},
+	}
+
+	corsHandler := cors.New(corsOptions)
+
+	publicHandler := corsHandler.Handler(publicMux)
+
 	publicServer := &http.Server{
-		Handler: publicMux,
+		Handler: publicHandler,
 		Addr:    ":9000",
 	}
 
