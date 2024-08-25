@@ -15,3 +15,4 @@ resources:
 - dockyards.io_clustertemplates.yaml
 - dockyards.io_features.yaml
 - dockyards.io_verificationrequests.yaml
+- dockyards.io_credentialtemplates.yaml
