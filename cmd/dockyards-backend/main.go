@@ -135,7 +135,7 @@ func main() {
 		},
 	}
 
-	manager, err := ctrl.NewManager(kubeconfig, managerOptions)
+	mgr, err := ctrl.NewManager(kubeconfig, managerOptions)
 	if err != nil {
 		logger.Error("error creating manager", "err", err)
 
@@ -144,7 +144,7 @@ func main() {
 
 	ctx := context.Background()
 
-	err = manager.GetFieldIndexer().IndexField(ctx, &dockyardsv1.User{}, index.EmailField, index.ByEmail)
+	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.User{}, index.EmailField, index.ByEmail)
 	if err != nil {
 		logger.Error("error adding email indexer to manager", "err", err)
 
@@ -152,7 +152,7 @@ func main() {
 	}
 
 	for _, object := range []client.Object{&v1alpha1.App{}} {
-		err = manager.GetFieldIndexer().IndexField(ctx, object, v1alpha1index.UIDIndexKey, v1alpha1index.UIDIndexer)
+		err = mgr.GetFieldIndexer().IndexField(ctx, object, v1alpha1index.UIDIndexKey, v1alpha1index.UIDIndexer)
 		if err != nil {
 			logger.Error("error adding uid indexer to manager", "err", err)
 
@@ -161,7 +161,7 @@ func main() {
 	}
 
 	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Cluster{}, &dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &corev1.Secret{}, &dockyardsv1.Deployment{}, &dockyardsv1.Organization{}} {
-		err = manager.GetFieldIndexer().IndexField(ctx, object, index.UIDField, index.ByUID)
+		err = mgr.GetFieldIndexer().IndexField(ctx, object, index.UIDField, index.ByUID)
 		if err != nil {
 			logger.Error("error adding uid indexer to manager", "err", err)
 
@@ -169,7 +169,7 @@ func main() {
 		}
 	}
 
-	err = manager.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Organization{}, index.MemberReferencesField, index.ByMemberReferences)
+	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Organization{}, index.MemberReferencesField, index.ByMemberReferences)
 	if err != nil {
 		logger.Error("error adding member refs indexer to manager", "err", err)
 
@@ -177,7 +177,7 @@ func main() {
 	}
 
 	for _, object := range []client.Object{&dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &dockyardsv1.Cluster{}, &dockyardsv1.Deployment{}} {
-		err = manager.GetFieldIndexer().IndexField(ctx, object, index.OwnerReferencesField, index.ByOwnerReferences)
+		err = mgr.GetFieldIndexer().IndexField(ctx, object, index.OwnerReferencesField, index.ByOwnerReferences)
 		if err != nil {
 			logger.Error("error adding owner refs indexer to manager", "err", err)
 
@@ -185,7 +185,7 @@ func main() {
 		}
 	}
 
-	err = manager.GetFieldIndexer().IndexField(ctx, &corev1.Secret{}, index.SecretTypeField, index.BySecretType)
+	err = mgr.GetFieldIndexer().IndexField(ctx, &corev1.Secret{}, index.SecretTypeField, index.BySecretType)
 	if err != nil {
 		logger.Error("error adding secret type indexer to manager", "err", err)
 
@@ -197,7 +197,7 @@ func main() {
 	prometheusMetricsOptions := []metrics.PrometheusMetricsOption{
 		metrics.WithLogger(logger),
 		metrics.WithPrometheusRegistry(registry),
-		metrics.WithManager(manager),
+		metrics.WithManager(mgr),
 	}
 
 	prometheusMetrics, err := metrics.NewPrometheusMetrics(prometheusMetricsOptions...)
@@ -233,7 +233,7 @@ func main() {
 	}
 
 	handlerOptions := []handlers.HandlerOption{
-		handlers.WithManager(manager),
+		handlers.WithManager(mgr),
 		handlers.WithNamespace(dockyardsNamespace),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
 		handlers.WithLogger(logger),
@@ -298,8 +298,8 @@ func main() {
 	}()
 
 	err = (&controller.OrganizationReconciler{
-		Client: manager.GetClient(),
-	}).SetupWithManager(manager)
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr)
 	if err != nil {
 		logger.Error("error creating new organization reconciler", "err", err)
 
@@ -307,9 +307,9 @@ func main() {
 	}
 
 	err = (&controller.FeatureReconciler{
-		Client:             manager.GetClient(),
+		Client:             mgr.GetClient(),
 		DockyardsNamespace: dockyardsNamespace,
-	}).SetupWithManager(manager)
+	}).SetupWithManager(mgr)
 	if err != nil {
 		logger.Error("error creating new feature reconciler", "err", err)
 
@@ -317,9 +317,9 @@ func main() {
 	}
 
 	err = (&controller.ClusterReconciler{
-		Client:             manager.GetClient(),
+		Client:             mgr.GetClient(),
 		DockyardsNamespace: dockyardsNamespace,
-	}).SetupWithManager(manager)
+	}).SetupWithManager(mgr)
 	if err != nil {
 		logger.Error("error creating new cluster reconciler", "err", err)
 
@@ -327,7 +327,7 @@ func main() {
 	}
 
 	if enableWebhooks {
-		err := setupWebhooks(manager)
+		err := setupWebhooks(mgr)
 		if err != nil {
 			logger.Error("error creating webhooks", "err", err)
 
@@ -335,7 +335,7 @@ func main() {
 		}
 	}
 
-	err = manager.Start(context.Background())
+	err = mgr.Start(context.Background())
 	if err != nil {
 		logger.Error("error starting manager", "err", err)
 

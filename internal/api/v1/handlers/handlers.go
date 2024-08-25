@@ -25,8 +25,8 @@ type handler struct {
 
 type HandlerOption func(*handler)
 
-func WithManager(manager ctrl.Manager) HandlerOption {
-	controllerClient := manager.GetClient()
+func WithManager(mgr ctrl.Manager) HandlerOption {
+	controllerClient := mgr.GetClient()
 
 	return func(h *handler) {
 		h.Client = controllerClient

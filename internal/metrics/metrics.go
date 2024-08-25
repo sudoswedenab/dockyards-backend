@@ -40,8 +40,8 @@ func WithPrometheusRegistry(registry *prometheus.Registry) PrometheusMetricsOpti
 	}
 }
 
-func WithManager(manager ctrl.Manager) PrometheusMetricsOption {
-	controllerClient := manager.GetClient()
+func WithManager(mgr ctrl.Manager) PrometheusMetricsOption {
+	controllerClient := mgr.GetClient()
 
 	return func(m *PrometheusMetrics) {
 		m.controllerClient = controllerClient
