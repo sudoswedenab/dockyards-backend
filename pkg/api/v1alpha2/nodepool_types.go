@@ -10,6 +10,8 @@ const (
 	NodePoolKind = "NodePool"
 )
 
+const StorageResourceTypeHostPath = "HostPath"
+
 type NodePoolStorageResource struct {
 	Name     string            `json:"name"`
 	Type     string            `json:"type,omitempty"`
