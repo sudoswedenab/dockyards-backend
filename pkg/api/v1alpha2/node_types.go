@@ -23,9 +23,10 @@ type NodeStatus struct {
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
-// +kubebuilder:printcolumn:name="CPU",type=string,JSONPath=".status.resources.cpu"
-// +kubebuilder:printcolumn:name="Memory",type=string,JSONPath=".status.resources.memory"
-// +kubebuilder:printcolumn:name="Storage",type=string,JSONPath=".status.resources.storage"
+// +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
+// +kubebuilder:printcolumn:name="CPU",type=string,priority=1,JSONPath=".status.resources.cpu"
+// +kubebuilder:printcolumn:name="Memory",type=string,priority=1,JSONPath=".status.resources.memory"
+// +kubebuilder:printcolumn:name="Storage",type=string,priority=1,JSONPath=".status.resources.storage"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type Node struct {
 	metav1.TypeMeta   `json:",inline"`
