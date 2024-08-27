@@ -27,8 +27,9 @@ type DeploymentStatus struct {
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
+// +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
 // +kubebuilder:printcolumn:name="Provenience",type=string,JSONPath=".spec.provenience"
-// +kubebuilder:printcolumn:name="ClusterComponent",type=boolean,JSONPath=".spec.clusterComponent"
+// +kubebuilder:printcolumn:name="ClusterComponent",type=boolean,priority=1,JSONPath=".spec.clusterComponent"
 // +kubebuilder:printcolumn:name="URL",type=string,priority=1,JSONPath=".status.urls[0]"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type Deployment struct {

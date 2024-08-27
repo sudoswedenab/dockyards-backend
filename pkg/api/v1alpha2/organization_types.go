@@ -36,6 +36,7 @@ type OrganizationStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
+// +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
 // +kubebuilder:printcolumn:name="NamespaceReference",type=string,JSONPath=".status.namespaceRef"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type Organization struct {

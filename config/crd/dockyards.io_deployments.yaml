@@ -152,11 +152,15 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="Ready")].status
       name: Ready
       type: string
+    - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+      name: Reason
+      type: string
     - jsonPath: .spec.provenience
       name: Provenience
       type: string
     - jsonPath: .spec.clusterComponent
       name: ClusterComponent
+      priority: 1
       type: boolean
     - jsonPath: .status.urls[0]
       name: URL
