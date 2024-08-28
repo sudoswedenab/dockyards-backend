@@ -118,6 +118,7 @@ func TestGetClusterOptions(t *testing.T) {
 						DiskSize: ptr.To("123G"),
 					},
 				},
+				StorageResourceTypes: []string{dockyardsv1.StorageResourceTypeHostPath},
 			},
 		},
 		{
@@ -192,6 +193,7 @@ func TestGetClusterOptions(t *testing.T) {
 						DiskSize: ptr.To("123Gi"),
 					},
 				},
+				StorageResourceTypes: []string{dockyardsv1.StorageResourceTypeHostPath},
 			},
 		},
 	}

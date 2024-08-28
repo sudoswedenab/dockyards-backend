@@ -100,10 +100,15 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 
 	recommendedNodePools := getRecommendedNodePools(&clusterTemplate)
 
+	storageResourceTypes := []string{
+		dockyardsv1.StorageResourceTypeHostPath,
+	}
+
 	options := v1.Options{
-		SingleNode:      false,
-		Version:         release.Status.Versions,
-		NodePoolOptions: recommendedNodePools,
+		SingleNode:           false,
+		Version:              release.Status.Versions,
+		NodePoolOptions:      recommendedNodePools,
+		StorageResourceTypes: storageResourceTypes,
 	}
 
 	b, err := json.Marshal(&options)
