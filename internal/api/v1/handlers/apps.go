@@ -30,7 +30,7 @@ func (h *handler) GetApps(w http.ResponseWriter, r *http.Request) {
 	apps := make([]v1.App, len(appList.Items))
 	for i, app := range appList.Items {
 		apps[i] = v1.App{
-			Id:   string(app.UID),
+			ID:   string(app.UID),
 			Name: app.Name,
 		}
 
@@ -92,7 +92,7 @@ func (h *handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	app := appList.Items[0]
 
 	v1App := v1.App{
-		Id:   string(app.UID),
+		ID:   string(app.UID),
 		Name: app.Name,
 	}
 
@@ -118,7 +118,7 @@ func (h *handler) GetApp(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if option.JSONPointer != "" {
-				stepOptions[j].JsonPointer = &step.Options[j].JSONPointer
+				stepOptions[j].JSONPointer = &step.Options[j].JSONPointer
 			}
 
 			if option.Type != "" {

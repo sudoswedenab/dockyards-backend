@@ -30,7 +30,7 @@ type App struct {
 	AppSteps    *[]AppStep `json:"app_steps,omitempty"`
 	Description *string    `json:"description,omitempty"`
 	Icon        *string    `json:"icon,omitempty"`
-	Id          string     `json:"id"`
+	ID          string     `json:"id"`
 	Name        string     `json:"name"`
 }
 
@@ -43,7 +43,7 @@ type AppStep struct {
 // Cluster defines model for cluster.
 type Cluster struct {
 	CreatedAt    time.Time  `json:"created_at"`
-	Id           string     `json:"id"`
+	ID           string     `json:"id"`
 	Name         string     `json:"name"`
 	NodeCount    int        `json:"node_count"`
 	NodePools    []NodePool `json:"node_pools"`
@@ -66,28 +66,28 @@ type ClusterOptions struct {
 // ClusterOverview defines model for cluster_overview.
 type ClusterOverview struct {
 	Deployments *[]DeploymentOverview `json:"deployments,omitempty"`
-	Id          string                `json:"id"`
+	ID          string                `json:"id"`
 	Name        string                `json:"name"`
 }
 
 // Credential defines model for credential.
 type Credential struct {
 	Data         *map[string]interface{} `json:"data,omitempty"`
-	Id           string                  `json:"id"`
+	ID           string                  `json:"id"`
 	Name         string                  `json:"name"`
 	Organization string                  `json:"organization"`
 }
 
 // Deployment defines model for deployment.
 type Deployment struct {
-	ClusterId      string                  `json:"cluster_id"`
+	ClusterID      string                  `json:"cluster_id"`
 	ContainerImage *string                 `json:"container_image,omitempty"`
 	CredentialName *string                 `json:"credential_name,omitempty"`
 	HelmChart      *string                 `json:"helm_chart,omitempty"`
 	HelmRepository *string                 `json:"helm_repository,omitempty"`
 	HelmValues     *map[string]interface{} `json:"helm_values,omitempty"`
 	HelmVersion    *string                 `json:"helm_version,omitempty"`
-	Id             string                  `json:"id"`
+	ID             string                  `json:"id"`
 	Kustomize      *map[string][]byte      `json:"kustomize,omitempty"`
 	Name           *string                 `json:"name,omitempty"`
 	Namespace      *string                 `json:"namespace,omitempty"`
@@ -102,16 +102,16 @@ type DeploymentType string
 
 // DeploymentOverview defines model for deployment_overview.
 type DeploymentOverview struct {
-	Id   string `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
 // DeploymentStatus defines model for deployment_status.
 type DeploymentStatus struct {
 	CreatedAt    time.Time               `json:"created_at"`
-	DeploymentId string                  `json:"deployment_id"`
+	DeploymentID string                  `json:"deployment_id"`
 	Health       *DeploymentStatusHealth `json:"health,omitempty"`
-	Id           string                  `json:"id"`
+	ID           string                  `json:"id"`
 	State        *string                 `json:"state,omitempty"`
 	Urls         *[]string               `json:"urls,omitempty"`
 }
@@ -127,24 +127,24 @@ type Login struct {
 
 // Node defines model for node.
 type Node struct {
-	Id    string `json:"id"`
+	ID    string `json:"id"`
 	Name  string `json:"name"`
 	State string `json:"state"`
 }
 
 // NodePool defines model for node_pool.
 type NodePool struct {
-	ClusterId                  string             `json:"cluster_id"`
+	ClusterID                  string             `json:"cluster_id"`
 	ControlPlane               *bool              `json:"control_plane,omitempty"`
 	ControlPlaneComponentsOnly *bool              `json:"control_plane_components_only,omitempty"`
-	CpuCount                   int                `json:"cpu_count"`
+	CPUCount                   int                `json:"cpu_count"`
 	DiskSize                   string             `json:"disk_size"`
-	Id                         string             `json:"id"`
+	ID                         string             `json:"id"`
 	LoadBalancer               *bool              `json:"load_balancer,omitempty"`
 	Name                       string             `json:"name"`
 	Nodes                      []Node             `json:"nodes"`
 	Quantity                   int                `json:"quantity"`
-	RamSize                    string             `json:"ram_size"`
+	RAMSize                    string             `json:"ram_size"`
 	StorageResources           *[]StorageResource `json:"storage_resources,omitempty"`
 }
 
@@ -152,12 +152,12 @@ type NodePool struct {
 type NodePoolOptions struct {
 	ControlPlane               *bool              `json:"control_plane,omitempty"`
 	ControlPlaneComponentsOnly *bool              `json:"control_plane_components_only,omitempty"`
-	CpuCount                   *int               `json:"cpu_count,omitempty"`
+	CPUCount                   *int               `json:"cpu_count,omitempty"`
 	DiskSize                   *string            `json:"disk_size,omitempty"`
 	LoadBalancer               *bool              `json:"load_balancer,omitempty"`
 	Name                       string             `json:"name"`
 	Quantity                   int                `json:"quantity"`
-	RamSize                    *string            `json:"ram_size,omitempty"`
+	RAMSize                    *string            `json:"ram_size,omitempty"`
 	StorageResources           *[]StorageResource `json:"storage_resources,omitempty"`
 }
 
@@ -172,7 +172,7 @@ type Options struct {
 type Organization struct {
 	CreatedAt   time.Time `json:"created_at"`
 	DisplayName *string   `json:"display_name,omitempty"`
-	Id          string    `json:"id"`
+	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -180,7 +180,7 @@ type Organization struct {
 // OrganizationOverview defines model for organization_overview.
 type OrganizationOverview struct {
 	Clusters *[]ClusterOverview `json:"clusters,omitempty"`
-	Id       string             `json:"id"`
+	ID       string             `json:"id"`
 	Name     string             `json:"name"`
 	Users    *[]UserOverview    `json:"users,omitempty"`
 }
@@ -195,7 +195,7 @@ type StepOption struct {
 	Default     *string   `json:"default,omitempty"`
 	DisplayName *string   `json:"display_name,omitempty"`
 	Hidden      *bool     `json:"hidden,omitempty"`
-	JsonPointer *string   `json:"json_pointer,omitempty"`
+	JSONPointer *string   `json:"json_pointer,omitempty"`
 	Managed     *bool     `json:"managed,omitempty"`
 	Selection   *[]string `json:"selection,omitempty"`
 	Tags        *[]string `json:"tags,omitempty"`
@@ -220,7 +220,7 @@ type Tokens struct {
 type User struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	Email     string     `json:"email"`
-	Id        string     `json:"id"`
+	ID        string     `json:"id"`
 	Name      string     `json:"name"`
 	Password  *string    `json:"password,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
@@ -229,7 +229,7 @@ type User struct {
 // UserOverview defines model for user_overview.
 type UserOverview struct {
 	Email string `json:"email"`
-	Id    string `json:"id"`
+	ID    string `json:"id"`
 }
 
 // CreateDeploymentJSONRequestBody defines body for CreateDeployment for application/json ContentType.

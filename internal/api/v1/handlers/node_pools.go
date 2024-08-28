@@ -26,10 +26,10 @@ import (
 
 func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyardsv1.Cluster, nodeList *dockyardsv1.NodeList) *v1.NodePool {
 	v1NodePool := v1.NodePool{
-		Id:        string(nodePool.UID),
-		ClusterId: string(cluster.UID),
+		ID:        string(nodePool.UID),
+		ClusterID: string(cluster.UID),
 		Name:      nodePool.Name,
-		CpuCount:  int(nodePool.Status.Resources.Cpu().Value()),
+		CPUCount:  int(nodePool.Status.Resources.Cpu().Value()),
 	}
 
 	resourceStorage := nodePool.Status.Resources.Storage()
@@ -39,7 +39,7 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyard
 
 	resourceMemory := nodePool.Status.Resources.Memory()
 	if !resourceMemory.IsZero() {
-		v1NodePool.RamSize = resourceMemory.String()
+		v1NodePool.RAMSize = resourceMemory.String()
 	}
 
 	if nodePool.Spec.Replicas != nil {
@@ -50,7 +50,7 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyard
 		nodes := make([]v1.Node, len(nodeList.Items))
 		for i, node := range nodeList.Items {
 			nodes[i] = v1.Node{
-				Id:   string(node.UID),
+				ID:   string(node.UID),
 				Name: node.Name,
 			}
 		}
@@ -287,8 +287,8 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 
 	resources := make(corev1.ResourceList)
 
-	if nodePoolOptions.RamSize != nil {
-		memory, err := resource.ParseQuantity(*nodePoolOptions.RamSize)
+	if nodePoolOptions.RAMSize != nil {
+		memory, err := resource.ParseQuantity(*nodePoolOptions.RAMSize)
 		if err != nil {
 			logger.Debug("error parsing ram size quantity", "err", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
@@ -299,8 +299,8 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 		resources[corev1.ResourceMemory] = memory
 	}
 
-	if nodePoolOptions.CpuCount != nil {
-		cpu := resource.NewQuantity(int64(*nodePoolOptions.CpuCount), resource.DecimalSI)
+	if nodePoolOptions.CPUCount != nil {
+		cpu := resource.NewQuantity(int64(*nodePoolOptions.CPUCount), resource.DecimalSI)
 		resources[corev1.ResourceCPU] = *cpu
 	}
 

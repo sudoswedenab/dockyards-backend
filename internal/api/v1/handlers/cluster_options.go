@@ -48,12 +48,12 @@ func getRecommendedNodePools(clusterTemplate *dockyardsv1.ClusterTemplate) []v1.
 
 		resourceCPU := nodePoolTemplate.Spec.Resources.Cpu()
 		if resourceCPU != nil && resourceCPU.Value() != 0 {
-			nodePoolOptions[i].CpuCount = ptr.To(int(resourceCPU.Value()))
+			nodePoolOptions[i].CPUCount = ptr.To(int(resourceCPU.Value()))
 		}
 
 		resourceMemory := nodePoolTemplate.Spec.Resources.Memory()
 		if !resourceMemory.IsZero() {
-			nodePoolOptions[i].RamSize = ptr.To(resourceMemory.String())
+			nodePoolOptions[i].RAMSize = ptr.To(resourceMemory.String())
 		}
 
 		resourceStorage := nodePoolTemplate.Spec.Resources.Storage()

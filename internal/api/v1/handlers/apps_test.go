@@ -51,7 +51,7 @@ func TestGetApps(t *testing.T) {
 			},
 			expected: []v1.App{
 				{
-					Id:   "86ea7a7c-2c77-49a8-9af2-a36be89aa031",
+					ID:   "86ea7a7c-2c77-49a8-9af2-a36be89aa031",
 					Name: "test",
 				},
 			},
@@ -88,15 +88,15 @@ func TestGetApps(t *testing.T) {
 			},
 			expected: []v1.App{
 				{
-					Id:   "7a8991b6-0fc8-450b-b97b-d39becc24d89",
+					ID:   "7a8991b6-0fc8-450b-b97b-d39becc24d89",
 					Name: "test1",
 				},
 				{
-					Id:   "3f09378e-c762-4725-9c28-443055297e75",
+					ID:   "3f09378e-c762-4725-9c28-443055297e75",
 					Name: "test2",
 				},
 				{
-					Id:          "3f72e332-2148-44f3-9266-9f4793c5cf7f",
+					ID:          "3f72e332-2148-44f3-9266-9f4793c5cf7f",
 					Name:        "test3",
 					Description: ptr.To("description"),
 					Icon:        ptr.To("http://localhost/icon.png"),
@@ -210,7 +210,7 @@ func TestGetApp(t *testing.T) {
 				},
 			},
 			expected: v1.App{
-				Id:   "7d5fcf7d-e7aa-43da-83e7-700ffc37748e",
+				ID:   "7d5fcf7d-e7aa-43da-83e7-700ffc37748e",
 				Name: "test",
 				AppSteps: &[]v1.AppStep{
 					{
@@ -218,32 +218,32 @@ func TestGetApp(t *testing.T) {
 						StepOptions: &[]v1.StepOption{
 							{
 								DisplayName: ptr.To("Helm Chart"),
-								JsonPointer: ptr.To("/helm_chart"),
+								JSONPointer: ptr.To("/helm_chart"),
 								Default:     ptr.To("test"),
 							},
 							{
 								DisplayName: ptr.To("Helm Repository"),
-								JsonPointer: ptr.To("/helm_repository"),
+								JSONPointer: ptr.To("/helm_repository"),
 								Default:     ptr.To("http://localhost/chart-repository"),
 							},
 							{
 								DisplayName: ptr.To("Helm Version"),
-								JsonPointer: ptr.To("/helm_version"),
+								JSONPointer: ptr.To("/helm_version"),
 								Default:     ptr.To("1.2.3"),
 							},
 							{
 								DisplayName: ptr.To("Helm Ingress Enabled"),
-								JsonPointer: ptr.To("/helm_values/ingress/enabled"),
+								JSONPointer: ptr.To("/helm_values/ingress/enabled"),
 								Default:     ptr.To("true"),
 								Type:        ptr.To("boolean"),
 							},
 							{
 								DisplayName: ptr.To("Helm Ingress Host"),
-								JsonPointer: ptr.To("/helm_values/ingress/host"),
+								JSONPointer: ptr.To("/helm_values/ingress/host"),
 								Default:     ptr.To("test"),
 							},
 							{
-								JsonPointer: ptr.To("/helm_values/annotations/test"),
+								JSONPointer: ptr.To("/helm_values/annotations/test"),
 								Default:     ptr.To("yes"),
 								Hidden:      ptr.To(true),
 							},
@@ -301,7 +301,7 @@ func TestGetApp(t *testing.T) {
 				},
 			},
 			expected: v1.App{
-				Id:   "e4c48f89-dcaf-48e6-b27e-04c34fb651d7",
+				ID:   "e4c48f89-dcaf-48e6-b27e-04c34fb651d7",
 				Name: "test",
 				AppSteps: &[]v1.AppStep{
 					{

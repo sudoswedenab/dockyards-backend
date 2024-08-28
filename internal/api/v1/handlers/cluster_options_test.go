@@ -103,8 +103,8 @@ func TestGetClusterOptions(t *testing.T) {
 						Name:         "cp",
 						Quantity:     3,
 						ControlPlane: ptr.To(true),
-						CpuCount:     ptr.To(2),
-						RamSize:      ptr.To("4Gi"),
+						CPUCount:     ptr.To(2),
+						RAMSize:      ptr.To("4Gi"),
 					},
 					{
 						Name:                       "lb",
@@ -184,7 +184,7 @@ func TestGetClusterOptions(t *testing.T) {
 						Name:         "cp",
 						Quantity:     1,
 						ControlPlane: ptr.To(true),
-						RamSize:      ptr.To("4Gi"),
+						RAMSize:      ptr.To("4Gi"),
 					},
 					{
 						Name:     "w",

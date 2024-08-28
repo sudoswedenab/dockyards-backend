@@ -786,14 +786,14 @@ func TestGetCluster(t *testing.T) {
 			},
 			expected: v1.Cluster{
 				Name:         "test",
-				Id:           "26836276-22c6-41bc-bb40-78cdf141e302",
+				ID:           "26836276-22c6-41bc-bb40-78cdf141e302",
 				Organization: "test-org",
 				CreatedAt:    now.Time.Truncate(time.Second),
 				NodePools: []v1.NodePool{
 					{
-						Id:        "14edb8e7-b76a-48c7-bfd8-81588d243c33",
+						ID:        "14edb8e7-b76a-48c7-bfd8-81588d243c33",
 						Name:      "test-pool",
-						ClusterId: "26836276-22c6-41bc-bb40-78cdf141e302",
+						ClusterID: "26836276-22c6-41bc-bb40-78cdf141e302",
 					},
 				},
 				State:   "active",
@@ -1296,7 +1296,7 @@ func TestGetClusters(t *testing.T) {
 			},
 			expected: []v1.Cluster{
 				{
-					Id:           "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
+					ID:           "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
 					Name:         "cluster1",
 					Organization: "test",
 					CreatedAt:    now.Time.Truncate(time.Second),

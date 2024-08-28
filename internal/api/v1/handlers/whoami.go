@@ -46,7 +46,7 @@ func (h *handler) GetWhoami(w http.ResponseWriter, r *http.Request) {
 	user := userList.Items[0]
 
 	v1User := v1.User{
-		Id:    string(user.UID),
+		ID:    string(user.UID),
 		Name:  user.Name,
 		Email: user.Spec.Email,
 	}

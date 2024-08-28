@@ -87,7 +87,7 @@ func (h *handler) GetOrgCredentials(w http.ResponseWriter, r *http.Request) {
 
 	for i, secret := range secretList.Items {
 		v1Credentials[i] = v1.Credential{
-			Id:           string(secret.UID),
+			ID:           string(secret.UID),
 			Name:         secret.Name,
 			Organization: organization.Name,
 		}
@@ -197,7 +197,7 @@ func (h *handler) PostOrgCredentials(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createdCredential := v1.Credential{
-		Id:   string(secret.UID),
+		ID:   string(secret.UID),
 		Name: secret.Name,
 	}
 
@@ -352,7 +352,7 @@ func (h *handler) GetCredential(w http.ResponseWriter, r *http.Request) {
 	}
 
 	v1Credential := v1.Credential{
-		Id:           string(secret.UID),
+		ID:           string(secret.UID),
 		Name:         secret.Name,
 		Organization: organization.Name,
 	}

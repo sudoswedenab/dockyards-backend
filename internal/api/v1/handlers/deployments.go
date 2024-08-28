@@ -88,7 +88,7 @@ func (h *handler) PostClusterDeployments(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	v1Deployment.ClusterId = string(cluster.UID)
+	v1Deployment.ClusterID = string(cluster.UID)
 
 	err = utildeployment.AddNormalizedName(&v1Deployment)
 	if err != nil {
@@ -178,8 +178,8 @@ func (h *handler) PostClusterDeployments(w http.ResponseWriter, r *http.Request)
 	patch := client.MergeFrom(deployment.DeepCopy())
 
 	createdDeployment := v1.Deployment{
-		Id:        string(deployment.UID),
-		ClusterId: string(cluster.UID),
+		ID:        string(deployment.UID),
+		ClusterID: string(cluster.UID),
 		Name:      ptr.To(strings.TrimPrefix(deployment.Name, cluster.Name+"-")),
 		Namespace: &deployment.Spec.TargetNamespace,
 	}
@@ -444,8 +444,8 @@ func (h *handler) GetClusterDeployments(w http.ResponseWriter, r *http.Request) 
 		}
 
 		deployments[i] = v1.Deployment{
-			Id:          string(deployment.UID),
-			ClusterId:   string(cluster.UID),
+			ID:          string(deployment.UID),
+			ClusterID:   string(cluster.UID),
 			Provenience: &deployment.Spec.Provenience,
 			Name:        &name,
 			Type:        deploymentType,
@@ -563,7 +563,7 @@ func (h *handler) GetDeployment(w http.ResponseWriter, r *http.Request) {
 	deployment := deploymentList.Items[0]
 
 	v1Deployment := v1.Deployment{
-		Id:          string(deployment.UID),
+		ID:          string(deployment.UID),
 		Provenience: &deployment.Spec.Provenience,
 		Name:        &deployment.Name,
 	}

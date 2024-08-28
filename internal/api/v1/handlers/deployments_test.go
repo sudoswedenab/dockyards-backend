@@ -36,13 +36,13 @@ func TestGetDeployment(t *testing.T) {
 
 	tt := []struct {
 		name         string
-		deploymentId string
+		deploymentID string
 		lists        []client.ObjectList
 		expected     v1.Deployment
 	}{
 		{
 			name:         "test container image",
-			deploymentId: "9f72e4e6-412c-47a9-b3e8-8704e129db57",
+			deploymentID: "9f72e4e6-412c-47a9-b3e8-8704e129db57",
 			lists: []client.ObjectList{
 				&dockyardsv1.ContainerImageDeploymentList{
 					Items: []dockyardsv1.ContainerImageDeployment{
@@ -82,7 +82,7 @@ func TestGetDeployment(t *testing.T) {
 				},
 			},
 			expected: v1.Deployment{
-				Id:             "9f72e4e6-412c-47a9-b3e8-8704e129db57",
+				ID:             "9f72e4e6-412c-47a9-b3e8-8704e129db57",
 				Provenience:    ptr.To(dockyardsv1.ProvenienceUser),
 				Name:           ptr.To("test"),
 				ContainerImage: ptr.To("docker.io/library/nginx:latest"),
@@ -91,7 +91,7 @@ func TestGetDeployment(t *testing.T) {
 		},
 		{
 			name:         "test helm chart with values",
-			deploymentId: "5621d3b0-0d4e-4265-9d92-56a580bcdd74",
+			deploymentID: "5621d3b0-0d4e-4265-9d92-56a580bcdd74",
 			lists: []client.ObjectList{
 				&dockyardsv1.HelmDeploymentList{
 					Items: []dockyardsv1.HelmDeployment{
@@ -134,7 +134,7 @@ func TestGetDeployment(t *testing.T) {
 				},
 			},
 			expected: v1.Deployment{
-				Id:             "5621d3b0-0d4e-4265-9d92-56a580bcdd74",
+				ID:             "5621d3b0-0d4e-4265-9d92-56a580bcdd74",
 				Provenience:    ptr.To(dockyardsv1.ProvenienceDockyards),
 				Name:           ptr.To("test"),
 				HelmChart:      ptr.To("test-chart"),
@@ -148,7 +148,7 @@ func TestGetDeployment(t *testing.T) {
 		},
 		{
 			name:         "test deployment with single status",
-			deploymentId: "63f4b165-d9e4-4653-a2a4-92b14ff6153e",
+			deploymentID: "63f4b165-d9e4-4653-a2a4-92b14ff6153e",
 			lists: []client.ObjectList{
 				&dockyardsv1.ContainerImageDeploymentList{
 					Items: []dockyardsv1.ContainerImageDeployment{
@@ -198,7 +198,7 @@ func TestGetDeployment(t *testing.T) {
 				},
 			},
 			expected: v1.Deployment{
-				Id:             "63f4b165-d9e4-4653-a2a4-92b14ff6153e",
+				ID:             "63f4b165-d9e4-4653-a2a4-92b14ff6153e",
 				Provenience:    ptr.To(dockyardsv1.ProvenienceUser),
 				Name:           ptr.To("test"),
 				ContainerImage: ptr.To("test"),
@@ -211,7 +211,7 @@ func TestGetDeployment(t *testing.T) {
 		},
 		{
 			name:         "test kustomize",
-			deploymentId: "c12c2313-662c-4895-86c2-49837c845086",
+			deploymentID: "c12c2313-662c-4895-86c2-49837c845086",
 			lists: []client.ObjectList{
 				&dockyardsv1.KustomizeDeploymentList{
 					Items: []dockyardsv1.KustomizeDeployment{
@@ -253,7 +253,7 @@ func TestGetDeployment(t *testing.T) {
 				},
 			},
 			expected: v1.Deployment{
-				Id:          "c12c2313-662c-4895-86c2-49837c845086",
+				ID:          "c12c2313-662c-4895-86c2-49837c845086",
 				Provenience: ptr.To(dockyardsv1.ProvenienceUser),
 				Name:        ptr.To("test"),
 				Kustomize: ptr.To(map[string][]byte{
@@ -281,13 +281,13 @@ func TestGetDeployment(t *testing.T) {
 			}
 
 			u := url.URL{
-				Path: path.Join("/v1/deployments", tc.deploymentId),
+				Path: path.Join("/v1/deployments", tc.deploymentID),
 			}
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-			r.SetPathValue("deploymentID", tc.deploymentId)
+			r.SetPathValue("deploymentID", tc.deploymentID)
 
 			ctx := middleware.ContextWithLogger(context.Background(), logger)
 
@@ -316,13 +316,13 @@ func TestGetDeployment(t *testing.T) {
 func TestGetDeploymentErrors(t *testing.T) {
 	tt := []struct {
 		name         string
-		deploymentId string
+		deploymentID string
 		lists        []client.ObjectList
 		expected     int
 	}{
 		{
 			name:         "test missing",
-			deploymentId: "c1e4b45e-cfe3-4fc7-a73a-2a3908524271",
+			deploymentID: "c1e4b45e-cfe3-4fc7-a73a-2a3908524271",
 			expected:     http.StatusUnauthorized,
 		},
 	}
@@ -344,13 +344,13 @@ func TestGetDeploymentErrors(t *testing.T) {
 			}
 
 			u := url.URL{
-				Path: path.Join("/v1/deployments", tc.deploymentId),
+				Path: path.Join("/v1/deployments", tc.deploymentID),
 			}
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-			r.SetPathValue("deploymentID", tc.deploymentId)
+			r.SetPathValue("deploymentID", tc.deploymentID)
 
 			ctx := middleware.ContextWithLogger(context.Background(), logger)
 
@@ -367,13 +367,13 @@ func TestGetDeploymentErrors(t *testing.T) {
 func TestGetClusterDeployments(t *testing.T) {
 	tt := []struct {
 		name      string
-		clusterId string
+		clusterID string
 		lists     []client.ObjectList
 		expected  []v1.Deployment
 	}{
 		{
 			name:      "test single deployment",
-			clusterId: "9746d1c6-01d3-4d24-b552-7888d5119a7e",
+			clusterID: "9746d1c6-01d3-4d24-b552-7888d5119a7e",
 			lists: []client.ObjectList{
 				&dockyardsv1.OrganizationList{
 					Items: []dockyardsv1.Organization{
@@ -440,16 +440,16 @@ func TestGetClusterDeployments(t *testing.T) {
 			},
 			expected: []v1.Deployment{
 				{
-					Id:          "115590c5-c5f5-48d3-95b4-5fd6a1d3e77f",
+					ID:          "115590c5-c5f5-48d3-95b4-5fd6a1d3e77f",
 					Provenience: ptr.To(dockyardsv1.ProvenienceDockyards),
 					Name:        ptr.To("test"),
-					ClusterId:   "9746d1c6-01d3-4d24-b552-7888d5119a7e",
+					ClusterID:   "9746d1c6-01d3-4d24-b552-7888d5119a7e",
 				},
 			},
 		},
 		{
 			name:      "test multiple deployments",
-			clusterId: "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
+			clusterID: "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 			lists: []client.ObjectList{
 				&dockyardsv1.OrganizationList{
 					Items: []dockyardsv1.Organization{
@@ -567,22 +567,22 @@ func TestGetClusterDeployments(t *testing.T) {
 			},
 			expected: []v1.Deployment{
 				{
-					Id:          "9f5be117-7a87-4b14-8788-42b595cd7679",
+					ID:          "9f5be117-7a87-4b14-8788-42b595cd7679",
 					Provenience: ptr.To(dockyardsv1.ProvenienceDockyards),
 					Name:        ptr.To("test1"),
-					ClusterId:   "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
+					ClusterID:   "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 				},
 				{
-					Id:          "a7743bee-d4cc-4342-b7bd-d149fa26f38f",
+					ID:          "a7743bee-d4cc-4342-b7bd-d149fa26f38f",
 					Provenience: ptr.To(dockyardsv1.ProvenienceUser),
 					Name:        ptr.To("test3"),
-					ClusterId:   "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
+					ClusterID:   "f7fbef40-3ee7-45f3-af1d-5a810b074ef1",
 				},
 			},
 		},
 		{
 			name:      "test cluster without deployments",
-			clusterId: "d1359b49-9190-45f0-b586-b5240fea847c",
+			clusterID: "d1359b49-9190-45f0-b586-b5240fea847c",
 			lists: []client.ObjectList{
 				&dockyardsv1.OrganizationList{
 					Items: []dockyardsv1.Organization{
@@ -678,17 +678,17 @@ func TestGetClusterDeployments(t *testing.T) {
 		},
 		/*{
 			name:      "test with deployment status",
-			clusterId: "e96f28f3-a2f9-426c-8e9d-9ffdba4b8581",
+			clusterID: "e96f28f3-a2f9-426c-8e9d-9ffdba4b8581",
 			deployments: []v1.Deployment{
 				{
-					Id:        "2a0d2f6d-e3b1-4021-84cd-5c47918dc99e",
-					ClusterId: "e96f28f3-a2f9-426c-8e9d-9ffdba4b8581",
+					ID:        "2a0d2f6d-e3b1-4021-84cd-5c47918dc99e",
+					ClusterID: "e96f28f3-a2f9-426c-8e9d-9ffdba4b8581",
 				},
 			},
 			deploymentStatuses: []v1.DeploymentStatus{
 				{
-					Id:           "dce9a76b-1a68-4d5d-bcea-fef85a265882",
-					DeploymentId: "fe9c90d4-6c0d-4038-8099-e4075bc1484b",
+					ID:           "dce9a76b-1a68-4d5d-bcea-fef85a265882",
+					DeploymentID: "fe9c90d4-6c0d-4038-8099-e4075bc1484b",
 					State:        ptr.To("testing"),
 				},
 			},
@@ -707,8 +707,8 @@ func TestGetClusterDeployments(t *testing.T) {
 			},
 			expected: []v1.Deployment{
 				{
-					Id:        "2a0d2f6d-e3b1-4021-84cd-5c47918dc99e",
-					ClusterId: "e96f28f3-a2f9-426c-8e9d-9ffdba4b8581",
+					ID:        "2a0d2f6d-e3b1-4021-84cd-5c47918dc99e",
+					ClusterID: "e96f28f3-a2f9-426c-8e9d-9ffdba4b8581",
 				},
 			},
 		},*/
@@ -732,13 +732,13 @@ func TestGetClusterDeployments(t *testing.T) {
 			}
 
 			u := url.URL{
-				Path: path.Join("/v1/clusters/", tc.clusterId, "deployments"),
+				Path: path.Join("/v1/clusters/", tc.clusterID, "deployments"),
 			}
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-			r.SetPathValue("clusterID", tc.clusterId)
+			r.SetPathValue("clusterID", tc.clusterID)
 
 			ctx := middleware.ContextWithLogger(context.Background(), logger)
 
@@ -771,12 +771,12 @@ func TestGetClusterDeployments(t *testing.T) {
 func TestDeleteDeployment(t *testing.T) {
 	tt := []struct {
 		name         string
-		deploymentId string
+		deploymentID string
 		lists        []client.ObjectList
 	}{
 		{
 			name:         "test single",
-			deploymentId: "33de82a0-4133-45dc-b319-ab6a8a1daebc",
+			deploymentID: "33de82a0-4133-45dc-b319-ab6a8a1daebc",
 			lists: []client.ObjectList{
 				&dockyardsv1.DeploymentList{
 					Items: []dockyardsv1.Deployment{
@@ -809,13 +809,13 @@ func TestDeleteDeployment(t *testing.T) {
 			}
 
 			u := url.URL{
-				Path: path.Join("/v1/deployments", tc.deploymentId),
+				Path: path.Join("/v1/deployments", tc.deploymentID),
 			}
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-			r.SetPathValue("deploymentID", tc.deploymentId)
+			r.SetPathValue("deploymentID", tc.deploymentID)
 
 			ctx := middleware.ContextWithLogger(context.Background(), logger)
 
@@ -866,7 +866,7 @@ func TestPostClusterDeployments(t *testing.T) {
 			},
 			expected: v1.Deployment{
 				Type:           v1.DeploymentTypeHelm,
-				ClusterId:      "b75471ce-5967-4633-a54d-270c7e7c7f26",
+				ClusterID:      "b75471ce-5967-4633-a54d-270c7e7c7f26",
 				Name:           ptr.To("test"),
 				Namespace:      ptr.To("test"),
 				HelmChart:      ptr.To("test"),
@@ -895,7 +895,7 @@ func TestPostClusterDeployments(t *testing.T) {
 			},
 			expected: v1.Deployment{
 				Type:           v1.DeploymentTypeContainerImage,
-				ClusterId:      "fb858a98-ac5f-44a8-9a51-f839077c1a93",
+				ClusterID:      "fb858a98-ac5f-44a8-9a51-f839077c1a93",
 				Name:           ptr.To("test"),
 				Namespace:      ptr.To("test"),
 				ContainerImage: ptr.To("docker.io/library/test"),
@@ -925,7 +925,7 @@ func TestPostClusterDeployments(t *testing.T) {
 			},
 			expected: v1.Deployment{
 				Type:      v1.DeploymentTypeKustomize,
-				ClusterId: "4c924548-e827-4005-b335-d6880e23a9e1",
+				ClusterID: "4c924548-e827-4005-b335-d6880e23a9e1",
 				Name:      ptr.To("test"),
 				Namespace: ptr.To("test"),
 				Kustomize: ptr.To(map[string][]byte{
@@ -968,7 +968,7 @@ func TestPostClusterDeployments(t *testing.T) {
 			},
 			expected: v1.Deployment{
 				Type:           v1.DeploymentTypeContainerImage,
-				ClusterId:      "07ce5009-c89e-458a-b2b5-07390f6e6d28",
+				ClusterID:      "07ce5009-c89e-458a-b2b5-07390f6e6d28",
 				Name:           ptr.To("test"),
 				Namespace:      ptr.To("test"),
 				ContainerImage: ptr.To("docker.io/library/test"),

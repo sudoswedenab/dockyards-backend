@@ -40,7 +40,7 @@ func (h *handler) GetOrgs(w http.ResponseWriter, r *http.Request) {
 	var organizations []v1.Organization
 	for _, organization := range organizationList.Items {
 		v1Organization := v1.Organization{
-			Id:   string(organization.UID),
+			ID:   string(organization.UID),
 			Name: organization.Name,
 		}
 

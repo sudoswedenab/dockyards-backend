@@ -72,7 +72,7 @@ func TestGetOrgCredentials(t *testing.T) {
 			},
 			expected: []v1.Credential{
 				{
-					Id:           "54376668-876c-43d7-8d29-2ef37ccab831",
+					ID:           "54376668-876c-43d7-8d29-2ef37ccab831",
 					Name:         "test",
 					Organization: "test",
 				},
@@ -142,7 +142,7 @@ func TestGetOrgCredentials(t *testing.T) {
 			},
 			expected: []v1.Credential{
 				{
-					Id:           "3cca83a8-7848-40ad-aa89-916a28f6016d",
+					ID:           "3cca83a8-7848-40ad-aa89-916a28f6016d",
 					Name:         "dockyards-io-credential",
 					Organization: "test",
 				},

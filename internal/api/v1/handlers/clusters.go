@@ -39,7 +39,7 @@ import (
 
 func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *dockyardsv1.Cluster, nodePoolList *dockyardsv1.NodePoolList) *v1.Cluster {
 	v1Cluster := v1.Cluster{
-		Id:           string(cluster.UID),
+		ID:           string(cluster.UID),
 		Name:         cluster.Name,
 		Organization: organization.Name,
 		CreatedAt:    cluster.CreationTimestamp.Time,
@@ -256,8 +256,8 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 
 		nodePool.Spec.Resources = corev1.ResourceList{}
 
-		if nodePoolOption.CpuCount != nil {
-			quantity := resource.NewQuantity(int64(*nodePoolOption.CpuCount), resource.BinarySI)
+		if nodePoolOption.CPUCount != nil {
+			quantity := resource.NewQuantity(int64(*nodePoolOption.CPUCount), resource.BinarySI)
 
 			nodePool.Spec.Resources[corev1.ResourceCPU] = *quantity
 		}
@@ -274,8 +274,8 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 			nodePool.Spec.Resources[corev1.ResourceStorage] = quantity
 		}
 
-		if nodePoolOption.RamSize != nil {
-			quantity, err := resource.ParseQuantity(*nodePoolOption.RamSize)
+		if nodePoolOption.RAMSize != nil {
+			quantity, err := resource.ParseQuantity(*nodePoolOption.RAMSize)
 			if err != nil {
 				logger.Error("error parsing ram size quantity", "err", err)
 				hasErrors = true
@@ -307,7 +307,7 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 	}
 
 	v1Cluster := v1.Cluster{
-		Id: string(cluster.UID),
+		ID: string(cluster.UID),
 	}
 
 	b, err := json.Marshal(&v1Cluster)

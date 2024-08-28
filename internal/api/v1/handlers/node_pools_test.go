@@ -120,12 +120,12 @@ func TestGetNodePool(t *testing.T) {
 				},
 			},
 			expected: v1.NodePool{
-				Id:        "0c386e60-e759-426f-b39d-36588547fac0",
-				ClusterId: "31f38488-c0df-48fe-89f8-e94a6c8c3258",
+				ID:        "0c386e60-e759-426f-b39d-36588547fac0",
+				ClusterID: "31f38488-c0df-48fe-89f8-e94a6c8c3258",
 				Name:      "test-pool",
 				Nodes: []v1.Node{
 					{
-						Id:   "55310c2b-589b-4044-8fce-8544ce0faf6c",
+						ID:   "55310c2b-589b-4044-8fce-8544ce0faf6c",
 						Name: "test-pool-1",
 					},
 				},
@@ -258,8 +258,8 @@ func TestGetNodePool(t *testing.T) {
 				},
 			},
 			expected: v1.NodePool{
-				Id:           "4386082b-cabe-4235-b6be-a857706ed6f4",
-				ClusterId:    "3fac0683-34bf-4f8a-908b-28db92cf20a0",
+				ID:           "4386082b-cabe-4235-b6be-a857706ed6f4",
+				ClusterID:    "3fac0683-34bf-4f8a-908b-28db92cf20a0",
 				ControlPlane: ptr.To(true),
 				DiskSize:     "123Gi",
 				Name:         "test-complex",
@@ -267,15 +267,15 @@ func TestGetNodePool(t *testing.T) {
 				Nodes: []v1.Node{
 					{
 						Name: "test-complex-1",
-						Id:   "55310c2b-589b-4044-8fce-8544ce0faf6c",
+						ID:   "55310c2b-589b-4044-8fce-8544ce0faf6c",
 					},
 					{
 						Name: "test-complex-2",
-						Id:   "0b5f21f5-aa1e-4286-be18-b172cb162ff4",
+						ID:   "0b5f21f5-aa1e-4286-be18-b172cb162ff4",
 					},
 					{
 						Name: "test-complex-3",
-						Id:   "e50f48b7-0332-4824-b8ea-139d5a0a5d39",
+						ID:   "e50f48b7-0332-4824-b8ea-139d5a0a5d39",
 					},
 				},
 			},
@@ -580,7 +580,7 @@ func TestPostClusterNodePools(t *testing.T) {
 				},
 			},
 			expected: v1.NodePool{
-				ClusterId: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+				ClusterID: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
 				Name:      "cluster1-test",
 			},
 		},
@@ -592,8 +592,8 @@ func TestPostClusterNodePools(t *testing.T) {
 				Quantity:                   3,
 				LoadBalancer:               ptr.To(true),
 				ControlPlaneComponentsOnly: ptr.To(true),
-				RamSize:                    ptr.To("1234M"),
-				CpuCount:                   ptr.To(12),
+				RAMSize:                    ptr.To("1234M"),
+				CPUCount:                   ptr.To(12),
 				DiskSize:                   ptr.To("123Gi"),
 			},
 			sub: "940b43ee-39d3-4ecb-a6bd-be25245d7eca",
@@ -641,7 +641,7 @@ func TestPostClusterNodePools(t *testing.T) {
 			},
 			expected: v1.NodePool{
 				Name:                       "cluster-123-test2",
-				ClusterId:                  "b70dc16e-1c52-4861-9932-59d950edcc49",
+				ClusterID:                  "b70dc16e-1c52-4861-9932-59d950edcc49",
 				Quantity:                   3,
 				LoadBalancer:               ptr.To(true),
 				ControlPlaneComponentsOnly: ptr.To(true),
@@ -705,7 +705,7 @@ func TestPostClusterNodePools(t *testing.T) {
 			},
 			expected: v1.NodePool{
 				Name:      "test-storage-resources",
-				ClusterId: "h5cb74d7f-274c-4284-bbf4-e2a4b1c7dbc3",
+				ClusterID: "h5cb74d7f-274c-4284-bbf4-e2a4b1c7dbc3",
 				Quantity:  3,
 				StorageResources: &[]v1.StorageResource{
 					{
