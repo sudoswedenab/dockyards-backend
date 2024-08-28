@@ -165,6 +165,82 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test invalid storage resource name",
+			dockyardsNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "invalid-storage-resource-name",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					StorageResources: []dockyardsv1.NodePoolStorageResource{
+						{
+							Name:     "Test Invalid Name",
+							Quantity: resource.MustParse("123"),
+						},
+					},
+				},
+			},
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      string(featurenames.FeatureStorageRole),
+							Namespace: "testing",
+						},
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"invalid-storage-resource-name",
+				field.ErrorList{
+					field.Invalid(field.NewPath("spec", "storageResources[0]", "name"), "Test Invalid Name", "not a valid name"),
+				},
+			),
+		},
+		{
+			name: "test duplicated storage resource name",
+			dockyardsNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "duplicated-storage-resource-name",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					StorageResources: []dockyardsv1.NodePoolStorageResource{
+						{
+							Name:     "test",
+							Quantity: resource.MustParse("123"),
+						},
+						{
+							Name:     "test",
+							Quantity: resource.MustParse("234"),
+						},
+						{
+							Name:     "test",
+							Quantity: resource.MustParse("345"),
+						},
+					},
+				},
+			},
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      string(featurenames.FeatureStorageRole),
+							Namespace: "testing",
+						},
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"duplicated-storage-resource-name",
+				field.ErrorList{
+					field.Duplicate(field.NewPath("spec", "storageResources").Child("name"), "test"),
+				},
+			),
+		},
 	}
 
 	for _, tc := range tt {

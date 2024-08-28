@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/google/go-cmp/cmp"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -78,6 +79,28 @@ func (webhook *DockyardsNodePool) validate(oldNodePool, newNodePool *dockyardsv1
 			forbidden := field.Forbidden(field.NewPath("spec", "resources"), "immutable-resources feature is enabled")
 			errorList = append(errorList, forbidden)
 		}
+	}
+
+	names := make(map[string]bool)
+
+	for i, storageResource := range newNodePool.Spec.StorageResources {
+		_, validName := name.IsValidName(storageResource.Name)
+		if !validName {
+			invalid := field.Invalid(field.NewPath("spec", "storageResources").Index(i).Child("name"), storageResource.Name, "not a valid name")
+			errorList = append(errorList, invalid)
+
+			continue
+		}
+
+		_, duplicated := names[storageResource.Name]
+		if duplicated {
+			duplicate := field.Duplicate(field.NewPath("spec", "storageResources", "name"), storageResource.Name)
+			errorList = append(errorList, duplicate)
+
+			break
+		}
+
+		names[storageResource.Name] = true
 	}
 
 	if len(errorList) > 0 {
