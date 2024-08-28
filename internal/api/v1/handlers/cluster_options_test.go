@@ -10,13 +10,13 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -59,7 +59,7 @@ func TestGetClusterOptions(t *testing.T) {
 											Name: "cp",
 										},
 										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:     util.Ptr(int32(3)),
+											Replicas:     ptr.To(int32(3)),
 											ControlPlane: true,
 											Resources: corev1.ResourceList{
 												corev1.ResourceCPU:    resource.MustParse("2"),
@@ -72,7 +72,7 @@ func TestGetClusterOptions(t *testing.T) {
 											Name: "lb",
 										},
 										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:      util.Ptr(int32(2)),
+											Replicas:      ptr.To(int32(2)),
 											LoadBalancer:  true,
 											DedicatedRole: true,
 										},
@@ -102,20 +102,20 @@ func TestGetClusterOptions(t *testing.T) {
 					{
 						Name:         "cp",
 						Quantity:     3,
-						ControlPlane: util.Ptr(true),
-						CpuCount:     util.Ptr(2),
-						RamSize:      util.Ptr("4Gi"),
+						ControlPlane: ptr.To(true),
+						CpuCount:     ptr.To(2),
+						RamSize:      ptr.To("4Gi"),
 					},
 					{
 						Name:                       "lb",
 						Quantity:                   2,
-						LoadBalancer:               util.Ptr(true),
-						ControlPlaneComponentsOnly: util.Ptr(true),
+						LoadBalancer:               ptr.To(true),
+						ControlPlaneComponentsOnly: ptr.To(true),
 					},
 					{
 						Name:     "w",
 						Quantity: 1,
-						DiskSize: util.Ptr("123G"),
+						DiskSize: ptr.To("123G"),
 					},
 				},
 			},
@@ -183,13 +183,13 @@ func TestGetClusterOptions(t *testing.T) {
 					{
 						Name:         "cp",
 						Quantity:     1,
-						ControlPlane: util.Ptr(true),
-						RamSize:      util.Ptr("4Gi"),
+						ControlPlane: ptr.To(true),
+						RamSize:      ptr.To("4Gi"),
 					},
 					{
 						Name:     "w",
 						Quantity: 1,
-						DiskSize: util.Ptr("123Gi"),
+						DiskSize: ptr.To("123Gi"),
 					},
 				},
 			},

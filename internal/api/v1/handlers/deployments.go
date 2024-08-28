@@ -8,7 +8,6 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -19,6 +18,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -180,7 +180,7 @@ func (h *handler) PostClusterDeployments(w http.ResponseWriter, r *http.Request)
 	createdDeployment := v1.Deployment{
 		Id:        string(deployment.UID),
 		ClusterId: string(cluster.UID),
-		Name:      util.Ptr(strings.TrimPrefix(deployment.Name, cluster.Name+"-")),
+		Name:      ptr.To(strings.TrimPrefix(deployment.Name, cluster.Name+"-")),
 		Namespace: &deployment.Spec.TargetNamespace,
 	}
 
@@ -587,7 +587,7 @@ func (h *handler) GetDeployment(w http.ResponseWriter, r *http.Request) {
 		v1Deployment.ContainerImage = &containerImageDeployment.Spec.Image
 
 		if containerImageDeployment.Spec.Port != 0 {
-			v1Deployment.Port = util.Ptr(int(containerImageDeployment.Spec.Port))
+			v1Deployment.Port = ptr.To(int(containerImageDeployment.Spec.Port))
 		}
 	case dockyardsv1.HelmDeploymentKind:
 		var helmDeployment dockyardsv1.HelmDeployment

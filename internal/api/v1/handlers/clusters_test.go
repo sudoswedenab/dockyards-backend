@@ -16,7 +16,6 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/google/go-cmp/cmp"
@@ -25,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -78,7 +78,7 @@ func TestPostOrgClusters(t *testing.T) {
 											Name: "control-plane",
 										},
 										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:      util.Ptr(int32(3)),
+											Replicas:      ptr.To(int32(3)),
 											ControlPlane:  true,
 											DedicatedRole: true,
 											Resources: corev1.ResourceList{
@@ -93,7 +93,7 @@ func TestPostOrgClusters(t *testing.T) {
 											Name: "worker",
 										},
 										Spec: dockyardsv1.NodePoolSpec{
-											Replicas: util.Ptr(int32(2)),
+											Replicas: ptr.To(int32(2)),
 											Resources: corev1.ResourceList{
 												corev1.ResourceCPU:     resource.MustParse("4"),
 												corev1.ResourceMemory:  resource.MustParse("8192M"),
@@ -106,7 +106,7 @@ func TestPostOrgClusters(t *testing.T) {
 											Name: "load-balancer",
 										},
 										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:      util.Ptr(int32(2)),
+											Replicas:      ptr.To(int32(2)),
 											LoadBalancer:  true,
 											DedicatedRole: true,
 											Resources: corev1.ResourceList{
@@ -136,7 +136,7 @@ func TestPostOrgClusters(t *testing.T) {
 								APIVersion:         dockyardsv1.GroupVersion.String(),
 								Kind:               dockyardsv1.OrganizationKind,
 								Name:               "test-org",
-								BlockOwnerDeletion: util.Ptr(true),
+								BlockOwnerDeletion: ptr.To(true),
 							},
 						},
 					},
@@ -151,12 +151,12 @@ func TestPostOrgClusters(t *testing.T) {
 								APIVersion:         dockyardsv1.GroupVersion.String(),
 								Kind:               dockyardsv1.ClusterKind,
 								Name:               "test",
-								BlockOwnerDeletion: util.Ptr(true),
+								BlockOwnerDeletion: ptr.To(true),
 							},
 						},
 					},
 					Spec: dockyardsv1.NodePoolSpec{
-						Replicas:      util.Ptr(int32(3)),
+						Replicas:      ptr.To(int32(3)),
 						ControlPlane:  true,
 						DedicatedRole: true,
 						Resources: corev1.ResourceList{
@@ -176,12 +176,12 @@ func TestPostOrgClusters(t *testing.T) {
 								APIVersion:         dockyardsv1.GroupVersion.String(),
 								Kind:               dockyardsv1.ClusterKind,
 								Name:               "test",
-								BlockOwnerDeletion: util.Ptr(true),
+								BlockOwnerDeletion: ptr.To(true),
 							},
 						},
 					},
 					Spec: dockyardsv1.NodePoolSpec{
-						Replicas:      util.Ptr(int32(2)),
+						Replicas:      ptr.To(int32(2)),
 						LoadBalancer:  true,
 						DedicatedRole: true,
 						Resources: corev1.ResourceList{
@@ -201,12 +201,12 @@ func TestPostOrgClusters(t *testing.T) {
 								APIVersion:         dockyardsv1.GroupVersion.String(),
 								Kind:               dockyardsv1.ClusterKind,
 								Name:               "test",
-								BlockOwnerDeletion: util.Ptr(true),
+								BlockOwnerDeletion: ptr.To(true),
 							},
 						},
 					},
 					Spec: dockyardsv1.NodePoolSpec{
-						Replicas: util.Ptr(int32(2)),
+						Replicas: ptr.To(int32(2)),
 						Resources: corev1.ResourceList{
 							corev1.ResourceCPU:     resource.MustParse("4"),
 							corev1.ResourceMemory:  resource.MustParse("8192M"),
@@ -357,7 +357,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			},
 			clusterOptions: v1.ClusterOptions{
 				Name: "test-cluster",
-				NodePoolOptions: util.Ptr([]v1.NodePoolOptions{
+				NodePoolOptions: ptr.To([]v1.NodePoolOptions{
 					{
 						Name: "InvalidNodePoolName",
 					},
@@ -457,7 +457,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			},
 			clusterOptions: v1.ClusterOptions{
 				Name: "test-cluster",
-				NodePoolOptions: util.Ptr([]v1.NodePoolOptions{
+				NodePoolOptions: ptr.To([]v1.NodePoolOptions{
 					{
 						Name:     "test",
 						Quantity: 123,

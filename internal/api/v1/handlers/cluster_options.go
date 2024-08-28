@@ -6,8 +6,8 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -48,17 +48,17 @@ func getRecommendedNodePools(clusterTemplate *dockyardsv1.ClusterTemplate) []v1.
 
 		resourceCPU := nodePoolTemplate.Spec.Resources.Cpu()
 		if resourceCPU != nil && resourceCPU.Value() != 0 {
-			nodePoolOptions[i].CpuCount = util.Ptr(int(resourceCPU.Value()))
+			nodePoolOptions[i].CpuCount = ptr.To(int(resourceCPU.Value()))
 		}
 
 		resourceMemory := nodePoolTemplate.Spec.Resources.Memory()
 		if !resourceMemory.IsZero() {
-			nodePoolOptions[i].RamSize = util.Ptr(resourceMemory.String())
+			nodePoolOptions[i].RamSize = ptr.To(resourceMemory.String())
 		}
 
 		resourceStorage := nodePoolTemplate.Spec.Resources.Storage()
 		if !resourceStorage.IsZero() {
-			nodePoolOptions[i].DiskSize = util.Ptr(resourceStorage.String())
+			nodePoolOptions[i].DiskSize = ptr.To(resourceStorage.String())
 		}
 	}
 

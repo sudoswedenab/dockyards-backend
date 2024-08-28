@@ -4,8 +4,8 @@ import (
 	"path"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/containers/image/v5/docker/reference"
+	"k8s.io/utils/ptr"
 )
 
 func AddNormalizedName(deployment *v1.Deployment) error {
@@ -15,7 +15,7 @@ func AddNormalizedName(deployment *v1.Deployment) error {
 			return err
 		}
 
-		deployment.ContainerImage = util.Ptr(named.String())
+		deployment.ContainerImage = ptr.To(named.String())
 
 		if deployment.Name == nil || (deployment.Name != nil && *deployment.Name == "") {
 			base := path.Base(named.Name())
@@ -35,7 +35,7 @@ func AddNormalizedName(deployment *v1.Deployment) error {
 
 	if deployment.Kustomize != nil {
 		if deployment.Name == nil {
-			deployment.Name = util.Ptr("")
+			deployment.Name = ptr.To("")
 		}
 
 		deployment.Type = v1.DeploymentTypeKustomize

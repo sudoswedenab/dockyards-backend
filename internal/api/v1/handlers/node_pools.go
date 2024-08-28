@@ -7,7 +7,6 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -16,6 +15,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -313,7 +313,7 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 		Spec: dockyardsv1.NodePoolSpec{
-			Replicas:  util.Ptr(int32(nodePoolOptions.Quantity)),
+			Replicas:  ptr.To(int32(nodePoolOptions.Quantity)),
 			Resources: resources,
 		},
 	}
@@ -453,7 +453,7 @@ func (h *handler) DeleteNodePool(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deleteOptions := client.DeleteOptions{
-		PropagationPolicy: util.Ptr(metav1.DeletePropagationBackground),
+		PropagationPolicy: ptr.To(metav1.DeletePropagationBackground),
 	}
 
 	err = h.Delete(ctx, &nodePool, &deleteOptions)

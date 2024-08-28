@@ -15,7 +15,6 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/google/go-cmp/cmp"
@@ -23,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -194,7 +194,7 @@ func TestGetNodePool(t *testing.T) {
 							},
 							Spec: dockyardsv1.NodePoolSpec{
 								ControlPlane: true,
-								Replicas:     util.Ptr(int32(3)),
+								Replicas:     ptr.To(int32(3)),
 								Resources: corev1.ResourceList{
 									corev1.ResourceStorage: resource.MustParse("123Gi"),
 								},
@@ -260,7 +260,7 @@ func TestGetNodePool(t *testing.T) {
 			expected: v1.NodePool{
 				Id:           "4386082b-cabe-4235-b6be-a857706ed6f4",
 				ClusterId:    "3fac0683-34bf-4f8a-908b-28db92cf20a0",
-				ControlPlane: util.Ptr(true),
+				ControlPlane: ptr.To(true),
 				DiskSize:     "123Gi",
 				Name:         "test-complex",
 				Quantity:     3,
@@ -590,11 +590,11 @@ func TestPostClusterNodePools(t *testing.T) {
 			nodePoolOptions: v1.NodePoolOptions{
 				Name:                       "test2",
 				Quantity:                   3,
-				LoadBalancer:               util.Ptr(true),
-				ControlPlaneComponentsOnly: util.Ptr(true),
-				RamSize:                    util.Ptr("1234M"),
-				CpuCount:                   util.Ptr(12),
-				DiskSize:                   util.Ptr("123Gi"),
+				LoadBalancer:               ptr.To(true),
+				ControlPlaneComponentsOnly: ptr.To(true),
+				RamSize:                    ptr.To("1234M"),
+				CpuCount:                   ptr.To(12),
+				DiskSize:                   ptr.To("123Gi"),
 			},
 			sub: "940b43ee-39d3-4ecb-a6bd-be25245d7eca",
 			lists: []client.ObjectList{
@@ -643,8 +643,8 @@ func TestPostClusterNodePools(t *testing.T) {
 				Name:                       "cluster-123-test2",
 				ClusterId:                  "b70dc16e-1c52-4861-9932-59d950edcc49",
 				Quantity:                   3,
-				LoadBalancer:               util.Ptr(true),
-				ControlPlaneComponentsOnly: util.Ptr(true),
+				LoadBalancer:               ptr.To(true),
+				ControlPlaneComponentsOnly: ptr.To(true),
 			},
 		},
 	}

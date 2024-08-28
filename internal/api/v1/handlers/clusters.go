@@ -15,7 +15,6 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -28,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -158,7 +158,7 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 					Kind:               dockyardsv1.OrganizationKind,
 					Name:               organization.Name,
 					UID:                organization.UID,
-					BlockOwnerDeletion: util.Ptr(true),
+					BlockOwnerDeletion: ptr.To(true),
 				},
 			},
 		},
@@ -201,18 +201,18 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		nodePoolOptions = util.Ptr(getRecommendedNodePools(&clusterTemplate))
+		nodePoolOptions = ptr.To(getRecommendedNodePools(&clusterTemplate))
 	}
 
 	if clusterOptions.SingleNode != nil && *clusterOptions.SingleNode {
 		logger.Debug("using single node pool")
 
-		nodePoolOptions = util.Ptr([]v1.NodePoolOptions{
+		nodePoolOptions = ptr.To([]v1.NodePoolOptions{
 			{
 				Name:         "single-node",
 				Quantity:     1,
-				ControlPlane: util.Ptr(true),
-				LoadBalancer: util.Ptr(true),
+				ControlPlane: ptr.To(true),
+				LoadBalancer: ptr.To(true),
 			},
 		})
 	}
@@ -233,12 +233,12 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 						Kind:               dockyardsv1.ClusterKind,
 						Name:               cluster.Name,
 						UID:                cluster.UID,
-						BlockOwnerDeletion: util.Ptr(true),
+						BlockOwnerDeletion: ptr.To(true),
 					},
 				},
 			},
 			Spec: dockyardsv1.NodePoolSpec{
-				Replicas: util.Ptr(int32(nodePoolOption.Quantity)),
+				Replicas: ptr.To(int32(nodePoolOption.Quantity)),
 			},
 		}
 

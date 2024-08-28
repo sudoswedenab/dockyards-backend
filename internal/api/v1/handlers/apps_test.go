@@ -14,12 +14,12 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -98,8 +98,8 @@ func TestGetApps(t *testing.T) {
 				{
 					Id:          "3f72e332-2148-44f3-9266-9f4793c5cf7f",
 					Name:        "test3",
-					Description: util.Ptr("description"),
-					Icon:        util.Ptr("http://localhost/icon.png"),
+					Description: ptr.To("description"),
+					Icon:        ptr.To("http://localhost/icon.png"),
 				},
 			},
 		},
@@ -217,35 +217,35 @@ func TestGetApp(t *testing.T) {
 						Name: "step",
 						StepOptions: &[]v1.StepOption{
 							{
-								DisplayName: util.Ptr("Helm Chart"),
-								JsonPointer: util.Ptr("/helm_chart"),
-								Default:     util.Ptr("test"),
+								DisplayName: ptr.To("Helm Chart"),
+								JsonPointer: ptr.To("/helm_chart"),
+								Default:     ptr.To("test"),
 							},
 							{
-								DisplayName: util.Ptr("Helm Repository"),
-								JsonPointer: util.Ptr("/helm_repository"),
-								Default:     util.Ptr("http://localhost/chart-repository"),
+								DisplayName: ptr.To("Helm Repository"),
+								JsonPointer: ptr.To("/helm_repository"),
+								Default:     ptr.To("http://localhost/chart-repository"),
 							},
 							{
-								DisplayName: util.Ptr("Helm Version"),
-								JsonPointer: util.Ptr("/helm_version"),
-								Default:     util.Ptr("1.2.3"),
+								DisplayName: ptr.To("Helm Version"),
+								JsonPointer: ptr.To("/helm_version"),
+								Default:     ptr.To("1.2.3"),
 							},
 							{
-								DisplayName: util.Ptr("Helm Ingress Enabled"),
-								JsonPointer: util.Ptr("/helm_values/ingress/enabled"),
-								Default:     util.Ptr("true"),
-								Type:        util.Ptr("boolean"),
+								DisplayName: ptr.To("Helm Ingress Enabled"),
+								JsonPointer: ptr.To("/helm_values/ingress/enabled"),
+								Default:     ptr.To("true"),
+								Type:        ptr.To("boolean"),
 							},
 							{
-								DisplayName: util.Ptr("Helm Ingress Host"),
-								JsonPointer: util.Ptr("/helm_values/ingress/host"),
-								Default:     util.Ptr("test"),
+								DisplayName: ptr.To("Helm Ingress Host"),
+								JsonPointer: ptr.To("/helm_values/ingress/host"),
+								Default:     ptr.To("test"),
 							},
 							{
-								JsonPointer: util.Ptr("/helm_values/annotations/test"),
-								Default:     util.Ptr("yes"),
-								Hidden:      util.Ptr(true),
+								JsonPointer: ptr.To("/helm_values/annotations/test"),
+								Default:     ptr.To("yes"),
+								Hidden:      ptr.To(true),
 							},
 						},
 					},
@@ -308,25 +308,25 @@ func TestGetApp(t *testing.T) {
 						Name: "testing",
 						StepOptions: &[]v1.StepOption{
 							{
-								DisplayName: util.Ptr("Ingress Enabled"),
-								Default:     util.Ptr("false"),
-								Type:        util.Ptr("boolean"),
+								DisplayName: ptr.To("Ingress Enabled"),
+								Default:     ptr.To("false"),
+								Type:        ptr.To("boolean"),
 								Toggle: &[]string{
 									"annotations",
 									"tls",
 								},
 							},
 							{
-								DisplayName: util.Ptr("TLS Hosts"),
-								Default:     util.Ptr("test"),
-								Type:        util.Ptr("hostname"),
+								DisplayName: ptr.To("TLS Hosts"),
+								Default:     ptr.To("test"),
+								Type:        ptr.To("hostname"),
 								Tags: &[]string{
 									"tls",
 								},
 							},
 							{
-								DisplayName: util.Ptr("Cluster Issuer"),
-								Default:     util.Ptr("issuer"),
+								DisplayName: ptr.To("Cluster Issuer"),
+								Default:     ptr.To("issuer"),
 								Tags: &[]string{
 									"annotations",
 								},

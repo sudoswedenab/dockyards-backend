@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/util"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
+	"k8s.io/utils/ptr"
 )
 
 func TestAddNormalizedName(t *testing.T) {
@@ -19,38 +19,38 @@ func TestAddNormalizedName(t *testing.T) {
 		{
 			name: "test container image",
 			deployment: v1.Deployment{
-				ContainerImage: util.Ptr("test:v1.2.3"),
+				ContainerImage: ptr.To("test:v1.2.3"),
 			},
 			expected: v1.Deployment{
-				Name:           util.Ptr("test"),
-				Namespace:      util.Ptr("test"),
-				ContainerImage: util.Ptr("docker.io/library/test:v1.2.3"),
+				Name:           ptr.To("test"),
+				Namespace:      ptr.To("test"),
+				ContainerImage: ptr.To("docker.io/library/test:v1.2.3"),
 				Type:           v1.DeploymentTypeContainerImage,
 			},
 		},
 		{
 			name: "test helm chart",
 			deployment: v1.Deployment{
-				HelmChart: util.Ptr("test"),
+				HelmChart: ptr.To("test"),
 			},
 			expected: v1.Deployment{
-				Name:      util.Ptr("test"),
-				Namespace: util.Ptr("test"),
-				HelmChart: util.Ptr("test"),
+				Name:      ptr.To("test"),
+				Namespace: ptr.To("test"),
+				HelmChart: ptr.To("test"),
 				Type:      v1.DeploymentTypeHelm,
 			},
 		},
 		{
 			name: "test kustomize",
 			deployment: v1.Deployment{
-				Kustomize: util.Ptr(map[string][]byte{
+				Kustomize: ptr.To(map[string][]byte{
 					"kustomization.yaml": []byte("test"),
 				}),
 			},
 			expected: v1.Deployment{
-				Name:      util.Ptr(""),
-				Namespace: util.Ptr(""),
-				Kustomize: util.Ptr(map[string][]byte{
+				Name:      ptr.To(""),
+				Namespace: ptr.To(""),
+				Kustomize: ptr.To(map[string][]byte{
 					"kustomization.yaml": []byte("test"),
 				}),
 				Type: v1.DeploymentTypeKustomize,
@@ -83,7 +83,7 @@ func TestAddNormalizedNameErrors(t *testing.T) {
 		{
 			name: "test invalid container image",
 			deployment: v1.Deployment{
-				ContainerImage: util.Ptr("http://localhost/nginx:v1.2.3"),
+				ContainerImage: ptr.To("http://localhost/nginx:v1.2.3"),
 			},
 		},
 	}
