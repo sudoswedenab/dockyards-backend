@@ -528,6 +528,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/node'
+        storage_resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/storage_resource'
       required:
       - id
       - cluster_id
@@ -555,6 +559,10 @@ components:
           type: string
         disk_size:
           type: string
+        storage_resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/storage_resource'
       required:
       - name
       - quantity
@@ -732,6 +740,17 @@ components:
       - id
       - name
       - state
+    storage_resource:
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        quantity:
+          type: string
+      required:
+      - name
+      - quantity
   securitySchemas:
     bearerAuth:
       type: http

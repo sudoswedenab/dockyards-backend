@@ -647,6 +647,74 @@ func TestPostClusterNodePools(t *testing.T) {
 				ControlPlaneComponentsOnly: ptr.To(true),
 			},
 		},
+		{
+			name:      "test with storage resource without type",
+			clusterID: "h5cb74d7f-274c-4284-bbf4-e2a4b1c7dbc3",
+			nodePoolOptions: v1.NodePoolOptions{
+				Name:     "storage-resources",
+				Quantity: 3,
+				StorageResources: &[]v1.StorageResource{
+					{
+						Name:     "test",
+						Quantity: "123",
+					},
+				},
+			},
+			sub: "e7620e3b-c888-43ce-82b5-b6575bfb4a14",
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "8491aaf4-df4b-458b-bc39-4d2d1f2f7d34",
+								Name: "test",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
+									{
+										Name: "test",
+										UID:  "e7620e3b-c888-43ce-82b5-b6575bfb4a14",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "h5cb74d7f-274c-4284-bbf4-e2a4b1c7dbc3",
+								Name:      "test",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
+										Name:       "test",
+										UID:        "8491aaf4-df4b-458b-bc39-4d2d1f2f7d34",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: v1.NodePool{
+				Name:      "test-storage-resources",
+				ClusterId: "h5cb74d7f-274c-4284-bbf4-e2a4b1c7dbc3",
+				Quantity:  3,
+				StorageResources: &[]v1.StorageResource{
+					{
+						Name:     "test",
+						Quantity: "123",
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {

@@ -70,6 +70,23 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyard
 		v1NodePool.ControlPlaneComponentsOnly = &nodePool.Spec.DedicatedRole
 	}
 
+	if nodePool.Spec.StorageResources != nil {
+		storageResources := make([]v1.StorageResource, len(nodePool.Spec.StorageResources))
+
+		for i, storageResource := range nodePool.Spec.StorageResources {
+			storageResources[i] = v1.StorageResource{
+				Name:     storageResource.Name,
+				Quantity: storageResource.Quantity.String(),
+			}
+
+			if storageResource.Type != "" {
+				storageResources[i].Type = &storageResource.Type
+			}
+		}
+
+		v1NodePool.StorageResources = &storageResources
+	}
+
 	return &v1NodePool
 }
 
@@ -328,6 +345,29 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 
 	if nodePoolOptions.ControlPlaneComponentsOnly != nil {
 		nodePool.Spec.DedicatedRole = *nodePoolOptions.ControlPlaneComponentsOnly
+	}
+
+	if nodePoolOptions.StorageResources != nil {
+		for _, storageResource := range *nodePoolOptions.StorageResources {
+			quantity, err := resource.ParseQuantity(storageResource.Quantity)
+			if err != nil {
+				logger.Debug("error parsing storage resource quantity", "err", err)
+				w.WriteHeader(http.StatusUnprocessableEntity)
+
+				return
+			}
+
+			nodePoolStorageResource := dockyardsv1.NodePoolStorageResource{
+				Name:     storageResource.Name,
+				Quantity: quantity,
+			}
+
+			if storageResource.Type != nil {
+				nodePoolStorageResource.Type = *storageResource.Type
+			}
+
+			nodePool.Spec.StorageResources = append(nodePool.Spec.StorageResources, nodePoolStorageResource)
+		}
 	}
 
 	err = h.Create(ctx, &nodePool)

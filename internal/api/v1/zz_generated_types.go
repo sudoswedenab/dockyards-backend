@@ -134,29 +134,31 @@ type Node struct {
 
 // NodePool defines model for node_pool.
 type NodePool struct {
-	ClusterId                  string `json:"cluster_id"`
-	ControlPlane               *bool  `json:"control_plane,omitempty"`
-	ControlPlaneComponentsOnly *bool  `json:"control_plane_components_only,omitempty"`
-	CpuCount                   int    `json:"cpu_count"`
-	DiskSize                   string `json:"disk_size"`
-	Id                         string `json:"id"`
-	LoadBalancer               *bool  `json:"load_balancer,omitempty"`
-	Name                       string `json:"name"`
-	Nodes                      []Node `json:"nodes"`
-	Quantity                   int    `json:"quantity"`
-	RamSize                    string `json:"ram_size"`
+	ClusterId                  string             `json:"cluster_id"`
+	ControlPlane               *bool              `json:"control_plane,omitempty"`
+	ControlPlaneComponentsOnly *bool              `json:"control_plane_components_only,omitempty"`
+	CpuCount                   int                `json:"cpu_count"`
+	DiskSize                   string             `json:"disk_size"`
+	Id                         string             `json:"id"`
+	LoadBalancer               *bool              `json:"load_balancer,omitempty"`
+	Name                       string             `json:"name"`
+	Nodes                      []Node             `json:"nodes"`
+	Quantity                   int                `json:"quantity"`
+	RamSize                    string             `json:"ram_size"`
+	StorageResources           *[]StorageResource `json:"storage_resources,omitempty"`
 }
 
 // NodePoolOptions defines model for node_pool_options.
 type NodePoolOptions struct {
-	ControlPlane               *bool   `json:"control_plane,omitempty"`
-	ControlPlaneComponentsOnly *bool   `json:"control_plane_components_only,omitempty"`
-	CpuCount                   *int    `json:"cpu_count,omitempty"`
-	DiskSize                   *string `json:"disk_size,omitempty"`
-	LoadBalancer               *bool   `json:"load_balancer,omitempty"`
-	Name                       string  `json:"name"`
-	Quantity                   int     `json:"quantity"`
-	RamSize                    *string `json:"ram_size,omitempty"`
+	ControlPlane               *bool              `json:"control_plane,omitempty"`
+	ControlPlaneComponentsOnly *bool              `json:"control_plane_components_only,omitempty"`
+	CpuCount                   *int               `json:"cpu_count,omitempty"`
+	DiskSize                   *string            `json:"disk_size,omitempty"`
+	LoadBalancer               *bool              `json:"load_balancer,omitempty"`
+	Name                       string             `json:"name"`
+	Quantity                   int                `json:"quantity"`
+	RamSize                    *string            `json:"ram_size,omitempty"`
+	StorageResources           *[]StorageResource `json:"storage_resources,omitempty"`
 }
 
 // Options defines model for options.
@@ -199,6 +201,13 @@ type StepOption struct {
 	Tags        *[]string `json:"tags,omitempty"`
 	Toggle      *[]string `json:"toggle,omitempty"`
 	Type        *string   `json:"type,omitempty"`
+}
+
+// StorageResource defines model for storage_resource.
+type StorageResource struct {
+	Name     string  `json:"name"`
+	Quantity string  `json:"quantity"`
+	Type     *string `json:"type,omitempty"`
 }
 
 // Tokens defines model for tokens.
