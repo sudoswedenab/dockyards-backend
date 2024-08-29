@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -84,22 +85,6 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	objectKey = client.ObjectKey{
-		Name:      "recommended",
-		Namespace: h.namespace,
-	}
-
-	var clusterTemplate dockyardsv1.ClusterTemplate
-	err = h.Get(ctx, objectKey, &clusterTemplate)
-	if err != nil {
-		logger.Error("error getting cluster template", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	recommendedNodePools := getRecommendedNodePools(&clusterTemplate)
-
 	storageResourceTypes := []string{
 		dockyardsv1.StorageResourceTypeHostPath,
 	}
@@ -107,8 +92,26 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 	options := v1.Options{
 		SingleNode:           false,
 		Version:              release.Status.Versions,
-		NodePoolOptions:      recommendedNodePools,
 		StorageResourceTypes: storageResourceTypes,
+	}
+
+	objectKey = client.ObjectKey{
+		Name:      "recommended",
+		Namespace: h.namespace,
+	}
+
+	var clusterTemplate dockyardsv1.ClusterTemplate
+	err = h.Get(ctx, objectKey, &clusterTemplate)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting cluster template", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if !apierrors.IsNotFound(err) {
+		recommendedNodePool := getRecommendedNodePools(&clusterTemplate)
+		options.NodePoolOptions = &recommendedNodePool
 	}
 
 	b, err := json.Marshal(&options)

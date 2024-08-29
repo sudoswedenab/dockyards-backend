@@ -418,6 +418,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/node_pool_options'
+          deprecated: true
         storage_resource_types:
           type: array
           items:
@@ -425,7 +426,6 @@ components:
       required:
       - single_node
       - version
-      - node_pool_options
       - storage_resource_types
     organization:
       properties:

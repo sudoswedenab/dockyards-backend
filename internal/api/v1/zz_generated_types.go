@@ -163,10 +163,11 @@ type NodePoolOptions struct {
 
 // Options defines model for options.
 type Options struct {
-	NodePoolOptions      []NodePoolOptions `json:"node_pool_options"`
-	SingleNode           bool              `json:"single_node"`
-	StorageResourceTypes []string          `json:"storage_resource_types"`
-	Version              []string          `json:"version"`
+	// Deprecated:
+	NodePoolOptions      *[]NodePoolOptions `json:"node_pool_options,omitempty"`
+	SingleNode           bool               `json:"single_node"`
+	StorageResourceTypes []string           `json:"storage_resource_types"`
+	Version              []string           `json:"version"`
 }
 
 // Organization defines model for organization.

@@ -98,7 +98,7 @@ func TestGetClusterOptions(t *testing.T) {
 				Version: []string{
 					"v1.2.3",
 				},
-				NodePoolOptions: []v1.NodePoolOptions{
+				NodePoolOptions: &[]v1.NodePoolOptions{
 					{
 						Name:         "cp",
 						Quantity:     3,
@@ -180,7 +180,7 @@ func TestGetClusterOptions(t *testing.T) {
 				Version: []string{
 					"v1.2.3",
 				},
-				NodePoolOptions: []v1.NodePoolOptions{
+				NodePoolOptions: &[]v1.NodePoolOptions{
 					{
 						Name:         "cp",
 						Quantity:     1,
@@ -192,6 +192,33 @@ func TestGetClusterOptions(t *testing.T) {
 						Quantity: 1,
 						DiskSize: ptr.To("123Gi"),
 					},
+				},
+				StorageResourceTypes: []string{dockyardsv1.StorageResourceTypeHostPath},
+			},
+		},
+		{
+			name: "test with no recommended cluster template",
+			lists: []client.ObjectList{
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+								Namespace: "testing",
+							},
+							Status: dockyardsv1.ReleaseStatus{
+								Versions: []string{
+									"v1.2.3",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: v1.Options{
+				SingleNode: false,
+				Version: []string{
+					"v1.2.3",
 				},
 				StorageResourceTypes: []string{dockyardsv1.StorageResourceTypeHostPath},
 			},
