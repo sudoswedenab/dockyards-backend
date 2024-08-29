@@ -166,7 +166,7 @@ type Options struct {
 	// Deprecated:
 	NodePoolOptions      *[]NodePoolOptions `json:"node_pool_options,omitempty"`
 	SingleNode           bool               `json:"single_node"`
-	StorageResourceTypes []string           `json:"storage_resource_types"`
+	StorageResourceTypes *[]string          `json:"storage_resource_types,omitempty"`
 	Version              []string           `json:"version"`
 }
 

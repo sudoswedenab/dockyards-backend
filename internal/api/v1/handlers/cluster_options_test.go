@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -10,6 +11,8 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -118,7 +121,6 @@ func TestGetClusterOptions(t *testing.T) {
 						DiskSize: ptr.To("123G"),
 					},
 				},
-				StorageResourceTypes: []string{dockyardsv1.StorageResourceTypeHostPath},
 			},
 		},
 		{
@@ -193,7 +195,6 @@ func TestGetClusterOptions(t *testing.T) {
 						DiskSize: ptr.To("123Gi"),
 					},
 				},
-				StorageResourceTypes: []string{dockyardsv1.StorageResourceTypeHostPath},
 			},
 		},
 		{
@@ -220,7 +221,45 @@ func TestGetClusterOptions(t *testing.T) {
 				Version: []string{
 					"v1.2.3",
 				},
-				StorageResourceTypes: []string{dockyardsv1.StorageResourceTypeHostPath},
+			},
+		},
+		{
+			name: "test storage role feature",
+			lists: []client.ObjectList{
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+								Namespace: "testing",
+							},
+							Status: dockyardsv1.ReleaseStatus{
+								Versions: []string{
+									"v1.2.3",
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.FeatureList{
+					Items: []dockyardsv1.Feature{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      string(featurenames.FeatureStorageRole),
+								Namespace: "testing",
+							},
+						},
+					},
+				},
+			},
+			expected: v1.Options{
+				SingleNode: false,
+				StorageResourceTypes: &[]string{
+					dockyardsv1.StorageResourceTypeHostPath,
+				},
+				Version: []string{
+					"v1.2.3",
+				},
 			},
 		},
 	}
@@ -234,7 +273,6 @@ func TestGetClusterOptions(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				logger:    logger,
 				Client:    fakeClient,
 				namespace: "testing",
 			}
@@ -242,7 +280,9 @@ func TestGetClusterOptions(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, "/v1/cluster-options", nil)
 
-			h.GetClusterOptions(w, r)
+			ctx := middleware.ContextWithLogger(context.Background(), logger)
+
+			h.GetClusterOptions(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {

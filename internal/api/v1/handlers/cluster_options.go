@@ -6,6 +6,8 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
@@ -85,14 +87,25 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	storageResourceTypes := []string{
-		dockyardsv1.StorageResourceTypeHostPath,
+	options := v1.Options{
+		SingleNode: false,
+		Version:    release.Status.Versions,
 	}
 
-	options := v1.Options{
-		SingleNode:           false,
-		Version:              release.Status.Versions,
-		StorageResourceTypes: storageResourceTypes,
+	featureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageRole, h.namespace)
+	if err != nil {
+		logger.Error("error verifying feature", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if featureEnabled {
+		storageResourceTypes := []string{
+			dockyardsv1.StorageResourceTypeHostPath,
+		}
+
+		options.StorageResourceTypes = &storageResourceTypes
 	}
 
 	objectKey = client.ObjectKey{

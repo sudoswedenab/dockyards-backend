@@ -426,7 +426,6 @@ components:
       required:
       - single_node
       - version
-      - storage_resource_types
     organization:
       properties:
         id:
