@@ -108,14 +108,29 @@ func (h *handler) GetOrgCredentials(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *handler) PostOrgCredentials(w http.ResponseWriter, r *http.Request) {
+func (h *handler) PostOrganizationCredentials(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	logger := middleware.LoggerFrom(ctx)
 
-	organizationID := r.PathValue("organizationID")
-	if organizationID == "" {
+	organizationName := r.PathValue("organizationName")
+	if organizationName == "" {
 		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting organization", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -138,28 +153,6 @@ func (h *handler) PostOrgCredentials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: organizationID,
-	}
-
-	var organizationList dockyardsv1.OrganizationList
-	err = h.List(ctx, &organizationList, matchingFields)
-	if err != nil {
-		logger.Error("error listing organizations", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if len(organizationList.Items) != 1 {
-		logger.Debug("expected exactly one organization", "count", len(organizationList.Items))
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	organization := organizationList.Items[0]
-
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
 		logger.Error("error getting subject from context", "err", err)
@@ -176,7 +169,7 @@ func (h *handler) PostOrgCredentials(w http.ResponseWriter, r *http.Request) {
 
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      credential.Name,
+			Name:      "credential-" + credential.Name,
 			Namespace: organization.Status.NamespaceRef,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -187,6 +180,15 @@ func (h *handler) PostOrgCredentials(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		},
+		Type: DockyardsSecretTypeCredential,
+	}
+
+	if credential.Data != nil {
+		secret.Data = make(map[string][]byte)
+
+		for key, value := range *credential.Data {
+			secret.Data[key] = value
+		}
 	}
 
 	err = h.Create(ctx, &secret)

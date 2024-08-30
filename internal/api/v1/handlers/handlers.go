@@ -87,7 +87,6 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/orgs", logger(requireAuth(http.HandlerFunc(h.GetOrgs))))
 	mux.Handle("GET /v1/orgs/{organizationID}/credentials", logger(requireAuth(http.HandlerFunc(h.GetOrgCredentials))))
 	mux.Handle("POST /v1/orgs/{organizationID}/clusters", logger(requireAuth(http.HandlerFunc(h.PostOrgClusters))))
-	mux.Handle("POST /v1/orgs/{organizationID}/credentials", logger(requireAuth(http.HandlerFunc(h.PostOrgCredentials))))
 
 	mux.Handle("GET /v1/deployments/{deploymentID}", logger(requireAuth(http.HandlerFunc(h.GetDeployment))))
 
@@ -104,6 +103,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("DELETE /v1/deployments/{deploymentID}", logger(requireAuth(http.HandlerFunc(h.DeleteDeployment))))
 
+	mux.Handle("POST /v1/orgs/{organizationName}/credentials", logger(requireAuth(http.HandlerFunc(h.PostOrganizationCredentials))))
 	mux.Handle("PUT /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(http.HandlerFunc(h.PutOrganizationCredential))))
 
 	return nil
