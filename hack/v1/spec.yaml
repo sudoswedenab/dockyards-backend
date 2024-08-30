@@ -277,6 +277,29 @@ paths:
         204: {}
         401: {}
         500: {}
+    put:
+      operationId: updateCredential
+      parameters:
+      - name: organization_name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: credential_name
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/credential'
+      responses:
+        200: {}
+        401: {}
+        500: {}
   /v1/overview:
     get:
       operationId: getOverview
@@ -630,6 +653,9 @@ components:
           type: string
         data:
           type: object
+          additionalProperties:
+            type: string
+            format: byte
       required:
       - id
       - name

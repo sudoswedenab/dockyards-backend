@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -11,17 +12,20 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
 func TestGetOrgCredentials(t *testing.T) {
@@ -199,6 +203,321 @@ func TestGetOrgCredentials(t *testing.T) {
 
 			if !cmp.Equal(actual, tc.expected) {
 				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
+
+func TestPutOrganizationCredential(t *testing.T) {
+	tt := []struct {
+		name             string
+		subject          string
+		organizationName string
+		credentialName   string
+		organization     dockyardsv1.Organization
+		credential       v1.Credential
+		secret           corev1.Secret
+		expected         corev1.Secret
+	}{
+		{
+			name:             "test update empty",
+			subject:          "92b0aabc-96a4-40ef-987d-5daa412f4f0d",
+			organizationName: "test",
+			credentialName:   "test-update-empty",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: dockyardsv1.OrganizationSpec{
+					MemberRefs: []dockyardsv1.MemberReference{
+						{
+							Role: dockyardsv1.MemberRoleSuperUser,
+							UID:  "92b0aabc-96a4-40ef-987d-5daa412f4f0d",
+						},
+					},
+				},
+				Status: dockyardsv1.OrganizationStatus{
+					NamespaceRef: "testing",
+				},
+			},
+			credential: v1.Credential{
+				Data: &map[string][]byte{
+					"test": []byte("secret"),
+				},
+			},
+			secret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-update-empty",
+					Namespace: "testing",
+				},
+				Type: DockyardsSecretTypeCredential,
+			},
+			expected: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-update-empty",
+					Namespace: "testing",
+				},
+				Data: map[string][]byte{
+					"test": []byte("secret"),
+				},
+				Type: DockyardsSecretTypeCredential,
+			},
+		},
+		{
+			name:             "test update existing key",
+			subject:          "ea6a1fa3-56c7-40d3-90cb-4d1c8249576e",
+			organizationName: "test",
+			credentialName:   "test-update-existing-key",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: dockyardsv1.OrganizationSpec{
+					MemberRefs: []dockyardsv1.MemberReference{
+						{
+							Role: dockyardsv1.MemberRoleSuperUser,
+							UID:  "ea6a1fa3-56c7-40d3-90cb-4d1c8249576e",
+						},
+					},
+				},
+				Status: dockyardsv1.OrganizationStatus{
+					NamespaceRef: "testing",
+				},
+			},
+			credential: v1.Credential{
+				Data: &map[string][]byte{
+					"test": []byte("secret"),
+				},
+			},
+			secret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-update-existing-key",
+					Namespace: "testing",
+				},
+				Data: map[string][]byte{
+					"test": []byte("qwfp"),
+					"hjkl": []byte("arst"),
+					"zxcv": []byte("neio"),
+				},
+				Type: DockyardsSecretTypeCredential,
+			},
+			expected: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-update-existing-key",
+					Namespace: "testing",
+				},
+				Data: map[string][]byte{
+					"test": []byte("secret"),
+					"hjkl": []byte("arst"),
+					"zxcv": []byte("neio"),
+				},
+				Type: DockyardsSecretTypeCredential,
+			},
+		},
+		{
+			name:             "test remove existing key",
+			organizationName: "test",
+			credentialName:   "test-remove-existing-key",
+			subject:          "8f129312-5639-4110-8415-b0cd3c66f58f",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: dockyardsv1.OrganizationSpec{
+					MemberRefs: []dockyardsv1.MemberReference{
+						{
+							Role: dockyardsv1.MemberRoleSuperUser,
+							UID:  "8f129312-5639-4110-8415-b0cd3c66f58f",
+						},
+					},
+				},
+				Status: dockyardsv1.OrganizationStatus{
+					NamespaceRef: "testing",
+				},
+			},
+			credential: v1.Credential{
+				Data: &map[string][]byte{
+					"test": nil,
+				},
+			},
+			secret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-remove-existing-key",
+					Namespace: "testing",
+				},
+				Data: map[string][]byte{
+					"test": []byte("secret"),
+					"arst": []byte("qwfp"),
+				},
+				Type: DockyardsSecretTypeCredential,
+			},
+			expected: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-remove-existing-key",
+					Namespace: "testing",
+				},
+				Data: map[string][]byte{
+					"arst": []byte("qwfp"),
+				},
+				Type: DockyardsSecretTypeCredential,
+			},
+		},
+		{
+			name:             "test update existing key to empty string",
+			organizationName: "test",
+			credentialName:   "test-update-empty-string",
+			subject:          "0b24eb27-2aac-4a00-b64a-3eaf3f301194",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: dockyardsv1.OrganizationSpec{
+					MemberRefs: []dockyardsv1.MemberReference{
+						{
+							Role: dockyardsv1.MemberRoleSuperUser,
+							UID:  "0b24eb27-2aac-4a00-b64a-3eaf3f301194",
+						},
+					},
+				},
+				Status: dockyardsv1.OrganizationStatus{
+					NamespaceRef: "testing",
+				},
+			},
+			secret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-update-empty-string",
+					Namespace: "testing",
+				},
+				Data: map[string][]byte{
+					"test": []byte("secret"),
+					"zxcv": []byte("neio"),
+				},
+				Type: DockyardsSecretTypeCredential,
+			},
+			credential: v1.Credential{
+				Data: &map[string][]byte{
+					"test": []byte(""),
+				},
+			},
+			expected: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-update-empty-string",
+					Namespace: "testing",
+				},
+				Data: map[string][]byte{
+					"test": []byte(""),
+					"zxcv": []byte("neio"),
+				},
+				Type: DockyardsSecretTypeCredential,
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+				t.Skip("no kubebuilder assets configured")
+			}
+
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+			ctx, cancel := context.WithCancel(context.TODO())
+
+			environment := envtest.Environment{
+				CRDDirectoryPaths: []string{
+					"../../../../config/crd",
+				},
+			}
+
+			cfg, err := environment.Start()
+			if err != nil {
+				t.Fatalf("error starting test environment: %s", err)
+			}
+
+			t.Cleanup(func() {
+				cancel()
+				environment.Stop()
+			})
+
+			scheme := scheme.Scheme
+			_ = dockyardsv1.AddToScheme(scheme)
+
+			c, err := client.New(cfg, client.Options{Scheme: scheme})
+			if err != nil {
+				t.Fatalf("error creating test client: %s", err)
+			}
+
+			namespace := corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "testing",
+				},
+			}
+
+			err = c.Create(ctx, &namespace)
+			if err != nil {
+				t.Fatalf("error creating test namespace: %s", err)
+			}
+
+			err = c.Create(ctx, &tc.organization)
+			if err != nil {
+				t.Fatalf("error creating test organization: %s", err)
+			}
+
+			patch := client.MergeFrom(tc.organization.DeepCopy())
+
+			tc.organization.Status.NamespaceRef = "testing"
+
+			err = c.Status().Patch(ctx, &tc.organization, patch)
+			if err != nil {
+				t.Fatalf("error patching test organization: %s", err)
+			}
+
+			err = c.Create(ctx, &tc.secret)
+			if err != nil {
+				t.Fatalf("error creating test secret: %s", err)
+			}
+
+			h := handler{
+				Client: c,
+			}
+
+			u := url.URL{
+				Path: path.Join("/v1/organizations", tc.organizationName, "credentials", tc.credentialName),
+			}
+
+			b, err := json.Marshal(tc.credential)
+			if err != nil {
+				t.Fatalf("error marshalling test credential: %s", err)
+			}
+
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, bytes.NewBuffer(b))
+
+			r.SetPathValue("organizationName", tc.organizationName)
+			r.SetPathValue("credentialName", tc.credentialName)
+
+			ctx = middleware.ContextWithSubject(ctx, tc.subject)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.PutOrganizationCredential(w, r.Clone(ctx))
+
+			if w.Result().StatusCode != http.StatusNoContent {
+				t.Fatalf("expected status code %d, got %d", http.StatusNoContent, w.Result().StatusCode)
+			}
+
+			var actual corev1.Secret
+			err = c.Get(ctx, client.ObjectKeyFromObject(&tc.expected), &actual)
+			if err != nil {
+				t.Fatalf("error getting expected secret: %s", err)
+			}
+
+			options := cmp.Options{
+				cmpopts.IgnoreTypes(time.Time{}),
+				cmpopts.IgnoreFields(metav1.ObjectMeta{}, "UID", "ResourceVersion", "ManagedFields"),
+			}
+
+			if !cmp.Equal(tc.expected, actual, options) {
+				t.Errorf("diff: %s", cmp.Diff(actual, tc.expected, options))
 			}
 		})
 	}

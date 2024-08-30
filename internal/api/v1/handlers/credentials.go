@@ -11,6 +11,7 @@ import (
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -19,7 +20,7 @@ const (
 	DockyardsSecretTypeCredential = "dockyards.io/credential"
 )
 
-// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;delete
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=create;delete;get;list;patch;watch
 
 func (h *handler) GetOrgCredentials(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -369,4 +370,108 @@ func (h *handler) GetCredential(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("error writing response data", "err", err)
 	}
+}
+
+func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logger := middleware.LoggerFrom(ctx)
+
+	organizationName := r.PathValue("organizationName")
+	credentialName := r.PathValue("credentialName")
+
+	if organizationName == "" || credentialName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	subject, err := middleware.SubjectFrom(ctx)
+	if err != nil {
+		logger.Error("error getting subject from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	var organization dockyardsv1.Organization
+	err = h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting organization", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	if !h.isMember(subject, &organization) {
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	var secret corev1.Secret
+	err = h.Get(ctx, client.ObjectKey{Name: "credential-" + credentialName, Namespace: organization.Status.NamespaceRef}, &secret)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting secret", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) || secret.Type != DockyardsSecretTypeCredential {
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		logger.Error("error reading request body", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	defer r.Body.Close()
+
+	var credential v1.Credential
+	err = json.Unmarshal(body, &credential)
+	if err != nil {
+		logger.Error("error unmarshalling request body", "err", err, "body", body)
+		w.WriteHeader(http.StatusUnprocessableEntity)
+
+		return
+	}
+
+	if credential.Data == nil {
+		w.WriteHeader(http.StatusNoContent)
+
+		return
+	}
+
+	patch := client.MergeFrom(secret.DeepCopy())
+
+	if secret.Data == nil {
+		secret.Data = make(map[string][]byte)
+	}
+
+	for key, value := range *credential.Data {
+		secret.Data[key] = value
+	}
+
+	err = h.Patch(ctx, &secret, patch)
+	if err != nil {
+		logger.Error("error patching secret", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

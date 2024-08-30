@@ -72,10 +72,10 @@ type ClusterOverview struct {
 
 // Credential defines model for credential.
 type Credential struct {
-	Data         *map[string]interface{} `json:"data,omitempty"`
-	ID           string                  `json:"id"`
-	Name         string                  `json:"name"`
-	Organization string                  `json:"organization"`
+	Data         *map[string][]byte `json:"data,omitempty"`
+	ID           string             `json:"id"`
+	Name         string             `json:"name"`
+	Organization string             `json:"organization"`
 }
 
 // Deployment defines model for deployment.
@@ -248,3 +248,6 @@ type CreateClusterJSONRequestBody = ClusterOptions
 
 // CreateCredentialJSONRequestBody defines body for CreateCredential for application/json ContentType.
 type CreateCredentialJSONRequestBody = Credential
+
+// UpdateCredentialJSONRequestBody defines body for UpdateCredential for application/json ContentType.
+type UpdateCredentialJSONRequestBody = Credential
