@@ -220,22 +220,6 @@ paths:
                 items:
                   $ref: '#/components/schemas/credential'
         500: {}
-  /v1/credentials/{credential_id}:
-    get:
-      operationId: getCredential
-      parameters:
-      - name: credential_id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        200:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/credential'
-        500: {}
   /v1/orgs/{organization_name}/credentials:
     post:
       operationId: createCredential
@@ -299,6 +283,26 @@ paths:
       responses:
         200: {}
         401: {}
+        500: {}
+    get:
+      operationId: getCredential
+      parameters:
+      - name: organization_name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: credential_name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/credential'
         500: {}
   /v1/overview:
     get:

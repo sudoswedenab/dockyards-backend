@@ -775,3 +775,198 @@ func TestPostOrganizationCredentials(t *testing.T) {
 		})
 	}
 }
+
+func TestGetOrganizationCredential(t *testing.T) {
+	tt := []struct {
+		name             string
+		organizationName string
+		credentialName   string
+		subject          string
+		organization     dockyardsv1.Organization
+		secret           corev1.Secret
+		expected         v1.Credential
+	}{
+		{
+			name:             "test empty credential",
+			organizationName: "test",
+			credentialName:   "test-empty-credential",
+			subject:          "19b704bd-4217-41ef-b86f-a3b73ce5b4c6",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: dockyardsv1.OrganizationSpec{
+					MemberRefs: []dockyardsv1.MemberReference{
+						{
+							Role: dockyardsv1.MemberRoleSuperUser,
+							UID:  "19b704bd-4217-41ef-b86f-a3b73ce5b4c6",
+						},
+					},
+				},
+			},
+			secret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-empty-credential",
+					Namespace: "testing",
+					UID:       "7bf4a804-82eb-4a43-8d33-c017cd57fda5",
+				},
+				Type: DockyardsSecretTypeCredential,
+			},
+			expected: v1.Credential{
+				ID:           "7bf4a804-82eb-4a43-8d33-c017cd57fda5",
+				Name:         "test-empty-credential",
+				Organization: "test",
+			},
+		},
+		{
+			name:             "test credential with multiple keys",
+			organizationName: "test",
+			credentialName:   "test-multiple-keys",
+			subject:          "dd886032-c690-4d7d-b1a1-c0f19fce1ea7",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: dockyardsv1.OrganizationSpec{
+					MemberRefs: []dockyardsv1.MemberReference{
+						{
+							Role: dockyardsv1.MemberRoleSuperUser,
+							UID:  "dd886032-c690-4d7d-b1a1-c0f19fce1ea7",
+						},
+					},
+				},
+			},
+			secret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-multiple-keys",
+					Namespace: "testing",
+					UID:       "219070d3-8294-4cb5-8db7-c4486cff9730",
+				},
+				Data: map[string][]byte{
+					"qwfp": []byte("arst"),
+					"zxcv": []byte("neio"),
+					"hjkl": []byte("wars"),
+				},
+				Type: DockyardsSecretTypeCredential,
+			},
+			expected: v1.Credential{
+				ID:           "219070d3-8294-4cb5-8db7-c4486cff9730",
+				Name:         "test-multiple-keys",
+				Organization: "test",
+				Data: &map[string][]byte{
+					"qwfp": nil,
+					"zxcv": nil,
+					"hjkl": nil,
+				},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+				t.Skip("no kubebuilder assets configured")
+			}
+
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+			ctx, cancel := context.WithCancel(context.TODO())
+
+			environment := envtest.Environment{
+				CRDDirectoryPaths: []string{
+					"../../../../config/crd",
+				},
+			}
+
+			cfg, err := environment.Start()
+			if err != nil {
+				t.Fatalf("error starting test environment: %s", err)
+			}
+
+			t.Cleanup(func() {
+				cancel()
+				environment.Stop()
+			})
+
+			scheme := scheme.Scheme
+			_ = dockyardsv1.AddToScheme(scheme)
+
+			c, err := client.New(cfg, client.Options{Scheme: scheme})
+			if err != nil {
+				t.Fatalf("error creating test client: %s", err)
+			}
+
+			namespace := corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "testing",
+				},
+			}
+
+			err = c.Create(ctx, &namespace)
+			if err != nil {
+				t.Fatalf("error creating test namespace: %s", err)
+			}
+
+			err = c.Create(ctx, &tc.organization)
+			if err != nil {
+				t.Fatalf("error creating test organization: %s", err)
+			}
+
+			patch := client.MergeFrom(tc.organization.DeepCopy())
+
+			tc.organization.Status.NamespaceRef = "testing"
+
+			err = c.Status().Patch(ctx, &tc.organization, patch)
+			if err != nil {
+				t.Fatalf("error patching test organization: %s", err)
+			}
+
+			err = c.Create(ctx, &tc.secret)
+			if err != nil {
+				t.Fatalf("error creating test secret: %s", err)
+			}
+
+			h := handler{
+				Client: c,
+			}
+
+			u := url.URL{
+				Path: path.Join("/v1/organizations", tc.organizationName, "credentials", tc.credentialName),
+			}
+
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+			r.SetPathValue("organizationName", tc.organizationName)
+			r.SetPathValue("credentialName", tc.credentialName)
+
+			ctx = middleware.ContextWithSubject(ctx, tc.subject)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.GetOrganizationCredential(w, r.Clone(ctx))
+
+			if w.Result().StatusCode != http.StatusOK {
+				t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Result().StatusCode)
+			}
+
+			body, err := io.ReadAll(w.Result().Body)
+			if err != nil {
+				t.Fatalf("error reading test body: %s", err)
+			}
+
+			t.Log(string(body))
+
+			var actual v1.Credential
+			err = json.Unmarshal(body, &actual)
+			if err != nil {
+				t.Fatalf("error unmarhalling body: %s", err)
+			}
+
+			opts := cmpopts.IgnoreFields(v1.Credential{}, "ID")
+
+			if !cmp.Equal(actual, tc.expected, opts) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual, opts))
+			}
+		})
+	}
+}

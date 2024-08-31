@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
@@ -291,51 +292,25 @@ func (h *handler) DeleteCredential(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *handler) GetCredential(w http.ResponseWriter, r *http.Request) {
+func (h *handler) GetOrganizationCredential(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	logger := middleware.LoggerFrom(ctx)
 
-	credentialID := r.PathValue("credentialID")
-	if credentialID == "" {
+	organizationName := r.PathValue("organizationName")
+	credentialName := r.PathValue("credentialName")
+
+	if credentialName == "" || organizationName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: credentialID,
-	}
-
-	var secretList corev1.SecretList
-	err := h.List(ctx, &secretList, matchingFields)
-	if err != nil {
-		logger.Error("error listing secrets", "err", err)
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting organization", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if len(secretList.Items) != 1 {
-		logger.Debug("expected exactly one secret", "count", len(secretList.Items))
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	secret := secretList.Items[0]
-
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &secret)
-	if err != nil {
-		logger.Error("error getting owner organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if organization == nil {
-		logger.Debug("secret is not owned by organization")
-		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -348,7 +323,28 @@ func (h *handler) GetCredential(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.isMember(subject, organization) {
+	if !h.isMember(subject, &organization) {
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	var secret corev1.Secret
+	err = h.Get(ctx, client.ObjectKey{Name: "credential-" + credentialName, Namespace: organization.Status.NamespaceRef}, &secret)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting secret", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusNotFound)
+
+		return
+	}
+
+	if secret.Type != DockyardsSecretTypeCredential {
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
@@ -356,8 +352,20 @@ func (h *handler) GetCredential(w http.ResponseWriter, r *http.Request) {
 
 	v1Credential := v1.Credential{
 		ID:           string(secret.UID),
-		Name:         secret.Name,
+		Name:         strings.TrimPrefix(secret.Name, "credential-"),
 		Organization: organization.Name,
+	}
+
+	if secret.Data != nil {
+		data := make(map[string][]byte)
+
+		for key := range secret.Data {
+			data[key] = []byte("")
+
+			data[key] = nil
+		}
+
+		v1Credential.Data = &data
 	}
 
 	b, err := json.Marshal(&v1Credential)

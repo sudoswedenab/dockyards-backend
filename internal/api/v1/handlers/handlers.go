@@ -90,7 +90,6 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("GET /v1/deployments/{deploymentID}", logger(requireAuth(http.HandlerFunc(h.GetDeployment))))
 
-	mux.Handle("GET /v1/credentials/{credentialID}", logger(requireAuth(http.HandlerFunc(h.GetCredential))))
 	mux.Handle("DELETE /v1/credentials/{credentialID}", logger(requireAuth(http.HandlerFunc(h.DeleteCredential))))
 
 	mux.Handle("GET /v1/whoami", logger(requireAuth(http.HandlerFunc(h.GetWhoami))))
@@ -103,6 +102,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("DELETE /v1/deployments/{deploymentID}", logger(requireAuth(http.HandlerFunc(h.DeleteDeployment))))
 
+	mux.Handle("GET /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(http.HandlerFunc(h.GetOrganizationCredential))))
 	mux.Handle("POST /v1/orgs/{organizationName}/credentials", logger(requireAuth(http.HandlerFunc(h.PostOrganizationCredentials))))
 	mux.Handle("PUT /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(http.HandlerFunc(h.PutOrganizationCredential))))
 
