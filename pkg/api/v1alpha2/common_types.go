@@ -18,12 +18,13 @@ const (
 )
 
 const (
-	LabelOrganizationName = "dockyards.io/organization-name"
-	LabelClusterName      = "dockyards.io/cluster-name"
-	LabelNodePoolName     = "dockyards.io/node-pool-name"
-	LabelNodeName         = "dockyards.io/node-name"
-	LabelDeploymentName   = "dockyards.io/deployment-name"
-	LabelReleaseName      = "dockyards.io/release-name"
+	LabelOrganizationName       = "dockyards.io/organization-name"
+	LabelClusterName            = "dockyards.io/cluster-name"
+	LabelNodePoolName           = "dockyards.io/node-pool-name"
+	LabelNodeName               = "dockyards.io/node-name"
+	LabelDeploymentName         = "dockyards.io/deployment-name"
+	LabelReleaseName            = "dockyards.io/release-name"
+	LabelCredentialTemplateName = "dockyards.io/credential-template-name"
 )
 
 const (

@@ -660,6 +660,8 @@ components:
           additionalProperties:
             type: string
             format: byte
+        credential_template:
+          type: string
       required:
       - id
       - name

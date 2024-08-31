@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -778,13 +779,14 @@ func TestPostOrganizationCredentials(t *testing.T) {
 
 func TestGetOrganizationCredential(t *testing.T) {
 	tt := []struct {
-		name             string
-		organizationName string
-		credentialName   string
-		subject          string
-		organization     dockyardsv1.Organization
-		secret           corev1.Secret
-		expected         v1.Credential
+		name               string
+		organizationName   string
+		credentialName     string
+		subject            string
+		organization       dockyardsv1.Organization
+		credentialTemplate *dockyardsv1.CredentialTemplate
+		secret             corev1.Secret
+		expected           v1.Credential
 	}{
 		{
 			name:             "test empty credential",
@@ -860,6 +862,65 @@ func TestGetOrganizationCredential(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:             "test credential with credential template",
+			organizationName: "test",
+			credentialName:   "test-with-credential-template",
+			subject:          "8889b649-1917-42e6-8278-01436567d294",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: dockyardsv1.OrganizationSpec{
+					MemberRefs: []dockyardsv1.MemberReference{
+						{
+							Role: dockyardsv1.MemberRoleSuperUser,
+							UID:  "8889b649-1917-42e6-8278-01436567d294",
+						},
+					},
+				},
+			},
+			credentialTemplate: &dockyardsv1.CredentialTemplate{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.CredentialTemplateSpec{
+					Options: []dockyardsv1.CredentialOption{
+						{
+							Key:       "qwfp",
+							Plaintext: true,
+						},
+						{
+							Key: "test",
+						},
+					},
+				},
+			},
+			secret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-with-credential-template",
+					Namespace: "testing",
+					Labels: map[string]string{
+						dockyardsv1.LabelCredentialTemplateName: "test",
+					},
+				},
+				Data: map[string][]byte{
+					"qwfp": []byte("arst"),
+					"test": []byte("secret"),
+				},
+				Type: dockyardsv1.SecretTypeCredential,
+			},
+			expected: v1.Credential{
+				Name:               "test-with-credential-template",
+				Organization:       "test",
+				CredentialTemplate: ptr.To("test"),
+				Data: &map[string][]byte{
+					"qwfp": []byte("arst"),
+					"test": nil,
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {
@@ -921,13 +982,21 @@ func TestGetOrganizationCredential(t *testing.T) {
 				t.Fatalf("error patching test organization: %s", err)
 			}
 
+			if tc.credentialTemplate != nil {
+				err := c.Create(ctx, tc.credentialTemplate)
+				if err != nil {
+					t.Fatalf("error creating test credential template: %s", err)
+				}
+			}
+
 			err = c.Create(ctx, &tc.secret)
 			if err != nil {
 				t.Fatalf("error creating test secret: %s", err)
 			}
 
 			h := handler{
-				Client: c,
+				Client:    c,
+				namespace: "testing",
 			}
 
 			u := url.URL{

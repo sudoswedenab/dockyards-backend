@@ -72,10 +72,11 @@ type ClusterOverview struct {
 
 // Credential defines model for credential.
 type Credential struct {
-	Data         *map[string][]byte `json:"data,omitempty"`
-	ID           string             `json:"id"`
-	Name         string             `json:"name"`
-	Organization string             `json:"organization"`
+	CredentialTemplate *string            `json:"credential_template,omitempty"`
+	Data               *map[string][]byte `json:"data,omitempty"`
+	ID                 string             `json:"id"`
+	Name               string             `json:"name"`
+	Organization       string             `json:"organization"`
 }
 
 // Deployment defines model for deployment.

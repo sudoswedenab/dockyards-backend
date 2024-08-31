@@ -346,17 +346,45 @@ func (h *handler) GetOrganizationCredential(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	plaintextKeys := make(map[string]bool)
+
 	v1Credential := v1.Credential{
 		ID:           string(secret.UID),
 		Name:         strings.TrimPrefix(secret.Name, "credential-"),
 		Organization: organization.Name,
 	}
 
+	credentialTemplateName, has := secret.Labels[dockyardsv1.LabelCredentialTemplateName]
+	if has {
+		var credentialTemplate dockyardsv1.CredentialTemplate
+		err := h.Get(ctx, client.ObjectKey{Name: credentialTemplateName, Namespace: h.namespace}, &credentialTemplate)
+		if client.IgnoreNotFound(err) != nil {
+			logger.Error("error getting credential template", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		if !apierrors.IsNotFound(err) {
+			for _, option := range credentialTemplate.Spec.Options {
+				if option.Plaintext {
+					plaintextKeys[option.Key] = true
+				}
+			}
+		}
+
+		v1Credential.CredentialTemplate = &credentialTemplateName
+	}
+
 	if secret.Data != nil {
 		data := make(map[string][]byte)
 
-		for key := range secret.Data {
-			data[key] = []byte("")
+		for key, value := range secret.Data {
+			if plaintextKeys[key] {
+				data[key] = value
+
+				continue
+			}
 
 			data[key] = nil
 		}
