@@ -128,7 +128,7 @@ func (h *handler) PostClusterDeployments(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		if secret.Type != DockyardsSecretTypeCredential {
+		if secret.Type != dockyardsv1.SecretTypeCredential {
 			w.WriteHeader(http.StatusForbidden)
 
 			return

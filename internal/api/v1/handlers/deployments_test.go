@@ -961,7 +961,7 @@ func TestPostClusterDeployments(t *testing.T) {
 								Namespace: "testing",
 								UID:       "74e1819c-8b20-4187-b464-17f9d2c229a8",
 							},
-							Type: DockyardsSecretTypeCredential,
+							Type: dockyardsv1.SecretTypeCredential,
 						},
 					},
 				},

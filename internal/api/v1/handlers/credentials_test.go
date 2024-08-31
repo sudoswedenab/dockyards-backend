@@ -69,7 +69,7 @@ func TestGetOrgCredentials(t *testing.T) {
 								Namespace: "testing",
 								UID:       "54376668-876c-43d7-8d29-2ef37ccab831",
 							},
-							Type: DockyardsSecretTypeCredential,
+							Type: dockyardsv1.SecretTypeCredential,
 						},
 					},
 				},
@@ -115,7 +115,7 @@ func TestGetOrgCredentials(t *testing.T) {
 								Namespace: "testing",
 								UID:       "3cca83a8-7848-40ad-aa89-916a28f6016d",
 							},
-							Type: DockyardsSecretTypeCredential,
+							Type: dockyardsv1.SecretTypeCredential,
 						},
 						{
 							ObjectMeta: metav1.ObjectMeta{
@@ -250,7 +250,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 					Name:      "credential-test-update-empty",
 					Namespace: "testing",
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 			expected: corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -260,7 +260,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 				Data: map[string][]byte{
 					"test": []byte("secret"),
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 		},
 		{
@@ -299,7 +299,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 					"hjkl": []byte("arst"),
 					"zxcv": []byte("neio"),
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 			expected: corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -311,7 +311,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 					"hjkl": []byte("arst"),
 					"zxcv": []byte("neio"),
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 		},
 		{
@@ -349,7 +349,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 					"test": []byte("secret"),
 					"arst": []byte("qwfp"),
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 			expected: corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -359,7 +359,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 				Data: map[string][]byte{
 					"arst": []byte("qwfp"),
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 		},
 		{
@@ -392,7 +392,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 					"test": []byte("secret"),
 					"zxcv": []byte("neio"),
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 			credential: v1.Credential{
 				Data: &map[string][]byte{
@@ -408,7 +408,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 					"test": []byte(""),
 					"zxcv": []byte("neio"),
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 		},
 	}
@@ -570,7 +570,7 @@ func TestPostOrganizationCredentials(t *testing.T) {
 						},
 					},
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 		},
 		{
@@ -616,7 +616,7 @@ func TestPostOrganizationCredentials(t *testing.T) {
 				Data: map[string][]byte{
 					"test": []byte("secret"),
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 		},
 		{
@@ -666,7 +666,7 @@ func TestPostOrganizationCredentials(t *testing.T) {
 					"zxcv": []byte("neio"),
 					"hjkl": []byte("wars"),
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 		},
 	}
@@ -810,7 +810,7 @@ func TestGetOrganizationCredential(t *testing.T) {
 					Namespace: "testing",
 					UID:       "7bf4a804-82eb-4a43-8d33-c017cd57fda5",
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 			expected: v1.Credential{
 				ID:           "7bf4a804-82eb-4a43-8d33-c017cd57fda5",
@@ -847,7 +847,7 @@ func TestGetOrganizationCredential(t *testing.T) {
 					"zxcv": []byte("neio"),
 					"hjkl": []byte("wars"),
 				},
-				Type: DockyardsSecretTypeCredential,
+				Type: dockyardsv1.SecretTypeCredential,
 			},
 			expected: v1.Credential{
 				ID:           "219070d3-8294-4cb5-8db7-c4486cff9730",

@@ -30,3 +30,7 @@ const (
 	ProvenienceDockyards = "Dockyards"
 	ProvenienceUser      = "User"
 )
+
+const (
+	SecretTypeCredential = "dockyards.io/credential"
+)

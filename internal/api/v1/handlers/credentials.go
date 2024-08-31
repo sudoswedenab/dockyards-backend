@@ -17,10 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	DockyardsSecretTypeCredential = "dockyards.io/credential"
-)
-
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=create;delete;get;list;patch;watch
 
 func (h *handler) GetOrgCredentials(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +69,7 @@ func (h *handler) GetOrgCredentials(w http.ResponseWriter, r *http.Request) {
 	}
 
 	matchingFields = client.MatchingFields{
-		index.SecretTypeField: DockyardsSecretTypeCredential,
+		index.SecretTypeField: dockyardsv1.SecretTypeCredential,
 	}
 
 	var secretList corev1.SecretList
@@ -181,7 +177,7 @@ func (h *handler) PostOrganizationCredentials(w http.ResponseWriter, r *http.Req
 				},
 			},
 		},
-		Type: DockyardsSecretTypeCredential,
+		Type: dockyardsv1.SecretTypeCredential,
 	}
 
 	if credential.Data != nil {
@@ -344,7 +340,7 @@ func (h *handler) GetOrganizationCredential(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if secret.Type != DockyardsSecretTypeCredential {
+	if secret.Type != dockyardsv1.SecretTypeCredential {
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
@@ -434,7 +430,7 @@ func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if apierrors.IsNotFound(err) || secret.Type != DockyardsSecretTypeCredential {
+	if apierrors.IsNotFound(err) || secret.Type != dockyardsv1.SecretTypeCredential {
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return

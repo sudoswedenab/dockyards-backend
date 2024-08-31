@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"runtime/debug"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/handlers"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -223,7 +222,7 @@ func (m *PrometheusMetrics) CollectMetrics() error {
 	m.credentialMetric.Reset()
 
 	matchingFields := client.MatchingFields{
-		index.SecretTypeField: handlers.DockyardsSecretTypeCredential,
+		index.SecretTypeField: dockyardsv1.SecretTypeCredential,
 	}
 
 	var secretList corev1.SecretList
