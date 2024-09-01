@@ -1104,3 +1104,130 @@ func TestGetOrganizationCredential(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteOrganizationCredential(t *testing.T) {
+	tt := []struct {
+		name             string
+		organizationName string
+		credentialName   string
+		subject          string
+		organization     dockyardsv1.Organization
+		secret           corev1.Secret
+	}{
+		{
+			name:             "test basic credential",
+			organizationName: "test",
+			credentialName:   "test-basic-credential",
+			subject:          "e82d8265-2abc-4617-ab3b-dcc3a30c17e3",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: dockyardsv1.OrganizationSpec{
+					MemberRefs: []dockyardsv1.MemberReference{
+						{
+							Role: dockyardsv1.MemberRoleSuperUser,
+							UID:  "e82d8265-2abc-4617-ab3b-dcc3a30c17e3",
+						},
+					},
+				},
+			},
+			secret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "credential-test-basic-credential",
+					Namespace: "testing",
+				},
+				Type: dockyardsv1.SecretTypeCredential,
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+				t.Skip("no kubebuilder assets configured")
+			}
+
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+			ctx, cancel := context.WithCancel(context.TODO())
+
+			environment := envtest.Environment{
+				CRDDirectoryPaths: []string{
+					"../../../../config/crd",
+				},
+			}
+
+			cfg, err := environment.Start()
+			if err != nil {
+				t.Fatalf("error starting test environment: %s", err)
+			}
+
+			t.Cleanup(func() {
+				cancel()
+				environment.Stop()
+			})
+
+			scheme := scheme.Scheme
+			_ = dockyardsv1.AddToScheme(scheme)
+
+			c, err := client.New(cfg, client.Options{Scheme: scheme})
+			if err != nil {
+				t.Fatalf("error creating test client: %s", err)
+			}
+
+			namespace := corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "testing",
+				},
+			}
+
+			err = c.Create(ctx, &namespace)
+			if err != nil {
+				t.Fatalf("error creating test namespace: %s", err)
+			}
+
+			err = c.Create(ctx, &tc.organization)
+			if err != nil {
+				t.Fatalf("error creating test organization: %s", err)
+			}
+
+			patch := client.MergeFrom(tc.organization.DeepCopy())
+
+			tc.organization.Status.NamespaceRef = "testing"
+
+			err = c.Status().Patch(ctx, &tc.organization, patch)
+			if err != nil {
+				t.Fatalf("error patching test organization: %s", err)
+			}
+
+			err = c.Create(ctx, &tc.secret)
+			if err != nil {
+				t.Fatalf("error creating test secret: %s", err)
+			}
+
+			h := handler{
+				Client: c,
+			}
+
+			u := url.URL{
+				Path: path.Join("/v1/organizations", tc.organizationName, "credentials", tc.credentialName),
+			}
+
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+			r.SetPathValue("organizationName", tc.organizationName)
+			r.SetPathValue("credentialName", tc.credentialName)
+
+			ctx = middleware.ContextWithSubject(ctx, tc.subject)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			h.DeleteOrganizationCredential(w, r.Clone(ctx))
+
+			if w.Result().StatusCode != http.StatusNoContent {
+				t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Result().StatusCode)
+			}
+		})
+	}
+}
