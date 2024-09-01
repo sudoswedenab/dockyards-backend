@@ -105,6 +105,8 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("POST /v1/orgs/{organizationName}/credentials", logger(requireAuth(http.HandlerFunc(h.PostOrganizationCredentials))))
 	mux.Handle("PUT /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(http.HandlerFunc(h.PutOrganizationCredential))))
 
+	mux.Handle("GET /v1/credentials", logger(requireAuth(http.HandlerFunc(h.GetCredentials))))
+
 	return nil
 }
 
