@@ -17,7 +17,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	corev1 "k8s.io/api/core/v1"
@@ -25,131 +24,142 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
-func TestGetOrgCredentials(t *testing.T) {
+func TestGetOrganizationCredentials(t *testing.T) {
 	tt := []struct {
-		name           string
-		sub            string
-		organizationID string
-		lists          []client.ObjectList
-		expected       []v1.Credential
+		name             string
+		organizationName string
+		subject          string
+		organization     dockyardsv1.Organization
+		secrets          []corev1.Secret
+		expected         []v1.Credential
 	}{
 		{
-			name:           "test single credential",
-			sub:            "654202f2-44f6-4fa6-873b-0b9817d3957c",
-			organizationID: "af2224ee-fd4b-4e6c-8ff6-21c2d1ddcc5c",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
+			name:             "test single credential",
+			organizationName: "test-single-credential",
+			subject:          "654202f2-44f6-4fa6-873b-0b9817d3957c",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-single-credential",
+					UID:  "af2224ee-fd4b-4e6c-8ff6-21c2d1ddcc5c",
+				},
+				Spec: dockyardsv1.OrganizationSpec{
+					MemberRefs: []dockyardsv1.MemberReference{
 						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test",
-								UID:  "af2224ee-fd4b-4e6c-8ff6-21c2d1ddcc5c",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
-									{
-										UID: "654202f2-44f6-4fa6-873b-0b9817d3957c",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: "testing",
-							},
+							Role: dockyardsv1.MemberRoleSuperUser,
+							UID:  "654202f2-44f6-4fa6-873b-0b9817d3957c",
 						},
 					},
 				},
-				&corev1.SecretList{
-					Items: []corev1.Secret{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "testing",
-								UID:       "54376668-876c-43d7-8d29-2ef37ccab831",
-							},
-							Type: dockyardsv1.SecretTypeCredential,
-						},
+				Status: dockyardsv1.OrganizationStatus{
+					NamespaceRef: "testing",
+				},
+			},
+			secrets: []corev1.Secret{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "credential-test",
+						Namespace: "testing",
+						UID:       "54376668-876c-43d7-8d29-2ef37ccab831",
 					},
+					Type: dockyardsv1.SecretTypeCredential,
 				},
 			},
 			expected: []v1.Credential{
 				{
 					ID:           "54376668-876c-43d7-8d29-2ef37ccab831",
 					Name:         "test",
-					Organization: "test",
+					Organization: "test-single-credential",
 				},
 			},
 		},
 		{
-			name:           "test several secret types",
-			sub:            "41ae3267-da66-4be0-b2ac-57a60549ff57",
-			organizationID: "8afac404-d43a-4253-a102-a90ff80fa13c",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
+			name:             "test several secret types",
+			subject:          "41ae3267-da66-4be0-b2ac-57a60549ff57",
+			organizationName: "test-several-secret-types",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-several-secret-types",
+					UID:  "8afac404-d43a-4253-a102-a90ff80fa13c",
+				},
+				Spec: dockyardsv1.OrganizationSpec{
+					MemberRefs: []dockyardsv1.MemberReference{
 						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test",
-								UID:  "8afac404-d43a-4253-a102-a90ff80fa13c",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
-									{
-										UID: "41ae3267-da66-4be0-b2ac-57a60549ff57",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: "testing",
-							},
+							Role: dockyardsv1.MemberRoleSuperUser,
+							UID:  "41ae3267-da66-4be0-b2ac-57a60549ff57",
 						},
 					},
 				},
-				&corev1.SecretList{
-					Items: []corev1.Secret{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "dockyards-io-credential",
-								Namespace: "testing",
-								UID:       "3cca83a8-7848-40ad-aa89-916a28f6016d",
-							},
-							Type: dockyardsv1.SecretTypeCredential,
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "kubernetes-io-ssh-auth",
-								Namespace: "testing",
-								UID:       "bf8fc71c-3278-40fe-a452-ed0b1ee189b8",
-							},
-							Type: corev1.SecretTypeSSHAuth,
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "kubernetes-io-tls",
-								Namespace: "testing",
-								UID:       "224a442e-515f-4042-9e03-10de6b827ecf",
-							},
-							Type: corev1.SecretTypeTLS,
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "opaque",
-								Namespace: "testing",
-								UID:       "1efe00b7-9e6a-425d-88ea-99cc41eb6011",
-							},
-							Type: corev1.SecretTypeOpaque,
-						},
+				Status: dockyardsv1.OrganizationStatus{
+					NamespaceRef: "testing",
+				},
+			},
+			secrets: []corev1.Secret{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "credential-dockyards-io-credential",
+						Namespace: "testing",
+						UID:       "3cca83a8-7848-40ad-aa89-916a28f6016d",
 					},
+					Type: dockyardsv1.SecretTypeCredential,
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "credential-kubernetes-io-ssh-auth",
+						Namespace: "testing",
+						UID:       "bf8fc71c-3278-40fe-a452-ed0b1ee189b8",
+					},
+					Data: map[string][]byte{
+						corev1.SSHAuthPrivateKey: []byte("ssh-privatekey"),
+					},
+					Type: corev1.SecretTypeSSHAuth,
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "credential-kubernetes-io-tls",
+						Namespace: "testing",
+						UID:       "224a442e-515f-4042-9e03-10de6b827ecf",
+					},
+					Data: map[string][]byte{
+						corev1.TLSCertKey:       []byte("tls.crt"),
+						corev1.TLSPrivateKeyKey: []byte("tls.key"),
+					},
+					Type: corev1.SecretTypeTLS,
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "credential-opaque",
+						Namespace: "testing",
+						UID:       "1efe00b7-9e6a-425d-88ea-99cc41eb6011",
+					},
+					Type: corev1.SecretTypeOpaque,
 				},
 			},
 			expected: []v1.Credential{
 				{
 					ID:           "3cca83a8-7848-40ad-aa89-916a28f6016d",
 					Name:         "dockyards-io-credential",
-					Organization: "test",
+					Organization: "test-several-secret-types",
+				},
+			},
+		},
+		{
+			name:             "test secret from credential template",
+			organizationName: "test-secret-from-credential-template",
+			subject:          "73161423-76d8-4bb7-9a11-6d014f0f1fcf",
+			organization: dockyardsv1.Organization{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-credential-with-credential-template",
+				},
+			},
+			secrets: []corev1.Secret{},
+			expected: []v1.Credential{
+				{
+					Name:               "test",
+					Organization:       "test-secret-from-credential-template",
+					CredentialTemplate: ptr.To("test"),
 				},
 			},
 		},
@@ -157,34 +167,87 @@ func TestGetOrgCredentials(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+				t.Skip("no kubebuilder assets configured")
+			}
+
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+			ctx, cancel := context.WithCancel(context.TODO())
+
+			environment := envtest.Environment{
+				CRDDirectoryPaths: []string{
+					"../../../../config/crd",
+				},
+			}
+
+			cfg, err := environment.Start()
+			if err != nil {
+				t.Fatalf("error starting test environment: %s", err)
+			}
+
+			t.Cleanup(func() {
+				cancel()
+				environment.Stop()
+			})
 
 			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithLists(tc.lists...).
-				WithIndex(&dockyardsv1.Organization{}, index.UIDField, index.ByUID).
-				WithIndex(&corev1.Secret{}, index.SecretTypeField, index.BySecretType).
-				Build()
+			_ = dockyardsv1.AddToScheme(scheme)
+
+			c, err := client.New(cfg, client.Options{Scheme: scheme})
+			if err != nil {
+				t.Fatalf("error creating test client: %s", err)
+			}
+
+			namespace := corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "testing",
+				},
+			}
+
+			err = c.Create(ctx, &namespace)
+			if err != nil {
+				t.Fatalf("error creating test namespace: %s", err)
+			}
+
+			err = c.Create(ctx, &tc.organization)
+			if err != nil {
+				t.Fatalf("error creating test organization: %s", err)
+			}
+
+			patch := client.MergeFrom(tc.organization.DeepCopy())
+
+			tc.organization.Status.NamespaceRef = "testing"
+
+			err = c.Status().Patch(ctx, &tc.organization, patch)
+			if err != nil {
+				t.Fatalf("error patching test organization: %s", err)
+			}
+
+			for _, secret := range tc.secrets {
+				err := c.Create(ctx, &secret)
+				if err != nil {
+					t.Fatalf("error creating test secret: %s", err)
+				}
+			}
 
 			h := handler{
-				Client: fakeClient,
+				Client: c,
 			}
 
 			u := url.URL{
-				Path: path.Join("/v1/orgs", tc.organizationID, "credentials"),
+				Path: path.Join("/v1/organizations", tc.organizationName, "credentials"),
 			}
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-			r.SetPathValue("organizationID", tc.organizationID)
+			r.SetPathValue("organizationName", tc.organizationName)
 
-			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithSubject(ctx, tc.subject)
 			ctx = middleware.ContextWithLogger(ctx, logger)
 
-			h.GetOrgCredentials(w, r.Clone(ctx))
+			h.GetOrganizationCredentials(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusOK {
@@ -202,8 +265,10 @@ func TestGetOrgCredentials(t *testing.T) {
 				t.Fatalf("error unmarshalling result body json: %s", err)
 			}
 
-			if !cmp.Equal(actual, tc.expected) {
-				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			opts := cmpopts.IgnoreFields(v1.Credential{}, "ID")
+
+			if !cmp.Equal(actual, tc.expected, opts) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual, opts))
 			}
 		})
 	}

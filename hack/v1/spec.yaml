@@ -243,6 +243,24 @@ paths:
                 $ref: '#/components/schemas/credential'
         401: {}
         500: {}
+    get:
+      operationId: getOrganizationCredentials
+      parameters:
+      - name: organization_name
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/credential'
+        401: {}
+        500: {}
   /v1/orgs/{organization_name}/credentials/{credential_name}:
     delete:
       operationId: deleteCredential

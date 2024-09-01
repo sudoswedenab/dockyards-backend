@@ -19,10 +19,32 @@ import (
 
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=create;delete;get;list;patch;watch
 
-func (h *handler) GetOrgCredentials(w http.ResponseWriter, r *http.Request) {
+func (h *handler) GetOrganizationCredentials(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	logger := middleware.LoggerFrom(ctx)
+
+	organizationName := r.PathValue("organizationName")
+	if organizationName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting organization", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
 
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
@@ -32,48 +54,14 @@ func (h *handler) GetOrgCredentials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	organizationID := r.PathValue("organizationID")
-	if organizationID == "" {
-		logger.Error("empty organizationID")
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	matchingFields := client.MatchingFields{
-		index.UIDField: organizationID,
-	}
-
-	var organizationList dockyardsv1.OrganizationList
-	err = h.List(ctx, &organizationList, matchingFields)
-	if err != nil {
-		logger.Error("error getting organizations from kubernetes", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if len(organizationList.Items) != 1 {
-		logger.Debug("expected exactly one organization", "count", len(organizationList.Items))
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	organization := organizationList.Items[0]
-
 	if !h.isMember(subject, &organization) {
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
 
-	matchingFields = client.MatchingFields{
-		index.SecretTypeField: dockyardsv1.SecretTypeCredential,
-	}
-
 	var secretList corev1.SecretList
-	err = h.List(ctx, &secretList, matchingFields)
+	err = h.List(ctx, &secretList, client.InNamespace(organization.Status.NamespaceRef))
 	if err != nil {
 		logger.Error("error listing secrets", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -81,18 +69,30 @@ func (h *handler) GetOrgCredentials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v1Credentials := make([]v1.Credential, len(secretList.Items))
+	credentials := []v1.Credential{}
 
-	for i, secret := range secretList.Items {
-		v1Credentials[i] = v1.Credential{
+	for _, secret := range secretList.Items {
+		if secret.Type != dockyardsv1.SecretTypeCredential {
+			continue
+		}
+
+		credential := v1.Credential{
 			ID:           string(secret.UID),
-			Name:         secret.Name,
+			Name:         strings.TrimPrefix(secret.Name, "credential-"),
 			Organization: organization.Name,
 		}
+
+		credentialTemplate, has := secret.Labels[dockyardsv1.LabelCredentialTemplateName]
+		if has {
+			credential.CredentialTemplate = &credentialTemplate
+		}
+
+		credentials = append(credentials, credential)
 	}
 
-	b, err := json.Marshal(&v1Credentials)
+	b, err := json.Marshal(&credentials)
 	if err != nil {
+		logger.Error("error marhalling credentials", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
