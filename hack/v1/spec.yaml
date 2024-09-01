@@ -222,7 +222,7 @@ paths:
         500: {}
   /v1/orgs/{organization_name}/credentials:
     post:
-      operationId: createCredential
+      operationId: createOrganizationCredential
       parameters:
       - name: organization_name
         in: path
@@ -263,7 +263,7 @@ paths:
         500: {}
   /v1/orgs/{organization_name}/credentials/{credential_name}:
     delete:
-      operationId: deleteCredential
+      operationId: deleteOrganizationCredential
       parameters:
       - name: organization_name
         in: path
@@ -280,7 +280,7 @@ paths:
         401: {}
         500: {}
     put:
-      operationId: updateCredential
+      operationId: updateOrganizationCredential
       parameters:
       - name: organization_name
         in: path
@@ -303,7 +303,7 @@ paths:
         401: {}
         500: {}
     get:
-      operationId: getCredential
+      operationId: getOrganizationCredential
       parameters:
       - name: organization_name
         in: path

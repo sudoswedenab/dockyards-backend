@@ -247,8 +247,8 @@ type LoginJSONRequestBody = Login
 // CreateClusterJSONRequestBody defines body for CreateCluster for application/json ContentType.
 type CreateClusterJSONRequestBody = ClusterOptions
 
-// CreateCredentialJSONRequestBody defines body for CreateCredential for application/json ContentType.
-type CreateCredentialJSONRequestBody = Credential
+// CreateOrganizationCredentialJSONRequestBody defines body for CreateOrganizationCredential for application/json ContentType.
+type CreateOrganizationCredentialJSONRequestBody = Credential
 
-// UpdateCredentialJSONRequestBody defines body for UpdateCredential for application/json ContentType.
-type UpdateCredentialJSONRequestBody = Credential
+// UpdateOrganizationCredentialJSONRequestBody defines body for UpdateOrganizationCredential for application/json ContentType.
+type UpdateOrganizationCredentialJSONRequestBody = Credential
