@@ -32,11 +32,12 @@ func (e *ClusterAPIEndpoint) String() string {
 }
 
 type ClusterSpec struct {
-	Version                  string           `json:"version,omitempty"`
-	NoDefaultIngressProvider bool             `json:"noDefaultIngressProvider,omitempty"`
-	Upgrades                 []ClusterUpgrade `json:"upgrades,omitempty"`
-	BlockDeletion            bool             `json:"blockDeletion,omitempty"`
-	AllocateInternalIP       bool             `json:"allocateInternalIP,omitempty"`
+	Version                  string                            `json:"version,omitempty"`
+	NoDefaultIngressProvider bool                              `json:"noDefaultIngressProvider,omitempty"`
+	Upgrades                 []ClusterUpgrade                  `json:"upgrades,omitempty"`
+	BlockDeletion            bool                              `json:"blockDeletion,omitempty"`
+	AllocateInternalIP       bool                              `json:"allocateInternalIP,omitempty"`
+	IPPoolRef                *corev1.TypedLocalObjectReference `json:"ipPoolRef,omitempty"`
 }
 
 type ClusterStatus struct {
