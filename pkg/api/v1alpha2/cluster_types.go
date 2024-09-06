@@ -36,6 +36,7 @@ type ClusterSpec struct {
 	NoDefaultIngressProvider bool             `json:"noDefaultIngressProvider,omitempty"`
 	Upgrades                 []ClusterUpgrade `json:"upgrades,omitempty"`
 	BlockDeletion            bool             `json:"blockDeletion,omitempty"`
+	AllocateInternalIP       bool             `json:"allocateInternalIP,omitempty"`
 }
 
 type ClusterStatus struct {

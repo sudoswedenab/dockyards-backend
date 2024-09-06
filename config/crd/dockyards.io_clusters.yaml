@@ -175,6 +175,8 @@ spec:
             type: object
           spec:
             properties:
+              allocateInternalIP:
+                type: boolean
               blockDeletion:
                 type: boolean
               noDefaultIngressProvider:
