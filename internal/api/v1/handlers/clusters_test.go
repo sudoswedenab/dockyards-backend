@@ -216,6 +216,85 @@ func TestPostOrgClusters(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:             "test allocate internal ip",
+			organizationName: "test-org",
+			sub:              "642ba917-2b23-4d15-8c68-667ed67e6cc5",
+			clusterOptions: v1.ClusterOptions{
+				Name:               "test",
+				AllocateInternalIP: ptr.To(true),
+			},
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-org",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
+									{
+										Name: "test",
+										UID:  "642ba917-2b23-4d15-8c68-667ed67e6cc5",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterTemplateList{
+					Items: []dockyardsv1.ClusterTemplate{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "recommended",
+							},
+							Spec: dockyardsv1.ClusterTemplateSpec{
+								NodePoolTemplates: []dockyardsv1.NodePool{
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "control-plane",
+										},
+										Spec: dockyardsv1.NodePoolSpec{
+											Replicas:      ptr.To(int32(1)),
+											ControlPlane:  true,
+											DedicatedRole: true,
+											Resources: corev1.ResourceList{
+												corev1.ResourceCPU:     resource.MustParse("2"),
+												corev1.ResourceMemory:  resource.MustParse("4096M"),
+												corev1.ResourceStorage: resource.MustParse("100G"),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []client.Object{
+				&dockyardsv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.OrganizationKind,
+								Name:               "test-org",
+								BlockOwnerDeletion: ptr.To(true),
+							},
+						},
+					},
+					Spec: dockyardsv1.ClusterSpec{
+						AllocateInternalIP: true,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {

@@ -633,6 +633,8 @@ components:
           type: boolean
         no_cluster_apps:
           type: boolean
+        allocate_internal_ip:
+          type: boolean
       required:
       - name
     cluster:

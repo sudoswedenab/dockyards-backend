@@ -54,13 +54,14 @@ type Cluster struct {
 
 // ClusterOptions defines model for cluster_options.
 type ClusterOptions struct {
-	IngressProvider   *string            `json:"ingress_provider,omitempty"`
-	Name              string             `json:"name"`
-	NoClusterApps     *bool              `json:"no_cluster_apps,omitempty"`
-	NoIngressProvider *bool              `json:"no_ingress_provider,omitempty"`
-	NodePoolOptions   *[]NodePoolOptions `json:"node_pool_options,omitempty"`
-	SingleNode        *bool              `json:"single_node,omitempty"`
-	Version           *string            `json:"version,omitempty"`
+	AllocateInternalIP *bool              `json:"allocate_internal_ip,omitempty"`
+	IngressProvider    *string            `json:"ingress_provider,omitempty"`
+	Name               string             `json:"name"`
+	NoClusterApps      *bool              `json:"no_cluster_apps,omitempty"`
+	NoIngressProvider  *bool              `json:"no_ingress_provider,omitempty"`
+	NodePoolOptions    *[]NodePoolOptions `json:"node_pool_options,omitempty"`
+	SingleNode         *bool              `json:"single_node,omitempty"`
+	Version            *string            `json:"version,omitempty"`
 }
 
 // ClusterOverview defines model for cluster_overview.

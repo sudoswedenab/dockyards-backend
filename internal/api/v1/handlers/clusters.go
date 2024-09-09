@@ -169,6 +169,10 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 		cluster.Spec.Version = *clusterOptions.Version
 	}
 
+	if clusterOptions.AllocateInternalIP != nil {
+		cluster.Spec.AllocateInternalIP = *clusterOptions.AllocateInternalIP
+	}
+
 	err = h.Create(ctx, &cluster)
 	if client.IgnoreAlreadyExists(err) != nil {
 		logger.Error("error creating cluster", "err", err)
