@@ -54,6 +54,25 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 				},
 			),
 		},
+		{
+			name: "test with internal ip allocation",
+			dockyardsCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-with-internal-ip-allocation",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: dockyardsv1.GroupVersion.String(),
+							Kind:       dockyardsv1.OrganizationKind,
+							Name:       "testing",
+							UID:        "a80777fc-078b-47dd-9252-0802990aedf8",
+						},
+					},
+				},
+				Spec: dockyardsv1.ClusterSpec{
+					AllocateInternalIP: true,
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {
@@ -114,5 +133,71 @@ func TestDockyardsClusterValidateDelete(t *testing.T) {
 		if !cmp.Equal(actual, tc.expected) {
 			t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
 		}
+	}
+}
+
+func TestDockyardsClusterValidateUpdate(t *testing.T) {
+	tt := []struct {
+		name       string
+		oldCluster dockyardsv1.Cluster
+		newCluster dockyardsv1.Cluster
+		expected   error
+	}{
+		{
+			name: "test enable internal ip allocation",
+			oldCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "enable-internal-ip-allocation",
+					Namespace: "testing",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: dockyardsv1.GroupVersion.String(),
+							Kind:       dockyardsv1.OrganizationKind,
+							Name:       "test",
+							UID:        "4ec0c0ac-4bd1-44da-b514-4eefa9e7fba5",
+						},
+					},
+				},
+			},
+			newCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "enable-internal-ip-allocation",
+					Namespace: "testing",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: dockyardsv1.GroupVersion.String(),
+							Kind:       dockyardsv1.OrganizationKind,
+							Name:       "test",
+							UID:        "4ec0c0ac-4bd1-44da-b514-4eefa9e7fba5",
+						},
+					},
+				},
+				Spec: dockyardsv1.ClusterSpec{
+					AllocateInternalIP: true,
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(),
+				"enable-internal-ip-allocation",
+				field.ErrorList{
+					field.Invalid(
+						field.NewPath("spec", "allocateInternalIP"),
+						true,
+						"field is immutable",
+					),
+				},
+			),
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			webhook := webhooks.DockyardsCluster{}
+
+			_, actual := webhook.ValidateUpdate(context.Background(), &tc.oldCluster, &tc.newCluster)
+			if !cmp.Equal(actual, tc.expected) {
+				t.Fatalf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
 	}
 }

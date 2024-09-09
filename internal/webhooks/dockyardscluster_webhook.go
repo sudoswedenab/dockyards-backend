@@ -58,13 +58,36 @@ func (webhook *DockyardsCluster) ValidateDelete(_ context.Context, obj runtime.O
 	return nil, nil
 }
 
-func (webhook *DockyardsCluster) ValidateUpdate(_ context.Context, _ runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
-	dockyardsCluster, ok := newObj.(*dockyardsv1.Cluster)
+func (webhook *DockyardsCluster) ValidateUpdate(_ context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+	oldCluster, ok := oldObj.(*dockyardsv1.Cluster)
 	if !ok {
 		return nil, nil
 	}
 
-	return nil, webhook.validate(dockyardsCluster)
+	newCluster, ok := newObj.(*dockyardsv1.Cluster)
+	if !ok {
+		return nil, nil
+	}
+
+	if newCluster.Spec.AllocateInternalIP != oldCluster.Spec.AllocateInternalIP {
+		invalid := field.Invalid(
+			field.NewPath("spec", "allocateInternalIP"),
+			newCluster.Spec.AllocateInternalIP,
+			"field is immutable",
+		)
+
+		qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind()
+
+		return nil, apierrors.NewInvalid(
+			qualifiedKind,
+			newCluster.Name,
+			field.ErrorList{
+				invalid,
+			},
+		)
+	}
+
+	return nil, webhook.validate(newCluster)
 }
 
 func (webhook *DockyardsCluster) validate(dockyardsCluster *dockyardsv1.Cluster) error {
