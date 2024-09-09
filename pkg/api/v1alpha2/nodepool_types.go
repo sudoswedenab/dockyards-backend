@@ -19,13 +19,14 @@ type NodePoolStorageResource struct {
 }
 
 type NodePoolSpec struct {
-	Replicas         *int32                    `json:"replicas,omitempty"`
-	ControlPlane     bool                      `json:"controlPlane,omitempty"`
-	LoadBalancer     bool                      `json:"loadBalancer,omitempty"`
-	DedicatedRole    bool                      `json:"dedicatedRole,omitempty"`
-	Resources        corev1.ResourceList       `json:"resources,omitempty"`
-	Storage          bool                      `json:"storage,omitempty"`
-	StorageResources []NodePoolStorageResource `json:"storageResources,omitempty"`
+	Replicas         *int32                       `json:"replicas,omitempty"`
+	ControlPlane     bool                         `json:"controlPlane,omitempty"`
+	LoadBalancer     bool                         `json:"loadBalancer,omitempty"`
+	DedicatedRole    bool                         `json:"dedicatedRole,omitempty"`
+	Resources        corev1.ResourceList          `json:"resources,omitempty"`
+	Storage          bool                         `json:"storage,omitempty"`
+	StorageResources []NodePoolStorageResource    `json:"storageResources,omitempty"`
+	ReleaseRef       *corev1.TypedObjectReference `json:"releaseRef,omitempty"`
 }
 
 type NodePoolStatus struct {
