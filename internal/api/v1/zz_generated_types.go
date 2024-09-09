@@ -42,14 +42,15 @@ type AppStep struct {
 
 // Cluster defines model for cluster.
 type Cluster struct {
-	CreatedAt    time.Time  `json:"created_at"`
-	ID           string     `json:"id"`
-	Name         string     `json:"name"`
-	NodeCount    int        `json:"node_count"`
-	NodePools    []NodePool `json:"node_pools"`
-	Organization string     `json:"organization"`
-	State        string     `json:"state"`
-	Version      string     `json:"version"`
+	AllocateInternalIP *bool      `json:"allocate_internal_ip,omitempty"`
+	CreatedAt          time.Time  `json:"created_at"`
+	ID                 string     `json:"id"`
+	Name               string     `json:"name"`
+	NodeCount          int        `json:"node_count"`
+	NodePools          []NodePool `json:"node_pools"`
+	Organization       string     `json:"organization"`
+	State              string     `json:"state"`
+	Version            string     `json:"version"`
 }
 
 // ClusterOptions defines model for cluster_options.

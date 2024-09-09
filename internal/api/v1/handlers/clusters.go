@@ -60,6 +60,10 @@ func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *d
 		v1Cluster.NodePools = nodePools
 	}
 
+	if cluster.Spec.AllocateInternalIP {
+		v1Cluster.AllocateInternalIP = &cluster.Spec.AllocateInternalIP
+	}
+
 	return &v1Cluster
 }
 

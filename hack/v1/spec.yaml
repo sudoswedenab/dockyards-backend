@@ -658,6 +658,8 @@ components:
         created_at:
           type: string
           format: date-time
+        allocate_internal_ip:
+          type: boolean
       required:
       - id
       - name

@@ -1408,6 +1408,67 @@ func TestGetClusters(t *testing.T) {
 			},
 			expected: []v1.Cluster{},
 		},
+		{
+			name: "test cluster with internal ip allocation",
+			sub:  "c05034fd-1a84-4723-bfc0-b565ed925ebf",
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "a4b99d4b-7abe-4e2b-96f7-fd75063755f2",
+								Name: "test",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
+									{
+										Name: "test",
+										UID:  "c05034fd-1a84-4723-bfc0-b565ed925ebf",
+									},
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:               "8ff763a6-876b-485e-871f-e000ff27e53c",
+								Name:              "internal-ip-allocation",
+								Namespace:         "testing",
+								CreationTimestamp: now,
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
+										Name:       "test",
+										UID:        "a4b99d4b-7abe-4e2b-96f7-fd75063755f2",
+									},
+								},
+							},
+							Spec: dockyardsv1.ClusterSpec{
+								AllocateInternalIP: true,
+							},
+							Status: dockyardsv1.ClusterStatus{
+								Version: "v1.2.3",
+							},
+						},
+					},
+				},
+			},
+			expected: []v1.Cluster{
+				{
+
+					ID:                 "8ff763a6-876b-485e-871f-e000ff27e53c",
+					Name:               "internal-ip-allocation",
+					Organization:       "test",
+					CreatedAt:          now.Time.Truncate(time.Second),
+					Version:            "v1.2.3",
+					AllocateInternalIP: ptr.To(true),
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {
