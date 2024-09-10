@@ -239,6 +239,17 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 
 	if clusterOptions.Version != nil {
 		cluster.Spec.Version = *clusterOptions.Version
+	} else {
+		var release dockyardsv1.Release
+		err := h.Get(ctx, client.ObjectKey{Name: dockyardsv1.ReleaseNameSupportedKubernetesVersions, Namespace: h.namespace}, &release)
+		if err != nil {
+			logger.Error("error getting supported kubernetes versions release", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		cluster.Spec.Version = release.Status.LatestVersion
 	}
 
 	if clusterOptions.AllocateInternalIP != nil {

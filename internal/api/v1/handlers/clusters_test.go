@@ -122,6 +122,19 @@ func TestPostOrgClusters(t *testing.T) {
 						},
 					},
 				},
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+								Namespace: "dockyards-testing",
+							},
+							Status: dockyardsv1.ReleaseStatus{
+								LatestVersion: "v1.2.3",
+							},
+						},
+					},
+				},
 			},
 			clusterOptions: v1.ClusterOptions{
 				Name: "test",
@@ -140,6 +153,9 @@ func TestPostOrgClusters(t *testing.T) {
 								BlockOwnerDeletion: ptr.To(true),
 							},
 						},
+					},
+					Spec: dockyardsv1.ClusterSpec{
+						Version: "v1.2.3",
 					},
 				},
 				&dockyardsv1.NodePool{
@@ -275,6 +291,19 @@ func TestPostOrgClusters(t *testing.T) {
 						},
 					},
 				},
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+								Namespace: "dockyards-testing",
+							},
+							Status: dockyardsv1.ReleaseStatus{
+								LatestVersion: "v1.2.3",
+							},
+						},
+					},
+				},
 			},
 			expected: []client.Object{
 				&dockyardsv1.Cluster{
@@ -293,6 +322,7 @@ func TestPostOrgClusters(t *testing.T) {
 					},
 					Spec: dockyardsv1.ClusterSpec{
 						AllocateInternalIP: true,
+						Version:            "v1.2.3",
 					},
 				},
 			},
@@ -355,6 +385,19 @@ func TestPostOrgClusters(t *testing.T) {
 						},
 					},
 				},
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+								Namespace: "dockyards-testing",
+							},
+							Status: dockyardsv1.ReleaseStatus{
+								LatestVersion: "v1.2.3",
+							},
+						},
+					},
+				},
 			},
 			expected: []client.Object{
 				&dockyardsv1.Cluster{
@@ -370,6 +413,9 @@ func TestPostOrgClusters(t *testing.T) {
 								BlockOwnerDeletion: ptr.To(true),
 							},
 						},
+					},
+					Spec: dockyardsv1.ClusterSpec{
+						Version: "v1.2.3",
 					},
 				},
 				&dockyardsv1.NodePool{
@@ -406,6 +452,7 @@ func TestPostOrgClusters(t *testing.T) {
 			clusterOptions: v1.ClusterOptions{
 				Name:            "test-custom-release",
 				ClusterTemplate: ptr.To("custom-release"),
+				Version:         ptr.To("v2.3.4"),
 			},
 			lists: []client.ObjectList{
 				&dockyardsv1.OrganizationList{
@@ -477,6 +524,9 @@ func TestPostOrgClusters(t *testing.T) {
 								BlockOwnerDeletion: ptr.To(true),
 							},
 						},
+					},
+					Spec: dockyardsv1.ClusterSpec{
+						Version: "v2.3.4",
 					},
 				},
 				&dockyardsv1.NodePool{
@@ -723,6 +773,19 @@ func TestPostOrgClustersErrors(t *testing.T) {
 						},
 					},
 				},
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+								Namespace: "dockyards-testing",
+							},
+							Status: dockyardsv1.ReleaseStatus{
+								LatestVersion: "v1.2.3",
+							},
+						},
+					},
+				},
 			},
 			clusterOptions: v1.ClusterOptions{
 				Name: "test-cluster",
@@ -774,7 +837,8 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				Client: fakeClient,
+				Client:    fakeClient,
+				namespace: "dockyards-testing",
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
