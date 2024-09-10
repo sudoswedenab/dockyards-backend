@@ -62,7 +62,6 @@ type ClusterOptions struct {
 	NoClusterApps      *bool              `json:"no_cluster_apps,omitempty"`
 	NoIngressProvider  *bool              `json:"no_ingress_provider,omitempty"`
 	NodePoolOptions    *[]NodePoolOptions `json:"node_pool_options,omitempty"`
-	SingleNode         *bool              `json:"single_node,omitempty"`
 	Version            *string            `json:"version,omitempty"`
 }
 
@@ -169,7 +168,6 @@ type NodePoolOptions struct {
 type Options struct {
 	// Deprecated:
 	NodePoolOptions      *[]NodePoolOptions `json:"node_pool_options,omitempty"`
-	SingleNode           bool               `json:"single_node"`
 	StorageResourceTypes *[]string          `json:"storage_resource_types,omitempty"`
 	Version              []string           `json:"version"`
 }

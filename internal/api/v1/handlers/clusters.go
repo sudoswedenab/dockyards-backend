@@ -223,19 +223,6 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 		nodePoolOptions = ptr.To(getRecommendedNodePools(&clusterTemplate))
 	}
 
-	if clusterOptions.SingleNode != nil && *clusterOptions.SingleNode {
-		logger.Debug("using single node pool")
-
-		nodePoolOptions = ptr.To([]v1.NodePoolOptions{
-			{
-				Name:         "single-node",
-				Quantity:     1,
-				ControlPlane: ptr.To(true),
-				LoadBalancer: ptr.To(true),
-			},
-		})
-	}
-
 	nodePoolList := dockyardsv1.NodePoolList{
 		Items: make([]dockyardsv1.NodePool, len(*nodePoolOptions)),
 	}

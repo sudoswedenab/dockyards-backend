@@ -453,8 +453,6 @@ components:
       - email
     options:
       properties:
-        single_node:
-          type: boolean
         version:
           type: array
           items:
@@ -469,7 +467,6 @@ components:
           items:
             type: string
       required:
-      - single_node
       - version
     organization:
       properties:
@@ -621,8 +618,6 @@ components:
           type: string
         version:
           type: string
-        single_node:
-          type: boolean
         node_pool_options:
           type: array
           items:

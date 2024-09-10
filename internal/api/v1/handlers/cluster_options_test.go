@@ -97,7 +97,6 @@ func TestGetClusterOptions(t *testing.T) {
 				},
 			},
 			expected: v1.Options{
-				SingleNode: false,
 				Version: []string{
 					"v1.2.3",
 				},
@@ -178,7 +177,6 @@ func TestGetClusterOptions(t *testing.T) {
 				},
 			},
 			expected: v1.Options{
-				SingleNode: false,
 				Version: []string{
 					"v1.2.3",
 				},
@@ -217,7 +215,6 @@ func TestGetClusterOptions(t *testing.T) {
 				},
 			},
 			expected: v1.Options{
-				SingleNode: false,
 				Version: []string{
 					"v1.2.3",
 				},
@@ -253,7 +250,6 @@ func TestGetClusterOptions(t *testing.T) {
 				},
 			},
 			expected: v1.Options{
-				SingleNode: false,
 				StorageResourceTypes: &[]string{
 					dockyardsv1.StorageResourceTypeHostPath,
 				},

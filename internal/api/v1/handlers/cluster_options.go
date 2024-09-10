@@ -88,8 +88,7 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	options := v1.Options{
-		SingleNode: false,
-		Version:    release.Status.Versions,
+		Version: release.Status.Versions,
 	}
 
 	featureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageRole, h.namespace)
