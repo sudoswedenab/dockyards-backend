@@ -399,6 +399,118 @@ func TestPostOrgClusters(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:             "test custom release",
+			organizationName: "test",
+			sub:              "5742569b-2be9-46e5-b2ef-0e9ed523f2a5",
+			clusterOptions: v1.ClusterOptions{
+				Name:            "test-custom-release",
+				ClusterTemplate: ptr.To("custom-release"),
+			},
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
+									{
+										Name: "test",
+										UID:  "5742569b-2be9-46e5-b2ef-0e9ed523f2a5",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterTemplateList{
+					Items: []dockyardsv1.ClusterTemplate{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "custom-release",
+								Namespace: "dockyards-testing",
+							},
+							Spec: dockyardsv1.ClusterTemplateSpec{
+								NodePoolTemplates: []dockyardsv1.NodePool{
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "controlplane",
+										},
+										Spec: dockyardsv1.NodePoolSpec{
+											Replicas:      ptr.To(int32(1)),
+											ControlPlane:  true,
+											DedicatedRole: true,
+											Resources: corev1.ResourceList{
+												corev1.ResourceCPU:     resource.MustParse("2"),
+												corev1.ResourceMemory:  resource.MustParse("3Mi"),
+												corev1.ResourceStorage: resource.MustParse("4G"),
+											},
+											ReleaseRef: &corev1.TypedObjectReference{
+												Kind:      dockyardsv1.ReleaseKind,
+												Name:      "custom",
+												Namespace: ptr.To("dockyards-testing"),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []client.Object{
+				&dockyardsv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-custom-release",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.OrganizationKind,
+								Name:               "test",
+								BlockOwnerDeletion: ptr.To(true),
+							},
+						},
+					},
+				},
+				&dockyardsv1.NodePool{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-custom-release-controlplane",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.ClusterKind,
+								Name:               "test-custom-release",
+								BlockOwnerDeletion: ptr.To(true),
+							},
+						},
+					},
+					Spec: dockyardsv1.NodePoolSpec{
+						Replicas:      ptr.To(int32(1)),
+						ControlPlane:  true,
+						DedicatedRole: true,
+						Resources: corev1.ResourceList{
+							corev1.ResourceCPU:     resource.MustParse("2"),
+							corev1.ResourceMemory:  resource.MustParse("3Mi"),
+							corev1.ResourceStorage: resource.MustParse("4G"),
+						},
+						ReleaseRef: &corev1.TypedObjectReference{
+							Kind:      dockyardsv1.ReleaseKind,
+							Name:      "custom",
+							Namespace: ptr.To("dockyards-testing"),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {

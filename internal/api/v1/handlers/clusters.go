@@ -67,6 +67,67 @@ func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *d
 	return &v1Cluster
 }
 
+func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *v1.NodePoolOptions, cluster *dockyardsv1.Cluster) (*dockyardsv1.NodePool, error) {
+	nodePool := dockyardsv1.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cluster.Name + "-" + nodePoolOptions.Name,
+			Namespace: cluster.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         dockyardsv1.GroupVersion.String(),
+					Kind:               dockyardsv1.ClusterKind,
+					Name:               cluster.Name,
+					UID:                cluster.UID,
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
+		},
+		Spec: dockyardsv1.NodePoolSpec{
+			Replicas: ptr.To(int32(nodePoolOptions.Quantity)),
+		},
+	}
+
+	if nodePoolOptions.ControlPlane != nil {
+		nodePool.Spec.ControlPlane = *nodePoolOptions.ControlPlane
+	}
+
+	if nodePoolOptions.LoadBalancer != nil {
+		nodePool.Spec.LoadBalancer = *nodePoolOptions.LoadBalancer
+	}
+
+	if nodePoolOptions.ControlPlaneComponentsOnly != nil {
+		nodePool.Spec.DedicatedRole = *nodePoolOptions.ControlPlaneComponentsOnly
+	}
+
+	nodePool.Spec.Resources = corev1.ResourceList{}
+
+	if nodePoolOptions.CPUCount != nil {
+		quantity := resource.NewQuantity(int64(*nodePoolOptions.CPUCount), resource.BinarySI)
+
+		nodePool.Spec.Resources[corev1.ResourceCPU] = *quantity
+	}
+
+	if nodePoolOptions.DiskSize != nil {
+		quantity, err := resource.ParseQuantity(*nodePoolOptions.DiskSize)
+		if err != nil {
+			return nil, err
+		}
+
+		nodePool.Spec.Resources[corev1.ResourceStorage] = quantity
+	}
+
+	if nodePoolOptions.RAMSize != nil {
+		quantity, err := resource.ParseQuantity(*nodePoolOptions.RAMSize)
+		if err != nil {
+			return nil, err
+		}
+
+		nodePool.Spec.Resources[corev1.ResourceMemory] = quantity
+	}
+
+	return &nodePool, nil
+}
+
 func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -198,8 +259,9 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nodePoolOptions := clusterOptions.NodePoolOptions
-	if nodePoolOptions == nil {
+	hasErrors := false
+
+	if clusterOptions.NodePoolOptions == nil {
 		objectKey := client.ObjectKey{
 			Name:      dockyardsv1.ClusterTemplateNameRecommended,
 			Namespace: h.namespace,
@@ -220,93 +282,58 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		nodePoolOptions = ptr.To(getRecommendedNodePools(&clusterTemplate))
-	}
+		for _, nodePoolTemplate := range clusterTemplate.Spec.NodePoolTemplates {
+			nodePool := nodePoolTemplate.DeepCopy()
 
-	nodePoolList := dockyardsv1.NodePoolList{
-		Items: make([]dockyardsv1.NodePool, len(*nodePoolOptions)),
-	}
-
-	hasErrors := false
-	for i, nodePoolOption := range *nodePoolOptions {
-		nodePool := dockyardsv1.NodePool{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      cluster.Name + "-" + nodePoolOption.Name,
-				Namespace: cluster.Namespace,
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion:         dockyardsv1.GroupVersion.String(),
-						Kind:               dockyardsv1.ClusterKind,
-						Name:               cluster.Name,
-						UID:                cluster.UID,
-						BlockOwnerDeletion: ptr.To(true),
-					},
+			nodePool.OwnerReferences = []metav1.OwnerReference{
+				{
+					APIVersion:         dockyardsv1.GroupVersion.String(),
+					Kind:               dockyardsv1.ClusterKind,
+					Name:               cluster.Name,
+					UID:                cluster.UID,
+					BlockOwnerDeletion: ptr.To(true),
 				},
-			},
-			Spec: dockyardsv1.NodePoolSpec{
-				Replicas: ptr.To(int32(nodePoolOption.Quantity)),
-			},
-		}
+			}
 
-		if nodePoolOption.ControlPlane != nil {
-			nodePool.Spec.ControlPlane = *nodePoolOption.ControlPlane
-		}
+			nodePool.Name = cluster.Name + "-" + nodePool.Name
+			nodePool.Namespace = cluster.Namespace
 
-		if nodePoolOption.LoadBalancer != nil {
-			nodePool.Spec.LoadBalancer = *nodePoolOption.LoadBalancer
-		}
-
-		if nodePoolOption.ControlPlaneComponentsOnly != nil {
-			nodePool.Spec.DedicatedRole = *nodePoolOption.ControlPlaneComponentsOnly
-		}
-
-		nodePool.Spec.Resources = corev1.ResourceList{}
-
-		if nodePoolOption.CPUCount != nil {
-			quantity := resource.NewQuantity(int64(*nodePoolOption.CPUCount), resource.BinarySI)
-
-			nodePool.Spec.Resources[corev1.ResourceCPU] = *quantity
-		}
-
-		if nodePoolOption.DiskSize != nil {
-			quantity, err := resource.ParseQuantity(*nodePoolOption.DiskSize)
+			err = h.Create(ctx, nodePool)
 			if err != nil {
-				logger.Error("error parsing disk size quantity", "err", err)
+				hasErrors = true
+				logger.Debug("error creating node pool", "err", err)
+
+				break
+			}
+
+			logger.Debug("created node pool", "uid", nodePool.UID, "name", nodePool.Name)
+		}
+	}
+
+	if clusterOptions.NodePoolOptions != nil {
+		for _, nodePoolOptions := range *clusterOptions.NodePoolOptions {
+			nodePool, err := h.nodePoolOptionsToNodePool(&nodePoolOptions, &cluster)
+			if err != nil {
+				logger.Error("error converting to node pool", "err", err)
 				hasErrors = true
 
 				break
 			}
 
-			nodePool.Spec.Resources[corev1.ResourceStorage] = quantity
-		}
-
-		if nodePoolOption.RAMSize != nil {
-			quantity, err := resource.ParseQuantity(*nodePoolOption.RAMSize)
+			err = h.Create(ctx, nodePool)
 			if err != nil {
-				logger.Error("error parsing ram size quantity", "err", err)
+				logger.Error("error creating node pool", "err", err)
 				hasErrors = true
 
 				break
 			}
 
-			nodePool.Spec.Resources[corev1.ResourceMemory] = quantity
+			logger.Debug("created cluster node pool", "id", nodePool.UID)
 		}
-
-		err := h.Create(ctx, &nodePool)
-		if err != nil {
-			logger.Error("error creating node pool", "err", err)
-			hasErrors = true
-
-			break
-		}
-
-		nodePoolList.Items[i] = nodePool
-
-		logger.Debug("created cluster node pool", "id", nodePool.UID)
 	}
 
 	if hasErrors {
-		logger.Error("deleting cluster", "id", cluster.UID)
+		logger.Error("deleting cluster due to node pool error", "id", cluster.UID)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
