@@ -635,6 +635,8 @@ components:
           type: boolean
         allocate_internal_ip:
           type: boolean
+        cluster_template:
+          type: string
       required:
       - name
     cluster:

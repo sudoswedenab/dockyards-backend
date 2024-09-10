@@ -69,7 +69,8 @@ func TestPostOrgClusters(t *testing.T) {
 					Items: []dockyardsv1.ClusterTemplate{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "recommended",
+								Name:      "recommended",
+								Namespace: "dockyards-testing",
 							},
 							Spec: dockyardsv1.ClusterTemplateSpec{
 								NodePoolTemplates: []dockyardsv1.NodePool{
@@ -249,7 +250,8 @@ func TestPostOrgClusters(t *testing.T) {
 					Items: []dockyardsv1.ClusterTemplate{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name: "recommended",
+								Name:      "recommended",
+								Namespace: "dockyards-testing",
 							},
 							Spec: dockyardsv1.ClusterTemplateSpec{
 								NodePoolTemplates: []dockyardsv1.NodePool{
@@ -295,18 +297,121 @@ func TestPostOrgClusters(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:             "test cluster template",
+			organizationName: "test",
+			sub:              "61122522-2a28-4005-a61a-e271246d6408",
+			clusterOptions: v1.ClusterOptions{
+				Name:            "test-cluster-template",
+				ClusterTemplate: ptr.To("test"),
+			},
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
+									{
+										Name: "test",
+										UID:  "61122522-2a28-4005-a61a-e271246d6408",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterTemplateList{
+					Items: []dockyardsv1.ClusterTemplate{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "dockyards-testing",
+							},
+							Spec: dockyardsv1.ClusterTemplateSpec{
+								NodePoolTemplates: []dockyardsv1.NodePool{
+									{
+										ObjectMeta: metav1.ObjectMeta{
+											Name: "controlplane",
+										},
+										Spec: dockyardsv1.NodePoolSpec{
+											Replicas:      ptr.To(int32(1)),
+											ControlPlane:  true,
+											DedicatedRole: true,
+											Resources: corev1.ResourceList{
+												corev1.ResourceCPU:     resource.MustParse("2"),
+												corev1.ResourceMemory:  resource.MustParse("3Mi"),
+												corev1.ResourceStorage: resource.MustParse("4G"),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []client.Object{
+				&dockyardsv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-cluster-template",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.OrganizationKind,
+								Name:               "test",
+								BlockOwnerDeletion: ptr.To(true),
+							},
+						},
+					},
+				},
+				&dockyardsv1.NodePool{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-cluster-template-controlplane",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.ClusterKind,
+								Name:               "test-cluster-template",
+								BlockOwnerDeletion: ptr.To(true),
+							},
+						},
+					},
+					Spec: dockyardsv1.NodePoolSpec{
+						Replicas:      ptr.To(int32(1)),
+						ControlPlane:  true,
+						DedicatedRole: true,
+						Resources: corev1.ResourceList{
+							corev1.ResourceCPU:     resource.MustParse("2"),
+							corev1.ResourceMemory:  resource.MustParse("3Mi"),
+							corev1.ResourceStorage: resource.MustParse("4G"),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 			scheme := scheme.Scheme
 			dockyardsv1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
 
 			h := handler{
-				Client: fakeClient,
+				Client:    fakeClient,
+				namespace: "dockyards-testing",
 			}
 
 			b, err := json.Marshal(tc.clusterOptions)
@@ -340,6 +445,7 @@ func TestPostOrgClusters(t *testing.T) {
 					Name:      e.GetName(),
 					Namespace: e.GetNamespace(),
 				}
+
 				switch x := e.(type) {
 				case *dockyardsv1.Cluster:
 					var actual dockyardsv1.Cluster

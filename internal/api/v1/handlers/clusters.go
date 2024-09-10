@@ -135,6 +135,13 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if clusterOptions.NodePoolOptions != nil && clusterOptions.ClusterTemplate != nil {
+		logger.Debug("both node pool options and cluster template set")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+
+		return
+	}
+
 	if clusterOptions.NodePoolOptions != nil {
 		for _, nodePoolOptions := range *clusterOptions.NodePoolOptions {
 			_, validName := name.IsValidName(nodePoolOptions.Name)
@@ -192,13 +199,17 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nodePoolOptions := clusterOptions.NodePoolOptions
-	if nodePoolOptions == nil || len(*nodePoolOptions) == 0 {
-		logger.Debug("using recommended node pool options")
-
+	if nodePoolOptions == nil {
 		objectKey := client.ObjectKey{
 			Name:      dockyardsv1.ClusterTemplateNameRecommended,
 			Namespace: h.namespace,
 		}
+
+		if clusterOptions.ClusterTemplate != nil {
+			objectKey.Name = *clusterOptions.ClusterTemplate
+		}
+
+		logger.Debug("using node pool options", "clusterTemplate", objectKey.Name)
 
 		var clusterTemplate dockyardsv1.ClusterTemplate
 		err := h.Get(ctx, objectKey, &clusterTemplate)
