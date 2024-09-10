@@ -8,6 +8,10 @@ const (
 	ClusterTemplateKind = "ClusterTemplate"
 )
 
+const (
+	ClusterTemplateNameRecommended = "recommended"
+)
+
 type ClusterTemplateSpec struct {
 	NodePoolTemplates []NodePool `json:"nodePoolTemplates,omitempty"`
 }

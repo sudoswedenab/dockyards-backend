@@ -109,7 +109,7 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	objectKey = client.ObjectKey{
-		Name:      "recommended",
+		Name:      dockyardsv1.ClusterTemplateNameRecommended,
 		Namespace: h.namespace,
 	}
 

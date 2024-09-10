@@ -196,7 +196,7 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 		logger.Debug("using recommended node pool options")
 
 		objectKey := client.ObjectKey{
-			Name:      "recommended",
+			Name:      dockyardsv1.ClusterTemplateNameRecommended,
 			Namespace: h.namespace,
 		}
 
