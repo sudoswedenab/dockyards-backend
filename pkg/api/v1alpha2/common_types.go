@@ -35,3 +35,7 @@ const (
 const (
 	SecretTypeCredential = "dockyards.io/credential"
 )
+
+const (
+	AnnotationDefaultTemplate = "dockyards.io/is-default-template"
+)
