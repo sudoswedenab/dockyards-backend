@@ -1,4 +1,4 @@
-image: docker.io/library/golang:1.22.6
+image: docker.io/library/golang:1.23.1
 
 definitions:
   steps:
@@ -18,7 +18,7 @@ definitions:
       name: build
       script:
       - source env.sh
-      - go install cuelang.org/go/cmd/cue@v0.8.2
+      - go install cuelang.org/go/cmd/cue@v0.10.0
       - docker build . --file Containerfile --tag dockyards-backend
       - docker save dockyards-backend --output dockyards-backend.tar
       - cue eval hack/kustomization.cue --inject "name=${IMAGE}" --inject "tag=${VERSION}" --out yaml --outfile config/kustomization.yaml
