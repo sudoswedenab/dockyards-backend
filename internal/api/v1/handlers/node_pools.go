@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
@@ -24,8 +24,8 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 
-func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyardsv1.Cluster, nodeList *dockyardsv1.NodeList) *v1.NodePool {
-	v1NodePool := v1.NodePool{
+func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyardsv1.Cluster, nodeList *dockyardsv1.NodeList) *types.NodePool {
+	v1NodePool := types.NodePool{
 		ID:        string(nodePool.UID),
 		ClusterID: string(cluster.UID),
 		Name:      nodePool.Name,
@@ -47,9 +47,9 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyard
 	}
 
 	if nodeList != nil && len(nodeList.Items) > 0 {
-		nodes := make([]v1.Node, len(nodeList.Items))
+		nodes := make([]types.Node, len(nodeList.Items))
 		for i, node := range nodeList.Items {
-			nodes[i] = v1.Node{
+			nodes[i] = types.Node{
 				ID:   string(node.UID),
 				Name: node.Name,
 			}
@@ -71,10 +71,10 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyard
 	}
 
 	if nodePool.Spec.StorageResources != nil {
-		storageResources := make([]v1.StorageResource, len(nodePool.Spec.StorageResources))
+		storageResources := make([]types.StorageResource, len(nodePool.Spec.StorageResources))
 
 		for i, storageResource := range nodePool.Spec.StorageResources {
-			storageResources[i] = v1.StorageResource{
+			storageResources[i] = types.StorageResource{
 				Name:     storageResource.Name,
 				Quantity: storageResource.Quantity.String(),
 			}
@@ -206,7 +206,7 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 
 	r.Body.Close()
 
-	var nodePoolOptions v1.NodePoolOptions
+	var nodePoolOptions types.NodePoolOptions
 	err = json.Unmarshal(body, &nodePoolOptions)
 	if err != nil {
 		logger.Debug("error unmashalling body", "err", err)

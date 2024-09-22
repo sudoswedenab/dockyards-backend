@@ -12,7 +12,7 @@ import (
 	"path"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -28,7 +28,7 @@ func TestGetOrgs(t *testing.T) {
 		name     string
 		lists    []client.ObjectList
 		sub      string
-		expected []v1.Organization
+		expected []types.Organization
 	}{
 		{
 			name: "test single",
@@ -53,7 +53,7 @@ func TestGetOrgs(t *testing.T) {
 				},
 			},
 			sub: "89a3e0aa-7744-49af-ae7e-1461004c1598",
-			expected: []v1.Organization{
+			expected: []types.Organization{
 				{
 					ID:   "03582042-318e-4c1e-9728-755c5eaf4267",
 					Name: "test",
@@ -115,7 +115,7 @@ func TestGetOrgs(t *testing.T) {
 				},
 			},
 			sub: "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
-			expected: []v1.Organization{
+			expected: []types.Organization{
 				{
 					ID:   "58c282c0-6a68-4ec8-9032-83d33f259bbe",
 					Name: "test1",
@@ -221,7 +221,7 @@ func TestGetOrgs(t *testing.T) {
 				t.Fatalf("unexpected error reading result body: %s", err)
 			}
 
-			var actual []v1.Organization
+			var actual []types.Organization
 			err = json.Unmarshal(b, &actual)
 			if err != nil {
 				t.Fatalf("error unmarshalling result body to json: %s", err)

@@ -5,11 +5,10 @@ import (
 	"io"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
-	//"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +36,7 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	logger := middleware.LoggerFrom(ctx)
 
-	var login v1.Login
+	var login types.Login
 	if h.UnmarshalBody(r, &login) != nil {
 		w.WriteHeader(http.StatusBadRequest)
 

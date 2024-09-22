@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
@@ -28,7 +28,7 @@ func TestGetClusterOptions(t *testing.T) {
 	tt := []struct {
 		name     string
 		lists    []client.ObjectList
-		expected v1.Options
+		expected types.Options
 	}{
 		{
 			name: "test simple",
@@ -96,11 +96,11 @@ func TestGetClusterOptions(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.Options{
+			expected: types.Options{
 				Version: []string{
 					"v1.2.3",
 				},
-				NodePoolOptions: &[]v1.NodePoolOptions{
+				NodePoolOptions: &[]types.NodePoolOptions{
 					{
 						Name:         "cp",
 						Quantity:     3,
@@ -176,11 +176,11 @@ func TestGetClusterOptions(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.Options{
+			expected: types.Options{
 				Version: []string{
 					"v1.2.3",
 				},
-				NodePoolOptions: &[]v1.NodePoolOptions{
+				NodePoolOptions: &[]types.NodePoolOptions{
 					{
 						Name:         "cp",
 						Quantity:     1,
@@ -214,7 +214,7 @@ func TestGetClusterOptions(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.Options{
+			expected: types.Options{
 				Version: []string{
 					"v1.2.3",
 				},
@@ -249,7 +249,7 @@ func TestGetClusterOptions(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.Options{
+			expected: types.Options{
 				StorageResourceTypes: &[]string{
 					dockyardsv1.StorageResourceTypeHostPath,
 				},
@@ -290,7 +290,7 @@ func TestGetClusterOptions(t *testing.T) {
 				t.Fatalf("error reading result body: %s", err)
 			}
 
-			var actual v1.Options
+			var actual types.Options
 			err = json.Unmarshal(b, &actual)
 			if err != nil {
 				t.Fatalf("error unmarshalling response body: %s", err)

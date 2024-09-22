@@ -1,9 +1,0 @@
-package: v1
-generate:
-  models: true
-output: internal/api/v1/zz_generated_types.go
-output-options:
-  skip-prune: true
-  name-normalizer: ToCamelCaseWithInitialisms
-compatibility:
-  always-prefix-enum-values: true

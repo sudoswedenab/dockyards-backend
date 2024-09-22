@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -68,14 +68,14 @@ func (h *handler) GetOrganizationCredentials(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	credentials := []v1.Credential{}
+	credentials := []types.Credential{}
 
 	for _, secret := range secretList.Items {
 		if secret.Type != dockyardsv1.SecretTypeCredential {
 			continue
 		}
 
-		credential := v1.Credential{
+		credential := types.Credential{
 			ID:           string(secret.UID),
 			Name:         strings.TrimPrefix(secret.Name, "credential-"),
 			Organization: organization.Name,
@@ -140,7 +140,7 @@ func (h *handler) PostOrganizationCredentials(w http.ResponseWriter, r *http.Req
 
 	r.Body.Close()
 
-	var credential v1.Credential
+	var credential types.Credential
 	err = json.Unmarshal(body, &credential)
 	if err != nil {
 		logger.Debug("error unmashalling body", "err", err)
@@ -195,7 +195,7 @@ func (h *handler) PostOrganizationCredentials(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	createdCredential := v1.Credential{
+	createdCredential := types.Credential{
 		ID:   string(secret.UID),
 		Name: secret.Name,
 	}
@@ -347,7 +347,7 @@ func (h *handler) GetOrganizationCredential(w http.ResponseWriter, r *http.Reque
 
 	plaintextKeys := make(map[string]bool)
 
-	v1Credential := v1.Credential{
+	v1Credential := types.Credential{
 		ID:           string(secret.UID),
 		Name:         strings.TrimPrefix(secret.Name, "credential-"),
 		Organization: organization.Name,
@@ -473,7 +473,7 @@ func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Reque
 
 	defer r.Body.Close()
 
-	var credential v1.Credential
+	var credential types.Credential
 	err = json.Unmarshal(body, &credential)
 	if err != nil {
 		logger.Error("error unmarshalling request body", "err", err, "body", body)
@@ -535,7 +535,7 @@ func (h *handler) GetCredentials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	credentials := []v1.Credential{}
+	credentials := []types.Credential{}
 
 	for _, organization := range organizationList.Items {
 		if organization.Status.NamespaceRef == "" {
@@ -556,7 +556,7 @@ func (h *handler) GetCredentials(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			credential := v1.Credential{
+			credential := types.Credential{
 				ID:           string(secret.UID),
 				Name:         strings.TrimPrefix(secret.Name, "credential-"),
 				Organization: organization.Name,

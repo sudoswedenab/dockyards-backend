@@ -3,12 +3,12 @@ package deployment
 import (
 	"path"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"github.com/containers/image/v5/docker/reference"
 	"k8s.io/utils/ptr"
 )
 
-func AddNormalizedName(deployment *v1.Deployment) error {
+func AddNormalizedName(deployment *types.Deployment) error {
 	if deployment.ContainerImage != nil {
 		named, err := reference.ParseNormalizedNamed(*deployment.ContainerImage)
 		if err != nil {
@@ -22,7 +22,7 @@ func AddNormalizedName(deployment *v1.Deployment) error {
 			deployment.Name = &base
 		}
 
-		deployment.Type = v1.DeploymentTypeContainerImage
+		deployment.Type = types.DeploymentTypeContainerImage
 	}
 
 	if deployment.HelmChart != nil {
@@ -30,7 +30,7 @@ func AddNormalizedName(deployment *v1.Deployment) error {
 			deployment.Name = deployment.HelmChart
 		}
 
-		deployment.Type = v1.DeploymentTypeHelm
+		deployment.Type = types.DeploymentTypeHelm
 	}
 
 	if deployment.Kustomize != nil {
@@ -38,7 +38,7 @@ func AddNormalizedName(deployment *v1.Deployment) error {
 			deployment.Name = ptr.To("")
 		}
 
-		deployment.Type = v1.DeploymentTypeKustomize
+		deployment.Type = types.DeploymentTypeKustomize
 	}
 
 	if deployment.Namespace == nil {

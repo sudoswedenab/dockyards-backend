@@ -13,7 +13,7 @@ import (
 	"os"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -33,7 +33,7 @@ func TestLogin(t *testing.T) {
 	tt := []struct {
 		name  string
 		lists []client.ObjectList
-		login v1.Login
+		login types.Login
 	}{
 		{
 			name: "test valid user",
@@ -61,7 +61,7 @@ func TestLogin(t *testing.T) {
 					},
 				},
 			},
-			login: v1.Login{
+			login: types.Login{
 				Email:    "test@dockyards.dev",
 				Password: "password",
 			},
@@ -128,7 +128,7 @@ func TestLogin(t *testing.T) {
 					},
 				},
 			},
-			login: v1.Login{
+			login: types.Login{
 				Email:    "test3@dockyards.dev",
 				Password: "password",
 			},
@@ -185,7 +185,7 @@ func TestLoginErrors(t *testing.T) {
 	tt := []struct {
 		name     string
 		lists    []client.ObjectList
-		login    v1.Login
+		login    types.Login
 		expected int
 	}{
 		{
@@ -214,7 +214,7 @@ func TestLoginErrors(t *testing.T) {
 					},
 				},
 			},
-			login: v1.Login{
+			login: types.Login{
 				Email:    "test@dockyards.dev",
 				Password: "incorrect",
 			},
@@ -222,7 +222,7 @@ func TestLoginErrors(t *testing.T) {
 		},
 		{
 			name: "test missing user",
-			login: v1.Login{
+			login: types.Login{
 				Email:    "test@dockyards.dev",
 				Password: "password",
 			},
@@ -246,7 +246,7 @@ func TestLoginErrors(t *testing.T) {
 					},
 				},
 			},
-			login: v1.Login{
+			login: types.Login{
 				Email:    "test@dockyards.dev",
 				Password: "password",
 			},

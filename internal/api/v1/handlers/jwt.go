@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -107,7 +107,7 @@ func (h *handler) PostRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *handler) generateTokens(user dockyardsv1.User) (*v1.Tokens, error) {
+func (h *handler) generateTokens(user dockyardsv1.User) (*types.Tokens, error) {
 	claims := jwt.RegisteredClaims{
 		Subject:   string(user.UID),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
@@ -130,7 +130,7 @@ func (h *handler) generateTokens(user dockyardsv1.User) (*v1.Tokens, error) {
 		return nil, err
 	}
 
-	tokens := v1.Tokens{
+	tokens := types.Tokens{
 		AccessToken:  signedAccessToken,
 		RefreshToken: signedRefreshToken,
 	}

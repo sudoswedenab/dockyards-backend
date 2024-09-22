@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/google/go-cmp/cmp"
@@ -34,7 +34,7 @@ func TestGetOrganizationCredentials(t *testing.T) {
 		subject          string
 		organization     dockyardsv1.Organization
 		secrets          []corev1.Secret
-		expected         []v1.Credential
+		expected         []types.Credential
 	}{
 		{
 			name:             "test single credential",
@@ -67,7 +67,7 @@ func TestGetOrganizationCredentials(t *testing.T) {
 					Type: dockyardsv1.SecretTypeCredential,
 				},
 			},
-			expected: []v1.Credential{
+			expected: []types.Credential{
 				{
 					ID:           "54376668-876c-43d7-8d29-2ef37ccab831",
 					Name:         "test",
@@ -137,7 +137,7 @@ func TestGetOrganizationCredentials(t *testing.T) {
 					Type: corev1.SecretTypeOpaque,
 				},
 			},
-			expected: []v1.Credential{
+			expected: []types.Credential{
 				{
 					ID:           "3cca83a8-7848-40ad-aa89-916a28f6016d",
 					Name:         "dockyards-io-credential",
@@ -155,7 +155,7 @@ func TestGetOrganizationCredentials(t *testing.T) {
 				},
 			},
 			secrets: []corev1.Secret{},
-			expected: []v1.Credential{
+			expected: []types.Credential{
 				{
 					Name:               "test",
 					Organization:       "test-secret-from-credential-template",
@@ -259,13 +259,13 @@ func TestGetOrganizationCredentials(t *testing.T) {
 				t.Fatalf("error reading result body: %s", err)
 			}
 
-			var actual []v1.Credential
+			var actual []types.Credential
 			err = json.Unmarshal(body, &actual)
 			if err != nil {
 				t.Fatalf("error unmarshalling result body json: %s", err)
 			}
 
-			opts := cmpopts.IgnoreFields(v1.Credential{}, "ID")
+			opts := cmpopts.IgnoreFields(types.Credential{}, "ID")
 
 			if !cmp.Equal(actual, tc.expected, opts) {
 				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual, opts))
@@ -281,7 +281,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 		organizationName string
 		credentialName   string
 		organization     dockyardsv1.Organization
-		credential       v1.Credential
+		credential       types.Credential
 		secret           corev1.Secret
 		expected         corev1.Secret
 	}{
@@ -306,7 +306,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 					NamespaceRef: "testing",
 				},
 			},
-			credential: v1.Credential{
+			credential: types.Credential{
 				Data: &map[string][]byte{
 					"test": []byte("secret"),
 				},
@@ -350,7 +350,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 					NamespaceRef: "testing",
 				},
 			},
-			credential: v1.Credential{
+			credential: types.Credential{
 				Data: &map[string][]byte{
 					"test": []byte("secret"),
 				},
@@ -401,7 +401,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 					NamespaceRef: "testing",
 				},
 			},
-			credential: v1.Credential{
+			credential: types.Credential{
 				Data: &map[string][]byte{
 					"test": nil,
 				},
@@ -460,7 +460,7 @@ func TestPutOrganizationCredential(t *testing.T) {
 				},
 				Type: dockyardsv1.SecretTypeCredential,
 			},
-			credential: v1.Credential{
+			credential: types.Credential{
 				Data: &map[string][]byte{
 					"test": []byte(""),
 				},
@@ -595,7 +595,7 @@ func TestPostOrganizationCredentials(t *testing.T) {
 		subject          string
 		organizationName string
 		organization     dockyardsv1.Organization
-		credential       v1.Credential
+		credential       types.Credential
 		expected         corev1.Secret
 	}{
 		{
@@ -619,7 +619,7 @@ func TestPostOrganizationCredentials(t *testing.T) {
 					NamespaceRef: "testing",
 				},
 			},
-			credential: v1.Credential{
+			credential: types.Credential{
 				Name: "test-create-empty-credential",
 				Data: &map[string][]byte{},
 			},
@@ -660,7 +660,7 @@ func TestPostOrganizationCredentials(t *testing.T) {
 					NamespaceRef: "testing",
 				},
 			},
-			credential: v1.Credential{
+			credential: types.Credential{
 				Name: "test-create-empty-credential",
 				Data: &map[string][]byte{
 					"test": []byte("secret"),
@@ -706,7 +706,7 @@ func TestPostOrganizationCredentials(t *testing.T) {
 					NamespaceRef: "testing",
 				},
 			},
-			credential: v1.Credential{
+			credential: types.Credential{
 				Name: "test-credential-with-multiple-keys",
 				Data: &map[string][]byte{
 					"qwfp": []byte("arst"),
@@ -851,7 +851,7 @@ func TestGetOrganizationCredential(t *testing.T) {
 		organization       dockyardsv1.Organization
 		credentialTemplate *dockyardsv1.CredentialTemplate
 		secret             corev1.Secret
-		expected           v1.Credential
+		expected           types.Credential
 	}{
 		{
 			name:             "test empty credential",
@@ -879,7 +879,7 @@ func TestGetOrganizationCredential(t *testing.T) {
 				},
 				Type: dockyardsv1.SecretTypeCredential,
 			},
-			expected: v1.Credential{
+			expected: types.Credential{
 				ID:           "7bf4a804-82eb-4a43-8d33-c017cd57fda5",
 				Name:         "test-empty-credential",
 				Organization: "test",
@@ -916,7 +916,7 @@ func TestGetOrganizationCredential(t *testing.T) {
 				},
 				Type: dockyardsv1.SecretTypeCredential,
 			},
-			expected: v1.Credential{
+			expected: types.Credential{
 				ID:           "219070d3-8294-4cb5-8db7-c4486cff9730",
 				Name:         "test-multiple-keys",
 				Organization: "test",
@@ -976,7 +976,7 @@ func TestGetOrganizationCredential(t *testing.T) {
 				},
 				Type: dockyardsv1.SecretTypeCredential,
 			},
-			expected: v1.Credential{
+			expected: types.Credential{
 				Name:               "test-with-credential-template",
 				Organization:       "test",
 				CredentialTemplate: ptr.To("test"),
@@ -1090,13 +1090,13 @@ func TestGetOrganizationCredential(t *testing.T) {
 
 			t.Log(string(body))
 
-			var actual v1.Credential
+			var actual types.Credential
 			err = json.Unmarshal(body, &actual)
 			if err != nil {
 				t.Fatalf("error unmarhalling body: %s", err)
 			}
 
-			opts := cmpopts.IgnoreFields(v1.Credential{}, "ID")
+			opts := cmpopts.IgnoreFields(types.Credential{}, "ID")
 
 			if !cmp.Equal(actual, tc.expected, opts) {
 				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual, opts))

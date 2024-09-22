@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
@@ -37,8 +37,8 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=create
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 
-func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *dockyardsv1.Cluster, nodePoolList *dockyardsv1.NodePoolList) *v1.Cluster {
-	v1Cluster := v1.Cluster{
+func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *dockyardsv1.Cluster, nodePoolList *dockyardsv1.NodePoolList) *types.Cluster {
+	v1Cluster := types.Cluster{
 		ID:           string(cluster.UID),
 		Name:         cluster.Name,
 		Organization: organization.Name,
@@ -52,7 +52,7 @@ func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *d
 	}
 
 	if nodePoolList != nil && len(nodePoolList.Items) > 0 {
-		nodePools := make([]v1.NodePool, len(nodePoolList.Items))
+		nodePools := make([]types.NodePool, len(nodePoolList.Items))
 		for i, nodePool := range nodePoolList.Items {
 			nodePools[i] = *h.toV1NodePool(&nodePool, cluster, nil)
 		}
@@ -67,7 +67,7 @@ func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *d
 	return &v1Cluster
 }
 
-func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *v1.NodePoolOptions, cluster *dockyardsv1.Cluster) (*dockyardsv1.NodePool, error) {
+func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *types.NodePoolOptions, cluster *dockyardsv1.Cluster) (*dockyardsv1.NodePool, error) {
 	nodePool := dockyardsv1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cluster.Name + "-" + nodePoolOptions.Name,
@@ -178,7 +178,7 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 
 	r.Body.Close()
 
-	var clusterOptions v1.ClusterOptions
+	var clusterOptions types.ClusterOptions
 	err = json.Unmarshal(body, &clusterOptions)
 	if err != nil {
 		logger.Debug("error unmarshalling body", "err", err)
@@ -350,7 +350,7 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v1Cluster := v1.Cluster{
+	v1Cluster := types.Cluster{
 		ID: string(cluster.UID),
 	}
 
@@ -705,7 +705,7 @@ func (h *handler) GetClusters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clusters := []v1.Cluster{}
+	clusters := []types.Cluster{}
 
 	for _, organization := range organizationList.Items {
 		var clusterList dockyardsv1.ClusterList

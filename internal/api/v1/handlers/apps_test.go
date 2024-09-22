@@ -12,7 +12,7 @@ import (
 	"path"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
@@ -28,11 +28,11 @@ func TestGetApps(t *testing.T) {
 	tt := []struct {
 		name     string
 		lists    []client.ObjectList
-		expected []v1.App
+		expected []types.App
 	}{
 		{
 			name:     "test empty",
-			expected: []v1.App{},
+			expected: []types.App{},
 		},
 		{
 			name: "test single",
@@ -49,7 +49,7 @@ func TestGetApps(t *testing.T) {
 					},
 				},
 			},
-			expected: []v1.App{
+			expected: []types.App{
 				{
 					ID:   "86ea7a7c-2c77-49a8-9af2-a36be89aa031",
 					Name: "test",
@@ -86,7 +86,7 @@ func TestGetApps(t *testing.T) {
 					},
 				},
 			},
-			expected: []v1.App{
+			expected: []types.App{
 				{
 					ID:   "7a8991b6-0fc8-450b-b97b-d39becc24d89",
 					Name: "test1",
@@ -134,7 +134,7 @@ func TestGetApps(t *testing.T) {
 				t.Fatalf("error reading result body: %s", err)
 			}
 
-			var actual []v1.App
+			var actual []types.App
 			err = json.Unmarshal(body, &actual)
 			if err != nil {
 				t.Fatalf("error unmarshalling result body json: %s", err)
@@ -152,7 +152,7 @@ func TestGetApp(t *testing.T) {
 		name     string
 		appID    string
 		lists    []client.ObjectList
-		expected v1.App
+		expected types.App
 	}{
 		{
 			name:  "test single",
@@ -209,13 +209,13 @@ func TestGetApp(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.App{
+			expected: types.App{
 				ID:   "7d5fcf7d-e7aa-43da-83e7-700ffc37748e",
 				Name: "test",
-				AppSteps: &[]v1.AppStep{
+				AppSteps: &[]types.AppStep{
 					{
 						Name: "step",
-						StepOptions: &[]v1.StepOption{
+						StepOptions: &[]types.StepOption{
 							{
 								DisplayName: ptr.To("Helm Chart"),
 								JSONPointer: ptr.To("/helm_chart"),
@@ -300,13 +300,13 @@ func TestGetApp(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.App{
+			expected: types.App{
 				ID:   "e4c48f89-dcaf-48e6-b27e-04c34fb651d7",
 				Name: "test",
-				AppSteps: &[]v1.AppStep{
+				AppSteps: &[]types.AppStep{
 					{
 						Name: "testing",
-						StepOptions: &[]v1.StepOption{
+						StepOptions: &[]types.StepOption{
 							{
 								DisplayName: ptr.To("Ingress Enabled"),
 								Default:     ptr.To("false"),
@@ -373,7 +373,7 @@ func TestGetApp(t *testing.T) {
 				t.Fatalf("error reading result body: %s", err)
 			}
 
-			var actual v1.App
+			var actual types.App
 			err = json.Unmarshal(body, &actual)
 			if err != nil {
 				t.Fatalf("error unmarshalling result body json: %s", err)

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
@@ -27,9 +27,9 @@ func (h *handler) GetApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apps := make([]v1.App, len(appList.Items))
+	apps := make([]types.App, len(appList.Items))
 	for i, app := range appList.Items {
-		apps[i] = v1.App{
+		apps[i] = types.App{
 			ID:   string(app.UID),
 			Name: app.Name,
 		}
@@ -91,7 +91,7 @@ func (h *handler) GetApp(w http.ResponseWriter, r *http.Request) {
 
 	app := appList.Items[0]
 
-	v1App := v1.App{
+	v1App := types.App{
 		ID:   string(app.UID),
 		Name: app.Name,
 	}
@@ -104,12 +104,12 @@ func (h *handler) GetApp(w http.ResponseWriter, r *http.Request) {
 		v1App.Icon = &app.Spec.Icon
 	}
 
-	appSteps := make([]v1.AppStep, len(app.Spec.Steps))
+	appSteps := make([]types.AppStep, len(app.Spec.Steps))
 	for i, step := range app.Spec.Steps {
-		stepOptions := make([]v1.StepOption, len(step.Options))
+		stepOptions := make([]types.StepOption, len(step.Options))
 
 		for j, option := range step.Options {
-			stepOptions[j] = v1.StepOption{
+			stepOptions[j] = types.StepOption{
 				Default: &step.Options[j].Default,
 			}
 
@@ -142,7 +142,7 @@ func (h *handler) GetApp(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		appSteps[i] = v1.AppStep{
+		appSteps[i] = types.AppStep{
 			Name:        step.Name,
 			StepOptions: &stepOptions,
 		}

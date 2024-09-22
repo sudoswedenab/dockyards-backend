@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -37,7 +37,7 @@ func TestPostOrgClusters(t *testing.T) {
 		organizationName string
 		sub              string
 		lists            []client.ObjectList
-		clusterOptions   v1.ClusterOptions
+		clusterOptions   types.ClusterOptions
 		expected         []client.Object
 	}{
 		{
@@ -136,7 +136,7 @@ func TestPostOrgClusters(t *testing.T) {
 					},
 				},
 			},
-			clusterOptions: v1.ClusterOptions{
+			clusterOptions: types.ClusterOptions{
 				Name: "test",
 			},
 			expected: []client.Object{
@@ -237,7 +237,7 @@ func TestPostOrgClusters(t *testing.T) {
 			name:             "test allocate internal ip",
 			organizationName: "test-org",
 			sub:              "642ba917-2b23-4d15-8c68-667ed67e6cc5",
-			clusterOptions: v1.ClusterOptions{
+			clusterOptions: types.ClusterOptions{
 				Name:               "test",
 				AllocateInternalIP: ptr.To(true),
 			},
@@ -331,7 +331,7 @@ func TestPostOrgClusters(t *testing.T) {
 			name:             "test cluster template",
 			organizationName: "test",
 			sub:              "61122522-2a28-4005-a61a-e271246d6408",
-			clusterOptions: v1.ClusterOptions{
+			clusterOptions: types.ClusterOptions{
 				Name:            "test-cluster-template",
 				ClusterTemplate: ptr.To("test"),
 			},
@@ -449,7 +449,7 @@ func TestPostOrgClusters(t *testing.T) {
 			name:             "test custom release",
 			organizationName: "test",
 			sub:              "5742569b-2be9-46e5-b2ef-0e9ed523f2a5",
-			clusterOptions: v1.ClusterOptions{
+			clusterOptions: types.ClusterOptions{
 				Name:            "test-custom-release",
 				ClusterTemplate: ptr.To("custom-release"),
 				Version:         ptr.To("v2.3.4"),
@@ -643,7 +643,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 		organizationName string
 		sub              string
 		lists            []client.ObjectList
-		clusterOptions   v1.ClusterOptions
+		clusterOptions   types.ClusterOptions
 		expected         int
 	}{
 		{
@@ -674,7 +674,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					},
 				},
 			},
-			clusterOptions: v1.ClusterOptions{
+			clusterOptions: types.ClusterOptions{
 				Name: "InvalidClusterName",
 			},
 			expected: http.StatusUnprocessableEntity,
@@ -702,9 +702,9 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					},
 				},
 			},
-			clusterOptions: v1.ClusterOptions{
+			clusterOptions: types.ClusterOptions{
 				Name: "test-cluster",
-				NodePoolOptions: ptr.To([]v1.NodePoolOptions{
+				NodePoolOptions: ptr.To([]types.NodePoolOptions{
 					{
 						Name: "InvalidNodePoolName",
 					},
@@ -787,7 +787,7 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					},
 				},
 			},
-			clusterOptions: v1.ClusterOptions{
+			clusterOptions: types.ClusterOptions{
 				Name: "test-cluster",
 			},
 			expected: http.StatusConflict,
@@ -815,9 +815,9 @@ func TestPostOrgClustersErrors(t *testing.T) {
 					},
 				},
 			},
-			clusterOptions: v1.ClusterOptions{
+			clusterOptions: types.ClusterOptions{
 				Name: "test-cluster",
-				NodePoolOptions: ptr.To([]v1.NodePoolOptions{
+				NodePoolOptions: ptr.To([]types.NodePoolOptions{
 					{
 						Name:     "test",
 						Quantity: 123,
@@ -1067,7 +1067,7 @@ func TestGetCluster(t *testing.T) {
 		clusterID string
 		sub       string
 		lists     []client.ObjectList
-		expected  v1.Cluster
+		expected  types.Cluster
 	}{
 		{
 			name:      "test simple",
@@ -1145,12 +1145,12 @@ func TestGetCluster(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.Cluster{
+			expected: types.Cluster{
 				Name:         "test",
 				ID:           "26836276-22c6-41bc-bb40-78cdf141e302",
 				Organization: "test-org",
 				CreatedAt:    now.Time.Truncate(time.Second),
-				NodePools: []v1.NodePool{
+				NodePools: []types.NodePool{
 					{
 						ID:        "14edb8e7-b76a-48c7-bfd8-81588d243c33",
 						Name:      "test-pool",
@@ -1203,7 +1203,7 @@ func TestGetCluster(t *testing.T) {
 				t.Fatalf("error reading result body: %s", err)
 			}
 
-			var actual v1.Cluster
+			var actual types.Cluster
 			err = json.Unmarshal(b, &actual)
 			if err != nil {
 				t.Fatalf("error unmarshalling result body: %s", err)
@@ -1604,7 +1604,7 @@ func TestGetClusters(t *testing.T) {
 		name     string
 		sub      string
 		lists    []client.ObjectList
-		expected []v1.Cluster
+		expected []types.Cluster
 	}{
 		{
 			name: "test single cluster",
@@ -1655,7 +1655,7 @@ func TestGetClusters(t *testing.T) {
 					},
 				},
 			},
-			expected: []v1.Cluster{
+			expected: []types.Cluster{
 				{
 					ID:           "072d27ef-3675-48bf-8a47-748f1ae6d3ec",
 					Name:         "cluster1",
@@ -1688,7 +1688,7 @@ func TestGetClusters(t *testing.T) {
 					},
 				},
 			},
-			expected: []v1.Cluster{},
+			expected: []types.Cluster{},
 		},
 		{
 			name: "test cluster with internal ip allocation",
@@ -1739,7 +1739,7 @@ func TestGetClusters(t *testing.T) {
 					},
 				},
 			},
-			expected: []v1.Cluster{
+			expected: []types.Cluster{
 				{
 
 					ID:                 "8ff763a6-876b-485e-871f-e000ff27e53c",
@@ -1791,7 +1791,7 @@ func TestGetClusters(t *testing.T) {
 				t.Fatalf("error reading result body: %s", err)
 			}
 
-			var actual []v1.Cluster
+			var actual []types.Cluster
 			err = json.Unmarshal(b, &actual)
 			if err != nil {
 				t.Fatalf("error unmarshalling result body: %s", err)

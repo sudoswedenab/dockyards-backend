@@ -13,7 +13,7 @@ import (
 	"path"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -33,7 +33,7 @@ func TestGetNodePool(t *testing.T) {
 		nodePoolID string
 		sub        string
 		lists      []client.ObjectList
-		expected   v1.NodePool
+		expected   types.NodePool
 	}{
 		{
 			name:       "test single node",
@@ -119,11 +119,11 @@ func TestGetNodePool(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.NodePool{
+			expected: types.NodePool{
 				ID:        "0c386e60-e759-426f-b39d-36588547fac0",
 				ClusterID: "31f38488-c0df-48fe-89f8-e94a6c8c3258",
 				Name:      "test-pool",
-				Nodes: []v1.Node{
+				Nodes: []types.Node{
 					{
 						ID:   "55310c2b-589b-4044-8fce-8544ce0faf6c",
 						Name: "test-pool-1",
@@ -257,14 +257,14 @@ func TestGetNodePool(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.NodePool{
+			expected: types.NodePool{
 				ID:           "4386082b-cabe-4235-b6be-a857706ed6f4",
 				ClusterID:    "3fac0683-34bf-4f8a-908b-28db92cf20a0",
 				ControlPlane: ptr.To(true),
 				DiskSize:     "123Gi",
 				Name:         "test-complex",
 				Quantity:     3,
-				Nodes: []v1.Node{
+				Nodes: []types.Node{
 					{
 						Name: "test-complex-1",
 						ID:   "55310c2b-589b-4044-8fce-8544ce0faf6c",
@@ -321,7 +321,7 @@ func TestGetNodePool(t *testing.T) {
 				t.Fatalf("unexpected error reading result body: %s", err)
 			}
 
-			var actual v1.NodePool
+			var actual types.NodePool
 			err = json.Unmarshal(b, &actual)
 			if err != nil {
 				t.Fatalf("error unmarshalling result body to json: %s", err)
@@ -525,15 +525,15 @@ func TestPostClusterNodePools(t *testing.T) {
 	tt := []struct {
 		name            string
 		clusterID       string
-		nodePoolOptions v1.NodePoolOptions
+		nodePoolOptions types.NodePoolOptions
 		sub             string
 		lists           []client.ObjectList
-		expected        v1.NodePool
+		expected        types.NodePool
 	}{
 		{
 			name:      "test simple",
 			clusterID: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
-			nodePoolOptions: v1.NodePoolOptions{
+			nodePoolOptions: types.NodePoolOptions{
 				Name: "test",
 			},
 			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
@@ -579,7 +579,7 @@ func TestPostClusterNodePools(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.NodePool{
+			expected: types.NodePool{
 				ClusterID: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
 				Name:      "cluster1-test",
 			},
@@ -587,7 +587,7 @@ func TestPostClusterNodePools(t *testing.T) {
 		{
 			name:      "test complex",
 			clusterID: "b70dc16e-1c52-4861-9932-59d950edcc49",
-			nodePoolOptions: v1.NodePoolOptions{
+			nodePoolOptions: types.NodePoolOptions{
 				Name:                       "test2",
 				Quantity:                   3,
 				LoadBalancer:               ptr.To(true),
@@ -639,7 +639,7 @@ func TestPostClusterNodePools(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.NodePool{
+			expected: types.NodePool{
 				Name:                       "cluster-123-test2",
 				ClusterID:                  "b70dc16e-1c52-4861-9932-59d950edcc49",
 				Quantity:                   3,
@@ -650,10 +650,10 @@ func TestPostClusterNodePools(t *testing.T) {
 		{
 			name:      "test with storage resource without type",
 			clusterID: "h5cb74d7f-274c-4284-bbf4-e2a4b1c7dbc3",
-			nodePoolOptions: v1.NodePoolOptions{
+			nodePoolOptions: types.NodePoolOptions{
 				Name:     "storage-resources",
 				Quantity: 3,
-				StorageResources: &[]v1.StorageResource{
+				StorageResources: &[]types.StorageResource{
 					{
 						Name:     "test",
 						Quantity: "123",
@@ -703,11 +703,11 @@ func TestPostClusterNodePools(t *testing.T) {
 					},
 				},
 			},
-			expected: v1.NodePool{
+			expected: types.NodePool{
 				Name:      "test-storage-resources",
 				ClusterID: "h5cb74d7f-274c-4284-bbf4-e2a4b1c7dbc3",
 				Quantity:  3,
-				StorageResources: &[]v1.StorageResource{
+				StorageResources: &[]types.StorageResource{
 					{
 						Name:     "test",
 						Quantity: "123",
@@ -761,7 +761,7 @@ func TestPostClusterNodePools(t *testing.T) {
 				t.Fatalf("unexpected error reading result body: %s", err)
 			}
 
-			var actual v1.NodePool
+			var actual types.NodePool
 			err = json.Unmarshal(b, &actual)
 			if err != nil {
 				t.Fatalf("error unmarshalling result body to json: %s", err)
@@ -779,7 +779,7 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 	tt := []struct {
 		name            string
 		clusterID       string
-		nodePoolOptions v1.NodePoolOptions
+		nodePoolOptions types.NodePoolOptions
 		sub             string
 		lists           []client.ObjectList
 		expected        int
@@ -787,7 +787,7 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 		{
 			name:      "test invalid cluster",
 			clusterID: "1817bd8b-db70-46ce-bc05-5d99df68b79e",
-			nodePoolOptions: v1.NodePoolOptions{
+			nodePoolOptions: types.NodePoolOptions{
 				Name: "test",
 			},
 			expected: http.StatusUnauthorized,
@@ -795,7 +795,7 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 		{
 			name:      "test invalid name",
 			clusterID: "a2e90092-956c-4ac9-8ec7-8d4e757faf25",
-			nodePoolOptions: v1.NodePoolOptions{
+			nodePoolOptions: types.NodePoolOptions{
 				Name: "InvalidName",
 			},
 			expected: http.StatusUnprocessableEntity,
@@ -803,7 +803,7 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 		{
 			name:      "test conflict name",
 			clusterID: "57cd048f-ceff-4d12-a19c-d8edab370d06",
-			nodePoolOptions: v1.NodePoolOptions{
+			nodePoolOptions: types.NodePoolOptions{
 				Name: "test",
 			},
 			sub: "df24c8f4-27f3-485a-ae7a-92546b3fb925",
@@ -873,7 +873,7 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 		{
 			name:      "test invalid membership",
 			clusterID: "0948b965-ea97-4e74-8262-d1b6c1ccc367",
-			nodePoolOptions: v1.NodePoolOptions{
+			nodePoolOptions: types.NodePoolOptions{
 				Name: "test",
 			},
 			sub: "44946295-97bc-4c24-8887-69d3f0ca0dad",
@@ -916,7 +916,7 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 		{
 			name:      "test high quantity",
 			clusterID: "3c727788-9cd1-4b74-836b-8b6ff5e58b8b",
-			nodePoolOptions: v1.NodePoolOptions{
+			nodePoolOptions: types.NodePoolOptions{
 				Name:     "test",
 				Quantity: 50,
 			},

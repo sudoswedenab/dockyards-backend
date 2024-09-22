@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
@@ -79,7 +79,7 @@ func (h *handler) PostClusterDeployments(w http.ResponseWriter, r *http.Request)
 
 	r.Body.Close()
 
-	var v1Deployment v1.Deployment
+	var v1Deployment types.Deployment
 	err = json.Unmarshal(body, &v1Deployment)
 	if err != nil {
 		logger.Debug("failed to unmarshall body", "err", err)
@@ -177,7 +177,7 @@ func (h *handler) PostClusterDeployments(w http.ResponseWriter, r *http.Request)
 
 	patch := client.MergeFrom(deployment.DeepCopy())
 
-	createdDeployment := v1.Deployment{
+	createdDeployment := types.Deployment{
 		ID:        string(deployment.UID),
 		ClusterID: string(cluster.UID),
 		Name:      ptr.To(strings.TrimPrefix(deployment.Name, cluster.Name+"-")),
@@ -230,7 +230,7 @@ func (h *handler) PostClusterDeployments(w http.ResponseWriter, r *http.Request)
 			},
 		}
 
-		createdDeployment.Type = v1.DeploymentTypeContainerImage
+		createdDeployment.Type = types.DeploymentTypeContainerImage
 		createdDeployment.ContainerImage = &containerImageDeployment.Spec.Image
 	}
 
@@ -272,7 +272,7 @@ func (h *handler) PostClusterDeployments(w http.ResponseWriter, r *http.Request)
 			},
 		}
 
-		createdDeployment.Type = v1.DeploymentTypeKustomize
+		createdDeployment.Type = types.DeploymentTypeKustomize
 		createdDeployment.Kustomize = &kustomizeDeployment.Spec.Kustomize
 	}
 
@@ -330,7 +330,7 @@ func (h *handler) PostClusterDeployments(w http.ResponseWriter, r *http.Request)
 			},
 		}
 
-		createdDeployment.Type = v1.DeploymentTypeHelm
+		createdDeployment.Type = types.DeploymentTypeHelm
 		createdDeployment.HelmChart = &helmDeployment.Spec.Chart
 		createdDeployment.HelmRepository = &helmDeployment.Spec.Repository
 		createdDeployment.HelmVersion = &helmDeployment.Spec.Version
@@ -426,24 +426,24 @@ func (h *handler) GetClusterDeployments(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	deployments := make([]v1.Deployment, len(deploymentList.Items))
+	deployments := make([]types.Deployment, len(deploymentList.Items))
 	for i, deployment := range deploymentList.Items {
 		name := strings.TrimPrefix(deployment.Name, cluster.Name+"-")
 
-		var deploymentType v1.DeploymentType
+		var deploymentType types.DeploymentType
 
 		if len(deployment.Spec.DeploymentRefs) > 0 {
 			switch deployment.Spec.DeploymentRefs[0].Kind {
 			case dockyardsv1.ContainerImageDeploymentKind:
-				deploymentType = v1.DeploymentTypeContainerImage
+				deploymentType = types.DeploymentTypeContainerImage
 			case dockyardsv1.HelmDeploymentKind:
-				deploymentType = v1.DeploymentTypeHelm
+				deploymentType = types.DeploymentTypeHelm
 			case dockyardsv1.KustomizeDeploymentKind:
-				deploymentType = v1.DeploymentTypeKustomize
+				deploymentType = types.DeploymentTypeKustomize
 			}
 		}
 
-		deployments[i] = v1.Deployment{
+		deployments[i] = types.Deployment{
 			ID:          string(deployment.UID),
 			ClusterID:   string(cluster.UID),
 			Provenience: &deployment.Spec.Provenience,
@@ -562,7 +562,7 @@ func (h *handler) GetDeployment(w http.ResponseWriter, r *http.Request) {
 
 	deployment := deploymentList.Items[0]
 
-	v1Deployment := v1.Deployment{
+	v1Deployment := types.Deployment{
 		ID:          string(deployment.UID),
 		Provenience: &deployment.Spec.Provenience,
 		Name:        &deployment.Name,
@@ -635,12 +635,12 @@ func (h *handler) GetDeployment(w http.ResponseWriter, r *http.Request) {
 
 	readyCondition := meta.FindStatusCondition(deployment.Status.Conditions, dockyardsv1.ReadyCondition)
 	if readyCondition != nil {
-		health := v1.DeploymentStatusHealthWarning
+		health := types.DeploymentStatusHealthWarning
 		if readyCondition.Status == metav1.ConditionTrue {
-			health = v1.DeploymentStatusHealthHealthy
+			health = types.DeploymentStatusHealthHealthy
 		}
 
-		v1Deployment.Status = &v1.DeploymentStatus{
+		v1Deployment.Status = &types.DeploymentStatus{
 			CreatedAt: readyCondition.LastTransitionTime.Time,
 			Health:    &health,
 			State:     &readyCondition.Message,

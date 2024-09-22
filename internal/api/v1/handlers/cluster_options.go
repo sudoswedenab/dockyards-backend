@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
@@ -17,12 +17,12 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=clustertemplates,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
 
-func getRecommendedNodePools(clusterTemplate *dockyardsv1.ClusterTemplate) []v1.NodePoolOptions {
+func getRecommendedNodePools(clusterTemplate *dockyardsv1.ClusterTemplate) []types.NodePoolOptions {
 	if clusterTemplate == nil {
-		return []v1.NodePoolOptions{}
+		return []types.NodePoolOptions{}
 	}
 
-	nodePoolOptions := make([]v1.NodePoolOptions, len(clusterTemplate.Spec.NodePoolTemplates))
+	nodePoolOptions := make([]types.NodePoolOptions, len(clusterTemplate.Spec.NodePoolTemplates))
 
 	for i, nodePoolTemplate := range clusterTemplate.Spec.NodePoolTemplates {
 		nodePoolTemplate := nodePoolTemplate
@@ -32,7 +32,7 @@ func getRecommendedNodePools(clusterTemplate *dockyardsv1.ClusterTemplate) []v1.
 			quantity = int(*nodePoolTemplate.Spec.Replicas)
 		}
 
-		nodePoolOptions[i] = v1.NodePoolOptions{
+		nodePoolOptions[i] = types.NodePoolOptions{
 			Name:     nodePoolTemplate.Name,
 			Quantity: quantity,
 		}
@@ -87,7 +87,7 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	options := v1.Options{
+	options := types.Options{
 		Version: release.Status.Versions,
 	}
 

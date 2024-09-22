@@ -3,7 +3,7 @@ package deployment
 import (
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
@@ -13,47 +13,47 @@ import (
 func TestAddNormalizedName(t *testing.T) {
 	tt := []struct {
 		name       string
-		deployment v1.Deployment
-		expected   v1.Deployment
+		deployment types.Deployment
+		expected   types.Deployment
 	}{
 		{
 			name: "test container image",
-			deployment: v1.Deployment{
-				ContainerImage: ptr.To("test:v1.2.3"),
+			deployment: types.Deployment{
+				ContainerImage: ptr.To("test:types.2.3"),
 			},
-			expected: v1.Deployment{
+			expected: types.Deployment{
 				Name:           ptr.To("test"),
 				Namespace:      ptr.To("test"),
-				ContainerImage: ptr.To("docker.io/library/test:v1.2.3"),
-				Type:           v1.DeploymentTypeContainerImage,
+				ContainerImage: ptr.To("docker.io/library/test:types.2.3"),
+				Type:           types.DeploymentTypeContainerImage,
 			},
 		},
 		{
 			name: "test helm chart",
-			deployment: v1.Deployment{
+			deployment: types.Deployment{
 				HelmChart: ptr.To("test"),
 			},
-			expected: v1.Deployment{
+			expected: types.Deployment{
 				Name:      ptr.To("test"),
 				Namespace: ptr.To("test"),
 				HelmChart: ptr.To("test"),
-				Type:      v1.DeploymentTypeHelm,
+				Type:      types.DeploymentTypeHelm,
 			},
 		},
 		{
 			name: "test kustomize",
-			deployment: v1.Deployment{
+			deployment: types.Deployment{
 				Kustomize: ptr.To(map[string][]byte{
 					"kustomization.yaml": []byte("test"),
 				}),
 			},
-			expected: v1.Deployment{
+			expected: types.Deployment{
 				Name:      ptr.To(""),
 				Namespace: ptr.To(""),
 				Kustomize: ptr.To(map[string][]byte{
 					"kustomization.yaml": []byte("test"),
 				}),
-				Type: v1.DeploymentTypeKustomize,
+				Type: types.DeploymentTypeKustomize,
 			},
 		},
 	}
@@ -78,12 +78,12 @@ func TestAddNormalizedName(t *testing.T) {
 func TestAddNormalizedNameErrors(t *testing.T) {
 	tt := []struct {
 		name       string
-		deployment v1.Deployment
+		deployment types.Deployment
 	}{
 		{
 			name: "test invalid container image",
-			deployment: v1.Deployment{
-				ContainerImage: ptr.To("http://localhost/nginx:v1.2.3"),
+			deployment: types.Deployment{
+				ContainerImage: ptr.To("http://localhost/nginx:types.2.3"),
 			},
 		},
 	}

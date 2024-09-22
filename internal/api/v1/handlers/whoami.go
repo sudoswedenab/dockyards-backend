@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1"
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
@@ -45,7 +45,7 @@ func (h *handler) GetWhoami(w http.ResponseWriter, r *http.Request) {
 
 	user := userList.Items[0]
 
-	v1User := v1.User{
+	v1User := types.User{
 		ID:    string(user.UID),
 		Name:  user.Name,
 		Email: user.Spec.Email,
