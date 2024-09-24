@@ -350,9 +350,7 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v1Cluster := types.Cluster{
-		ID: string(cluster.UID),
-	}
+	v1Cluster := h.toV1Cluster(&organization, &cluster, nil)
 
 	b, err := json.Marshal(&v1Cluster)
 	if err != nil {
