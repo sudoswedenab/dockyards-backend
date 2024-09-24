@@ -15,11 +15,8 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"github.com/google/go-cmp/cmp"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -48,77 +45,10 @@ func TestGetClusterOptions(t *testing.T) {
 						},
 					},
 				},
-				&dockyardsv1.ClusterTemplateList{
-					Items: []dockyardsv1.ClusterTemplate{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "recommended",
-								Namespace: "testing",
-							},
-							Spec: dockyardsv1.ClusterTemplateSpec{
-								NodePoolTemplates: []dockyardsv1.NodePool{
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "cp",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:     ptr.To(int32(3)),
-											ControlPlane: true,
-											Resources: corev1.ResourceList{
-												corev1.ResourceCPU:    resource.MustParse("2"),
-												corev1.ResourceMemory: resource.MustParse("4Gi"),
-											},
-										},
-									},
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "lb",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:      ptr.To(int32(2)),
-											LoadBalancer:  true,
-											DedicatedRole: true,
-										},
-									},
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "w",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											Resources: corev1.ResourceList{
-												corev1.ResourceStorage: resource.MustParse("123G"),
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
 			},
 			expected: types.Options{
 				Version: []string{
 					"v1.2.3",
-				},
-				NodePoolOptions: &[]types.NodePoolOptions{
-					{
-						Name:         "cp",
-						Quantity:     3,
-						ControlPlane: ptr.To(true),
-						CPUCount:     ptr.To(2),
-						RAMSize:      ptr.To("4Gi"),
-					},
-					{
-						Name:                       "lb",
-						Quantity:                   2,
-						LoadBalancer:               ptr.To(true),
-						ControlPlaneComponentsOnly: ptr.To(true),
-					},
-					{
-						Name:     "w",
-						Quantity: 1,
-						DiskSize: ptr.To("123G"),
-					},
 				},
 			},
 		},
@@ -140,58 +70,10 @@ func TestGetClusterOptions(t *testing.T) {
 						},
 					},
 				},
-				&dockyardsv1.ClusterTemplateList{
-					Items: []dockyardsv1.ClusterTemplate{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "recommended",
-								Namespace: "testing",
-							},
-							Spec: dockyardsv1.ClusterTemplateSpec{
-								NodePoolTemplates: []dockyardsv1.NodePool{
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "cp",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											ControlPlane: true,
-											Resources: corev1.ResourceList{
-												corev1.ResourceMemory: resource.MustParse("4Gi"),
-											},
-										},
-									},
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "w",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											Resources: corev1.ResourceList{
-												corev1.ResourceStorage: resource.MustParse("123Gi"),
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
 			},
 			expected: types.Options{
 				Version: []string{
 					"v1.2.3",
-				},
-				NodePoolOptions: &[]types.NodePoolOptions{
-					{
-						Name:         "cp",
-						Quantity:     1,
-						ControlPlane: ptr.To(true),
-						RAMSize:      ptr.To("4Gi"),
-					},
-					{
-						Name:     "w",
-						Quantity: 1,
-						DiskSize: ptr.To("123Gi"),
-					},
 				},
 			},
 		},

@@ -9,64 +9,11 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=clustertemplates,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
-
-func getRecommendedNodePools(clusterTemplate *dockyardsv1.ClusterTemplate) []types.NodePoolOptions {
-	if clusterTemplate == nil {
-		return []types.NodePoolOptions{}
-	}
-
-	nodePoolOptions := make([]types.NodePoolOptions, len(clusterTemplate.Spec.NodePoolTemplates))
-
-	for i, nodePoolTemplate := range clusterTemplate.Spec.NodePoolTemplates {
-		nodePoolTemplate := nodePoolTemplate
-
-		quantity := 1
-		if nodePoolTemplate.Spec.Replicas != nil {
-			quantity = int(*nodePoolTemplate.Spec.Replicas)
-		}
-
-		nodePoolOptions[i] = types.NodePoolOptions{
-			Name:     nodePoolTemplate.Name,
-			Quantity: quantity,
-		}
-
-		if nodePoolTemplate.Spec.ControlPlane {
-			nodePoolOptions[i].ControlPlane = &nodePoolTemplate.Spec.ControlPlane
-		}
-
-		if nodePoolTemplate.Spec.LoadBalancer {
-			nodePoolOptions[i].LoadBalancer = &nodePoolTemplate.Spec.LoadBalancer
-		}
-
-		if nodePoolTemplate.Spec.DedicatedRole {
-			nodePoolOptions[i].ControlPlaneComponentsOnly = &nodePoolTemplate.Spec.DedicatedRole
-		}
-
-		resourceCPU := nodePoolTemplate.Spec.Resources.Cpu()
-		if resourceCPU != nil && resourceCPU.Value() != 0 {
-			nodePoolOptions[i].CPUCount = ptr.To(int(resourceCPU.Value()))
-		}
-
-		resourceMemory := nodePoolTemplate.Spec.Resources.Memory()
-		if !resourceMemory.IsZero() {
-			nodePoolOptions[i].RAMSize = ptr.To(resourceMemory.String())
-		}
-
-		resourceStorage := nodePoolTemplate.Spec.Resources.Storage()
-		if !resourceStorage.IsZero() {
-			nodePoolOptions[i].DiskSize = ptr.To(resourceStorage.String())
-		}
-	}
-
-	return nodePoolOptions
-}
 
 func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -105,25 +52,6 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 		}
 
 		options.StorageResourceTypes = &storageResourceTypes
-	}
-
-	objectKey = client.ObjectKey{
-		Name:      dockyardsv1.ClusterTemplateNameRecommended,
-		Namespace: h.namespace,
-	}
-
-	var clusterTemplate dockyardsv1.ClusterTemplate
-	err = h.Get(ctx, objectKey, &clusterTemplate)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting cluster template", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !apierrors.IsNotFound(err) {
-		recommendedNodePool := getRecommendedNodePools(&clusterTemplate)
-		options.NodePoolOptions = &recommendedNodePool
 	}
 
 	b, err := json.Marshal(&options)
