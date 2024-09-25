@@ -18,6 +18,10 @@ type NodePoolStorageResource struct {
 	Quantity resource.Quantity `json:"quantity"`
 }
 
+type NodePoolSecurity struct {
+	EnableAppArmor bool `json:"enableAppArmor,omitempty"`
+}
+
 type NodePoolSpec struct {
 	Replicas         *int32                       `json:"replicas,omitempty"`
 	ControlPlane     bool                         `json:"controlPlane,omitempty"`
@@ -27,6 +31,7 @@ type NodePoolSpec struct {
 	Storage          bool                         `json:"storage,omitempty"`
 	StorageResources []NodePoolStorageResource    `json:"storageResources,omitempty"`
 	ReleaseRef       *corev1.TypedObjectReference `json:"releaseRef,omitempty"`
+	Security         NodePoolSecurity             `json:"security,omitempty"`
 }
 
 type NodePoolStatus struct {

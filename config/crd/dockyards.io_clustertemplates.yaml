@@ -321,6 +321,11 @@ spec:
                           description: ResourceList is a set of (resource name, quantity)
                             pairs.
                           type: object
+                        security:
+                          properties:
+                            enableAppArmor:
+                              type: boolean
+                          type: object
                         storage:
                           type: boolean
                         storageResources:
