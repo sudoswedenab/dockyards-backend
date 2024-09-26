@@ -16,3 +16,4 @@ resources:
 - dockyards.io_features.yaml
 - dockyards.io_verificationrequests.yaml
 - dockyards.io_credentialtemplates.yaml
+- dockyards.io_deploymenttemplates.yaml
