@@ -2,6 +2,7 @@ package v1alpha2
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -10,9 +11,11 @@ const (
 )
 
 type DeploymentSpec struct {
-	TargetNamespace  string                             `json:"targetNamespace,omitempty"`
-	DeploymentRefs   []corev1.TypedLocalObjectReference `json:"deploymentRefs,omitempty"`
-	ClusterComponent bool                               `json:"clusterComponent,omitempty"`
+	TargetNamespace         string                             `json:"targetNamespace,omitempty"`
+	DeploymentRefs          []corev1.TypedLocalObjectReference `json:"deploymentRefs,omitempty"`
+	ClusterComponent        bool                               `json:"clusterComponent,omitempty"`
+	DeploymentTemplateRef   *corev1.TypedObjectReference       `json:"deploymentTemplateRef,omitempty"`
+	DeploymentTemplateInput *apiextensionsv1.JSON              `json:"deploymentTemplateInput,omitempty"`
 
 	// +kubebuilder:validation:Enum=Dockyards;User
 	Provenience string `json:"provenience"`
