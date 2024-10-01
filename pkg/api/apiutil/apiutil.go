@@ -257,3 +257,11 @@ func IsSubjectAllowed(ctx context.Context, c client.Client, subject string, reso
 
 	return accessReview.Status.Allowed, nil
 }
+
+func IgnoreConflict(err error) error {
+	if apierrors.IsConflict(err) {
+		return nil
+	}
+
+	return err
+}
