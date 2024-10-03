@@ -19,6 +19,7 @@ const (
 	OwnerReferencesField       = ".metadata.ownerReferences"
 	SecretTypeField            = ".type"
 	CloudSecretReferenceField  = ".spec.cloud.secretRef"
+	CodeField                  = ".spec.code"
 )
 
 // Deprecated: use ByMemberReferences
@@ -106,4 +107,17 @@ func ByCloudSecretRef(obj client.Object) []string {
 	}
 
 	return []string{CloudSecretRef(organization.Spec.Cloud.SecretRef)}
+}
+
+func ByCode(obj client.Object) []string {
+	organizationVoucher, ok := obj.(*v1alpha2.OrganizationVoucher)
+	if !ok {
+		return nil
+	}
+
+	if organizationVoucher.Spec.Code == "" {
+		return nil
+	}
+
+	return []string{organizationVoucher.Spec.Code}
 }
