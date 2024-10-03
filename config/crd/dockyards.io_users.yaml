@@ -53,8 +53,6 @@ spec:
               password:
                 pattern: ^\$2a\$10\$[\.\/A-Za-z0-9]{53}$
                 type: string
-              phone:
-                type: string
             required:
             - email
             - password

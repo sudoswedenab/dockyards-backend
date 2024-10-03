@@ -12,7 +12,6 @@ const (
 type UserSpec struct {
 	Email       string `json:"email"`
 	DisplayName string `json:"displayName,omitempty"`
-	Phone       string `json:"phone,omitempty"`
 
 	// +kubebuilder:validation:Pattern="^\\$2a\\$10\\$[\\.\\/A-Za-z0-9]{53}$"
 	Password string `json:"password"`
