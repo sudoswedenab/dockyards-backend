@@ -178,6 +178,8 @@ spec:
                 type: string
               password:
                 type: string
+              phone:
+                type: string
             required:
             - email
             - password

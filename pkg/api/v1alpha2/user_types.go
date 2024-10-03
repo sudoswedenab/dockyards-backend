@@ -12,6 +12,7 @@ type UserSpec struct {
 	Email       string `json:"email"`
 	DisplayName string `json:"displayName,omitempty"`
 	Password    string `json:"password"`
+	Phone       string `json:"phone,omitempty"`
 }
 
 type UserStatus struct {
