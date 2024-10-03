@@ -38,4 +38,5 @@ const (
 
 const (
 	AnnotationDefaultTemplate = "dockyards.io/is-default-template"
+	AnnotationVoucherCode     = "dockyards.io/voucher-code"
 )
