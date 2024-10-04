@@ -90,6 +90,21 @@ func TestDockyardsUserValidateCreate(t *testing.T) {
 				},
 			),
 		},
+		{
+			name: "test with multiple allowed domains",
+			allowedDomains: []string{
+				"@dockyards.dev",
+				"@sudosweden.com",
+			},
+			dockyardsUser: dockyardsv1.User{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-multiple-allowed-domains",
+				},
+				Spec: dockyardsv1.UserSpec{
+					Email: "test@dockyards.dev",
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {

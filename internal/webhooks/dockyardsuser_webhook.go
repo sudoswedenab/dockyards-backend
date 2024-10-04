@@ -73,23 +73,23 @@ func (webhook *DockyardsUser) validate(dockyardsUser *dockyardsv1.User) error {
 	}
 
 	for _, allowedDomain := range webhook.AllowedDomains {
-		if !strings.HasSuffix(address.Address, allowedDomain) {
-			forbidden := field.Forbidden(
-				field.NewPath("spec", "email"),
-				"address is forbidden",
-			)
-
-			qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.UserKind).GroupKind()
-
-			return apierrors.NewInvalid(
-				qualifiedKind,
-				dockyardsUser.Name,
-				field.ErrorList{
-					forbidden,
-				},
-			)
+		if strings.HasSuffix(address.Address, allowedDomain) {
+			return nil
 		}
 	}
 
-	return nil
+	forbidden := field.Forbidden(
+		field.NewPath("spec", "email"),
+		"address is forbidden",
+	)
+
+	qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.UserKind).GroupKind()
+
+	return apierrors.NewInvalid(
+		qualifiedKind,
+		dockyardsUser.Name,
+		field.ErrorList{
+			forbidden,
+		},
+	)
 }
