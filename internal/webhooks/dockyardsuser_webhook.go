@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:groups=dockyards.io,resources=users,verbs=create;update,path=/validate-dockyards-io-v1alpha2-user,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.cluster.dockyards.io,versions=v1alpha2
+// +kubebuilder:webhook:groups=dockyards.io,resources=users,verbs=create;update,path=/validate-dockyards-io-v1alpha2-user,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.user.dockyards.io,versions=v1alpha2
 
 type DockyardsUser struct {
 	AllowedDomains []string
@@ -21,7 +21,7 @@ type DockyardsUser struct {
 
 func (webhook *DockyardsUser) SetupWebhookWithManager(m ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(m).
-		For(&dockyardsv1.Cluster{}).
+		For(&dockyardsv1.User{}).
 		WithValidator(webhook).
 		Complete()
 }
