@@ -53,7 +53,7 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 	return slog.New(slog.NewTextHandler(os.Stdout, &handlerOptions)), nil
 }
 
-func setupWebhooks(mgr ctrl.Manager) error {
+func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 	err := (&v1alpha1.Organization{}).SetupWebhookWithManager(mgr)
 	if err != nil {
 		return err
@@ -79,6 +79,13 @@ func setupWebhooks(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = (&webhooks.DockyardsUser{
+		AllowedDomains: allowedDomains,
+	}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -89,12 +96,14 @@ func main() {
 	var metricsBindAddress string
 	var allowedOrigins []string
 	var dockyardsNamespace string
+	var allowedDomains []string
 	pflag.StringVar(&logLevel, "log-level", "info", "log level")
 	pflag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
 	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
 	pflag.StringSliceVar(&allowedOrigins, "allow-origin", []string{"http://localhost", "http://localhost:8000"}, "allow origin")
 	pflag.StringVar(&dockyardsNamespace, "dockyards-namespace", "dockyards", "dockyards namespace")
+	pflag.StringSliceVar(&allowedDomains, "allow-domain", nil, "allow domain")
 	pflag.Parse()
 
 	logger, err := newLogger(logLevel)
@@ -330,7 +339,9 @@ func main() {
 	}
 
 	if enableWebhooks {
-		err := setupWebhooks(mgr)
+		logger.Info("enabling webhooks", "domains", allowedDomains)
+
+		err := setupWebhooks(mgr, allowedDomains)
 		if err != nil {
 			logger.Error("error creating webhooks", "err", err)
 
