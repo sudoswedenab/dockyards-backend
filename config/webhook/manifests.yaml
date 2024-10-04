@@ -31,6 +31,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-dockyards-io-v1alpha2-user
+  failurePolicy: Fail
+  name: validation.cluster.dockyards.io
+  rules:
+  - apiGroups:
+    - dockyards.io
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - users
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-dockyards-io-v1alpha2-nodepool
   failurePolicy: Fail
   name: validation.nodepool.dockyards.io
