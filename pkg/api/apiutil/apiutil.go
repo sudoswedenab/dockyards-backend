@@ -265,3 +265,11 @@ func IgnoreConflict(err error) error {
 
 	return err
 }
+
+func IgnoreForbidden(err error) error {
+	if apierrors.IsForbidden(err) {
+		return nil
+	}
+
+	return err
+}
