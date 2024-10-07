@@ -83,13 +83,11 @@ func (webhook *DockyardsUser) validate(dockyardsUser *dockyardsv1.User) error {
 		"address is forbidden",
 	)
 
-	qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.UserKind).GroupKind()
+	qualifiedResource := dockyardsv1.GroupVersion.WithResource(dockyardsv1.UserKind).GroupResource()
 
-	return apierrors.NewInvalid(
-		qualifiedKind,
+	return apierrors.NewForbidden(
+		qualifiedResource,
 		dockyardsUser.Name,
-		field.ErrorList{
-			forbidden,
-		},
+		forbidden,
 	)
 }

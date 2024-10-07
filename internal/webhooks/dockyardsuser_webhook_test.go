@@ -57,15 +57,13 @@ func TestDockyardsUserValidateCreate(t *testing.T) {
 					Email: "test-without-allowed-domain@sudosweden.com",
 				},
 			},
-			expected: apierrors.NewInvalid(
-				dockyardsv1.GroupVersion.WithKind(dockyardsv1.UserKind).GroupKind(),
+			expected: apierrors.NewForbidden(
+				dockyardsv1.GroupVersion.WithResource(dockyardsv1.UserKind).GroupResource(),
 				"test-without-allowed-domain",
-				field.ErrorList{
-					field.Forbidden(
-						field.NewPath("spec", "email"),
-						"address is forbidden",
-					),
-				},
+				field.Forbidden(
+					field.NewPath("spec", "email"),
+					"address is forbidden",
+				),
 			),
 		},
 		{
