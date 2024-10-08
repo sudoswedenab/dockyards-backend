@@ -561,6 +561,115 @@ func TestPostOrgClusters(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:             "test storage resources",
+			organizationName: "test",
+			sub:              "2f890308-6043-4c0d-a8c9-90d49d0cabfd",
+			clusterOptions: types.ClusterOptions{
+				Name: "test-storage-resources",
+				NodePoolOptions: &[]types.NodePoolOptions{
+					{
+						Name:     "worker",
+						Quantity: 3,
+						DiskSize: ptr.To("4G"),
+						RAMSize:  ptr.To("3Mi"),
+						CPUCount: ptr.To(2),
+						StorageResources: &[]types.StorageResource{
+							{
+								Name:     "test",
+								Quantity: "123",
+								Type:     ptr.To("HostPath"),
+							},
+						},
+					},
+				},
+			},
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
+									{
+										Name: "test",
+										UID:  "2f890308-6043-4c0d-a8c9-90d49d0cabfd",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
+						},
+					},
+				},
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+								Namespace: "dockyards-testing",
+							},
+							Status: dockyardsv1.ReleaseStatus{
+								LatestVersion: "v1.2.3",
+							},
+						},
+					},
+				},
+			},
+			expected: []client.Object{
+				&dockyardsv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-storage-resources",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.OrganizationKind,
+								Name:               "test",
+								BlockOwnerDeletion: ptr.To(true),
+							},
+						},
+					},
+					Spec: dockyardsv1.ClusterSpec{
+						Version: "v1.2.3",
+					},
+				},
+				&dockyardsv1.NodePool{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-storage-resources-worker",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.ClusterKind,
+								Name:               "test-storage-resources",
+								BlockOwnerDeletion: ptr.To(true),
+							},
+						},
+					},
+					Spec: dockyardsv1.NodePoolSpec{
+						Replicas: ptr.To(int32(3)),
+						Resources: corev1.ResourceList{
+							corev1.ResourceCPU:     resource.MustParse("2"),
+							corev1.ResourceMemory:  resource.MustParse("3Mi"),
+							corev1.ResourceStorage: resource.MustParse("4G"),
+						},
+						StorageResources: []dockyardsv1.NodePoolStorageResource{
+							{
+								Name:     "test",
+								Quantity: resource.MustParse("123"),
+								Type:     dockyardsv1.StorageResourceTypeHostPath,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {

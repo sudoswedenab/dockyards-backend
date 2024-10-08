@@ -125,6 +125,26 @@ func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *types.NodePoolOptio
 		nodePool.Spec.Resources[corev1.ResourceMemory] = quantity
 	}
 
+	if nodePoolOptions.StorageResources != nil {
+		for _, storageResource := range *nodePoolOptions.StorageResources {
+			quantity, err := resource.ParseQuantity(storageResource.Quantity)
+			if err != nil {
+				return nil, err
+			}
+
+			nodePoolStorageResource := dockyardsv1.NodePoolStorageResource{
+				Name:     storageResource.Name,
+				Quantity: quantity,
+			}
+
+			if storageResource.Type != nil {
+				nodePoolStorageResource.Type = *storageResource.Type
+			}
+
+			nodePool.Spec.StorageResources = append(nodePool.Spec.StorageResources, nodePoolStorageResource)
+		}
+	}
+
 	return &nodePool, nil
 }
 
