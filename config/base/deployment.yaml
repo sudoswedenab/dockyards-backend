@@ -42,7 +42,8 @@ spec:
       imagePullSecrets:
       - name: dockyards-registry
       securityContext:
-        runAsUser: 65534
+        fsGroup: 65534
+        runAsUser: 65532
         runAsGroup: 65534
         runAsNonRoot: true
         seccompProfile:
