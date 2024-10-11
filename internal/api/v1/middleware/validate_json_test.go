@@ -42,6 +42,12 @@ func TestValidateJSON(t *testing.T) {
 			body:     `{"name":"hello","invalid":true}`,
 			expected: http.StatusUnprocessableEntity,
 		},
+		{
+			name:     "test cluster options nested invalid field",
+			schema:   "#clusterOptions",
+			body:     `{"name":"hello","node_pool_options":[{"disks":{}}]}`,
+			expected: http.StatusUnprocessableEntity,
+		},
 	}
 
 	for _, tc := range tt {
@@ -59,7 +65,7 @@ func TestValidateJSON(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(b))
 
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 			ctx := middleware.ContextWithLogger(r.Context(), logger)
 

@@ -75,9 +75,11 @@ import "time"
 
 // Deployment defines model for deployment.
 #Deployment: {
-	cluster_id:       string        @go(ClusterID)
-	container_image?: null | string @go(ContainerImage,*string)
-	credential_name?: null | string @go(CredentialName,*string)
+	cluster_id:           string        @go(ClusterID)
+	container_image?:     null | string @go(ContainerImage,*string)
+	credential_name?:     null | string @go(CredentialName,*string)
+	deployment_template?: null | string @go(DeploymentTemplate,*string)
+	deployment_template_input?: null | {...} @go(DeploymentTemplateInput,*map[string]interface{})
 	helm_chart?:      null | string @go(HelmChart,*string)
 	helm_repository?: null | string @go(HelmRepository,*string)
 	helm_values?: null | {...} @go(HelmValues,*map[string]interface{})
@@ -218,6 +220,11 @@ import "time"
 #Tokens: {
 	AccessToken:  string
 	RefreshToken: string
+}
+
+// UnprocessableEntityErrors defines model for unprocessable_entity_errors.
+#UnprocessableEntityErrors: {
+	errors: [...string] @go(Errors,[]string)
 }
 
 // User defines model for user.

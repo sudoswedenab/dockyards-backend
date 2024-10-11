@@ -2,13 +2,16 @@ package middleware
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 
+	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
+	"cuelang.org/go/cue/errors"
 	"cuelang.org/go/cue/load"
-	"cuelang.org/go/encoding/json"
+	cuejson "cuelang.org/go/encoding/json"
 )
 
 type validate struct {
@@ -28,12 +31,32 @@ func (v validate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	r.Body.Close()
 
-	err = json.Validate(body, v.schema)
+	err = cuejson.Validate(body, v.schema)
 	if err != nil {
 		logger.Debug("error validating body", "err", err)
 
+		cueerrors := errors.Errors(err)
+		entityErrors := make([]string, len(cueerrors))
+
+		for i, cueerr := range cueerrors {
+			entityErrors[i] = cueerr.Error()
+		}
+
+		unprocessableEntityErrors := types.UnprocessableEntityErrors{
+			Errors: entityErrors,
+		}
+
+		b, err := json.Marshal(&unprocessableEntityErrors)
+		if err != nil {
+			logger.Error("error marshalling unprocessable entity errors", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, err := w.Write([]byte(err.Error()))
+
+		_, err = w.Write(b)
 		if err != nil {
 			logger.Error("error writing body", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
