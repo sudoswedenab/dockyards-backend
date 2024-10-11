@@ -242,7 +242,7 @@ func (m *PrometheusMetrics) CollectMetrics() error {
 		}
 
 		if ownerOrganization == nil {
-			m.logger.Warn("secret has no owner organization", "name", secret.Name)
+			m.logger.Warn("secret has no owner organization", "name", secret.Name, "namespace", secret.Namespace)
 
 			continue
 		}
