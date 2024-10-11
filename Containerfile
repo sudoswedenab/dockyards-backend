@@ -8,5 +8,6 @@ FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=builder /src/dockyards-backend /usr/bin/dockyards-backend
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /src/cue.mod /home/nonroot/cue.mod
+COPY --from=builder /src/internal/api/v1/middleware/*.cue /home/nonroot/internal/api/v1/middleware/
 EXPOSE 9000
 ENTRYPOINT ["/usr/bin/dockyards-backend"]
