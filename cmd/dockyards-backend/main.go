@@ -115,6 +115,15 @@ func main() {
 	slogr := logr.FromSlogHandler(logger.Handler())
 	ctrl.SetLogger(slogr)
 
+	wd, err := os.Getwd()
+	if err != nil {
+		logger.Error("error getting working directory", "err", err)
+
+		os.Exit(1)
+	}
+
+	logger.Debug("process info", "wd", wd, "uid", os.Getuid(), "pid", os.Getpid())
+
 	kubeconfig, err := config.GetConfig()
 	if err != nil {
 		logger.Error("error getting kubeconfig", "err", err)
