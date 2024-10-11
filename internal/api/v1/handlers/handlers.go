@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"log/slog"
 	"net/http"
+	"path/filepath"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
@@ -71,7 +72,17 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	logger := middleware.NewLogger(h.logger).Handler
 	requireAuth := middleware.NewRequireAuth(h.jwtAccessPublicKey).Handler
 
-	mux.Handle("POST /v1/login", logger(http.HandlerFunc(h.Login)))
+	validateJSON, err := middleware.NewValidateJSON(filepath.Join("internal", "api", "v1", "middleware"))
+	if err != nil {
+		return err
+	}
+
+	mux.Handle("POST /v1/login",
+		logger(
+			validateJSON.WithSchema("#login")(http.HandlerFunc(h.Login)),
+		),
+	)
+
 	mux.Handle("POST /v1/refresh", logger(http.HandlerFunc(h.PostRefresh)))
 
 	mux.Handle("GET /v1/cluster-options", logger(requireAuth(http.HandlerFunc(h.GetClusterOptions))))
