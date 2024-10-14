@@ -7,5 +7,10 @@ const (
 )
 
 const (
+	DeletingReason = "Deleting"
+	DeletedReason  = "Deleted"
+)
+
+const (
 	CloudProjectAssignedReason = "CloudProjectAssigned"
 )
