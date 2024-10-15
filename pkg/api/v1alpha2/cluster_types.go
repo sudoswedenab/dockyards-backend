@@ -38,23 +38,26 @@ type ClusterSpec struct {
 	BlockDeletion            bool                              `json:"blockDeletion,omitempty"`
 	AllocateInternalIP       bool                              `json:"allocateInternalIP,omitempty"`
 	IPPoolRef                *corev1.TypedLocalObjectReference `json:"ipPoolRef,omitempty"`
+	Duration                 *metav1.Duration                  `json:"duration,omitempty"`
 }
 
 type ClusterStatus struct {
-	Conditions       []metav1.Condition `json:"conditions,omitempty"`
-	ClusterServiceID string             `json:"clusterServiceID,omitempty"`
-	Version          string             `json:"version,omitempty"`
-	DNSZones         []string           `json:"dnsZones,omitempty"`
-	APIEndpoint      ClusterAPIEndpoint `json:"apiEndpoint,omitempty"`
+	Conditions          []metav1.Condition `json:"conditions,omitempty"`
+	ClusterServiceID    string             `json:"clusterServiceID,omitempty"`
+	Version             string             `json:"version,omitempty"`
+	DNSZones            []string           `json:"dnsZones,omitempty"`
+	APIEndpoint         ClusterAPIEndpoint `json:"apiEndpoint,omitempty"`
+	ExpirationTimestamp *metav1.Time       `json:"expirationTimestamp,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
-// +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
+// +kubebuilder:printcolumn:name="Reason",type=string,priority=1,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
 // +kubebuilder:printcolumn:name="Version",type=string,JSONPath=".status.version"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Duration",type=string,JSONPath=".spec.duration"
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -77,6 +80,16 @@ func (c *Cluster) GetConditions() []metav1.Condition {
 
 func (c *Cluster) SetConditions(conditions []metav1.Condition) {
 	c.Status.Conditions = conditions
+}
+
+func (c *Cluster) GetExpiration() *metav1.Time {
+	if c.Spec.Duration == nil {
+		return nil
+	}
+
+	expiration := c.CreationTimestamp.Add(c.Spec.Duration.Duration)
+
+	return &metav1.Time{Time: expiration}
 }
 
 func init() {

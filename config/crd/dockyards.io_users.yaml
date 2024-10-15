@@ -140,6 +140,7 @@ spec:
       type: string
     - jsonPath: .metadata.uid
       name: UID
+      priority: 1
       type: string
     - jsonPath: .spec.email
       name: Email
@@ -147,6 +148,9 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    - jsonPath: .spec.duration
+      name: Duration
+      type: string
     name: v1alpha2
     schema:
       openAPIV3Schema:
@@ -171,6 +175,8 @@ spec:
           spec:
             properties:
               displayName:
+                type: string
+              duration:
                 type: string
               email:
                 type: string
@@ -253,6 +259,9 @@ spec:
                   - type
                   type: object
                 type: array
+              expirationTimestamp:
+                format: date-time
+                type: string
             type: object
         type: object
     served: true
