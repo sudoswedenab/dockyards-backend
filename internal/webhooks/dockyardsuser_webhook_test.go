@@ -103,6 +103,23 @@ func TestDockyardsUserValidateCreate(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test without allowed domain but with voucher code",
+			allowedDomains: []string{
+				"@dockyards.dev",
+			},
+			dockyardsUser: dockyardsv1.User{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-without-domain-with-voucher",
+					Annotations: map[string]string{
+						dockyardsv1.AnnotationVoucherCode: "ABC-123",
+					},
+				},
+				Spec: dockyardsv1.UserSpec{
+					Email: "test@sudosweden.com",
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {

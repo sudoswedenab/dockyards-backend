@@ -72,6 +72,11 @@ func (webhook *DockyardsUser) validate(dockyardsUser *dockyardsv1.User) error {
 		return nil
 	}
 
+	_, hasVoucherCode := dockyardsUser.Annotations[dockyardsv1.AnnotationVoucherCode]
+	if hasVoucherCode {
+		return nil
+	}
+
 	for _, allowedDomain := range webhook.AllowedDomains {
 		if strings.HasSuffix(address.Address, allowedDomain) {
 			return nil
