@@ -276,6 +276,20 @@ func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
 		cluster.Spec.AllocateInternalIP = *clusterOptions.AllocateInternalIP
 	}
 
+	if clusterOptions.Duration != nil {
+		duration, err := time.ParseDuration(*clusterOptions.Duration)
+		if err != nil {
+			logger.Error("error parsing duration", "err", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+
+			return
+		}
+
+		cluster.Spec.Duration = &metav1.Duration{
+			Duration: duration,
+		}
+	}
+
 	err = h.Create(ctx, &cluster)
 	if client.IgnoreAlreadyExists(err) != nil {
 		logger.Error("error creating cluster", "err", err)

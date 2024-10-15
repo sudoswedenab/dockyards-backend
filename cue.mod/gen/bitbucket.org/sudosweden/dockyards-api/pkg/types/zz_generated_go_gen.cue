@@ -34,11 +34,12 @@ import "time"
 
 // Cluster defines model for cluster.
 #Cluster: {
-	allocate_internal_ip?: null | bool @go(AllocateInternalIP,*bool)
-	created_at:            time.Time   @go(CreatedAt)
-	id:                    string      @go(ID)
-	name:                  string      @go(Name)
-	node_count:            int         @go(NodeCount)
+	allocate_internal_ip?: null | bool   @go(AllocateInternalIP,*bool)
+	created_at:            time.Time     @go(CreatedAt)
+	duration?:             null | string @go(Duration,*string)
+	id:                    string        @go(ID)
+	name:                  string        @go(Name)
+	node_count:            int           @go(NodeCount)
 	node_pools: [...#NodePool] @go(NodePools,[]NodePool)
 	organization: string @go(Organization)
 	state:        string @go(State)
@@ -49,6 +50,7 @@ import "time"
 #ClusterOptions: {
 	allocate_internal_ip?: null | bool   @go(AllocateInternalIP,*bool)
 	cluster_template?:     null | string @go(ClusterTemplate,*string)
+	duration?:             null | string @go(Duration,*string)
 	ingress_provider?:     null | string @go(IngressProvider,*string)
 	name:                  string        @go(Name)
 	no_cluster_apps?:      null | bool   @go(NoClusterApps,*bool)
@@ -178,6 +180,7 @@ import "time"
 #Organization: {
 	created_at:    time.Time     @go(CreatedAt)
 	display_name?: null | string @go(DisplayName,*string)
+	duration?:     null | string @go(Duration,*string)
 	id:            string        @go(ID)
 	name:          string        @go(Name)
 	updated_at:    time.Time     @go(UpdatedAt)

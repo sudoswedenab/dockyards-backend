@@ -670,11 +670,88 @@ func TestPostOrgClusters(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:             "test duration",
+			organizationName: "test",
+			sub:              "9b4aeeb8-bb16-4d99-8658-f9b46b507fcd",
+			clusterOptions: types.ClusterOptions{
+				Name:     "test-duration",
+				Duration: ptr.To("15m"),
+			},
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.MemberReference{
+									{
+										Name: "test",
+										UID:  "9b4aeeb8-bb16-4d99-8658-f9b46b507fcd",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: "testing",
+							},
+						},
+					},
+				},
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+								Namespace: "dockyards-testing",
+							},
+							Status: dockyardsv1.ReleaseStatus{
+								LatestVersion: "v1.2.3",
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterTemplateList{
+					Items: []dockyardsv1.ClusterTemplate{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      dockyardsv1.ClusterTemplateNameRecommended,
+								Namespace: "dockyards-testing",
+							},
+						},
+					},
+				},
+			},
+			expected: []client.Object{
+				&dockyardsv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-duration",
+						Namespace:       "testing",
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         dockyardsv1.GroupVersion.String(),
+								Kind:               dockyardsv1.OrganizationKind,
+								Name:               "test",
+								BlockOwnerDeletion: ptr.To(true),
+							},
+						},
+					},
+					Spec: dockyardsv1.ClusterSpec{
+						Version: "v1.2.3",
+						Duration: &metav1.Duration{
+							Duration: time.Minute * 15,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			scheme := scheme.Scheme
 			dockyardsv1.AddToScheme(scheme)
