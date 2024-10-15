@@ -7,9 +7,14 @@ import (
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type Expirable interface {
+	GetExpiration() *metav1.Time
+}
 
 func GetOwnerOrganization(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Organization, error) {
 	for _, ownerReference := range o.GetOwnerReferences() {
@@ -272,4 +277,18 @@ func IgnoreForbidden(err error) error {
 	}
 
 	return err
+}
+
+func HasExpired(expirable Expirable) bool {
+	expiration := expirable.GetExpiration()
+
+	if expiration == nil {
+		return false
+	}
+
+	if metav1.Now().After(expiration.Time) {
+		return true
+	}
+
+	return false
 }
