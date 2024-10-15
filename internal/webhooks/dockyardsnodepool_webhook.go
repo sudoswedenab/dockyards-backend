@@ -103,6 +103,13 @@ func (webhook *DockyardsNodePool) validate(oldNodePool, newNodePool *dockyardsv1
 		names[storageResource.Name] = true
 	}
 
+	if newNodePool.Spec.ControlPlane && newNodePool.Spec.Replicas != nil {
+		if *newNodePool.Spec.Replicas == 0 {
+			invalid := field.Invalid(field.NewPath("spec", "replicas"), *newNodePool.Spec.Replicas, "must be at least 1 for control plane")
+			errorList = append(errorList, invalid)
+		}
+	}
+
 	if len(errorList) > 0 {
 		qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind()
 

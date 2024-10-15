@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/utils/ptr"
 )
 
 func TestDockyardsNodePoolValidateCreate(t *testing.T) {
@@ -343,6 +344,57 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 					field.Forbidden(field.NewPath("spec", "resources"), "immutable-resources feature is enabled"),
 				},
 			),
+		},
+		{
+			name: "test scaling down control plane to zero replicas",
+			oldNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-control-plane-zero-replicas",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					ControlPlane: true,
+					Replicas:     ptr.To(int32(1)),
+				},
+			},
+			newNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-control-plane-zero-replicas",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					ControlPlane: true,
+					Replicas:     ptr.To(int32(0)),
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"test-control-plane-zero-replicas",
+				field.ErrorList{
+					field.Invalid(field.NewPath("spec", "replicas"), 0, "must be at least 1 for control plane"),
+				},
+			),
+		},
+		{
+			name: "test scaling down worker to zero replicas",
+			oldNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-worker-zero-replicas",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					Replicas: ptr.To(int32(2)),
+				},
+			},
+			newNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-worker-zero-replicas",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					Replicas: ptr.To(int32(0)),
+				},
+			},
 		},
 	}
 
