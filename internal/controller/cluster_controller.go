@@ -3,17 +3,20 @@ package controller
 import (
 	"context"
 	"slices"
+	"time"
 
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	semverv3 "github.com/Masterminds/semver/v3"
 	"github.com/fluxcd/pkg/runtime/patch"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;list;patch;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;delete;list;patch;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
 
 type ClusterReconciler struct {
@@ -30,7 +33,16 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	logger.Info("reconcile cluster")
+	if apiutil.HasExpired(&cluster) && !cluster.Spec.BlockDeletion {
+		logger.Info("deleting expired cluster")
+
+		err := r.Delete(ctx, &cluster, client.PropagationPolicy(metav1.DeletePropagationForeground))
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
+	}
 
 	var release dockyardsv1.Release
 	err = r.Get(ctx, client.ObjectKey{Name: dockyardsv1.ReleaseNameSupportedKubernetesVersions, Namespace: r.DockyardsNamespace}, &release)
@@ -94,6 +106,17 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		logger.Info("new upgrades available", "old", cluster.Spec.Upgrades, "new", upgrades)
 
 		cluster.Spec.Upgrades = upgrades
+	}
+
+	expiration := cluster.GetExpiration()
+	cluster.Status.ExpirationTimestamp = expiration
+
+	if expiration != nil {
+		requeueAfter := expiration.Sub(time.Now())
+
+		logger.Info("requeuing cluster until expiration", "expiration", expiration, "after", requeueAfter)
+
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
 	return ctrl.Result{}, nil
