@@ -7,11 +7,13 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
+	"github.com/fluxcd/pkg/runtime/patch"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -32,7 +34,7 @@ type OrganizationReconciler struct {
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=create;get;list;patch;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=create;get;list;patch;watch
 
-func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, reterr error) {
 	logger := ctrl.LoggerFrom(ctx)
 
 	var organization dockyardsv1.Organization
@@ -62,18 +64,20 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	if !controllerutil.ContainsFinalizer(&organization, OrganizationFinalizer) {
-		patch := client.MergeFrom(organization.DeepCopy())
+	patchHelper, err := patch.NewHelper(&organization, r.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
-		controllerutil.AddFinalizer(&organization, OrganizationFinalizer)
-
-		err := r.Patch(ctx, &organization, patch)
+	defer func() {
+		err := patchHelper.Patch(ctx, &organization)
 		if err != nil {
-			logger.Error(err, "error adding finalizer")
-
-			return ctrl.Result{}, err
+			result = ctrl.Result{}
+			reterr = kerrors.NewAggregate([]error{reterr, err})
 		}
+	}()
 
+	if controllerutil.AddFinalizer(&organization, OrganizationFinalizer) {
 		return ctrl.Result{}, nil
 	}
 
@@ -101,23 +105,14 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, err
 		}
 
-		patch := client.MergeFrom(organization.DeepCopy())
-
 		organization.Status.NamespaceRef = namespace.Name
-
-		err = r.Status().Patch(ctx, &organization, patch)
-		if err != nil {
-			logger.Error(err, "error patching organization status")
-
-			return ctrl.Result{}, err
-		}
 
 		logger.Info("created namespace for organization")
 
 		return ctrl.Result{}, nil
 	}
 
-	result, err := r.reconcileRoleBindings(ctx, &organization)
+	result, err = r.reconcileRoleBindings(ctx, &organization)
 	if err != nil {
 		return result, err
 	}
