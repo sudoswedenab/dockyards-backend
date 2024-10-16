@@ -292,3 +292,11 @@ func HasExpired(expirable Expirable) bool {
 
 	return false
 }
+
+func IgnoreInternalError(err error) error {
+	if apierrors.IsInternalError(err) {
+		return nil
+	}
+
+	return err
+}
