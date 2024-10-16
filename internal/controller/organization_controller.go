@@ -2,11 +2,14 @@ package controller
 
 import (
 	"context"
+	"time"
 
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,6 +43,23 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	if !organization.DeletionTimestamp.IsZero() {
 		return r.reconcileDelete(ctx, &organization)
+	}
+
+	if apiutil.HasExpired(&organization) {
+		logger.Info("organization has expired")
+
+		err := r.Delete(ctx, &organization, client.PropagationPolicy(metav1.DeletePropagationForeground))
+		if apiutil.IgnoreInternalError(err) != nil {
+			return ctrl.Result{}, err
+		}
+
+		if apierrors.IsInternalError(err) {
+			logger.Info("ignoring internal error deleting expired cluster", "err", err)
+
+			return ctrl.Result{RequeueAfter: time.Second}, nil
+		}
+
+		return ctrl.Result{}, nil
 	}
 
 	if !controllerutil.ContainsFinalizer(&organization, OrganizationFinalizer) {
@@ -100,6 +120,17 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	result, err := r.reconcileRoleBindings(ctx, &organization)
 	if err != nil {
 		return result, err
+	}
+
+	expiration := organization.GetExpiration()
+	organization.Status.ExpirationTimestamp = expiration
+
+	if expiration != nil {
+		requeueAfter := expiration.Sub(time.Now())
+
+		logger.Info("requeuing organization until expiration", "expiration", expiration, "after", requeueAfter)
+
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
 	return ctrl.Result{}, nil
