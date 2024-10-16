@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func TestPostOrgClusters(t *testing.T) {
+func TestCreateCluster(t *testing.T) {
 	tt := []struct {
 		name             string
 		organizationName string
@@ -774,12 +774,12 @@ func TestPostOrgClusters(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-			r.SetPathValue("organizationID", tc.organizationName)
+			r.SetPathValue("organizationName", tc.organizationName)
 
 			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
 			ctx = middleware.ContextWithLogger(ctx, logger)
 
-			h.PostOrgClusters(w, r.Clone(ctx))
+			h.CreateCluster(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != http.StatusCreated {
@@ -823,7 +823,7 @@ func TestPostOrgClusters(t *testing.T) {
 	}
 }
 
-func TestPostOrgClustersErrors(t *testing.T) {
+func TestCreateClusterErrors(t *testing.T) {
 	tt := []struct {
 		name             string
 		organizationName string
@@ -1039,12 +1039,12 @@ func TestPostOrgClustersErrors(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-			r.SetPathValue("organizationID", tc.organizationName)
+			r.SetPathValue("organizationName", tc.organizationName)
 
 			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
 			ctx = middleware.ContextWithLogger(ctx, logger)
 
-			h.PostOrgClusters(w, r.Clone(ctx))
+			h.CreateCluster(w, r.Clone(ctx))
 
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {

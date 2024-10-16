@@ -148,20 +148,20 @@ func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *types.NodePoolOptio
 	return &nodePool, nil
 }
 
-func (h *handler) PostOrgClusters(w http.ResponseWriter, r *http.Request) {
+func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	logger := middleware.LoggerFrom(ctx)
 
-	organizationID := r.PathValue("organizationID")
-	if organizationID == "" {
+	organizationName := r.PathValue("organizationName")
+	if organizationName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
 	objectKey := client.ObjectKey{
-		Name: organizationID,
+		Name: organizationName,
 	}
 
 	var organization dockyardsv1.Organization

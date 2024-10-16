@@ -96,10 +96,10 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("POST /v1/clusters/{clusterID}/node-pools", logger(requireAuth(http.HandlerFunc(h.PostClusterNodePools))))
 
 	mux.Handle("GET /v1/orgs", logger(requireAuth(http.HandlerFunc(h.GetOrgs))))
-	mux.Handle("POST /v1/orgs/{organizationID}/clusters",
+	mux.Handle("POST /v1/orgs/{organizationName}/clusters",
 		logger(
 			requireAuth(
-				validateJSON.WithSchema("#clusterOptions")(http.HandlerFunc(h.PostOrgClusters)),
+				validateJSON.WithSchema("#clusterOptions")(http.HandlerFunc(h.CreateCluster)),
 			),
 		),
 	)
