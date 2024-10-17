@@ -12,8 +12,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
-	v1alpha1index "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1/index"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
@@ -54,17 +52,7 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 }
 
 func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
-	err := (&v1alpha1.Organization{}).SetupWebhookWithManager(mgr)
-	if err != nil {
-		return err
-	}
-
-	err = (&dockyardsv1.Organization{}).SetupWebhookWithManager(mgr)
-	if err != nil {
-		return err
-	}
-
-	err = (&webhooks.DockyardsNodePool{}).SetupWebhookWithManager(mgr)
+	err := (&webhooks.DockyardsNodePool{}).SetupWebhookWithManager(mgr)
 	if err != nil {
 		return err
 	}
@@ -132,7 +120,6 @@ func main() {
 	}
 
 	scheme := runtime.NewScheme()
-	_ = v1alpha1.AddToScheme(scheme)
 	_ = dockyardsv1.AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)
 	_ = authorizationv1.AddToScheme(scheme)
@@ -167,15 +154,6 @@ func main() {
 		logger.Error("error adding email indexer to manager", "err", err)
 
 		os.Exit(1)
-	}
-
-	for _, object := range []client.Object{&v1alpha1.App{}} {
-		err = mgr.GetFieldIndexer().IndexField(ctx, object, v1alpha1index.UIDIndexKey, v1alpha1index.UIDIndexer)
-		if err != nil {
-			logger.Error("error adding uid indexer to manager", "err", err)
-
-			os.Exit(1)
-		}
 	}
 
 	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Cluster{}, &dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &corev1.Secret{}, &dockyardsv1.Deployment{}, &dockyardsv1.Organization{}} {
