@@ -27,9 +27,8 @@ type OrganizationReconciler struct {
 	client.Client
 }
 
+// +kubebuilder:rbac:groups=dockyards.io,resources=*,verbs=*
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=create;get;list;watch
-// +kubebuilder:rbac:groups=dockyards.io,resources=organizations/status,verbs=patch
-// +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=create;get;list;patch;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=create;get;list;patch;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=create;get;list;patch;watch

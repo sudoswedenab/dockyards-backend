@@ -43,6 +43,12 @@ rules:
 - apiGroups:
   - dockyards.io
   resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - dockyards.io
+  resources:
   - apps
   verbs:
   - get
@@ -59,12 +65,6 @@ rules:
   - list
   - patch
   - watch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - clusters/status
-  verbs:
-  - patch
 - apiGroups:
   - dockyards.io
   resources:
@@ -150,12 +150,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - organizations/status
-  verbs:
-  - patch
 - apiGroups:
   - dockyards.io
   resources:

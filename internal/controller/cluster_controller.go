@@ -17,7 +17,6 @@ import (
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;delete;list;patch;watch
-// +kubebuilder:rbac:groups=dockyards.io,resources=clusters/status,verbs=patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
 
 type ClusterReconciler struct {
