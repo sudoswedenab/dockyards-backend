@@ -131,9 +131,11 @@ func main() {
 	}
 
 	scheme := runtime.NewScheme()
-	_ = dockyardsv1.AddToScheme(scheme)
-	_ = corev1.AddToScheme(scheme)
+
 	_ = authorizationv1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
+	_ = dockyardsv1.AddToScheme(scheme)
+	_ = v1alpha2.AddToScheme(scheme)
 
 	controllerClient, err := client.New(kubeconfig, client.Options{Scheme: scheme})
 	if err != nil {
