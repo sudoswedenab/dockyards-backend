@@ -12,6 +12,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
@@ -70,6 +71,16 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 	err = (&webhooks.DockyardsUser{
 		AllowedDomains: allowedDomains,
 	}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		return err
+	}
+
+	err = (&v1alpha2.Organization{}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		return err
+	}
+
+	err = (&dockyardsv1.Organization{}).SetupWebhookWithManager(mgr)
 	if err != nil {
 		return err
 	}
