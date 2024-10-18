@@ -13,7 +13,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -34,58 +34,14 @@ func TestGetClusterOptions(t *testing.T) {
 					Items: []dockyardsv1.Release{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+								Name:      "test",
 								Namespace: "testing",
-							},
-							Status: dockyardsv1.ReleaseStatus{
-								Versions: []string{
-									"v1.2.3",
+								Annotations: map[string]string{
+									dockyardsv1.AnnotationDefaultRelease: "true",
 								},
 							},
-						},
-					},
-				},
-			},
-			expected: types.Options{
-				Version: []string{
-					"v1.2.3",
-				},
-			},
-		},
-		{
-			name: "test binary format",
-			lists: []client.ObjectList{
-				&dockyardsv1.ReleaseList{
-					Items: []dockyardsv1.Release{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
-								Namespace: "testing",
-							},
-							Status: dockyardsv1.ReleaseStatus{
-								Versions: []string{
-									"v1.2.3",
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: types.Options{
-				Version: []string{
-					"v1.2.3",
-				},
-			},
-		},
-		{
-			name: "test with no recommended cluster template",
-			lists: []client.ObjectList{
-				&dockyardsv1.ReleaseList{
-					Items: []dockyardsv1.Release{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
-								Namespace: "testing",
+							Spec: dockyardsv1.ReleaseSpec{
+								Type: dockyardsv1.ReleaseTypeKubernetes,
 							},
 							Status: dockyardsv1.ReleaseStatus{
 								Versions: []string{
@@ -109,8 +65,14 @@ func TestGetClusterOptions(t *testing.T) {
 					Items: []dockyardsv1.Release{
 						{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+								Name:      "test",
 								Namespace: "testing",
+								Annotations: map[string]string{
+									dockyardsv1.AnnotationDefaultRelease: "true",
+								},
+							},
+							Spec: dockyardsv1.ReleaseSpec{
+								Type: dockyardsv1.ReleaseTypeKubernetes,
 							},
 							Status: dockyardsv1.ReleaseStatus{
 								Versions: []string{

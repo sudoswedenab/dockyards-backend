@@ -7,7 +7,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"github.com/google/go-cmp/cmp"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,9 +28,9 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 					Name: "auto-assign",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 						},
 					},
 				},
@@ -50,9 +50,9 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 					Name: "auto-assign",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 						},
 					},
 				},
@@ -75,9 +75,9 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 					Name: "skip-auto-assign",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 						},
 					},
 					SkipAutoAssign: true,
@@ -91,9 +91,9 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 					Name: "skip-auto-assign",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 						},
 					},
 					SkipAutoAssign: true,
@@ -135,12 +135,12 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 					Name: "missing-super-user",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleUser,
+							Role: dockyardsv1.OrganizationMemberRoleUser,
 						},
 						{
-							Role: dockyardsv1.MemberRoleReader,
+							Role: dockyardsv1.OrganizationMemberRoleReader,
 						},
 					},
 					SkipAutoAssign: true,

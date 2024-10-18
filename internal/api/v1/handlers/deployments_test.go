@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -16,8 +17,8 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
@@ -383,15 +384,19 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:  "b4715218-c084-4c1e-b59f-29a0c5848681",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
 									{
-										Name: "test",
-										UID:  "05658865-b26f-485c-a1bf-b008552aa7ce",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test",
+										},
+										UID: "05658865-b26f-485c-a1bf-b008552aa7ce",
 									},
 								},
 							},
 							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: "testing",
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
 							},
 						},
 					},
@@ -459,15 +464,19 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:  "d7efe04a-517b-4726-b84b-6cec573c3601",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
 									{
-										Name: "test",
-										UID:  "1ef182bf-2b0a-46ec-ae6d-13c0c62cd1c9",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test",
+										},
+										UID: "1ef182bf-2b0a-46ec-ae6d-13c0c62cd1c9",
 									},
 								},
 							},
 							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: "testing",
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
 							},
 						},
 					},
@@ -592,15 +601,19 @@ func TestGetClusterDeployments(t *testing.T) {
 								UID:  "bf876395-0282-4e5f-8eec-48db0ddfff12",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
 									{
-										Name: "test",
-										UID:  "465cef30-6793-422a-9b50-bd081353ea22",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test",
+										},
+										UID: "465cef30-6793-422a-9b50-bd081353ea22",
 									},
 								},
 							},
 							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: "testing",
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
 							},
 						},
 					},

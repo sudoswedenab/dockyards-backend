@@ -41,6 +41,14 @@ rules:
   - patch
   - watch
 - apiGroups:
+  - dockyards
+  resources:
+  - organizations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - dockyards.io
   resources:
   - '*'

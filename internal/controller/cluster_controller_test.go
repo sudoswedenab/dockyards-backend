@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -50,7 +50,7 @@ func TestClusterController(t *testing.T) {
 			},
 			release: dockyardsv1.Release{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+					Name:      "test",
 					Namespace: "dockyards-testing",
 				},
 				Status: dockyardsv1.ReleaseStatus{
@@ -71,7 +71,7 @@ func TestClusterController(t *testing.T) {
 			},
 			release: dockyardsv1.Release{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+					Name:      "test",
 					Namespace: "dockyards-testing",
 				},
 				Status: dockyardsv1.ReleaseStatus{
@@ -97,7 +97,7 @@ func TestClusterController(t *testing.T) {
 			},
 			release: dockyardsv1.Release{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+					Name:      "test",
 					Namespace: "dockyards-testing",
 				},
 				Status: dockyardsv1.ReleaseStatus{
@@ -123,7 +123,7 @@ func TestClusterController(t *testing.T) {
 			},
 			release: dockyardsv1.Release{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+					Name:      "test",
 					Namespace: "dockyards-testing",
 				},
 				Status: dockyardsv1.ReleaseStatus{
@@ -152,7 +152,7 @@ func TestClusterController(t *testing.T) {
 			},
 			release: dockyardsv1.Release{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+					Name:      "test",
 					Namespace: "dockyards-testing",
 				},
 				Status: dockyardsv1.ReleaseStatus{
@@ -178,7 +178,7 @@ func TestClusterController(t *testing.T) {
 			},
 			release: dockyardsv1.Release{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+					Name:      "test",
 					Namespace: "dockyards-testing",
 				},
 				Status: dockyardsv1.ReleaseStatus{
@@ -199,7 +199,7 @@ func TestClusterController(t *testing.T) {
 			},
 			release: dockyardsv1.Release{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
+					Name:      "test",
 					Namespace: "dockyards-testing",
 				},
 				Status: dockyardsv1.ReleaseStatus{

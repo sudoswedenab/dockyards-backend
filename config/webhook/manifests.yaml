@@ -10,14 +10,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-dockyards-io-v1alpha2-cluster
+      path: /validate-dockyards-io-v1alpha3-cluster
   failurePolicy: Fail
   name: validation.cluster.dockyards.io
   rules:
   - apiGroups:
     - dockyards.io
     apiVersions:
-    - v1alpha2
+    - v1alpha3
     operations:
     - CREATE
     - DELETE
@@ -31,14 +31,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-dockyards-io-v1alpha2-nodepool
+      path: /validate-dockyards-io-v1alpha3-nodepool
   failurePolicy: Fail
   name: validation.nodepool.dockyards.io
   rules:
   - apiGroups:
     - dockyards.io
     apiVersions:
-    - v1alpha2
+    - v1alpha3
     operations:
     - CREATE
     - UPDATE
@@ -51,14 +51,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-dockyards-io-v1alpha2-organization
+      path: /validate-dockyards-io-v1alpha3-organization
   failurePolicy: Fail
   name: validation.organizations.dockyards.io
   rules:
   - apiGroups:
     - dockyards.io
     apiVersions:
-    - v1alpha2
+    - v1alpha3
     operations:
     - CREATE
     - UPDATE
@@ -71,14 +71,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-dockyards-io-v1alpha2-user
+      path: /validate-dockyards-io-v1alpha3-user
   failurePolicy: Fail
   name: validation.user.dockyards.io
   rules:
   - apiGroups:
     - dockyards.io
     apiVersions:
-    - v1alpha2
+    - v1alpha3
     operations:
     - CREATE
     - UPDATE

@@ -5,7 +5,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:groups=dockyards.io,resources=organizations,verbs=create;update,path=/validate-dockyards-io-v1alpha2-organization,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.organizations.dockyards.io,versions=v1alpha2
+// +kubebuilder:webhook:groups=dockyards.io,resources=organizations,verbs=create;update,path=/validate-dockyards-io-v1alpha3-organization,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.organizations.dockyards.io,versions=v1alpha3
 
 type DockyardsOrganization struct{}
 
@@ -60,7 +60,7 @@ func (webhook *DockyardsOrganization) validate(dockyardsOrganization *dockyardsv
 
 	superUsers := 0
 	for _, memberRef := range dockyardsOrganization.Spec.MemberRefs {
-		if memberRef.Role == dockyardsv1.MemberRoleSuperUser {
+		if memberRef.Role == dockyardsv1.OrganizationMemberRoleSuperUser {
 			superUsers = superUsers + 1
 		}
 	}

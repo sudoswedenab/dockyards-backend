@@ -8,8 +8,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=clustertemplates,verbs=get;list;watch
@@ -20,15 +19,8 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 
 	logger := middleware.LoggerFrom(ctx)
 
-	objectKey := client.ObjectKey{
-		Name:      dockyardsv1.ReleaseNameSupportedKubernetesVersions,
-		Namespace: h.namespace,
-	}
-
-	var release dockyardsv1.Release
-	err := h.Get(ctx, objectKey, &release)
-	if err != nil {
-		logger.Error("error getting release", "err", err)
+	release, err := apiutil.GetDefaultRelease(ctx, h.Client, dockyardsv1.ReleaseTypeKubernetes)
+	if err != nil || release == nil {
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return

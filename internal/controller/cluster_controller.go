@@ -6,10 +6,9 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	semverv3 "github.com/Masterminds/semver/v3"
 	"github.com/fluxcd/pkg/runtime/patch"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,13 +43,12 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrl.Result{}, nil
 	}
 
-	var release dockyardsv1.Release
-	err = r.Get(ctx, client.ObjectKey{Name: dockyardsv1.ReleaseNameSupportedKubernetesVersions, Namespace: r.DockyardsNamespace}, &release)
-	if client.IgnoreNotFound(err) != nil {
+	release, err := apiutil.GetDefaultRelease(ctx, r.Client, dockyardsv1.ReleaseTypeKubernetes)
+	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if apierrors.IsNotFound(err) {
+	if release == nil {
 		logger.Info("ignoring cluster with missing release")
 
 		return ctrl.Result{}, nil

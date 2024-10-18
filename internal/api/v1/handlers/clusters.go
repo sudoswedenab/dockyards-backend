@@ -16,8 +16,8 @@ import (
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -173,6 +173,12 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if organization.Status.NamespaceRef == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
 		logger.Debug("error fetching subject from context", "err", err)
@@ -243,7 +249,7 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterOptions.Name,
-			Namespace: organization.Status.NamespaceRef,
+			Namespace: organization.Status.NamespaceRef.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion:         dockyardsv1.GroupVersion.String(),
@@ -260,9 +266,8 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 	if clusterOptions.Version != nil {
 		cluster.Spec.Version = *clusterOptions.Version
 	} else {
-		var release dockyardsv1.Release
-		err := h.Get(ctx, client.ObjectKey{Name: dockyardsv1.ReleaseNameSupportedKubernetesVersions, Namespace: h.namespace}, &release)
-		if err != nil {
+		release, err := apiutil.GetDefaultRelease(ctx, h.Client, dockyardsv1.ReleaseTypeKubernetes)
+		if err != nil || release == nil {
 			logger.Error("error getting supported kubernetes versions release", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 
@@ -306,20 +311,16 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 
 	hasErrors := false
 
-	if clusterOptions.NodePoolOptions == nil {
+	var clusterTemplate *dockyardsv1.ClusterTemplate
+
+	if clusterOptions.ClusterTemplate != nil {
 		objectKey := client.ObjectKey{
-			Name:      dockyardsv1.ClusterTemplateNameRecommended,
+			Name:      *clusterOptions.ClusterTemplate,
 			Namespace: h.namespace,
 		}
 
-		if clusterOptions.ClusterTemplate != nil {
-			objectKey.Name = *clusterOptions.ClusterTemplate
-		}
-
-		logger.Debug("using node pool options", "clusterTemplate", objectKey.Name)
-
-		var clusterTemplate dockyardsv1.ClusterTemplate
-		err := h.Get(ctx, objectKey, &clusterTemplate)
+		var customTemplate dockyardsv1.ClusterTemplate
+		err := h.Get(ctx, objectKey, &customTemplate)
 		if err != nil {
 			logger.Error("error getting cluster template", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -327,8 +328,25 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		clusterTemplate = &customTemplate
+	} else {
+		clusterTemplate, err = apiutil.GetDefaultClusterTemplate(ctx, h.Client)
+		if err != nil || clusterTemplate == nil {
+			logger.Error("error getting default cluster template", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+	}
+
+	logger.Debug("using cluster template", "name", clusterTemplate.Name)
+
+	if clusterOptions.NodePoolOptions == nil {
 		for _, nodePoolTemplate := range clusterTemplate.Spec.NodePoolTemplates {
-			nodePool := nodePoolTemplate.DeepCopy()
+			var nodePool dockyardsv1.NodePool
+
+			nodePool.ObjectMeta = nodePoolTemplate.ObjectMeta
+			nodePoolTemplate.Spec.DeepCopyInto(&nodePool.Spec)
 
 			nodePool.OwnerReferences = []metav1.OwnerReference{
 				{
@@ -343,7 +361,7 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 			nodePool.Name = cluster.Name + "-" + nodePool.Name
 			nodePool.Namespace = cluster.Namespace
 
-			err = h.Create(ctx, nodePool)
+			err = h.Create(ctx, &nodePool)
 			if err != nil {
 				hasErrors = true
 				logger.Debug("error creating node pool", "err", err)
@@ -740,8 +758,12 @@ func (h *handler) GetClusters(w http.ResponseWriter, r *http.Request) {
 	clusters := []types.Cluster{}
 
 	for _, organization := range organizationList.Items {
+		if organization.Status.NamespaceRef == nil {
+			continue
+		}
+
 		var clusterList dockyardsv1.ClusterList
-		err = h.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef))
+		err = h.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef.Name))
 		if err != nil {
 			logger.Error("error listing clusters", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)

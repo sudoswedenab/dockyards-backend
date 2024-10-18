@@ -14,9 +14,10 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"github.com/google/go-cmp/cmp"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,10 +42,12 @@ func TestGetOrgs(t *testing.T) {
 								UID:  "03582042-318e-4c1e-9728-755c5eaf4267",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
 									{
-										Name: "test",
-										UID:  "89a3e0aa-7744-49af-ae7e-1461004c1598",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test",
+										},
+										UID: "89a3e0aa-7744-49af-ae7e-1461004c1598",
 									},
 								},
 							},
@@ -71,14 +74,18 @@ func TestGetOrgs(t *testing.T) {
 								UID:  "58c282c0-6a68-4ec8-9032-83d33f259bbe",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
 									{
-										Name: "user1",
-										UID:  "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "user1",
+										},
+										UID: "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
 									},
 									{
-										Name: "user2",
-										UID:  "5cf0ed84-82f4-43fe-a3fb-b91f2ec7f0b1",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "user2",
+										},
+										UID: "5cf0ed84-82f4-43fe-a3fb-b91f2ec7f0b1",
 									},
 								},
 							},
@@ -89,10 +96,12 @@ func TestGetOrgs(t *testing.T) {
 								UID:  "d327da4c-f8fe-4f85-93a1-258b729a40d2",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
 									{
-										Name: "user2",
-										UID:  "5cf0ed84-82f4-43fe-a3fb-b91f2ec7f0b1",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "user2",
+										},
+										UID: "5cf0ed84-82f4-43fe-a3fb-b91f2ec7f0b1",
 									},
 								},
 							},
@@ -103,10 +112,12 @@ func TestGetOrgs(t *testing.T) {
 								UID:  "5c13be53-fecd-467d-9546-d8ba3bb68103",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
 									{
-										Name: "user1",
-										UID:  "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "user1",
+										},
+										UID: "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
 									},
 								},
 							},
@@ -137,14 +148,18 @@ func TestGetOrgs(t *testing.T) {
 								UID:  "57236ef2-304c-4fa7-9aa7-e8019dfa3070",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
 									{
-										Name: "user1",
-										UID:  "92770876-ae7f-493f-b3f8-7d9f0a45b656",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "user1",
+										},
+										UID: "92770876-ae7f-493f-b3f8-7d9f0a45b656",
 									},
 									{
-										Name: "user2",
-										UID:  "29625697-69c7-4142-92dc-dccccfb5b824",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "user2",
+										},
+										UID: "29625697-69c7-4142-92dc-dccccfb5b824",
 									},
 								},
 							},
@@ -155,10 +170,12 @@ func TestGetOrgs(t *testing.T) {
 								UID:  "d327da4c-f8fe-4f85-93a1-258b729a40d2",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
 									{
-										Name: "user3",
-										UID:  "df8ab98f-7866-4f4d-a9a6-7426879b7032",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "user3",
+										},
+										UID: "df8ab98f-7866-4f4d-a9a6-7426879b7032",
 									},
 								},
 							},
@@ -169,10 +186,12 @@ func TestGetOrgs(t *testing.T) {
 								UID:  "5c13be53-fecd-467d-9546-d8ba3bb68103",
 							},
 							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.MemberReference{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
 									{
-										Name: "user4",
-										UID:  "d734d20f-e03e-44a8-89a5-8bd7f5d176d3",
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "user4",
+										},
+										UID: "d734d20f-e03e-44a8-89a5-8bd7f5d176d3",
 									},
 								},
 							},

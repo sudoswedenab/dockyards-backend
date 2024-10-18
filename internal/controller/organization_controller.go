@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"github.com/fluxcd/pkg/runtime/patch"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -81,7 +81,7 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	if organization.Status.NamespaceRef == "" {
+	if organization.Status.NamespaceRef == nil {
 		logger.Info("organization has no namespace reference")
 
 		namespace := corev1.Namespace{
@@ -105,7 +105,9 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, err
 		}
 
-		organization.Status.NamespaceRef = namespace.Name
+		organization.Status.NamespaceRef = &corev1.LocalObjectReference{
+			Name: namespace.Name,
+		}
 
 		logger.Info("created namespace for organization")
 
@@ -140,14 +142,14 @@ func (r *OrganizationReconciler) reconcileRoleBindings(ctx context.Context, orga
 
 	for _, memberRef := range organization.Spec.MemberRefs {
 		switch memberRef.Role {
-		case dockyardsv1.MemberRoleSuperUser:
+		case dockyardsv1.OrganizationMemberRoleSuperUser:
 			superUsers = append(superUsers, memberRef.UID)
 			users = append(users, memberRef.UID)
 			readers = append(readers, memberRef.UID)
-		case dockyardsv1.MemberRoleUser:
+		case dockyardsv1.OrganizationMemberRoleUser:
 			users = append(users, memberRef.UID)
 			readers = append(readers, memberRef.UID)
-		case dockyardsv1.MemberRoleReader:
+		case dockyardsv1.OrganizationMemberRoleReader:
 			readers = append(readers, memberRef.UID)
 		default:
 			logger.Info("ignoring member reference with unsupported role", "role", memberRef.Role)
@@ -284,10 +286,14 @@ func (r *OrganizationReconciler) reconcileSuperUserClusterRoleAndBinding(ctx con
 func (r *OrganizationReconciler) reconcileUserRoleAndBinding(ctx context.Context, organization *dockyardsv1.Organization, uids []types.UID) (ctrl.Result, error) {
 	logger := ctrl.LoggerFrom(ctx)
 
+	if organization.Status.NamespaceRef == nil {
+		return ctrl.Result{}, nil
+	}
+
 	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dockyards-user",
-			Namespace: organization.Status.NamespaceRef,
+			Namespace: organization.Status.NamespaceRef.Name,
 		},
 	}
 
@@ -336,7 +342,7 @@ func (r *OrganizationReconciler) reconcileUserRoleAndBinding(ctx context.Context
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dockyards-user",
-			Namespace: organization.Status.NamespaceRef,
+			Namespace: organization.Status.NamespaceRef.Name,
 		},
 	}
 
@@ -486,10 +492,14 @@ func (r *OrganizationReconciler) reconcileReaderClusterRoleAndBinding(ctx contex
 func (r *OrganizationReconciler) reconcileReaderRoleAndBinding(ctx context.Context, organization *dockyardsv1.Organization, uids []types.UID) (ctrl.Result, error) {
 	logger := ctrl.LoggerFrom(ctx)
 
+	if organization.Status.NamespaceRef == nil {
+		return ctrl.Result{}, nil
+	}
+
 	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dockyards-reader",
-			Namespace: organization.Status.NamespaceRef,
+			Namespace: organization.Status.NamespaceRef.Name,
 		},
 	}
 
@@ -538,7 +548,7 @@ func (r *OrganizationReconciler) reconcileReaderRoleAndBinding(ctx context.Conte
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dockyards-reader",
-			Namespace: organization.Status.NamespaceRef,
+			Namespace: organization.Status.NamespaceRef.Name,
 		},
 	}
 

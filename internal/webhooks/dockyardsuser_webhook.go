@@ -5,7 +5,7 @@ import (
 	"net/mail"
 	"strings"
 
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:groups=dockyards.io,resources=users,verbs=create;update,path=/validate-dockyards-io-v1alpha2-user,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.user.dockyards.io,versions=v1alpha2
+// +kubebuilder:webhook:groups=dockyards.io,resources=users,verbs=create;update,path=/validate-dockyards-io-v1alpha3-user,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.user.dockyards.io,versions=v1alpha3
 
 type DockyardsUser struct {
 	AllowedDomains []string

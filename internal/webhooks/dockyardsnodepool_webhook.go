@@ -5,7 +5,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/google/go-cmp/cmp"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:groups=dockyards.io,resources=nodepools,verbs=create;update,path=/validate-dockyards-io-v1alpha2-nodepool,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.nodepool.dockyards.io,versions=v1alpha2
+// +kubebuilder:webhook:groups=dockyards.io,resources=nodepools,verbs=create;update,path=/validate-dockyards-io-v1alpha3-nodepool,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.nodepool.dockyards.io,versions=v1alpha3
 
 type DockyardsNodePool struct{}
 

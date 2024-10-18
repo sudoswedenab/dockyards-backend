@@ -8,8 +8,8 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +17,7 @@ import (
 )
 
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=create;delete;get;list;patch;watch
+// +kubebuilder:rbac:groups=dockyards,resources=organizations,verbs=get;list;watch
 
 func (h *handler) GetOrganizationCredentials(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -45,6 +46,12 @@ func (h *handler) GetOrganizationCredentials(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	if organization.Status.NamespaceRef == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
 		logger.Error("error getting subject from context", "err", err)
@@ -60,7 +67,7 @@ func (h *handler) GetOrganizationCredentials(w http.ResponseWriter, r *http.Requ
 	}
 
 	var secretList corev1.SecretList
-	err = h.List(ctx, &secretList, client.InNamespace(organization.Status.NamespaceRef))
+	err = h.List(ctx, &secretList, client.InNamespace(organization.Status.NamespaceRef.Name))
 	if err != nil {
 		logger.Error("error listing secrets", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -131,6 +138,12 @@ func (h *handler) PostOrganizationCredentials(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	if organization.Status.NamespaceRef == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -166,7 +179,7 @@ func (h *handler) PostOrganizationCredentials(w http.ResponseWriter, r *http.Req
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "credential-" + credential.Name,
-			Namespace: organization.Status.NamespaceRef,
+			Namespace: organization.Status.NamespaceRef.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: dockyardsv1.GroupVersion.String(),
@@ -255,8 +268,13 @@ func (h *handler) DeleteOrganizationCredential(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	objectKey := client.ObjectKey{
+		Name:      "credential-" + credentialName,
+		Namespace: organization.Status.NamespaceRef.Name,
+	}
+
 	var secret corev1.Secret
-	err = h.Get(ctx, client.ObjectKey{Name: "credential-" + credentialName, Namespace: organization.Status.NamespaceRef}, &secret)
+	err = h.Get(ctx, objectKey, &secret)
 	if client.IgnoreNotFound(err) != nil {
 		logger.Error("error getting secret", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -310,6 +328,12 @@ func (h *handler) GetOrganizationCredential(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if organization.Status.NamespaceRef == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
 		logger.Error("error getting subject from context", "err", err)
@@ -324,8 +348,13 @@ func (h *handler) GetOrganizationCredential(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	objectKey := client.ObjectKey{
+		Name:      "credential-" + credentialName,
+		Namespace: organization.Status.NamespaceRef.Name,
+	}
+
 	var secret corev1.Secret
-	err = h.Get(ctx, client.ObjectKey{Name: "credential-" + credentialName, Namespace: organization.Status.NamespaceRef}, &secret)
+	err = h.Get(ctx, objectKey, &secret)
 	if client.IgnoreNotFound(err) != nil {
 		logger.Error("error getting secret", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -436,6 +465,12 @@ func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if organization.Status.NamespaceRef == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
 	if apierrors.IsNotFound(err) {
 		w.WriteHeader(http.StatusUnauthorized)
 
@@ -448,8 +483,13 @@ func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	objectKey := client.ObjectKey{
+		Name:      "credential-" + credentialName,
+		Namespace: organization.Status.NamespaceRef.Name,
+	}
+
 	var secret corev1.Secret
-	err = h.Get(ctx, client.ObjectKey{Name: "credential-" + credentialName, Namespace: organization.Status.NamespaceRef}, &secret)
+	err = h.Get(ctx, objectKey, &secret)
 	if client.IgnoreNotFound(err) != nil {
 		logger.Error("error getting secret", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -538,12 +578,12 @@ func (h *handler) GetCredentials(w http.ResponseWriter, r *http.Request) {
 	credentials := []types.Credential{}
 
 	for _, organization := range organizationList.Items {
-		if organization.Status.NamespaceRef == "" {
+		if organization.Status.NamespaceRef == nil {
 			continue
 		}
 
 		var secretList corev1.SecretList
-		err := h.List(ctx, &secretList, client.InNamespace(organization.Status.NamespaceRef))
+		err := h.List(ctx, &secretList, client.InNamespace(organization.Status.NamespaceRef.Name))
 		if err != nil {
 			logger.Error("error listing secrets", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)

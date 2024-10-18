@@ -16,7 +16,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	corev1 "k8s.io/api/core/v1"
@@ -46,15 +46,17 @@ func TestGetOrganizationCredentials(t *testing.T) {
 					UID:  "af2224ee-fd4b-4e6c-8ff6-21c2d1ddcc5c",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "654202f2-44f6-4fa6-873b-0b9817d3957c",
 						},
 					},
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 			secrets: []corev1.Secret{
@@ -85,15 +87,17 @@ func TestGetOrganizationCredentials(t *testing.T) {
 					UID:  "8afac404-d43a-4253-a102-a90ff80fa13c",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "41ae3267-da66-4be0-b2ac-57a60549ff57",
 						},
 					},
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 			secrets: []corev1.Secret{
@@ -217,7 +221,9 @@ func TestGetOrganizationCredentials(t *testing.T) {
 
 			patch := client.MergeFrom(tc.organization.DeepCopy())
 
-			tc.organization.Status.NamespaceRef = "testing"
+			tc.organization.Status.NamespaceRef = &corev1.LocalObjectReference{
+				Name: "testing",
+			}
 
 			err = c.Status().Patch(ctx, &tc.organization, patch)
 			if err != nil {
@@ -295,15 +301,17 @@ func TestPutOrganizationCredential(t *testing.T) {
 					Name: "test",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "92b0aabc-96a4-40ef-987d-5daa412f4f0d",
 						},
 					},
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 			credential: types.Credential{
@@ -339,15 +347,17 @@ func TestPutOrganizationCredential(t *testing.T) {
 					Name: "test",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "ea6a1fa3-56c7-40d3-90cb-4d1c8249576e",
 						},
 					},
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 			credential: types.Credential{
@@ -390,15 +400,17 @@ func TestPutOrganizationCredential(t *testing.T) {
 					Name: "test",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "8f129312-5639-4110-8415-b0cd3c66f58f",
 						},
 					},
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 			credential: types.Credential{
@@ -438,15 +450,17 @@ func TestPutOrganizationCredential(t *testing.T) {
 					Name: "test",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "0b24eb27-2aac-4a00-b64a-3eaf3f301194",
 						},
 					},
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 			secret: corev1.Secret{
@@ -531,7 +545,9 @@ func TestPutOrganizationCredential(t *testing.T) {
 
 			patch := client.MergeFrom(tc.organization.DeepCopy())
 
-			tc.organization.Status.NamespaceRef = "testing"
+			tc.organization.Status.NamespaceRef = &corev1.LocalObjectReference{
+				Name: "testing",
+			}
 
 			err = c.Status().Patch(ctx, &tc.organization, patch)
 			if err != nil {
@@ -608,15 +624,17 @@ func TestPostOrganizationCredentials(t *testing.T) {
 					UID:  "0b8a1fe3-90d7-4762-a3ab-929c8d4cae68",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "755c43a6-09bb-485a-8826-23a582b70a98",
 						},
 					},
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 			credential: types.Credential{
@@ -649,15 +667,17 @@ func TestPostOrganizationCredentials(t *testing.T) {
 					UID:  "0b8a1fe3-90d7-4762-a3ab-929c8d4cae68",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "962d948f-a7c4-44b8-94e8-03f11d1ee1dc",
 						},
 					},
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 			credential: types.Credential{
@@ -695,15 +715,17 @@ func TestPostOrganizationCredentials(t *testing.T) {
 					UID:  "0b8a1fe3-90d7-4762-a3ab-929c8d4cae68",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "fdf5bb49-e430-4fb8-b846-575363224c76",
 						},
 					},
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 			credential: types.Credential{
@@ -789,7 +811,9 @@ func TestPostOrganizationCredentials(t *testing.T) {
 
 			patch := client.MergeFrom(tc.organization.DeepCopy())
 
-			tc.organization.Status.NamespaceRef = "testing"
+			tc.organization.Status.NamespaceRef = &corev1.LocalObjectReference{
+				Name: "testing",
+			}
 
 			err = c.Status().Patch(ctx, &tc.organization, patch)
 			if err != nil {
@@ -863,9 +887,9 @@ func TestGetOrganizationCredential(t *testing.T) {
 					Name: "test",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "19b704bd-4217-41ef-b86f-a3b73ce5b4c6",
 						},
 					},
@@ -895,9 +919,9 @@ func TestGetOrganizationCredential(t *testing.T) {
 					Name: "test",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "dd886032-c690-4d7d-b1a1-c0f19fce1ea7",
 						},
 					},
@@ -937,9 +961,9 @@ func TestGetOrganizationCredential(t *testing.T) {
 					Name: "test",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "8889b649-1917-42e6-8278-01436567d294",
 						},
 					},
@@ -1040,7 +1064,9 @@ func TestGetOrganizationCredential(t *testing.T) {
 
 			patch := client.MergeFrom(tc.organization.DeepCopy())
 
-			tc.organization.Status.NamespaceRef = "testing"
+			tc.organization.Status.NamespaceRef = &corev1.LocalObjectReference{
+				Name: "testing",
+			}
 
 			err = c.Status().Patch(ctx, &tc.organization, patch)
 			if err != nil {
@@ -1124,9 +1150,9 @@ func TestDeleteOrganizationCredential(t *testing.T) {
 					Name: "test",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.MemberReference{
+					MemberRefs: []dockyardsv1.OrganizationMemberReference{
 						{
-							Role: dockyardsv1.MemberRoleSuperUser,
+							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 							UID:  "e82d8265-2abc-4617-ab3b-dcc3a30c17e3",
 						},
 					},
@@ -1194,7 +1220,9 @@ func TestDeleteOrganizationCredential(t *testing.T) {
 
 			patch := client.MergeFrom(tc.organization.DeepCopy())
 
-			tc.organization.Status.NamespaceRef = "testing"
+			tc.organization.Status.NamespaceRef = &corev1.LocalObjectReference{
+				Name: "testing",
+			}
 
 			err = c.Status().Patch(ctx, &tc.organization, patch)
 			if err != nil {
