@@ -13,7 +13,7 @@ type DeploymentTemplateSpec struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:storageversion
+// +kubebuilder:deprecatedversion
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type DeploymentTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
