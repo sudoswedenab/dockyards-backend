@@ -1,4 +1,4 @@
-package v1alpha2
+package v1alpha3
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +27,7 @@ type DeploymentStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:deprecatedversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"

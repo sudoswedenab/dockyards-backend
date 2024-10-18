@@ -1,4 +1,4 @@
-package v1alpha2
+package v1alpha3
 
 import (
 	"fmt"
@@ -28,6 +28,7 @@ func (e *ClusterAPIEndpoint) IsValid() bool {
 
 func (e *ClusterAPIEndpoint) String() string {
 	port := fmt.Sprintf("%d", e.Port)
+
 	return "https://" + net.JoinHostPort(e.Host, port)
 }
 
@@ -51,7 +52,7 @@ type ClusterStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="Reason",type=string,priority=1,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"

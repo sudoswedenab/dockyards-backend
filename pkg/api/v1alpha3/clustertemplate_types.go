@@ -1,4 +1,4 @@
-package v1alpha2
+package v1alpha3
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -8,16 +8,18 @@ const (
 	ClusterTemplateKind = "ClusterTemplate"
 )
 
-const (
-	ClusterTemplateNameRecommended = "recommended"
-)
+type NodePoolTemplate struct {
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec NodePoolSpec `json:"spec,omitempty"`
+}
 
 type ClusterTemplateSpec struct {
-	NodePoolTemplates []NodePool `json:"nodePoolTemplates,omitempty"`
+	NodePoolTemplates []NodePoolTemplate `json:"nodePoolTemplates,omitempty"`
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type ClusterTemplate struct {
 	metav1.TypeMeta   `json:",inline"`

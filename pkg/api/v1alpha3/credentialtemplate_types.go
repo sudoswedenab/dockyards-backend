@@ -1,4 +1,4 @@
-package v1alpha2
+package v1alpha3
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +21,7 @@ type CredentialTemplateSpec struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 type CredentialTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

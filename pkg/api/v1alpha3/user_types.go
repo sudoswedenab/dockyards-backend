@@ -1,4 +1,4 @@
-package v1alpha2
+package v1alpha3
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +22,7 @@ type UserStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"

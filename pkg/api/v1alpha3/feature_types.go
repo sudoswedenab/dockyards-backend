@@ -1,4 +1,4 @@
-package v1alpha2
+package v1alpha3
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +13,7 @@ type FeatureSpec struct{}
 type FeatureStatus struct{}
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type Feature struct {

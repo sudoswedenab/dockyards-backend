@@ -1,4 +1,4 @@
-package v1alpha2
+package v1alpha3
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -9,9 +9,6 @@ const (
 	NodeKind = "Node"
 )
 
-type NodeSpec struct {
-}
-
 type NodeStatus struct {
 	ClusterServiceID string                 `json:"clusterServiceID,omitempty"`
 	Conditions       []metav1.Condition     `json:"conditions,omitempty"`
@@ -21,7 +18,7 @@ type NodeStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
@@ -33,7 +30,6 @@ type Node struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   NodeSpec   `json:"spec,omitempty"`
 	Status NodeStatus `json:"status,omitempty"`
 }
 

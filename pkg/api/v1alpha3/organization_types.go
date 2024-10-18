@@ -1,45 +1,55 @@
-package v1alpha2
+package v1alpha3
 
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
+
+type OrganizationMemberRole string
 
 const (
 	OrganizationKind = "Organization"
+
+	OrganizationMemberRoleSuperUser OrganizationMemberRole = "SuperUser"
+	OrganizationMemberRoleUser      OrganizationMemberRole = "User"
+	OrganizationMemberRoleReader    OrganizationMemberRole = "Reader"
 )
 
-type Cloud struct {
-	ProjectRef *NamespacedObjectReference `json:"cloudRef,omitempty"`
-	SecretRef  *NamespacedSecretReference `json:"cloudSecret,omitempty"`
+type OrganizationMemberReference struct {
+	corev1.TypedLocalObjectReference `json:",inline"`
+
+	// +kubebuilder:validation:Enum=SuperUser;User;Reader
+	Role OrganizationMemberRole `json:"role"`
+	UID  types.UID              `json:"uid"`
 }
 
 type OrganizationSpec struct {
 	DisplayName string `json:"displayName,omitempty"`
 
-	MemberRefs []MemberReference `json:"memberRefs"`
+	MemberRefs []OrganizationMemberReference `json:"memberRefs"`
 
-	BillingRef *NamespacedObjectReference `json:"billingRef,omitempty"`
-	Cloud      Cloud                      `json:"cloud,omitempty"`
+	ProjectRef    *corev1.TypedObjectReference `json:"projectRef,omitempty"`
+	CredentialRef *corev1.TypedObjectReference `json:"credentialRef,omitempty"`
 
 	SkipAutoAssign bool             `json:"skipAutoAssign,omitempty"`
 	Duration       *metav1.Duration `json:"duration,omitempty"`
 }
 
 type OrganizationStatus struct {
-	Conditions          []metav1.Condition  `json:"conditions,omitempty"`
-	NamespaceRef        string              `json:"namespaceRef,omitempty"`
-	ResourceQuotas      corev1.ResourceList `json:"resourceQuotas,omitempty"`
-	ExpirationTimestamp *metav1.Time        `json:"expirationTimestamp,omitempty"`
+	Conditions          []metav1.Condition           `json:"conditions,omitempty"`
+	ExpirationTimestamp *metav1.Time                 `json:"expirationTimestamp,omitempty"`
+	NamespaceRef        *corev1.LocalObjectReference `json:"namespaceRef,omitempty"`
+	ResourceQuotas      corev1.ResourceList          `json:"resourceQuotas,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="Reason",type=string,priority=1,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
-// +kubebuilder:printcolumn:name="NamespaceReference",type=string,JSONPath=".status.namespaceRef"
+// +kubebuilder:printcolumn:name="NamespaceReference",type=string,JSONPath=".status.namespaceRef.name"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Duration",type=string,JSONPath=".spec.duration"
 type Organization struct {
@@ -75,6 +85,8 @@ func (o *Organization) GetExpiration() *metav1.Time {
 
 	return &metav1.Time{Time: expiration}
 }
+
+func (*Organization) Hub() {}
 
 func init() {
 	SchemeBuilder.Register(&Organization{}, &OrganizationList{})
