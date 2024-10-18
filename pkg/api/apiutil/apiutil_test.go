@@ -6,8 +6,9 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"github.com/google/go-cmp/cmp"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,7 +33,9 @@ func TestGetOwnerOrganization(t *testing.T) {
 								UID:  "42e4bdaf-d34b-44c4-bc7e-8a0d342153c9",
 							},
 							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: "testing",
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
 							},
 						},
 					},
@@ -64,7 +67,9 @@ func TestGetOwnerOrganization(t *testing.T) {
 					ResourceVersion: "999",
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 		},
@@ -79,7 +84,9 @@ func TestGetOwnerOrganization(t *testing.T) {
 								UID:  "eb92bcdb-ffae-4a8d-8581-94a664c60ea4",
 							},
 							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: "testing",
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
 							},
 						},
 					},
@@ -143,7 +150,9 @@ func TestGetOwnerOrganization(t *testing.T) {
 					ResourceVersion: "999",
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 		},
@@ -401,7 +410,9 @@ func TestGetNamespaceOrganization(t *testing.T) {
 							Name: "test",
 						},
 						Status: dockyardsv1.OrganizationStatus{
-							NamespaceRef: "testing",
+							NamespaceRef: &corev1.LocalObjectReference{
+								Name: "testing",
+							},
 						},
 					},
 				},
@@ -413,7 +424,9 @@ func TestGetNamespaceOrganization(t *testing.T) {
 					ResourceVersion: "999",
 				},
 				Status: dockyardsv1.OrganizationStatus{
-					NamespaceRef: "testing",
+					NamespaceRef: &corev1.LocalObjectReference{
+						Name: "testing",
+					},
 				},
 			},
 		},

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -158,7 +158,11 @@ func GetNamespaceOrganization(ctx context.Context, c client.Client, namespace st
 	}
 
 	for _, organization := range organizationList.Items {
-		if organization.Status.NamespaceRef == namespace {
+		if organization.Status.NamespaceRef == nil {
+			continue
+		}
+
+		if organization.Status.NamespaceRef.Name == namespace {
 			return &organization, nil
 		}
 	}
@@ -299,4 +303,42 @@ func IgnoreInternalError(err error) error {
 	}
 
 	return err
+}
+
+func GetDefaultRelease(ctx context.Context, c client.Client, releaseType dockyardsv1.ReleaseType) (*dockyardsv1.Release, error) {
+	var releaseList dockyardsv1.ReleaseList
+	err := c.List(ctx, &releaseList)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, release := range releaseList.Items {
+		if release.Spec.Type != releaseType {
+			continue
+		}
+
+		_, isDefault := release.Annotations[dockyardsv1.AnnotationDefaultRelease]
+		if isDefault {
+			return &release, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func GetDefaultClusterTemplate(ctx context.Context, c client.Client) (*dockyardsv1.ClusterTemplate, error) {
+	var clusterTemplateList dockyardsv1.ClusterTemplateList
+	err := c.List(ctx, &clusterTemplateList)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, clusterTemplate := range clusterTemplateList.Items {
+		_, isDefault := clusterTemplate.Annotations[dockyardsv1.AnnotationDefaultTemplate]
+		if isDefault {
+			return &clusterTemplate, nil
+		}
+	}
+
+	return nil, nil
 }
