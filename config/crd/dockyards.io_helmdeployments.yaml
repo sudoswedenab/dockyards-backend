@@ -18,7 +18,6 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: 'Deprecated: superseded by v1alpha2.HelmDeployment'
         properties:
           apiVersion:
             description: |-
@@ -55,7 +54,7 @@ spec:
             - version
             type: object
         type: object
-    served: true
+    served: false
     storage: false
   - additionalPrinterColumns:
     - jsonPath: .status.conditions[?(@.type=="Ready")].status

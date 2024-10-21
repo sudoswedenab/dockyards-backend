@@ -24,7 +24,7 @@ type ContainerImageDeploymentStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:deprecatedversion
 // +kubebuilder:subresource:status
-// Deprecated: superseded by v1alpha2.ContainerImageDeployment
+// +kubebuilder:unservedversion
 type ContainerImageDeployment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -34,7 +34,7 @@ type ContainerImageDeployment struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.ContainerImageDeploymentList
+// +kubebuilder:unservedversion
 type ContainerImageDeploymentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

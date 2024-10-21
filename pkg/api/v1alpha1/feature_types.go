@@ -11,7 +11,7 @@ type FeatureStatus struct{}
 // +kubebuilder:object:root=true
 // +kubebuilder:deprecatedversion
 // +kubebuilder:subresource:status
-// Deprecated: superseded by v1alpha2.Feature
+// +kubebuilder:unservedversion
 type Feature struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -21,7 +21,7 @@ type Feature struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.FeatureList
+// +kubebuilder:unservedversion
 type FeatureList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

@@ -41,7 +41,6 @@ spec:
             properties:
               nodePoolTemplates:
                 items:
-                  description: 'Deprecated: superseded by v1alpha2.NodePool'
                   properties:
                     apiVersion:
                       description: |-

@@ -37,7 +37,7 @@ type NodePoolStatus struct {
 // +kubebuilder:deprecatedversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
-// Deprecated: superseded by v1alpha2.NodePool
+// +kubebuilder:unservedversion
 type NodePool struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -47,7 +47,7 @@ type NodePool struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.NodePoolList
+// +kubebuilder:unservedversion
 type NodePoolList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

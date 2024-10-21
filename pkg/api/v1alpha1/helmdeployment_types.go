@@ -20,7 +20,7 @@ type HelmDeploymentSpec struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:deprecatedversion
-// Deprecated: superseded by v1alpha2.HelmDeployment
+// +kubebuilder:unservedversion
 type HelmDeployment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -29,7 +29,7 @@ type HelmDeployment struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.HelmDeploymentList
+// +kubebuilder:unservedversion
 type HelmDeploymentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

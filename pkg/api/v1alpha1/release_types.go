@@ -25,7 +25,7 @@ type ReleaseStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:deprecatedversion
 // +kubebuilder:subresource:status
-// Deprecated: superseded by v1alpha2.Release
+// +kubebuilder:unservedversion
 type Release struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -35,7 +35,7 @@ type Release struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.Release
+// +kubebuilder:unservedversion
 type ReleaseList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

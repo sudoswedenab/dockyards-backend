@@ -18,7 +18,6 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: 'Deprecated: superseded by v1alpha2.Feature'
         properties:
           apiVersion:
             description: |-
@@ -42,7 +41,7 @@ spec:
           status:
             type: object
         type: object
-    served: true
+    served: false
     storage: false
     subresources:
       status: {}

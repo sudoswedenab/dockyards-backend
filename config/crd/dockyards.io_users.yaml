@@ -25,7 +25,6 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: 'Deprecated: superseded by v1alpha2.User'
         properties:
           apiVersion:
             description: |-
@@ -130,7 +129,7 @@ spec:
                 type: array
             type: object
         type: object
-    served: true
+    served: false
     storage: false
     subresources:
       status: {}

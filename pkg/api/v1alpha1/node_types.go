@@ -28,7 +28,7 @@ type NodeStatus struct {
 // +kubebuilder:printcolumn:name="CPU",type=string,JSONPath=".status.resources.cpu"
 // +kubebuilder:printcolumn:name="Memory",type=string,JSONPath=".status.resources.memory"
 // +kubebuilder:printcolumn:name="Storage",type=string,JSONPath=".status.resources.storage"
-// Deprecated: superseded by v1alpha2.Node
+// +kubebuilder:unservedversion
 type Node struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -38,7 +38,7 @@ type Node struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.NodeList
+// +kubebuilder:unservedversion
 type NodeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

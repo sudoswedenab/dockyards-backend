@@ -21,7 +21,7 @@ type KustomizeDeploymentStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:deprecatedversion
 // +kubebuilder:subresource:status
-// Deprecated: superseded by v1alpha2.KustomizeDeployment
+// +kubebuilder:unservedversion
 type KustomizeDeployment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -31,7 +31,7 @@ type KustomizeDeployment struct {
 }
 
 // +kubebuilder:object:root=true
-// Deprecated: superseded by v1alpha2.KustomizeDeploymentList
+// +kubebuilder:unservedversion
 type KustomizeDeploymentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
