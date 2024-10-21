@@ -1,0 +1,14 @@
+- op: add
+  path: /spec/conversion
+  value:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: dockyards-backend-webhook-service
+          namespace: system
+          path: /convert
+          port: 443
+      conversionReviewVersions:
+      - v1
+      - v1beta1

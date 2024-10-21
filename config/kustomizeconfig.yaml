@@ -1,0 +1,4 @@
+namespace:
+- kind: CustomResourceDefintion
+  group: apiextensions.k8s.io
+  path: webhooks/clientConfig/service/namespace
