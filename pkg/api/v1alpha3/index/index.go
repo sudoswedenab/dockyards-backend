@@ -59,3 +59,24 @@ func BySecretType(obj client.Object) []string {
 		string(secret.Type),
 	}
 }
+
+func TypedObjectRef(ref *corev1.TypedObjectReference) string {
+	if ref.Namespace == nil {
+		return ref.Kind + ref.Name
+	}
+
+	return *ref.Namespace + ref.Kind + ref.Name
+}
+
+func ByCredentialRef(obj client.Object) []string {
+	organization, ok := obj.(*v1alpha3.Organization)
+	if !ok {
+		return nil
+	}
+
+	if organization.Spec.CredentialRef == nil {
+		return nil
+	}
+
+	return []string{TypedObjectRef(organization.Spec.CredentialRef)}
+}
