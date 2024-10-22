@@ -7,11 +7,13 @@ import (
 )
 
 const (
-	EmailField            = ".spec.email"
-	MemberReferencesField = ".spec.memberRefs.uid"
-	OwnerReferencesField  = ".metadata.ownerReferences"
-	SecretTypeField       = ".type"
-	UIDField              = ".metadata.uid"
+	EmailField               = ".spec.email"
+	MemberReferencesField    = ".spec.memberRefs.uid"
+	OwnerReferencesField     = ".metadata.ownerReferences"
+	SecretTypeField          = ".type"
+	UIDField                 = ".metadata.uid"
+	CredentialReferenceField = ".spec.credentialRef"
+	CodeField                = ".spec.code"
 )
 
 func ByMemberReferences(obj client.Object) []string {
