@@ -80,3 +80,16 @@ func ByCredentialRef(obj client.Object) []string {
 
 	return []string{TypedObjectRef(organization.Spec.CredentialRef)}
 }
+
+func ByCode(obj client.Object) []string {
+	organizationVoucher, ok := obj.(*v1alpha3.OrganizationVoucher)
+	if !ok {
+		return nil
+	}
+
+	if organizationVoucher.Spec.Code == "" {
+		return nil
+	}
+
+	return []string{organizationVoucher.Spec.Code}
+}
