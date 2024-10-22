@@ -12,6 +12,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/metrics"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha1"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha2"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
@@ -135,6 +136,7 @@ func main() {
 	_ = authorizationv1.AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)
 	_ = dockyardsv1.AddToScheme(scheme)
+	_ = v1alpha1.AddToScheme(scheme)
 	_ = v1alpha2.AddToScheme(scheme)
 
 	controllerClient, err := client.New(kubeconfig, client.Options{Scheme: scheme})
