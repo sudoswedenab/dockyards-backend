@@ -1,4 +1,4 @@
-package v1alpha2
+package v1alpha3
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -20,7 +20,7 @@ type OrganizationVoucherStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="PoolReference",type=string,JSONPath=".spec.poolRef.name"
 // +kubebuilder:printcolumn:name="Code",type=string,JSONPath=".spec.code"
 // +kubebuilder:printcolumn:name="Redeemed",type=boolean,JSONPath=".status.redeemed"
