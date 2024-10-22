@@ -76,6 +76,11 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 		return err
 	}
 
+	err = (&v1alpha1.Organization{}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		return err
+	}
+
 	err = (&v1alpha2.Organization{}).SetupWebhookWithManager(mgr)
 	if err != nil {
 		return err
