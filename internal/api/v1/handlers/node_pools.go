@@ -215,7 +215,14 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, isValidName := name.IsValidName(nodePoolOptions.Name)
+	if nodePoolOptions.Name == nil {
+		logger.Debug("node pool has invalid name", "name", nodePoolOptions.Name)
+		w.WriteHeader(http.StatusUnprocessableEntity)
+
+		return
+	}
+	nodePoolName := *nodePoolOptions.Name
+	_, isValidName := name.IsValidName(nodePoolName)
 	if !isValidName {
 		logger.Debug("node pool has invalid name", "name", nodePoolOptions.Name)
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -223,8 +230,16 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if nodePoolOptions.Quantity > 9 {
-		logger.Debug("quantity too large", "quantity", nodePoolOptions.Quantity)
+	if nodePoolOptions.Quantity == nil {
+		logger.Debug("quantity may not be nil")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+
+		return
+	}
+	nodePoolQuantity := *nodePoolOptions.Quantity
+
+	if nodePoolQuantity > 9 {
+		logger.Debug("quantity too large", "quantity", nodePoolQuantity)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		return
@@ -283,7 +298,7 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := cluster.Name + "-" + nodePoolOptions.Name
+	name := cluster.Name + "-" + nodePoolName
 
 	resources := make(corev1.ResourceList)
 
@@ -330,7 +345,7 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 		Spec: dockyardsv1.NodePoolSpec{
-			Replicas:  ptr.To(int32(nodePoolOptions.Quantity)),
+			Replicas:  ptr.To(int32(nodePoolQuantity)),
 			Resources: resources,
 		},
 	}

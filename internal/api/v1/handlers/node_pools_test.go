@@ -546,7 +546,8 @@ func TestPostClusterNodePools(t *testing.T) {
 			name:      "test simple",
 			clusterID: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
 			nodePoolOptions: types.NodePoolOptions{
-				Name: "test",
+				Name: ptr.To("test"),
+				Quantity: ptr.To(0),
 			},
 			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
 			lists: []client.ObjectList{
@@ -604,8 +605,8 @@ func TestPostClusterNodePools(t *testing.T) {
 			name:      "test complex",
 			clusterID: "b70dc16e-1c52-4861-9932-59d950edcc49",
 			nodePoolOptions: types.NodePoolOptions{
-				Name:                       "test2",
-				Quantity:                   3,
+				Name:                       ptr.To("test2"),
+				Quantity:                   ptr.To(3),
 				LoadBalancer:               ptr.To(true),
 				ControlPlaneComponentsOnly: ptr.To(true),
 				RAMSize:                    ptr.To("1234M"),
@@ -671,8 +672,8 @@ func TestPostClusterNodePools(t *testing.T) {
 			name:      "test with storage resource without type",
 			clusterID: "h5cb74d7f-274c-4284-bbf4-e2a4b1c7dbc3",
 			nodePoolOptions: types.NodePoolOptions{
-				Name:     "storage-resources",
-				Quantity: 3,
+				Name:     ptr.To("storage-resources"),
+				Quantity: ptr.To(3),
 				StorageResources: &[]types.StorageResource{
 					{
 						Name:     "test",
@@ -812,7 +813,8 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 			name:      "test invalid cluster",
 			clusterID: "1817bd8b-db70-46ce-bc05-5d99df68b79e",
 			nodePoolOptions: types.NodePoolOptions{
-				Name: "test",
+				Name: ptr.To("test"),
+				Quantity: ptr.To(0),
 			},
 			expected: http.StatusUnauthorized,
 		},
@@ -820,7 +822,8 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 			name:      "test invalid name",
 			clusterID: "a2e90092-956c-4ac9-8ec7-8d4e757faf25",
 			nodePoolOptions: types.NodePoolOptions{
-				Name: "InvalidName",
+				Name: ptr.To("InvalidName"),
+				Quantity: ptr.To(0),
 			},
 			expected: http.StatusUnprocessableEntity,
 		},
@@ -828,7 +831,8 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 			name:      "test conflict name",
 			clusterID: "57cd048f-ceff-4d12-a19c-d8edab370d06",
 			nodePoolOptions: types.NodePoolOptions{
-				Name: "test",
+				Name: ptr.To("test"),
+				Quantity: ptr.To(0),
 			},
 			sub: "df24c8f4-27f3-485a-ae7a-92546b3fb925",
 			lists: []client.ObjectList{
@@ -902,7 +906,8 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 			name:      "test invalid membership",
 			clusterID: "0948b965-ea97-4e74-8262-d1b6c1ccc367",
 			nodePoolOptions: types.NodePoolOptions{
-				Name: "test",
+				Name: ptr.To("test"),
+				Quantity: ptr.To(0),
 			},
 			sub: "44946295-97bc-4c24-8887-69d3f0ca0dad",
 			lists: []client.ObjectList{
@@ -949,8 +954,8 @@ func TestPostClusterNodePoolsErrors(t *testing.T) {
 			name:      "test high quantity",
 			clusterID: "3c727788-9cd1-4b74-836b-8b6ff5e58b8b",
 			nodePoolOptions: types.NodePoolOptions{
-				Name:     "test",
-				Quantity: 50,
+				Name:     ptr.To("test"),
+				Quantity: ptr.To(50),
 			},
 			sub: "44946295-97bc-4c24-8887-69d3f0ca0dad",
 			lists: []client.ObjectList{

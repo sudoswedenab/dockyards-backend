@@ -7,6 +7,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"io"
 	"math"
 	"math/big"
@@ -68,9 +69,17 @@ func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *d
 }
 
 func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *types.NodePoolOptions, cluster *dockyardsv1.Cluster) (*dockyardsv1.NodePool, error) {
+	if nodePoolOptions.Name == nil {
+		return nil, errors.New("name must not be nil")
+	}
+
+	if nodePoolOptions.Quantity == nil {
+		return nil, errors.New("quantity must not be nil")
+	}
+
 	nodePool := dockyardsv1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cluster.Name + "-" + nodePoolOptions.Name,
+			Name:      cluster.Name + "-" + *nodePoolOptions.Name,
 			Namespace: cluster.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -83,7 +92,7 @@ func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *types.NodePoolOptio
 			},
 		},
 		Spec: dockyardsv1.NodePoolSpec{
-			Replicas: ptr.To(int32(nodePoolOptions.Quantity)),
+			Replicas: ptr.To(int32(*nodePoolOptions.Quantity)),
 		},
 	}
 
@@ -251,14 +260,24 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 
 	if clusterOptions.NodePoolOptions != nil {
 		for _, nodePoolOptions := range *clusterOptions.NodePoolOptions {
-			_, validName := name.IsValidName(nodePoolOptions.Name)
+			if nodePoolOptions.Name == nil {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+
+				return
+			}
+			_, validName := name.IsValidName(*nodePoolOptions.Name)
 			if !validName {
 				w.WriteHeader(http.StatusUnprocessableEntity)
 
 				return
 			}
 
-			if nodePoolOptions.Quantity > 9 {
+			if nodePoolOptions.Quantity == nil {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+
+				return
+			}
+			if *nodePoolOptions.Quantity > 9 {
 				w.WriteHeader(http.StatusUnprocessableEntity)
 
 				return

@@ -488,7 +488,7 @@ func TestCreateCluster(t *testing.T) {
 			Name: "test-node-pool-name",
 			NodePoolOptions: ptr.To([]types.NodePoolOptions{
 				{
-					Name: "InvalidNodePoolName",
+					Name: ptr.To("InvalidNodePoolName"),
 				},
 			}),
 		}
@@ -565,8 +565,8 @@ func TestCreateCluster(t *testing.T) {
 			Name: "test-high-quantity",
 			NodePoolOptions: ptr.To([]types.NodePoolOptions{
 				{
-					Name:     "test",
-					Quantity: 123,
+					Name:     ptr.To("test"),
+					Quantity: ptr.To(123),
 				},
 			}),
 		}
@@ -741,8 +741,8 @@ func TestCreateCluster(t *testing.T) {
 			Name: "test-storage-resources",
 			NodePoolOptions: &[]types.NodePoolOptions{
 				{
-					Name:     "worker",
-					Quantity: 3,
+					Name:     ptr.To("worker"),
+					Quantity: ptr.To(3),
 					DiskSize: ptr.To("4G"),
 					RAMSize:  ptr.To("3Mi"),
 					CPUCount: ptr.To(2),
