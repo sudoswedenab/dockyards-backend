@@ -292,7 +292,7 @@ func TestGetNodePool(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
 
 			scheme := scheme.Scheme
 			dockyardsv1.AddToScheme(scheme)
@@ -1335,6 +1335,950 @@ func TestDeleteNodePoolErrors(t *testing.T) {
 			statusCode := w.Result().StatusCode
 			if statusCode != tc.expected {
 				t.Fatalf("expected status code %d, got %d", tc.expected, statusCode)
+			}
+		})
+	}
+}
+
+func TestUpdateNodePool(t *testing.T) {
+	tt := []struct{
+		name string
+		nodePoolID string
+		sub string
+		lists []client.ObjectList
+		update types.NodePoolOptions
+		expected types.NodePool
+	}{
+		{
+			name: "changing quantity does not affect cpu count",
+			update: types.NodePoolOptions{
+				Quantity: ptr.To(2),
+			},
+			expected: types.NodePool{
+				Name: "test-node-pool",
+				ClusterID: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+				ID: "18f543f7-ed03-405e-b808-5a562db0105f",
+				CPUCount: 2,
+				Quantity: 2,
+			},
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "3928f445-d53c-4a23-9663-77382a361d17",
+								Name: "test-org",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
+									{
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test-user",
+										},
+										Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+										UID: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+								Name:      "test-cluster",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "3928f445-d53c-4a23-9663-77382a361d17",
+									},
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.NodePoolList{
+					Items: []dockyardsv1.NodePool{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "18f543f7-ed03-405e-b808-5a562db0105f",
+								Name:      "test-node-pool",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
+										Name:       "test-cluster",
+										UID:        "cf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+									},
+								},
+							},
+							Spec: dockyardsv1.NodePoolSpec{
+								Resources: corev1.ResourceList{
+									corev1.ResourceCPU: resource.MustParse("2"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "changing name to what it was is noop",
+			update: types.NodePoolOptions{
+				Name: ptr.To("test-node-pool"),
+			},
+			expected: types.NodePool{
+				Name: "test-node-pool",
+				ClusterID: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+				ID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			},
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "3928f445-d53c-4a23-9663-77382a361d17",
+								Name: "test-org",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
+									{
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test-user",
+										},
+										Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+										UID: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+								Name:      "test-cluster",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "3928f445-d53c-4a23-9663-77382a361d17",
+									},
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.NodePoolList{
+					Items: []dockyardsv1.NodePool{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "18f543f7-ed03-405e-b808-5a562db0105f",
+								Name:      "test-node-pool",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
+										Name:       "test-cluster",
+										UID:        "cf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "user can edit fields",
+			update: types.NodePoolOptions{
+				CPUCount: ptr.To(3),
+			},
+			expected: types.NodePool{
+				Name: "test-node-pool",
+				CPUCount: 3,
+				ID: "18f543f7-ed03-405e-b808-5a562db0105f",
+				ClusterID: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+			},
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "3928f445-d53c-4a23-9663-77382a361d17",
+								Name: "test-org",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
+									{
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test-user",
+										},
+										Role: dockyardsv1.OrganizationMemberRoleUser,
+										UID: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+								Name:      "test-cluster",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "3928f445-d53c-4a23-9663-77382a361d17",
+									},
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.NodePoolList{
+					Items: []dockyardsv1.NodePool{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "18f543f7-ed03-405e-b808-5a562db0105f",
+								Name:      "test-node-pool",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
+										Name:       "test-cluster",
+										UID:        "cf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+									},
+								},
+							},
+							Spec: dockyardsv1.NodePoolSpec{
+								Resources: corev1.ResourceList{
+									corev1.ResourceCPU: resource.MustParse("1"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "super user can edit fields",
+			update: types.NodePoolOptions{
+				CPUCount: ptr.To(3),
+			},
+			expected: types.NodePool{
+				Name: "test-node-pool",
+				CPUCount: 3,
+				ID: "18f543f7-ed03-405e-b808-5a562db0105f",
+				ClusterID: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+			},
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "3928f445-d53c-4a23-9663-77382a361d17",
+								Name: "test-org",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
+									{
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test-user",
+										},
+										Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+										UID: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+								Name:      "test-cluster",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "3928f445-d53c-4a23-9663-77382a361d17",
+									},
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.NodePoolList{
+					Items: []dockyardsv1.NodePool{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "18f543f7-ed03-405e-b808-5a562db0105f",
+								Name:      "test-node-pool",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
+										Name:       "test-cluster",
+										UID:        "cf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+									},
+								},
+							},
+							Spec: dockyardsv1.NodePoolSpec{
+								Resources: corev1.ResourceList{
+									corev1.ResourceCPU: resource.MustParse("1"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "update storage resources removes disks not specified",
+			update: types.NodePoolOptions{
+				StorageResources: ptr.To([]types.StorageResource{
+					{
+						Name: "foo",
+						Quantity: "1",
+						Type: ptr.To(dockyardsv1.StorageResourceTypeHostPath),
+					},
+				}),
+			},
+			expected: types.NodePool{
+				Name: "test-node-pool",
+				StorageResources: ptr.To([]types.StorageResource{
+					{
+						Name: "foo",
+						Quantity: "1",
+						Type: ptr.To(dockyardsv1.StorageResourceTypeHostPath),
+					},
+				}),
+				ID: "18f543f7-ed03-405e-b808-5a562db0105f",
+				ClusterID: "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+			},
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "3928f445-d53c-4a23-9663-77382a361d17",
+								Name: "test-org",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
+									{
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test-user",
+										},
+										Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+										UID: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+								Name:      "test-cluster",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "3928f445-d53c-4a23-9663-77382a361d17",
+									},
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.NodePoolList{
+					Items: []dockyardsv1.NodePool{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "18f543f7-ed03-405e-b808-5a562db0105f",
+								Name:      "test-node-pool",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
+										Name:       "test-cluster",
+										UID:        "cf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+									},
+								},
+							},
+							Spec: dockyardsv1.NodePoolSpec{
+								StorageResources: []dockyardsv1.NodePoolStorageResource{
+									{
+										Name: "this-should-be-removed",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+
+			scheme := scheme.Scheme
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.NodePool{}, index.UIDField, index.ByUID).
+				Build()
+
+			h := handler{
+				Client: fakeClient,
+			}
+
+			u := url.URL{
+				Path: path.Join("/v1/node-pools", tc.nodePoolID),
+			}
+
+			w := httptest.NewRecorder()
+
+			b, err := json.Marshal(tc.update)
+			if err != nil {
+				t.Fatalf("unexpected error marshalling test options: %s", err)
+			}
+			r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			r.SetPathValue("nodePoolID", tc.nodePoolID)
+
+			h.UpdateNodePool(w, r.Clone(ctx))
+
+			statusCode := w.Result().StatusCode
+			if statusCode != http.StatusAccepted {
+				t.Fatalf("expected status code %d, got %d (%s)", http.StatusAccepted, statusCode, http.StatusText(statusCode))
+			}
+
+			b, err = io.ReadAll(w.Result().Body)
+			if err != nil {
+				t.Fatalf("unexpected error reading result body: %s", err)
+			}
+
+			var actual types.NodePool
+			err = json.Unmarshal(b, &actual)
+			if err != nil {
+				t.Fatalf("error unmarshalling result body to json: %s", err)
+			}
+
+			if !cmp.Equal(tc.expected, actual) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
+
+func TestUpdateNodePoolErrors(t *testing.T) {
+	basicLists := []client.ObjectList{
+		&dockyardsv1.OrganizationList{
+			Items: []dockyardsv1.Organization{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  "3928f445-d53c-4a23-9663-77382a361d17",
+						Name: "test-org",
+					},
+					Spec: dockyardsv1.OrganizationSpec{
+						MemberRefs: []dockyardsv1.OrganizationMemberReference{
+							{
+								TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+									Name: "test-user",
+								},
+								Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+								UID: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+							},
+						},
+					},
+					Status: dockyardsv1.OrganizationStatus{
+						NamespaceRef: &corev1.LocalObjectReference{
+							Name: "testing",
+						},
+					},
+				},
+			},
+		},
+		&dockyardsv1.ClusterList{
+			Items: []dockyardsv1.Cluster{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:       "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+						Name:      "test-cluster",
+						Namespace: "testing",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: dockyardsv1.GroupVersion.String(),
+								Kind:       dockyardsv1.OrganizationKind,
+								Name:       "test-org",
+								UID:        "3928f445-d53c-4a23-9663-77382a361d17",
+							},
+						},
+					},
+				},
+			},
+		},
+		&dockyardsv1.NodePoolList{
+			Items: []dockyardsv1.NodePool{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:       "18f543f7-ed03-405e-b808-5a562db0105f",
+						Name:      "test-node-pool",
+						Namespace: "testing",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: dockyardsv1.GroupVersion.String(),
+								Kind:       dockyardsv1.ClusterKind,
+								Name:       "test-cluster",
+								UID:        "cf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+							},
+						},
+					},
+					Spec: dockyardsv1.NodePoolSpec{
+						Resources: corev1.ResourceList{
+							corev1.ResourceCPU: resource.MustParse("2"),
+						},
+						StorageResources: []dockyardsv1.NodePoolStorageResource{},
+					},
+				},
+			},
+		},
+	}
+
+	tt := []struct{
+		name string
+		nodePoolID string
+		sub string
+		lists []client.ObjectList
+		update types.NodePoolOptions
+		expected int
+	}{
+		{
+			name: "empty nodePoolID is invalid",
+			update: types.NodePoolOptions{},
+			expected: http.StatusBadRequest,
+			nodePoolID: "",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "cannot change name of node pool",
+			update: types.NodePoolOptions{
+				Name: ptr.To("hello"),
+			},
+			expected: http.StatusUnprocessableEntity,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "cannot find non existent node pool",
+			update: types.NodePoolOptions{},
+			expected: http.StatusUnauthorized,
+			nodePoolID: "this-node-pool-does-not-exist",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "nonexistent user may not modify node pool",
+			update: types.NodePoolOptions{},
+			expected: http.StatusUnauthorized,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			sub: "this-subject-does-not-exist",
+			lists: basicLists,
+		},
+		{
+			name: "quantity may not be over 9",
+			update: types.NodePoolOptions{
+				Quantity: ptr.To(10),
+			},
+			expected: http.StatusUnprocessableEntity,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "cannot update storage resources with types that do not exist",
+			update: types.NodePoolOptions{
+				StorageResources: ptr.To([]types.StorageResource{
+					{
+						Name: "foo",
+						Quantity: "100Gi",
+						Type: ptr.To("this-type-does-not-exist"),
+					},
+				}),
+			},
+			expected: http.StatusInternalServerError,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "cannot update storage resources with invalid quantity",
+			update: types.NodePoolOptions{
+				StorageResources: ptr.To([]types.StorageResource{
+					{
+						Name: "foo",
+						Quantity: "invalid-quantity",
+						Type: ptr.To(dockyardsv1.StorageResourceTypeHostPath),
+					},
+				}),
+			},
+			expected: http.StatusInternalServerError,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "reject invalid disk size",
+			update: types.NodePoolOptions{
+				DiskSize: ptr.To("foobar"),
+			},
+			expected: http.StatusUnprocessableEntity,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "reject invalid ram size",
+			update: types.NodePoolOptions{
+				RAMSize: ptr.To("foobar"),
+			},
+			expected: http.StatusUnprocessableEntity,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "reject empty storage resource name",
+			update: types.NodePoolOptions{
+				StorageResources: ptr.To([]types.StorageResource{
+					{
+						Name: "",
+						Quantity: "100Gi",
+						Type: ptr.To(dockyardsv1.StorageResourceTypeHostPath),
+					},
+				}),
+			},
+			expected: http.StatusInternalServerError,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "reject storage resource name with invalid characters",
+			update: types.NodePoolOptions{
+				StorageResources: ptr.To([]types.StorageResource{
+					{
+						Name: "<script>giveMeYourCookies()</script>",
+						Quantity: "100Gi",
+						Type: ptr.To(dockyardsv1.StorageResourceTypeHostPath),
+					},
+				}),
+			},
+			expected: http.StatusInternalServerError,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "reject negative cpu count",
+			update: types.NodePoolOptions{
+				CPUCount: ptr.To(-1),
+			},
+			expected: http.StatusUnprocessableEntity,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: basicLists,
+		},
+		{
+			name: "cannot remove last control plane",
+			update: types.NodePoolOptions{
+				ControlPlane: ptr.To(false),
+			},
+			expected: http.StatusUnprocessableEntity,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "3928f445-d53c-4a23-9663-77382a361d17",
+								Name: "test-org",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
+									{
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test-user",
+										},
+										Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+										UID: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+								Name:      "test-cluster",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "3928f445-d53c-4a23-9663-77382a361d17",
+									},
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.NodePoolList{
+					Items: []dockyardsv1.NodePool{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "18f543f7-ed03-405e-b808-5a562db0105f",
+								Name:      "test-node-pool",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
+										Name:       "test-cluster",
+										UID:        "cf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+									},
+								},
+							},
+							Spec: dockyardsv1.NodePoolSpec{
+								Resources: corev1.ResourceList{
+									corev1.ResourceCPU: resource.MustParse("2"),
+								},
+								ControlPlane: true,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "reader user cannot modify values",
+			update: types.NodePoolOptions{
+				StorageResources: ptr.To([]types.StorageResource{
+					{
+						Name: "foo",
+						Quantity: "1",
+						Type: ptr.To(dockyardsv1.StorageResourceTypeHostPath),
+					},
+				}),
+			},
+			expected: http.StatusUnauthorized,
+			nodePoolID: "18f543f7-ed03-405e-b808-5a562db0105f",
+
+			sub: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+			lists: []client.ObjectList{
+				&dockyardsv1.OrganizationList{
+					Items: []dockyardsv1.Organization{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:  "3928f445-d53c-4a23-9663-77382a361d17",
+								Name: "test-org",
+							},
+							Spec: dockyardsv1.OrganizationSpec{
+								MemberRefs: []dockyardsv1.OrganizationMemberReference{
+									{
+										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+											Name: "test-user",
+										},
+										Role: dockyardsv1.OrganizationMemberRoleReader,
+										UID: "d80ff784-20fe-4bcc-b52f-e57764111c9a",
+									},
+								},
+							},
+							Status: dockyardsv1.OrganizationStatus{
+								NamespaceRef: &corev1.LocalObjectReference{
+									Name: "testing",
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.ClusterList{
+					Items: []dockyardsv1.Cluster{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "acf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+								Name:      "test-cluster",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.OrganizationKind,
+										Name:       "test-org",
+										UID:        "3928f445-d53c-4a23-9663-77382a361d17",
+									},
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.NodePoolList{
+					Items: []dockyardsv1.NodePool{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								UID:       "18f543f7-ed03-405e-b808-5a562db0105f",
+								Name:      "test-node-pool",
+								Namespace: "testing",
+								OwnerReferences: []metav1.OwnerReference{
+									{
+										APIVersion: dockyardsv1.GroupVersion.String(),
+										Kind:       dockyardsv1.ClusterKind,
+										Name:       "test-cluster",
+										UID:        "cf90c2f-62ea-4b5d-9636-bf08ed0dcac5",
+									},
+								},
+							},
+							Spec: dockyardsv1.NodePoolSpec{
+								Resources: corev1.ResourceList{
+									corev1.ResourceCPU: resource.MustParse("2"),
+								},
+								StorageResources: []dockyardsv1.NodePoolStorageResource{},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+
+			scheme := scheme.Scheme
+			dockyardsv1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(tc.lists...).
+				WithIndex(&dockyardsv1.NodePool{}, index.UIDField, index.ByUID).
+				WithIndex(&dockyardsv1.NodePool{}, index.OwnerReferencesField, index.ByUID).
+				Build()
+
+			h := handler{
+				Client: fakeClient,
+			}
+
+			u := url.URL{
+				Path: path.Join("/v1/node-pools", tc.nodePoolID),
+			}
+
+			w := httptest.NewRecorder()
+
+			b, err := json.Marshal(tc.update)
+			if err != nil {
+				t.Fatalf("unexpected error marshalling test options: %s", err)
+			}
+			r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
+			ctx = middleware.ContextWithLogger(ctx, logger)
+
+			r.SetPathValue("nodePoolID", tc.nodePoolID)
+
+			h.UpdateNodePool(w, r.Clone(ctx))
+
+			statusCode := w.Result().StatusCode
+			if statusCode != tc.expected {
+				t.Fatalf("expected status code %d, got %d (%s)", tc.expected, statusCode, http.StatusText(statusCode))
 			}
 		})
 	}

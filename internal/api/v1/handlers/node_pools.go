@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -15,6 +17,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,6 +26,8 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=create;get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
+
+const maxReplicas = 9
 
 func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyardsv1.Cluster, nodeList *dockyardsv1.NodeList) *types.NodePool {
 	v1NodePool := types.NodePool{
@@ -238,7 +243,7 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 	}
 	nodePoolQuantity := *nodePoolOptions.Quantity
 
-	if nodePoolQuantity > 9 {
+	if nodePoolQuantity > maxReplicas {
 		logger.Debug("quantity too large", "quantity", nodePoolQuantity)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
@@ -517,4 +522,344 @@ func (h *handler) DeleteNodePool(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logger := middleware.LoggerFrom(ctx)
+
+	nodePoolID := r.PathValue("nodePoolID")
+	if nodePoolID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	var patchRequest types.NodePoolOptions
+	err := json.NewDecoder(r.Body).Decode(&patchRequest)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	matchingFields := client.MatchingFields{
+		index.UIDField: nodePoolID,
+	}
+
+	var nodePoolList dockyardsv1.NodePoolList
+	err = h.List(ctx, &nodePoolList, matchingFields)
+	if err != nil {
+		logger.Error("error listing node pools", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if len(nodePoolList.Items) != 1 {
+		logger.Debug("expected exactly one node pool", "count", len(nodePoolList.Items))
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	nodePool := nodePoolList.Items[0]
+
+	cluster, err := apiutil.GetOwnerCluster(ctx, h.Client, &nodePool)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting owner cluster", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
+		logger.Error("error getting owner cluster", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	if cluster == nil {
+		logger.Debug("node pool has no owner cluster")
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting owner organization", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	if organization == nil {
+		logger.Debug("node pool has no owner organization")
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	subject, err := middleware.SubjectFrom(ctx)
+	if err != nil {
+		logger.Error("error getting subject from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	member := h.findMember(subject, organization)
+	if member == nil {
+		logger.Debug("could not find subject in organization")
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	if !(member.Role == dockyardsv1.OrganizationMemberRoleSuperUser || member.Role == dockyardsv1.OrganizationMemberRoleUser) {
+		logger.Debug("subject does not have permission to edit node pool")
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	replicas := patchRequest.Quantity
+	if replicas != nil {
+		if *replicas <= 0 || *replicas > maxReplicas {
+			logger.Debug("invalid amount of replicas", "replicas", *replicas)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+
+			return
+		}
+		nodePool.Spec.Replicas = ptr.To(int32(*replicas))
+	}
+
+	if patchRequest.Name != nil {
+		if nodePool.ObjectMeta.Name != *patchRequest.Name {
+			logger.Debug("cannot change name of node pool")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+
+			return
+		}
+	}
+
+	patch := client.MergeFrom(nodePool.DeepCopy())
+
+	if patchRequest.ControlPlane != nil {
+		controlPlane := *patchRequest.ControlPlane
+		if !controlPlane {
+			count, err := countControlPlanes(ctx, h, cluster.ObjectMeta.UID)
+			if err != nil {
+				logger.Error("could not count control planes", "err", err)
+				w.WriteHeader(http.StatusUnauthorized)
+
+				return
+			}
+			if count <= 1 {
+				logger.Error("too few control planes", "count", count)
+				w.WriteHeader(http.StatusUnprocessableEntity)
+
+				return
+			}
+		}
+		nodePool.Spec.ControlPlane = controlPlane
+	}
+
+	if patchRequest.LoadBalancer != nil {
+		nodePool.Spec.LoadBalancer = *patchRequest.LoadBalancer
+	}
+
+	if patchRequest.ControlPlaneComponentsOnly != nil {
+		nodePool.Spec.DedicatedRole = *patchRequest.ControlPlaneComponentsOnly
+	}
+
+	if patchRequest.StorageResources != nil {
+		storageResource, err := nodePoolStorageResourcesFromStorageResources(*patchRequest.StorageResources)
+		if err != nil {
+			logger.Debug("could not create convert node pool resources", "storageResources", patchRequest.StorageResources)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+		nodePool.Spec.StorageResources = storageResource
+	}
+
+	if patchRequest.CPUCount != nil {
+		if *patchRequest.CPUCount <= 0 {
+			logger.Debug("invalid cpu count", "count", *patchRequest.CPUCount)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+
+			return
+		}
+
+		cpu := resource.NewQuantity(int64(*patchRequest.CPUCount), resource.DecimalSI)
+		nodePool.Spec.Resources[corev1.ResourceCPU] = *cpu
+	}
+
+	if patchRequest.DiskSize != nil {
+		size, err := resource.ParseQuantity(*patchRequest.DiskSize)
+
+		if err != nil {
+			logger.Debug("error parsing disk size quantity", "err", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+
+			return
+		}
+
+		nodePool.Spec.Resources[corev1.ResourceStorage] = size
+	}
+
+	if patchRequest.RAMSize != nil {
+		size, err := resource.ParseQuantity(*patchRequest.RAMSize)
+
+		if err != nil {
+			logger.Debug("error parsing memory size quantity", "err", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+
+			return
+		}
+
+		nodePool.Spec.Resources[corev1.ResourceMemory] = size
+	}
+
+	if patchRequest.Quantity != nil {
+		if *patchRequest.Quantity > maxReplicas {
+			logger.Debug("invalid amount of replicas", "quantity", patchRequest.Quantity)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+
+			return
+		}
+
+		nodePool.Spec.Replicas = ptr.To(int32(*patchRequest.Quantity))
+	}
+
+	responseJSON, err := json.Marshal(nodePoolResponseFromNodePool(nodePool))
+	if err != nil {
+		logger.Error("error creating JSON response", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	err = h.Patch(ctx, &nodePool, patch)
+	if err != nil {
+		logger.Error("error patching node pool", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	_, err = w.Write(responseJSON)
+	if err != nil {
+		logger.Error("error writing response data", "err", err)
+	}
+}
+
+func nodePoolStorageResourcesFromStorageResources(storageResources []types.StorageResource) ([]dockyardsv1.NodePoolStorageResource, error) {
+	result := make([]dockyardsv1.NodePoolStorageResource, len(storageResources))
+
+	for i, item := range storageResources {
+		quantity, err := resource.ParseQuantity(item.Quantity)
+		if err != nil {
+			return nil, err
+		}
+
+		resourceType := dockyardsv1.StorageResourceTypeHostPath
+		if item.Type != nil {
+			resourceType = *item.Type
+		}
+		if resourceType != dockyardsv1.StorageResourceTypeHostPath {
+			return nil, errors.New("invalid storage type")
+		}
+
+		if reason, isValid := name.IsValidName(item.Name); !isValid {
+			return nil, errors.New(reason)
+		}
+
+		result[i] = dockyardsv1.NodePoolStorageResource{
+			Name: item.Name,
+			Quantity: quantity,
+			Type: resourceType,
+		}
+	}
+
+	return result, nil
+}
+
+func storageResourcesFromNodePoolStorageResources(storageResources []dockyardsv1.NodePoolStorageResource) []types.StorageResource {
+	result := make([]types.StorageResource, len(storageResources))
+
+	for i, item := range storageResources {
+		result[i] = types.StorageResource{
+			Name: item.Name,
+			Quantity: item.Quantity.String(),
+			Type: &item.Type,
+		}
+	}
+
+	return result
+}
+
+func nodePoolResponseFromNodePool(nodePool dockyardsv1.NodePool) types.NodePool {
+	result := types.NodePool{
+		ControlPlane: &nodePool.Spec.ControlPlane,
+		ControlPlaneComponentsOnly: &nodePool.Spec.DedicatedRole,
+		LoadBalancer: &nodePool.Spec.LoadBalancer,
+		Name: nodePool.ObjectMeta.Name,
+	}
+
+	if item, found := nodePool.Spec.Resources[corev1.ResourceCPU]; found {
+		// This should be fine in this particular situation, since the result
+		// of this function will be JSON serialized anyway.
+		result.CPUCount = int(item.AsApproximateFloat64())
+	}
+
+	if item, found := nodePool.Spec.Resources[corev1.ResourceStorage]; found {
+		result.DiskSize = item.String()
+	}
+
+	if item, found := nodePool.Spec.Resources[corev1.ResourceStorage]; found {
+		result.RAMSize = item.String()
+	}
+
+	if nodePool.Spec.Replicas != nil {
+		result.Quantity = int(*nodePool.Spec.Replicas)
+	}
+
+	if nodePool.Spec.StorageResources != nil {
+		result.StorageResources = ptr.To(storageResourcesFromNodePoolStorageResources(nodePool.Spec.StorageResources))
+	}
+
+	return result
+}
+
+func countControlPlanes(ctx context.Context, h *handler, clusterID k8stypes.UID) (int, error) {
+	matchingFields := client.MatchingFields{
+		index.OwnerReferencesField: string(clusterID),
+	}
+
+	var nodePoolList dockyardsv1.NodePoolList
+	err := h.List(ctx, &nodePoolList, matchingFields)
+	if err != nil {
+		return 0, err
+	}
+
+	count := 0
+	for _, item := range nodePoolList.Items {
+		if item.Spec.ControlPlane {
+			count++
+		}
+	}
+
+	return count, nil
 }
