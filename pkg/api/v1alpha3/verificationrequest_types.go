@@ -1,4 +1,4 @@
-package v1alpha2
+package v1alpha3
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -6,11 +6,9 @@ import (
 )
 
 type VerificationRequestSpec struct {
-	// Deprecated: use UserRef
-	User     string                           `json:"user,omitempty"`
 	Code     string                           `json:"code"`
 	Subject  string                           `json:"subject"`
-	BodyHTML string                           `json:"bodyHTML"`
+	BodyHTML string                           `json:"bodyHTML,omitempty"`
 	BodyText string                           `json:"bodyText"`
 	UserRef  corev1.TypedLocalObjectReference `json:"userRef"`
 }
@@ -20,10 +18,10 @@ type VerificationRequestStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:deprecatedversion
 type VerificationRequest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
