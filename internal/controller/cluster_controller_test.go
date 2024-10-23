@@ -52,6 +52,12 @@ func TestClusterController(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "dockyards-testing",
+					Annotations: map[string]string{
+						dockyardsv1.AnnotationDefaultRelease: "true",
+					},
+				},
+				Spec: dockyardsv1.ReleaseSpec{
+					Type: dockyardsv1.ReleaseTypeKubernetes,
 				},
 				Status: dockyardsv1.ReleaseStatus{
 					Versions: versions,
@@ -73,6 +79,12 @@ func TestClusterController(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "dockyards-testing",
+					Annotations: map[string]string{
+						dockyardsv1.AnnotationDefaultRelease: "true",
+					},
+				},
+				Spec: dockyardsv1.ReleaseSpec{
+					Type: dockyardsv1.ReleaseTypeKubernetes,
 				},
 				Status: dockyardsv1.ReleaseStatus{
 					Versions: versions,
@@ -99,6 +111,12 @@ func TestClusterController(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "dockyards-testing",
+					Annotations: map[string]string{
+						dockyardsv1.AnnotationDefaultRelease: "true",
+					},
+				},
+				Spec: dockyardsv1.ReleaseSpec{
+					Type: dockyardsv1.ReleaseTypeKubernetes,
 				},
 				Status: dockyardsv1.ReleaseStatus{
 					Versions: versions,
@@ -125,6 +143,12 @@ func TestClusterController(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "dockyards-testing",
+					Annotations: map[string]string{
+						dockyardsv1.AnnotationDefaultRelease: "true",
+					},
+				},
+				Spec: dockyardsv1.ReleaseSpec{
+					Type: dockyardsv1.ReleaseTypeKubernetes,
 				},
 				Status: dockyardsv1.ReleaseStatus{
 					Versions: versions,
@@ -154,6 +178,12 @@ func TestClusterController(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "dockyards-testing",
+					Annotations: map[string]string{
+						dockyardsv1.AnnotationDefaultRelease: "true",
+					},
+				},
+				Spec: dockyardsv1.ReleaseSpec{
+					Type: dockyardsv1.ReleaseTypeKubernetes,
 				},
 				Status: dockyardsv1.ReleaseStatus{
 					Versions: versions,
@@ -180,6 +210,12 @@ func TestClusterController(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "dockyards-testing",
+					Annotations: map[string]string{
+						dockyardsv1.AnnotationDefaultRelease: "true",
+					},
+				},
+				Spec: dockyardsv1.ReleaseSpec{
+					Type: dockyardsv1.ReleaseTypeKubernetes,
 				},
 				Status: dockyardsv1.ReleaseStatus{
 					Versions: versions,
@@ -201,6 +237,12 @@ func TestClusterController(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "dockyards-testing",
+					Annotations: map[string]string{
+						dockyardsv1.AnnotationDefaultRelease: "true",
+					},
+				},
+				Spec: dockyardsv1.ReleaseSpec{
+					Type: dockyardsv1.ReleaseTypeKubernetes,
 				},
 				Status: dockyardsv1.ReleaseStatus{
 					Versions: versions,
