@@ -316,6 +316,7 @@ func (r *OrganizationReconciler) reconcileUserRoleAndBinding(ctx context.Context
 		role.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
+					"create",
 					"delete",
 					"patch",
 					"watch",

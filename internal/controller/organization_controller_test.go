@@ -326,6 +326,51 @@ func TestOrganizationController(t *testing.T) {
 					},
 					expected: true,
 				},
+				{
+					name: "test super user creating clusters",
+					subjectAccessReview: authorizationv1.SubjectAccessReview{
+						Spec: authorizationv1.SubjectAccessReviewSpec{
+							User: "cffbcc36-fd31-4c1a-8d44-fce8b0d69688",
+							ResourceAttributes: &authorizationv1.ResourceAttributes{
+								Namespace: "REPLACE",
+								Verb:      "create",
+								Resource:  "clusters",
+								Group:     dockyardsv1.GroupVersion.Group,
+							},
+						},
+					},
+					expected: true,
+				},
+				{
+					name: "test user creating clusters",
+					subjectAccessReview: authorizationv1.SubjectAccessReview{
+						Spec: authorizationv1.SubjectAccessReviewSpec{
+							User: "57dc0194-cecd-403a-901a-74dcb4e954e3",
+							ResourceAttributes: &authorizationv1.ResourceAttributes{
+								Namespace: "REPLACE",
+								Verb:      "create",
+								Resource:  "clusters",
+								Group:     dockyardsv1.GroupVersion.Group,
+							},
+						},
+					},
+					expected: true,
+				},
+				{
+					name: "test reader creating clusters",
+					subjectAccessReview: authorizationv1.SubjectAccessReview{
+						Spec: authorizationv1.SubjectAccessReviewSpec{
+							User: "aa725fea-0907-4ca8-be03-6a3728afd704",
+							ResourceAttributes: &authorizationv1.ResourceAttributes{
+								Namespace: "REPLACE",
+								Verb:      "create",
+								Resource:  "clusters",
+								Group:     dockyardsv1.GroupVersion.Group,
+							},
+						},
+					},
+					expected: false,
+				},
 			},
 		},
 	}
