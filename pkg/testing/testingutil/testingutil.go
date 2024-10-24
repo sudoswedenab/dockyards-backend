@@ -1,0 +1,229 @@
+package testingutil
+
+import (
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/authorization"
+	"context"
+	authorizationv1 "k8s.io/api/authorization/v1"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+)
+
+type TestEnvironment struct {
+	mgr           manager.Manager
+	organization  *dockyardsv1.Organization
+	environment   *envtest.Environment
+	c             client.Client
+	superUser     *dockyardsv1.User
+	user          *dockyardsv1.User
+	reader        *dockyardsv1.User
+	namespaceName string
+}
+
+func (e *TestEnvironment) GetManager() manager.Manager {
+	return e.mgr
+}
+
+func (e *TestEnvironment) GetOrganization() *dockyardsv1.Organization {
+	return e.organization
+}
+
+func (e *TestEnvironment) GetEnvironment() *envtest.Environment {
+	return e.environment
+}
+
+func (e *TestEnvironment) GetClient() client.Client {
+	return e.c
+}
+
+func (e *TestEnvironment) GetSuperUser() *dockyardsv1.User {
+	return e.superUser
+}
+
+func (e *TestEnvironment) GetUser() *dockyardsv1.User {
+	return e.user
+}
+
+func (e *TestEnvironment) GetReader() *dockyardsv1.User {
+	return e.reader
+}
+
+func (e *TestEnvironment) GetDockyardsNamespace() string {
+	return e.namespaceName
+}
+
+func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestEnvironment, error) {
+	environment := envtest.Environment{
+		CRDDirectoryPaths: crdDirectoryPaths,
+	}
+
+	cfg, err := environment.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+	_ = dockyardsv1.AddToScheme(scheme)
+	_ = authorizationv1.AddToScheme(scheme)
+	_ = rbacv1.AddToScheme(scheme)
+
+	c, err := client.New(cfg, client.Options{Scheme: scheme})
+	if err != nil {
+		return nil, err
+	}
+
+	opts := manager.Options{
+		Scheme: scheme,
+		Metrics: server.Options{
+			BindAddress: "0",
+		},
+	}
+
+	mgr, err := ctrl.NewManager(cfg, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	superUser := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "superuser-",
+		},
+		Spec: dockyardsv1.UserSpec{
+			Email: "superuser@dockyards.dev",
+		},
+	}
+
+	user := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "user-",
+		},
+		Spec: dockyardsv1.UserSpec{
+			Email: "user@dockyards.dev",
+		},
+	}
+
+	reader := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "reader-",
+		},
+		Spec: dockyardsv1.UserSpec{
+			Email: "reader@dockyards.dev",
+		},
+	}
+
+	err = c.Create(ctx, &superUser)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.Create(ctx, &user)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.Create(ctx, &reader)
+	if err != nil {
+		return nil, err
+	}
+
+	organization := dockyardsv1.Organization{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+		Spec: dockyardsv1.OrganizationSpec{
+			MemberRefs: []dockyardsv1.OrganizationMemberReference{
+				{
+					Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+					UID:  superUser.UID,
+				},
+				{
+					Role: dockyardsv1.OrganizationMemberRoleUser,
+					UID:  user.UID,
+				},
+				{
+					Role: dockyardsv1.OrganizationMemberRoleReader,
+					UID:  reader.UID,
+				},
+			},
+		},
+	}
+
+	err = c.Create(ctx, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	namespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+	}
+
+	err = c.Create(ctx, &namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	patch := client.MergeFrom(organization.DeepCopy())
+
+	organization.Status.NamespaceRef = &corev1.LocalObjectReference{
+		Name: namespace.Name,
+	}
+
+	err = c.Status().Patch(ctx, &organization, patch)
+	if err != nil {
+		return nil, err
+	}
+
+	err = authorization.ReconcileSuperUserClusterRoleAndBinding(ctx, c, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	err = authorization.ReconcileUserRoleAndBindings(ctx, c, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	err = authorization.ReconcileReaderClusterRoleAndBinding(ctx, c, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	err = authorization.ReconcileReaderRoleAndBinding(ctx, c, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	namespace = corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "dockyards-",
+		},
+	}
+
+	err = c.Create(ctx, &namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	t := TestEnvironment{
+		mgr:           mgr,
+		environment:   &environment,
+		organization:  &organization,
+		c:             c,
+		superUser:     &superUser,
+		user:          &user,
+		reader:        &reader,
+		namespaceName: namespace.Name,
+	}
+
+	return &t, nil
+}
