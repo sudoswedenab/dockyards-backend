@@ -461,7 +461,7 @@ func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resourceAttributes := authorizationv1.ResourceAttributes{
-		Verb:      "get",
+		Verb:      "patch",
 		Resource:  "clusters",
 		Group:     "dockyards.io",
 		Namespace: cluster.Namespace,
@@ -476,7 +476,7 @@ func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !allowed {
-		logger.Debug("subject is not allowed to get cluster", "subject", subject, "cluster", cluster.Name, "namespace", cluster.Namespace)
+		logger.Debug("subject is not allowed to patch cluster", "subject", subject, "cluster", cluster.Name, "namespace", cluster.Namespace)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
