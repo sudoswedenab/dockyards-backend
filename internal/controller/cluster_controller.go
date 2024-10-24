@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
@@ -43,17 +42,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		return ctrl.Result{}, nil
 	}
 
-	release, err := apiutil.GetDefaultRelease(ctx, r.Client, dockyardsv1.ReleaseTypeKubernetes)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if release == nil {
-		logger.Info("ignoring cluster with missing release")
-
-		return ctrl.Result{}, nil
-	}
-
 	patchHelper, err := patch.NewHelper(&cluster, r.Client)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -67,9 +55,46 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		}
 	}()
 
-	currentVersion, err := semverv3.NewVersion(cluster.Spec.Version)
+	result, err = r.reconcileClusterUpgrades(ctx, &cluster)
 	if err != nil {
-		logger.Error(err, "error parsing current cluster version as semver")
+		return ctrl.Result{}, err
+	}
+
+	expiration := cluster.GetExpiration()
+	cluster.Status.ExpirationTimestamp = expiration
+
+	if expiration != nil {
+		requeueAfter := expiration.Sub(time.Now())
+
+		logger.Info("requeuing cluster until expiration", "expiration", expiration, "after", requeueAfter)
+
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *ClusterReconciler) reconcileClusterUpgrades(ctx context.Context, dockyardsCluster *dockyardsv1.Cluster) (ctrl.Result, error) {
+	logger := ctrl.LoggerFrom(ctx)
+
+	if dockyardsCluster.Spec.Version == "" {
+		return ctrl.Result{}, nil
+	}
+
+	currentVersion, err := semverv3.NewVersion(dockyardsCluster.Spec.Version)
+	if err != nil {
+		logger.Error(err, "error parsing current cluster version as semver", "version", dockyardsCluster.Spec.Version)
+
+		return ctrl.Result{}, nil
+	}
+
+	release, err := apiutil.GetDefaultRelease(ctx, r.Client, dockyardsv1.ReleaseTypeKubernetes)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if release == nil {
+		logger.Info("ignoring cluster with missing release")
 
 		return ctrl.Result{}, nil
 	}
@@ -100,22 +125,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		})
 	}
 
-	if !slices.Equal(cluster.Spec.Upgrades, upgrades) {
-		logger.Info("new upgrades available", "old", cluster.Spec.Upgrades, "new", upgrades)
-
-		cluster.Spec.Upgrades = upgrades
-	}
-
-	expiration := cluster.GetExpiration()
-	cluster.Status.ExpirationTimestamp = expiration
-
-	if expiration != nil {
-		requeueAfter := expiration.Sub(time.Now())
-
-		logger.Info("requeuing cluster until expiration", "expiration", expiration, "after", requeueAfter)
-
-		return ctrl.Result{RequeueAfter: requeueAfter}, nil
-	}
+	dockyardsCluster.Spec.Upgrades = upgrades
 
 	return ctrl.Result{}, nil
 }
