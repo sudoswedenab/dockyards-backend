@@ -4,361 +4,379 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"path"
 	"testing"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
-func TestClusterController(t *testing.T) {
+func TestClusterController_Upgrades(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	versions := []string{
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError})
+	slogr := logr.FromSlogHandler(handler)
+	ctrl.SetLogger(slogr)
+
+	ctx, cancel := context.WithCancel(context.TODO())
+
+	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../config/crd")})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		cancel()
+		testEnvironment.GetEnvironment().Stop()
+	})
+
+	mgr := testEnvironment.GetManager()
+
+	organization := testEnvironment.GetOrganization()
+	c := testEnvironment.GetClient()
+
+	release := dockyardsv1.Release{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: testEnvironment.GetDockyardsNamespace(),
+			Annotations: map[string]string{
+				dockyardsv1.AnnotationDefaultRelease: "true",
+			},
+		},
+		Spec: dockyardsv1.ReleaseSpec{
+			Type: dockyardsv1.ReleaseTypeKubernetes,
+		},
+	}
+
+	err = c.Create(ctx, &release)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	patch := client.MergeFrom(release.DeepCopy())
+
+	release.Status.Versions = []string{
 		"v1.30.1",
 		"v1.29.5",
 		"v1.28.10",
 		"v1.27.14",
 	}
 
-	tt := []struct {
-		name     string
-		cluster  dockyardsv1.Cluster
-		release  dockyardsv1.Release
-		expected []dockyardsv1.ClusterUpgrade
-	}{
-		{
-			name: "test cluster without upgrades",
-			cluster: dockyardsv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "testing",
-				},
-				Spec: dockyardsv1.ClusterSpec{
-					Version: "v1.30.1",
-				},
-			},
-			release: dockyardsv1.Release{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "dockyards-testing",
-					Annotations: map[string]string{
-						dockyardsv1.AnnotationDefaultRelease: "true",
-					},
-				},
-				Spec: dockyardsv1.ReleaseSpec{
-					Type: dockyardsv1.ReleaseTypeKubernetes,
-				},
-				Status: dockyardsv1.ReleaseStatus{
-					Versions: versions,
-				},
-			},
-		},
-		{
-			name: "test cluster with patch upgrade",
-			cluster: dockyardsv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "testing",
-				},
-				Spec: dockyardsv1.ClusterSpec{
-					Version: "v1.30.0",
-				},
-			},
-			release: dockyardsv1.Release{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "dockyards-testing",
-					Annotations: map[string]string{
-						dockyardsv1.AnnotationDefaultRelease: "true",
-					},
-				},
-				Spec: dockyardsv1.ReleaseSpec{
-					Type: dockyardsv1.ReleaseTypeKubernetes,
-				},
-				Status: dockyardsv1.ReleaseStatus{
-					Versions: versions,
-				},
-			},
-			expected: []dockyardsv1.ClusterUpgrade{
-				{
-					To: "v1.30.1",
-				},
-			},
-		},
-		{
-			name: "test cluster with minor upgrade",
-			cluster: dockyardsv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "testing",
-				},
-				Spec: dockyardsv1.ClusterSpec{
-					Version: "v1.29.5",
-				},
-			},
-			release: dockyardsv1.Release{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "dockyards-testing",
-					Annotations: map[string]string{
-						dockyardsv1.AnnotationDefaultRelease: "true",
-					},
-				},
-				Spec: dockyardsv1.ReleaseSpec{
-					Type: dockyardsv1.ReleaseTypeKubernetes,
-				},
-				Status: dockyardsv1.ReleaseStatus{
-					Versions: versions,
-				},
-			},
-			expected: []dockyardsv1.ClusterUpgrade{
-				{
-					To: "v1.30.1",
-				},
-			},
-		},
-		{
-			name: "test cluster with minor and patch upgrades",
-			cluster: dockyardsv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "testing",
-				},
-				Spec: dockyardsv1.ClusterSpec{
-					Version: "v1.29.4",
-				},
-			},
-			release: dockyardsv1.Release{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "dockyards-testing",
-					Annotations: map[string]string{
-						dockyardsv1.AnnotationDefaultRelease: "true",
-					},
-				},
-				Spec: dockyardsv1.ReleaseSpec{
-					Type: dockyardsv1.ReleaseTypeKubernetes,
-				},
-				Status: dockyardsv1.ReleaseStatus{
-					Versions: versions,
-				},
-			},
-			expected: []dockyardsv1.ClusterUpgrade{
-				{
-					To: "v1.30.1",
-				},
-				{
-					To: "v1.29.5",
-				},
-			},
-		},
-		{
-			name: "test cluster unable to skip to latest version",
-			cluster: dockyardsv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "testing",
-				},
-				Spec: dockyardsv1.ClusterSpec{
-					Version: "v1.28.10",
-				},
-			},
-			release: dockyardsv1.Release{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "dockyards-testing",
-					Annotations: map[string]string{
-						dockyardsv1.AnnotationDefaultRelease: "true",
-					},
-				},
-				Spec: dockyardsv1.ReleaseSpec{
-					Type: dockyardsv1.ReleaseTypeKubernetes,
-				},
-				Status: dockyardsv1.ReleaseStatus{
-					Versions: versions,
-				},
-			},
-			expected: []dockyardsv1.ClusterUpgrade{
-				{
-					To: "v1.29.5",
-				},
-			},
-		},
-		{
-			name: "test cluster too old to upgrade to any version",
-			cluster: dockyardsv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "testing",
-				},
-				Spec: dockyardsv1.ClusterSpec{
-					Version: "v1.24.17",
-				},
-			},
-			release: dockyardsv1.Release{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "dockyards-testing",
-					Annotations: map[string]string{
-						dockyardsv1.AnnotationDefaultRelease: "true",
-					},
-				},
-				Spec: dockyardsv1.ReleaseSpec{
-					Type: dockyardsv1.ReleaseTypeKubernetes,
-				},
-				Status: dockyardsv1.ReleaseStatus{
-					Versions: versions,
-				},
-			},
-		},
-		{
-			name: "test cluster just outside of supported versions",
-			cluster: dockyardsv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "testing",
-				},
-				Spec: dockyardsv1.ClusterSpec{
-					Version: "v1.26.15",
-				},
-			},
-			release: dockyardsv1.Release{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "dockyards-testing",
-					Annotations: map[string]string{
-						dockyardsv1.AnnotationDefaultRelease: "true",
-					},
-				},
-				Spec: dockyardsv1.ReleaseSpec{
-					Type: dockyardsv1.ReleaseTypeKubernetes,
-				},
-				Status: dockyardsv1.ReleaseStatus{
-					Versions: versions,
-				},
-			},
-			expected: []dockyardsv1.ClusterUpgrade{
-				{
-					To: "v1.27.14",
-				},
-			},
-		},
+	err = c.Status().Patch(ctx, &release, patch)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError})
-			slogr := logr.FromSlogHandler(handler)
-			ctrl.SetLogger(slogr)
-
-			ctx, cancel := context.WithCancel(context.TODO())
-
-			environment := envtest.Environment{
-				CRDDirectoryPaths: []string{
-					"../../config/crd",
-				},
-			}
-
-			cfg, err := environment.Start()
-			if err != nil {
-				t.Fatalf("error starting test environment: %s", err)
-			}
-
-			t.Cleanup(func() {
-				cancel()
-				environment.Stop()
-			})
-
-			scheme := runtime.NewScheme()
-			_ = corev1.AddToScheme(scheme)
-			_ = dockyardsv1.AddToScheme(scheme)
-
-			c, err := client.New(cfg, client.Options{Scheme: scheme})
-			if err != nil {
-				t.Fatalf("error creating test client: %s", err)
-			}
-
-			mgr, err := ctrl.NewManager(cfg, ctrl.Options{})
-			if err != nil {
-				t.Fatalf("error creating test manager: %s", err)
-			}
-
-			for _, name := range []string{"testing", "dockyards-testing"} {
-				namespace := corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: name,
-					},
-				}
-
-				err = c.Create(ctx, &namespace)
-				if err != nil {
-					t.Fatalf("error creating test namespace: %s", err)
-				}
-			}
-
-			err = c.Create(ctx, &tc.cluster)
-			if err != nil {
-				t.Fatalf("error creating test cluster: %s", err)
-			}
-
-			err = c.Create(ctx, &tc.release)
-			if err != nil {
-				t.Fatalf("error creating test release: %s", err)
-			}
-
-			patch := client.MergeFrom(tc.release.DeepCopy())
-
-			tc.release.Status.Versions = versions
-
-			err = c.Status().Patch(ctx, &tc.release, patch)
-			if err != nil {
-				t.Fatalf("error patching test release: %s", err)
-			}
-
-			err = (&controller.ClusterReconciler{
-				Client:             mgr.GetClient(),
-				DockyardsNamespace: "dockyards-testing",
-			}).SetupWithManager(mgr)
-			if err != nil {
-				t.Fatalf("error creating test reconciler: %s", err)
-			}
-
-			go func() {
-				err := mgr.Start(ctx)
-				if err != nil {
-					panic(err)
-				}
-			}()
-
-			var actual dockyardsv1.Cluster
-
-			for i := 0; i < 5; i++ {
-				err := c.Get(ctx, client.ObjectKeyFromObject(&tc.cluster), &actual)
-				if err != nil {
-					t.Fatalf("error getting test cluster: %s", err)
-				}
-
-				if actual.Spec.Upgrades != nil {
-					break
-				}
-
-				time.Sleep(time.Second)
-			}
-
-			if !cmp.Equal(actual.Spec.Upgrades, tc.expected) {
-				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual.Spec.Upgrades))
-			}
-		})
+	err = (&controller.ClusterReconciler{
+		Client:             mgr.GetClient(),
+		DockyardsNamespace: testEnvironment.GetDockyardsNamespace(),
+	}).SetupWithManager(mgr)
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	t.Run("test latest version", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-latest-version",
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.ClusterSpec{
+				Version: "v1.30.1",
+			},
+		}
+
+		err := c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual dockyardsv1.Cluster
+
+		for i := 0; i < 5; i++ {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if actual.Spec.Upgrades != nil {
+				break
+			}
+
+			time.Sleep(time.Second)
+		}
+
+		var expected []dockyardsv1.ClusterUpgrade
+
+		if !cmp.Equal(actual.Spec.Upgrades, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual.Spec.Upgrades))
+		}
+	})
+
+	t.Run("test patch version", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-patch-upgrade",
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.ClusterSpec{
+				Version: "v1.30.0",
+			},
+		}
+
+		err := c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual dockyardsv1.Cluster
+
+		for i := 0; i < 5; i++ {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if actual.Spec.Upgrades != nil {
+				break
+			}
+
+			time.Sleep(time.Second)
+		}
+
+		expected := []dockyardsv1.ClusterUpgrade{
+			{
+				To: "v1.30.1",
+			},
+		}
+
+		if !cmp.Equal(actual.Spec.Upgrades, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual.Spec.Upgrades))
+		}
+	})
+
+	t.Run("test minor version", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-minor-version",
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.ClusterSpec{
+				Version: "v1.29.5",
+			},
+		}
+
+		err := c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual dockyardsv1.Cluster
+
+		for i := 0; i < 5; i++ {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if actual.Spec.Upgrades != nil {
+				break
+			}
+
+			time.Sleep(time.Second)
+		}
+
+		expected := []dockyardsv1.ClusterUpgrade{
+			{
+				To: "v1.30.1",
+			},
+		}
+
+		if !cmp.Equal(actual.Spec.Upgrades, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual.Spec.Upgrades))
+		}
+	})
+
+	t.Run("test minor and patch versions", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-minor-patch-version",
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.ClusterSpec{
+				Version: "v1.29.4",
+			},
+		}
+
+		err := c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual dockyardsv1.Cluster
+
+		for i := 0; i < 5; i++ {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if actual.Spec.Upgrades != nil {
+				break
+			}
+
+			time.Sleep(time.Second)
+		}
+
+		expected := []dockyardsv1.ClusterUpgrade{
+			{
+				To: "v1.30.1",
+			},
+			{
+				To: "v1.29.5",
+			},
+		}
+
+		if !cmp.Equal(actual.Spec.Upgrades, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual.Spec.Upgrades))
+		}
+	})
+
+	t.Run("test penultimate version", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-penultimate-version",
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.ClusterSpec{
+				Version: "v1.28.10",
+			},
+		}
+
+		err := c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual dockyardsv1.Cluster
+
+		for i := 0; i < 5; i++ {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if actual.Spec.Upgrades != nil {
+				break
+			}
+
+			time.Sleep(time.Second)
+		}
+
+		expected := []dockyardsv1.ClusterUpgrade{
+			{
+				To: "v1.29.5",
+			},
+		}
+
+		if !cmp.Equal(actual.Spec.Upgrades, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual.Spec.Upgrades))
+		}
+	})
+
+	t.Run("test old version", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-old-version",
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.ClusterSpec{
+				Version: "v1.24.17",
+			},
+		}
+
+		err := c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual dockyardsv1.Cluster
+
+		for i := 0; i < 5; i++ {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if actual.Spec.Upgrades != nil {
+				break
+			}
+
+			time.Sleep(time.Second)
+		}
+
+		var expected []dockyardsv1.ClusterUpgrade
+
+		if !cmp.Equal(actual.Spec.Upgrades, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual.Spec.Upgrades))
+		}
+	})
+
+	t.Run("test below supported version", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-below-supported-version",
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.ClusterSpec{
+				Version: "v1.26.15",
+			},
+		}
+
+		err := c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual dockyardsv1.Cluster
+
+		for i := 0; i < 5; i++ {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if actual.Spec.Upgrades != nil {
+				break
+			}
+
+			time.Sleep(time.Second)
+		}
+
+		expected := []dockyardsv1.ClusterUpgrade{
+			{
+				To: "v1.27.14",
+			},
+		}
+
+		if !cmp.Equal(actual.Spec.Upgrades, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual.Spec.Upgrades))
+		}
+	})
 }
