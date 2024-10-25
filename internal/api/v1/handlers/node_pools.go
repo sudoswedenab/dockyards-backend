@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -17,7 +16,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -34,15 +32,15 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyard
 		ID:        string(nodePool.UID),
 		ClusterID: string(cluster.UID),
 		Name:      nodePool.Name,
-		CPUCount:  int(nodePool.Status.Resources.Cpu().Value()),
+		CPUCount:  int(nodePool.Spec.Resources.Cpu().Value()),
 	}
 
-	resourceStorage := nodePool.Status.Resources.Storage()
+	resourceStorage := nodePool.Spec.Resources.Storage()
 	if !resourceStorage.IsZero() {
 		v1NodePool.DiskSize = resourceStorage.String()
 	}
 
-	resourceMemory := nodePool.Status.Resources.Memory()
+	resourceMemory := nodePool.Spec.Resources.Memory()
 	if !resourceMemory.IsZero() {
 		v1NodePool.RAMSize = resourceMemory.String()
 	}
@@ -655,23 +653,12 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 	patch := client.MergeFrom(nodePool.DeepCopy())
 
 	if patchRequest.ControlPlane != nil {
-		controlPlane := *patchRequest.ControlPlane
-		if !controlPlane {
-			count, err := countControlPlanes(ctx, h, cluster.ObjectMeta.UID)
-			if err != nil {
-				logger.Error("could not count control planes", "err", err)
-				w.WriteHeader(http.StatusUnauthorized)
+		if nodePool.Spec.ControlPlane != *patchRequest.ControlPlane {
+			logger.Error("ControlPlane field may not be changed")
+			w.WriteHeader(http.StatusUnprocessableEntity)
 
-				return
-			}
-			if count <= 1 {
-				logger.Error("too few control planes", "count", count)
-				w.WriteHeader(http.StatusUnprocessableEntity)
-
-				return
-			}
+			return
 		}
-		nodePool.Spec.ControlPlane = controlPlane
 	}
 
 	if patchRequest.LoadBalancer != nil {
@@ -715,7 +702,12 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		nodePool.Spec.Resources[corev1.ResourceStorage] = size
+		if !nodePool.Spec.Resources[corev1.ResourceStorage].Equal(size) {
+			logger.Debug("disk size may not be changed")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+
+			return
+		}
 	}
 
 	if patchRequest.RAMSize != nil {
@@ -742,7 +734,7 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 		nodePool.Spec.Replicas = ptr.To(int32(*patchRequest.Quantity))
 	}
 
-	responseJSON, err := json.Marshal(nodePoolResponseFromNodePool(nodePool))
+	responseJSON, err := json.Marshal(h.toV1NodePool(&nodePool, cluster, nil))
 	if err != nil {
 		logger.Error("error creating JSON response", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -794,72 +786,4 @@ func nodePoolStorageResourcesFromStorageResources(storageResources []types.Stora
 	}
 
 	return result, nil
-}
-
-func storageResourcesFromNodePoolStorageResources(storageResources []dockyardsv1.NodePoolStorageResource) []types.StorageResource {
-	result := make([]types.StorageResource, len(storageResources))
-
-	for i, item := range storageResources {
-		result[i] = types.StorageResource{
-			Name: item.Name,
-			Quantity: item.Quantity.String(),
-			Type: &item.Type,
-		}
-	}
-
-	return result
-}
-
-func nodePoolResponseFromNodePool(nodePool dockyardsv1.NodePool) types.NodePool {
-	result := types.NodePool{
-		ControlPlane: &nodePool.Spec.ControlPlane,
-		ControlPlaneComponentsOnly: &nodePool.Spec.DedicatedRole,
-		LoadBalancer: &nodePool.Spec.LoadBalancer,
-		Name: nodePool.ObjectMeta.Name,
-	}
-
-	if item, found := nodePool.Spec.Resources[corev1.ResourceCPU]; found {
-		// This should be fine in this particular situation, since the result
-		// of this function will be JSON serialized anyway.
-		result.CPUCount = int(item.AsApproximateFloat64())
-	}
-
-	if item, found := nodePool.Spec.Resources[corev1.ResourceStorage]; found {
-		result.DiskSize = item.String()
-	}
-
-	if item, found := nodePool.Spec.Resources[corev1.ResourceStorage]; found {
-		result.RAMSize = item.String()
-	}
-
-	if nodePool.Spec.Replicas != nil {
-		result.Quantity = int(*nodePool.Spec.Replicas)
-	}
-
-	if nodePool.Spec.StorageResources != nil {
-		result.StorageResources = ptr.To(storageResourcesFromNodePoolStorageResources(nodePool.Spec.StorageResources))
-	}
-
-	return result
-}
-
-func countControlPlanes(ctx context.Context, h *handler, clusterID k8stypes.UID) (int, error) {
-	matchingFields := client.MatchingFields{
-		index.OwnerReferencesField: string(clusterID),
-	}
-
-	var nodePoolList dockyardsv1.NodePoolList
-	err := h.List(ctx, &nodePoolList, matchingFields)
-	if err != nil {
-		return 0, err
-	}
-
-	count := 0
-	for _, item := range nodePoolList.Items {
-		if item.Spec.ControlPlane {
-			count++
-		}
-	}
-
-	return count, nil
 }

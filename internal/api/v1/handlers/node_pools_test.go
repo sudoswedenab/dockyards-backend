@@ -666,6 +666,9 @@ func TestPostClusterNodePools(t *testing.T) {
 				Quantity:                   3,
 				LoadBalancer:               ptr.To(true),
 				ControlPlaneComponentsOnly: ptr.To(true),
+				RAMSize:                    "1234M",
+				CPUCount:                   12,
+				DiskSize:                   "123Gi",
 			},
 		},
 		{
