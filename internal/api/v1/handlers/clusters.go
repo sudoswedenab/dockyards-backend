@@ -166,8 +166,14 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 
 	var organization dockyardsv1.Organization
 	err := h.Get(ctx, objectKey, &organization)
-	if err != nil {
+	if client.IgnoreNotFound(err) != nil {
 		logger.Error("error getting organization from kubernetes", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
@@ -187,9 +193,23 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isMember := h.isMember(subject, &organization)
-	if !isMember {
-		logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
+	resourceAttributes := authorizationv1.ResourceAttributes{
+		Verb:      "create",
+		Resource:  "clusters",
+		Group:     dockyardsv1.GroupVersion.Group,
+		Namespace: organization.Status.NamespaceRef.Name,
+	}
+
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+	if err != nil {
+		logger.Error("error reviewing subject", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if !allowed {
+		logger.Debug("subject is not allowed to create clusters", "subject", subject, "organization", organization.Name)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
