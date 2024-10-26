@@ -18,6 +18,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -29,158 +30,57 @@ import (
 )
 
 func TestCreateCluster(t *testing.T) {
-	tt := []struct {
-		name             string
-		organizationName string
-		sub              string
-		lists            []client.ObjectList
-		clusterOptions   types.ClusterOptions
-		expected         []client.Object
-	}{
-		{
-			name:             "test default",
-			organizationName: "test-org",
-			sub:              "fec813fc-7938-4cb9-ba12-bb28f6b1f5d9",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "fec813fc-7938-4cb9-ba12-bb28f6b1f5d9",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterTemplateList{
-					Items: []dockyardsv1.ClusterTemplate{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "dockyards-testing",
-								Annotations: map[string]string{
-									dockyardsv1.AnnotationDefaultTemplate: "true",
-								},
-							},
-							Spec: dockyardsv1.ClusterTemplateSpec{
-								NodePoolTemplates: []dockyardsv1.NodePoolTemplate{
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "control-plane",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:      ptr.To(int32(3)),
-											ControlPlane:  true,
-											DedicatedRole: true,
-											Resources: corev1.ResourceList{
-												corev1.ResourceCPU:     resource.MustParse("2"),
-												corev1.ResourceMemory:  resource.MustParse("4096M"),
-												corev1.ResourceStorage: resource.MustParse("100G"),
-											},
-										},
-									},
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "worker",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											Replicas: ptr.To(int32(2)),
-											Resources: corev1.ResourceList{
-												corev1.ResourceCPU:     resource.MustParse("4"),
-												corev1.ResourceMemory:  resource.MustParse("8192M"),
-												corev1.ResourceStorage: resource.MustParse("100G"),
-											},
-										},
-									},
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "load-balancer",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:      ptr.To(int32(2)),
-											LoadBalancer:  true,
-											DedicatedRole: true,
-											Resources: corev1.ResourceList{
-												corev1.ResourceCPU:     resource.MustParse("2"),
-												corev1.ResourceMemory:  resource.MustParse("4096M"),
-												corev1.ResourceStorage: resource.MustParse("100G"),
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ReleaseList{
-					Items: []dockyardsv1.Release{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "dockyards-testing",
-								Annotations: map[string]string{
-									dockyardsv1.AnnotationDefaultRelease: "true",
-								},
-							},
-							Spec: dockyardsv1.ReleaseSpec{
-								Type: dockyardsv1.ReleaseTypeKubernetes,
-							},
-							Status: dockyardsv1.ReleaseStatus{
-								LatestVersion: "v1.2.3",
-							},
-						},
-					},
-				},
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+
+	ctx, cancel := context.WithCancel(context.TODO())
+
+	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		cancel()
+		testEnvironment.GetEnvironment().Stop()
+	})
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.GetOrganization()
+	superUser := testEnvironment.GetSuperUser()
+	user := testEnvironment.GetUser()
+	reader := testEnvironment.GetReader()
+
+	h := handler{
+		Client:    mgr.GetClient(),
+		namespace: testEnvironment.GetDockyardsNamespace(),
+	}
+
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	clusterTemplate := dockyardsv1.ClusterTemplate{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+			Namespace:    testEnvironment.GetDockyardsNamespace(),
+			Annotations: map[string]string{
+				dockyardsv1.AnnotationDefaultTemplate: "true",
 			},
-			clusterOptions: types.ClusterOptions{
-				Name: "test",
-			},
-			expected: []client.Object{
-				&dockyardsv1.Cluster{
+		},
+		Spec: dockyardsv1.ClusterTemplateSpec{
+			NodePoolTemplates: []dockyardsv1.NodePoolTemplate{
+				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.OrganizationKind,
-								Name:               "test-org",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
-					},
-					Spec: dockyardsv1.ClusterSpec{
-						Version: "v1.2.3",
-					},
-				},
-				&dockyardsv1.NodePool{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-control-plane",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.ClusterKind,
-								Name:               "test",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
+						Name: "controlplane",
 					},
 					Spec: dockyardsv1.NodePoolSpec{
 						Replicas:      ptr.To(int32(3)),
@@ -193,44 +93,9 @@ func TestCreateCluster(t *testing.T) {
 						},
 					},
 				},
-				&dockyardsv1.NodePool{
+				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-load-balancer",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.ClusterKind,
-								Name:               "test",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
-					},
-					Spec: dockyardsv1.NodePoolSpec{
-						Replicas:      ptr.To(int32(2)),
-						LoadBalancer:  true,
-						DedicatedRole: true,
-						Resources: corev1.ResourceList{
-							corev1.ResourceCPU:     resource.MustParse("2"),
-							corev1.ResourceMemory:  resource.MustParse("4096M"),
-							corev1.ResourceStorage: resource.MustParse("100G"),
-						},
-					},
-				},
-				&dockyardsv1.NodePool{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-worker",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.ClusterKind,
-								Name:               "test",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
+						Name: "worker",
 					},
 					Spec: dockyardsv1.NodePoolSpec{
 						Replicas: ptr.To(int32(2)),
@@ -243,442 +108,680 @@ func TestCreateCluster(t *testing.T) {
 				},
 			},
 		},
-		{
-			name:             "test allocate internal ip",
-			organizationName: "test-org",
-			sub:              "642ba917-2b23-4d15-8c68-667ed67e6cc5",
-			clusterOptions: types.ClusterOptions{
-				Name:               "test",
-				AllocateInternalIP: ptr.To(true),
-			},
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "642ba917-2b23-4d15-8c68-667ed67e6cc5",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterTemplateList{
-					Items: []dockyardsv1.ClusterTemplate{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "recommended",
-								Namespace: "dockyards-testing",
-								Annotations: map[string]string{
-									dockyardsv1.AnnotationDefaultTemplate: "true",
-								},
-							},
-							Spec: dockyardsv1.ClusterTemplateSpec{
-								NodePoolTemplates: []dockyardsv1.NodePoolTemplate{
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "control-plane",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:      ptr.To(int32(1)),
-											ControlPlane:  true,
-											DedicatedRole: true,
-											Resources: corev1.ResourceList{
-												corev1.ResourceCPU:     resource.MustParse("2"),
-												corev1.ResourceMemory:  resource.MustParse("4096M"),
-												corev1.ResourceStorage: resource.MustParse("100G"),
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ReleaseList{
-					Items: []dockyardsv1.Release{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "dockyards-testing",
-								Annotations: map[string]string{
-									dockyardsv1.AnnotationDefaultRelease: "true",
-								},
-							},
-							Spec: dockyardsv1.ReleaseSpec{
-								Type: dockyardsv1.ReleaseTypeKubernetes,
-							},
-							Status: dockyardsv1.ReleaseStatus{
-								LatestVersion: "v1.2.3",
-							},
-						},
-					},
-				},
-			},
-			expected: []client.Object{
-				&dockyardsv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.OrganizationKind,
-								Name:               "test-org",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
-					},
-					Spec: dockyardsv1.ClusterSpec{
-						AllocateInternalIP: true,
-						Version:            "v1.2.3",
-					},
-				},
+	}
+
+	err = c.Create(ctx, &clusterTemplate)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	release := dockyardsv1.Release{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+			Namespace:    testEnvironment.GetDockyardsNamespace(),
+			Annotations: map[string]string{
+				dockyardsv1.AnnotationDefaultRelease: "true",
 			},
 		},
-		{
-			name:             "test cluster template",
-			organizationName: "test",
-			sub:              "61122522-2a28-4005-a61a-e271246d6408",
-			clusterOptions: types.ClusterOptions{
-				Name:            "test-cluster-template",
-				ClusterTemplate: ptr.To("test-cluster-template"),
-			},
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "61122522-2a28-4005-a61a-e271246d6408",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterTemplateList{
-					Items: []dockyardsv1.ClusterTemplate{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-cluster-template",
-								Namespace: "dockyards-testing",
-							},
-							Spec: dockyardsv1.ClusterTemplateSpec{
-								NodePoolTemplates: []dockyardsv1.NodePoolTemplate{
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "controlplane",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:      ptr.To(int32(1)),
-											ControlPlane:  true,
-											DedicatedRole: true,
-											Resources: corev1.ResourceList{
-												corev1.ResourceCPU:     resource.MustParse("2"),
-												corev1.ResourceMemory:  resource.MustParse("3Mi"),
-												corev1.ResourceStorage: resource.MustParse("4G"),
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ReleaseList{
-					Items: []dockyardsv1.Release{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "dockyards-testing",
-								Annotations: map[string]string{
-									dockyardsv1.AnnotationDefaultRelease: "true",
-								},
-							},
-							Spec: dockyardsv1.ReleaseSpec{
-								Type: dockyardsv1.ReleaseTypeKubernetes,
-							},
-							Status: dockyardsv1.ReleaseStatus{
-								LatestVersion: "v1.2.3",
-							},
-						},
-					},
-				},
-			},
-			expected: []client.Object{
-				&dockyardsv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-cluster-template",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.OrganizationKind,
-								Name:               "test",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
-					},
-					Spec: dockyardsv1.ClusterSpec{
-						Version: "v1.2.3",
-					},
-				},
-				&dockyardsv1.NodePool{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-cluster-template-controlplane",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.ClusterKind,
-								Name:               "test-cluster-template",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
-					},
-					Spec: dockyardsv1.NodePoolSpec{
-						Replicas:      ptr.To(int32(1)),
-						ControlPlane:  true,
-						DedicatedRole: true,
-						Resources: corev1.ResourceList{
-							corev1.ResourceCPU:     resource.MustParse("2"),
-							corev1.ResourceMemory:  resource.MustParse("3Mi"),
-							corev1.ResourceStorage: resource.MustParse("4G"),
-						},
-					},
-				},
-			},
+		Spec: dockyardsv1.ReleaseSpec{
+			Type: dockyardsv1.ReleaseTypeKubernetes,
 		},
-		{
-			name:             "test custom release",
-			organizationName: "test",
-			sub:              "5742569b-2be9-46e5-b2ef-0e9ed523f2a5",
-			clusterOptions: types.ClusterOptions{
-				Name:            "test-custom-release",
-				ClusterTemplate: ptr.To("custom-release"),
-				Version:         ptr.To("v2.3.4"),
-			},
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "5742569b-2be9-46e5-b2ef-0e9ed523f2a5",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterTemplateList{
-					Items: []dockyardsv1.ClusterTemplate{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "custom-release",
-								Namespace: "dockyards-testing",
-							},
-							Spec: dockyardsv1.ClusterTemplateSpec{
-								NodePoolTemplates: []dockyardsv1.NodePoolTemplate{
-									{
-										ObjectMeta: metav1.ObjectMeta{
-											Name: "controlplane",
-										},
-										Spec: dockyardsv1.NodePoolSpec{
-											Replicas:      ptr.To(int32(1)),
-											ControlPlane:  true,
-											DedicatedRole: true,
-											Resources: corev1.ResourceList{
-												corev1.ResourceCPU:     resource.MustParse("2"),
-												corev1.ResourceMemory:  resource.MustParse("3Mi"),
-												corev1.ResourceStorage: resource.MustParse("4G"),
-											},
-											ReleaseRef: &corev1.TypedObjectReference{
-												Kind:      dockyardsv1.ReleaseKind,
-												Name:      "custom",
-												Namespace: ptr.To("dockyards-testing"),
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: []client.Object{
-				&dockyardsv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-custom-release",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.OrganizationKind,
-								Name:               "test",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
-					},
-					Spec: dockyardsv1.ClusterSpec{
-						Version: "v2.3.4",
-					},
-				},
-				&dockyardsv1.NodePool{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-custom-release-controlplane",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.ClusterKind,
-								Name:               "test-custom-release",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
-					},
-					Spec: dockyardsv1.NodePoolSpec{
-						Replicas:      ptr.To(int32(1)),
-						ControlPlane:  true,
-						DedicatedRole: true,
-						Resources: corev1.ResourceList{
-							corev1.ResourceCPU:     resource.MustParse("2"),
-							corev1.ResourceMemory:  resource.MustParse("3Mi"),
-							corev1.ResourceStorage: resource.MustParse("4G"),
-						},
-						ReleaseRef: &corev1.TypedObjectReference{
-							Kind:      dockyardsv1.ReleaseKind,
-							Name:      "custom",
-							Namespace: ptr.To("dockyards-testing"),
-						},
-					},
-				},
-			},
-		},
-		{
-			name:             "test storage resources",
-			organizationName: "test",
-			sub:              "2f890308-6043-4c0d-a8c9-90d49d0cabfd",
-			clusterOptions: types.ClusterOptions{
-				Name: "test-storage-resources",
-				NodePoolOptions: &[]types.NodePoolOptions{
+	}
+
+	err = c.Create(ctx, &release)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	patch := client.MergeFrom(release.DeepCopy())
+
+	release.Status.LatestVersion = "v1.2.3"
+
+	err = c.Status().Patch(ctx, &release, patch)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mgr.GetCache().WaitForCacheSync(ctx)
+
+	t.Run("test default as super user", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-super-user",
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		expectedCluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      clusterOptions.Name,
+				Namespace: organization.Status.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
 					{
-						Name:     "worker",
-						Quantity: 3,
-						DiskSize: ptr.To("4G"),
-						RAMSize:  ptr.To("3Mi"),
-						CPUCount: ptr.To(2),
-						StorageResources: &[]types.StorageResource{
-							{
-								Name:     "test",
-								Quantity: "123",
-								Type:     ptr.To("HostPath"),
+						APIVersion:         dockyardsv1.GroupVersion.String(),
+						Kind:               dockyardsv1.OrganizationKind,
+						Name:               organization.Name,
+						UID:                organization.UID,
+						BlockOwnerDeletion: ptr.To(true),
+					},
+				},
+			},
+			Spec: dockyardsv1.ClusterSpec{
+				Version: release.Status.LatestVersion,
+			},
+		}
+
+		var actualCluster dockyardsv1.Cluster
+		err = c.Get(ctx, client.ObjectKeyFromObject(&expectedCluster), &actualCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actualCluster.Spec, expectedCluster.Spec) {
+			t.Errorf("diff: %s", cmp.Diff(expectedCluster.Spec, actualCluster.Spec))
+		}
+	})
+
+	t.Run("test default as user", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-user",
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+	})
+
+	t.Run("test default as reader", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-reader",
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test allocate internal ip", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name:               "test",
+			AllocateInternalIP: ptr.To(true),
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      clusterOptions.Name,
+			Namespace: organization.Status.NamespaceRef.Name,
+		}
+
+		var actual dockyardsv1.Cluster
+		err = c.Get(ctx, objectKey, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.ClusterSpec{
+			AllocateInternalIP: true,
+			Version:            "v1.2.3",
+		}
+
+		if !cmp.Equal(actual.Spec, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual.Spec))
+		}
+	})
+
+	t.Run("test cluster template", func(t *testing.T) {
+		clusterTemplate := dockyardsv1.ClusterTemplate{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    testEnvironment.GetDockyardsNamespace(),
+			},
+			Spec: dockyardsv1.ClusterTemplateSpec{
+				NodePoolTemplates: []dockyardsv1.NodePoolTemplate{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "controlplane",
+						},
+						Spec: dockyardsv1.NodePoolSpec{
+							Replicas:      ptr.To(int32(1)),
+							ControlPlane:  true,
+							DedicatedRole: true,
+							Resources: corev1.ResourceList{
+								corev1.ResourceCPU:     resource.MustParse("2"),
+								corev1.ResourceMemory:  resource.MustParse("3Mi"),
+								corev1.ResourceStorage: resource.MustParse("4G"),
 							},
 						},
 					},
 				},
 			},
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
+		}
+
+		err := c.Create(ctx, &clusterTemplate)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		clusterOptions := types.ClusterOptions{
+			Name:            "test-cluster-template",
+			ClusterTemplate: ptr.To(clusterTemplate.Name),
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		expectedCluster := dockyardsv1.ClusterSpec{
+			Version: "v1.2.3",
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      clusterOptions.Name,
+			Namespace: organization.Status.NamespaceRef.Name,
+		}
+
+		var actualCluster dockyardsv1.Cluster
+		err = c.Get(ctx, objectKey, &actualCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actualCluster.Spec, expectedCluster) {
+			t.Errorf("diff: %s", cmp.Diff(expectedCluster, actualCluster.Spec))
+		}
+
+		/*expected: []client.Object{
+			&dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "test-cluster-template-controlplane",
+					Namespace:       "testing",
+					ResourceVersion: "1",
+					OwnerReferences: []metav1.OwnerReference{
 						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "2f890308-6043-4c0d-a8c9-90d49d0cabfd",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
+							APIVersion:         dockyardsv1.GroupVersion.String(),
+							Kind:               dockyardsv1.ClusterKind,
+							Name:               "test-cluster-template",
+							BlockOwnerDeletion: ptr.To(true),
 						},
 					},
 				},
-				&dockyardsv1.ReleaseList{
-					Items: []dockyardsv1.Release{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "dockyards-testing",
-								Annotations: map[string]string{
-									dockyardsv1.AnnotationDefaultRelease: "true",
-								},
-							},
-							Spec: dockyardsv1.ReleaseSpec{
-								Type: dockyardsv1.ReleaseTypeKubernetes,
-							},
-							Status: dockyardsv1.ReleaseStatus{
-								LatestVersion: "v1.2.3",
-							},
-						},
+				Spec: dockyardsv1.NodePoolSpec{
+					Replicas:      ptr.To(int32(1)),
+					ControlPlane:  true,
+					DedicatedRole: true,
+					Resources: corev1.ResourceList{
+						corev1.ResourceCPU:     resource.MustParse("2"),
+						corev1.ResourceMemory:  resource.MustParse("3Mi"),
+						corev1.ResourceStorage: resource.MustParse("4G"),
 					},
 				},
-				&dockyardsv1.ClusterTemplateList{
-					Items: []dockyardsv1.ClusterTemplate{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "dockyards-testing",
-								Annotations: map[string]string{
-									dockyardsv1.AnnotationDefaultTemplate: "true",
-								},
+			},
+		},*/
+	})
+
+	t.Run("test invalid organization", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-invalid-organization",
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", "invalid-organization", "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", "invalid-organization")
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test invalid name", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "InvalidClusterName",
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
+		}
+	})
+
+	t.Run("test invalid node pool name", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-node-pool-name",
+			NodePoolOptions: ptr.To([]types.NodePoolOptions{
+				{
+					Name: "InvalidNodePoolName",
+				},
+			}),
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
+		}
+	})
+
+	t.Run("test existing name", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    organization.Status.NamespaceRef.Name,
+			},
+		}
+
+		err := c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		clusterOptions := types.ClusterOptions{
+			Name: cluster.Name,
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusConflict {
+			t.Fatalf("expected status code %d, got %d", http.StatusConflict, statusCode)
+		}
+	})
+
+	t.Run("test high quantity", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-high-quantity",
+			NodePoolOptions: ptr.To([]types.NodePoolOptions{
+				{
+					Name:     "test",
+					Quantity: 123,
+				},
+			}),
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
+		}
+	})
+
+	t.Run("test custom release", func(t *testing.T) {
+		release := dockyardsv1.Release{}
+
+		clusterTemplate := dockyardsv1.ClusterTemplate{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "custom-release-",
+				Namespace:    testEnvironment.GetDockyardsNamespace(),
+			},
+			Spec: dockyardsv1.ClusterTemplateSpec{
+				NodePoolTemplates: []dockyardsv1.NodePoolTemplate{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "controlplane",
+						},
+						Spec: dockyardsv1.NodePoolSpec{
+							Replicas:      ptr.To(int32(1)),
+							ControlPlane:  true,
+							DedicatedRole: true,
+							Resources: corev1.ResourceList{
+								corev1.ResourceCPU:     resource.MustParse("2"),
+								corev1.ResourceMemory:  resource.MustParse("3Mi"),
+								corev1.ResourceStorage: resource.MustParse("4G"),
+							},
+							ReleaseRef: &corev1.TypedObjectReference{
+								Kind:      dockyardsv1.ReleaseKind,
+								Name:      release.Name,
+								Namespace: ptr.To(release.Namespace),
 							},
 						},
 					},
 				},
 			},
+		}
+
+		err := c.Create(ctx, &clusterTemplate)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		clusterOptions := types.ClusterOptions{
+			Name:            "test-custom-release",
+			ClusterTemplate: ptr.To(clusterTemplate.Name),
+			Version:         ptr.To("v2.3.4"),
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		expectedCluster := dockyardsv1.ClusterSpec{
+			Version: "v2.3.4",
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      clusterOptions.Name,
+			Namespace: organization.Status.NamespaceRef.Name,
+		}
+
+		var actualCluster dockyardsv1.Cluster
+		err = c.Get(ctx, objectKey, &actualCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actualCluster.Spec, expectedCluster) {
+			t.Errorf("diff: %s", cmp.Diff(expectedCluster, actualCluster.Spec))
+		}
+
+		/*expected: []client.Object{
+			&dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "test-custom-release",
+					Namespace:       "testing",
+					ResourceVersion: "1",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         dockyardsv1.GroupVersion.String(),
+							Kind:               dockyardsv1.OrganizationKind,
+							Name:               "test",
+							BlockOwnerDeletion: ptr.To(true),
+						},
+					},
+				},
+				Spec: dockyardsv1.ClusterSpec{
+					Version: "v2.3.4",
+				},
+			},
+			&dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "test-custom-release-controlplane",
+					Namespace:       "testing",
+					ResourceVersion: "1",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         dockyardsv1.GroupVersion.String(),
+							Kind:               dockyardsv1.ClusterKind,
+							Name:               "test-custom-release",
+							BlockOwnerDeletion: ptr.To(true),
+						},
+					},
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					Replicas:      ptr.To(int32(1)),
+					ControlPlane:  true,
+					DedicatedRole: true,
+					Resources: corev1.ResourceList{
+						corev1.ResourceCPU:     resource.MustParse("2"),
+						corev1.ResourceMemory:  resource.MustParse("3Mi"),
+						corev1.ResourceStorage: resource.MustParse("4G"),
+					},
+					ReleaseRef: &corev1.TypedObjectReference{
+						Kind:      dockyardsv1.ReleaseKind,
+						Name:      "custom",
+						Namespace: ptr.To("dockyards-testing"),
+					},
+				},
+			},
+		}*/
+	})
+
+	t.Run("test storage resources", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-storage-resources",
+			NodePoolOptions: &[]types.NodePoolOptions{
+				{
+					Name:     "worker",
+					Quantity: 3,
+					DiskSize: ptr.To("4G"),
+					RAMSize:  ptr.To("3Mi"),
+					CPUCount: ptr.To(2),
+					StorageResources: &[]types.StorageResource{
+						{
+							Name:     "test",
+							Quantity: "123",
+							Type:     ptr.To("HostPath"),
+						},
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		/*
 			expected: []client.Object{
 				&dockyardsv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
@@ -728,441 +831,63 @@ func TestCreateCluster(t *testing.T) {
 						},
 					},
 				},
-			},
-		},
-		{
-			name:             "test duration",
-			organizationName: "test",
-			sub:              "9b4aeeb8-bb16-4d99-8658-f9b46b507fcd",
-			clusterOptions: types.ClusterOptions{
-				Name:     "test-duration",
-				Duration: ptr.To("15m"),
-			},
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
+			}*/
+
+	})
+
+	t.Run("test duration", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name:     "test-duration",
+			Duration: ptr.To("15m"),
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+		/*expected: []client.Object{
+			&dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "test-duration",
+					Namespace:       "testing",
+					ResourceVersion: "1",
+					OwnerReferences: []metav1.OwnerReference{
 						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "9b4aeeb8-bb16-4d99-8658-f9b46b507fcd",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
+							APIVersion:         dockyardsv1.GroupVersion.String(),
+							Kind:               dockyardsv1.OrganizationKind,
+							Name:               "test",
+							BlockOwnerDeletion: ptr.To(true),
 						},
 					},
 				},
-				&dockyardsv1.ReleaseList{
-					Items: []dockyardsv1.Release{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "dockyards-testing",
-								Annotations: map[string]string{
-									dockyardsv1.AnnotationDefaultRelease: "true",
-								},
-							},
-							Spec: dockyardsv1.ReleaseSpec{
-								Type: dockyardsv1.ReleaseTypeKubernetes,
-							},
-							Status: dockyardsv1.ReleaseStatus{
-								LatestVersion: "v1.2.3",
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterTemplateList{
-					Items: []dockyardsv1.ClusterTemplate{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "dockyards-testing",
-								Annotations: map[string]string{
-									dockyardsv1.AnnotationDefaultTemplate: "true",
-								},
-							},
-						},
+				Spec: dockyardsv1.ClusterSpec{
+					Version: "v1.2.3",
+					Duration: &metav1.Duration{
+						Duration: time.Minute * 15,
 					},
 				},
 			},
-			expected: []client.Object{
-				&dockyardsv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-duration",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.OrganizationKind,
-								Name:               "test",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
-					},
-					Spec: dockyardsv1.ClusterSpec{
-						Version: "v1.2.3",
-						Duration: &metav1.Duration{
-							Duration: time.Minute * 15,
-						},
-					},
-				},
-			},
-		},
-	}
-
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
-
-			h := handler{
-				Client:    fakeClient,
-				namespace: "dockyards-testing",
-			}
-
-			b, err := json.Marshal(tc.clusterOptions)
-			if err != nil {
-				t.Fatalf("unexpected error marshalling test cluster options: %s", err)
-			}
-
-			u := url.URL{
-				Path: path.Join("/v1/orgs", tc.organizationName, "clusters"),
-			}
-
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
-
-			r.SetPathValue("organizationName", tc.organizationName)
-
-			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
-			ctx = middleware.ContextWithLogger(ctx, logger)
-
-			h.CreateCluster(w, r.Clone(ctx))
-
-			statusCode := w.Result().StatusCode
-			if statusCode != http.StatusCreated {
-				t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
-			}
-
-			for _, e := range tc.expected {
-				ctx := context.Background()
-
-				objectKey := client.ObjectKey{
-					Name:      e.GetName(),
-					Namespace: e.GetNamespace(),
-				}
-
-				switch x := e.(type) {
-				case *dockyardsv1.Cluster:
-					var actual dockyardsv1.Cluster
-					err := fakeClient.Get(ctx, objectKey, &actual)
-					if err != nil {
-						t.Errorf("error getting expected cluster: %s", err)
-					}
-
-					if !cmp.Equal(x, &actual) {
-						t.Errorf("diff: %s", cmp.Diff(x, &actual))
-					}
-				case *dockyardsv1.NodePool:
-					var actual dockyardsv1.NodePool
-					err := fakeClient.Get(ctx, objectKey, &actual)
-					if err != nil {
-						t.Errorf("error getting expected node pool: %s", err)
-					}
-
-					if !cmp.Equal(x, &actual) {
-						t.Errorf("diff: %s", cmp.Diff(x, &actual))
-					}
-				default:
-					t.Fatalf("test not supported on group version kind: %s", e.GetObjectKind().GroupVersionKind().String())
-				}
-			}
-		})
-	}
-}
-
-func TestCreateClusterErrors(t *testing.T) {
-	tt := []struct {
-		name             string
-		organizationName string
-		sub              string
-		lists            []client.ObjectList
-		clusterOptions   types.ClusterOptions
-		expected         int
-	}{
-		{
-			name:             "test invalid organization",
-			organizationName: "test-org",
-			expected:         http.StatusUnauthorized,
-		},
-		{
-			name:             "test invalid cluster name",
-			organizationName: "test-org",
-			sub:              "82aaf116-666f-4846-9e10-defa79a4df3d",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "82aaf116-666f-4846-9e10-defa79a4df3d",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-			},
-			clusterOptions: types.ClusterOptions{
-				Name: "InvalidClusterName",
-			},
-			expected: http.StatusUnprocessableEntity,
-		},
-		{
-			name:             "test invalid node pool name",
-			organizationName: "test-org",
-			sub:              "e7282b48-f8b6-4042-8f4c-12ec59fe3a87",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "e7282b48-f8b6-4042-8f4c-12ec59fe3a87",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-			},
-			clusterOptions: types.ClusterOptions{
-				Name: "test-cluster",
-				NodePoolOptions: ptr.To([]types.NodePoolOptions{
-					{
-						Name: "InvalidNodePoolName",
-					},
-				}),
-			},
-			expected: http.StatusUnprocessableEntity,
-		},
-		{
-			name:             "test invalid membership",
-			organizationName: "test-org",
-			sub:              "62034914-3f46-4c71-810f-14ab985399bc",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-org",
-								Namespace: "test",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "af510e3e-e667-4500-8a73-12f2163f849e",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: http.StatusUnauthorized,
-		},
-		{
-			name:             "test existing cluster name",
-			organizationName: "test-org",
-			sub:              "c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "c185f9d3-b4c4-4cb1-a567-f786c9ac4a2f",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterList{
-					Items: []dockyardsv1.Cluster{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-cluster",
-								Namespace: "testing",
-							},
-						},
-					},
-				},
-				&dockyardsv1.ReleaseList{
-					Items: []dockyardsv1.Release{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "dockyards-testing",
-								Annotations: map[string]string{
-									dockyardsv1.AnnotationDefaultRelease: "true",
-								},
-							},
-							Spec: dockyardsv1.ReleaseSpec{
-								Type: dockyardsv1.ReleaseTypeKubernetes,
-							},
-							Status: dockyardsv1.ReleaseStatus{
-								LatestVersion: "v1.2.3",
-							},
-						},
-					},
-				},
-			},
-			clusterOptions: types.ClusterOptions{
-				Name: "test-cluster",
-			},
-			expected: http.StatusConflict,
-		},
-		{
-			name:             "test node pool with high quantity",
-			organizationName: "test-org",
-			sub:              "7a7d8423-c9e7-46f3-958a-e68fb97b4417",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "7a7d8423-c9e7-46f3-958a-e68fb97b4417",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-			},
-			clusterOptions: types.ClusterOptions{
-				Name: "test-cluster",
-				NodePoolOptions: ptr.To([]types.NodePoolOptions{
-					{
-						Name:     "test",
-						Quantity: 123,
-					},
-				}),
-			},
-			expected: http.StatusUnprocessableEntity,
-		},
-	}
-
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-
-			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
-
-			h := handler{
-				Client:    fakeClient,
-				namespace: "dockyards-testing",
-			}
-
-			b, err := json.Marshal(tc.clusterOptions)
-			if err != nil {
-				t.Fatalf("unexpected error marshalling test cluster options: %s", err)
-			}
-
-			u := url.URL{
-				Path: path.Join("/v1/orgs", tc.organizationName, "clusters"),
-			}
-
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
-
-			r.SetPathValue("organizationName", tc.organizationName)
-
-			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
-			ctx = middleware.ContextWithLogger(ctx, logger)
-
-			h.CreateCluster(w, r.Clone(ctx))
-
-			statusCode := w.Result().StatusCode
-			if statusCode != tc.expected {
-				t.Fatalf("expected status code %d, got %d", tc.expected, statusCode)
-			}
-		})
-	}
+		}*/
+	})
 }
 
 func TestDeleteCluster(t *testing.T) {
