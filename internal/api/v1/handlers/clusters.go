@@ -715,11 +715,6 @@ func (h *handler) DeleteCluster(w http.ResponseWriter, r *http.Request) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
-	if err != nil {
-		logger.Error("error getting owner organization", "err", err)
-	}
-
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
 		logger.Debug("error fetching user from context", "err", err)
@@ -728,9 +723,23 @@ func (h *handler) DeleteCluster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isMember := h.isMember(subject, organization)
-	if !isMember {
-		logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
+	resourceAttributes := authorizationv1.ResourceAttributes{
+		Verb:      "delete",
+		Resource:  "clusters",
+		Group:     dockyardsv1.GroupVersion.Group,
+		Namespace: cluster.Namespace,
+	}
+
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+	if err != nil {
+		logger.Error("error reviewing subject", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if !allowed {
+		logger.Debug("subject is not allowed to delete clusters", "subject", subject, "namespace", cluster.Namespace)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
