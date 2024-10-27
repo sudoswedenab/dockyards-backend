@@ -65,7 +65,7 @@ func TestValidateJSON(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(b))
 
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 			ctx := middleware.ContextWithLogger(r.Context(), logger)
 
