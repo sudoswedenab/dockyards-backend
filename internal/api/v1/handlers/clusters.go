@@ -708,7 +708,7 @@ func (h *handler) DeleteCluster(w http.ResponseWriter, r *http.Request) {
 
 	if len(clusterList.Items) != 1 {
 		logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
