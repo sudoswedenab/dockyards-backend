@@ -818,7 +818,6 @@ func (h *handler) GetCluster(w http.ResponseWriter, r *http.Request) {
 
 	clusterID := r.PathValue("clusterID")
 	if clusterID == "" {
-		logger.Error("empty cluster id")
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
@@ -854,6 +853,13 @@ func (h *handler) GetCluster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if organization == nil {
+		logger.Error("cluster has no organization owner", "name", cluster.Name, "namespace", cluster.Namespace)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
 	if apierrors.IsNotFound(err) {
 		w.WriteHeader(http.StatusUnauthorized)
 
@@ -868,9 +874,23 @@ func (h *handler) GetCluster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isMember := h.isMember(subject, organization)
-	if !isMember {
-		logger.Debug("subject is not a member of organization", "subject", subject, "organization", organization.Name)
+	resourceAttributes := authorizationv1.ResourceAttributes{
+		Verb:      "get",
+		Resource:  "clusters",
+		Group:     dockyardsv1.GroupVersion.Group,
+		Namespace: cluster.Namespace,
+	}
+
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+	if err != nil {
+		logger.Error("error reviewing subject", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if !allowed {
+		logger.Debug("subject is not allowed to get clusters", "subject", subject, "organization", organization.Name)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
