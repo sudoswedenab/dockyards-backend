@@ -891,202 +891,293 @@ func TestCreateCluster(t *testing.T) {
 }
 
 func TestDeleteCluster(t *testing.T) {
-	tt := []struct {
-		name      string
-		clusterID string
-		sub       string
-		lists     []client.ObjectList
-	}{
-		{
-			name:      "test simple",
-			clusterID: "43257a3d-426d-458b-af8e-4aefad29d442",
-			sub:       "7994b631-399a-41e6-9c6c-200391f8f87d",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test-org",
-								UID:  "10659cb0-fce0-4155-b8c6-4b6b825b6da9",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "7994b631-399a-41e6-9c6c-200391f8f87d",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterList{
-					Items: []dockyardsv1.Cluster{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "testing",
-								UID:       "43257a3d-426d-458b-af8e-4aefad29d442",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.OrganizationKind,
-										Name:       "test-org",
-										UID:        "10659cb0-fce0-4155-b8c6-4b6b825b6da9",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
 	}
 
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
-			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).WithIndex(&dockyardsv1.Cluster{}, index.UIDField, index.ByUID).Build()
+	ctx, cancel := context.WithCancel(context.TODO())
 
-			h := handler{
-				Client: fakeClient,
-			}
-
-			u := url.URL{
-				Path: path.Join("/v1/clusters", tc.clusterID),
-			}
-
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
-
-			r.SetPathValue("clusterID", tc.clusterID)
-
-			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
-			ctx = middleware.ContextWithLogger(ctx, logger)
-
-			h.DeleteCluster(w, r.Clone(ctx))
-
-			statusCode := w.Result().StatusCode
-			if statusCode != http.StatusAccepted {
-				t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
-			}
-		})
+	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
+	if err != nil {
+		t.Fatal(err)
 	}
 
-}
+	t.Cleanup(func() {
+		cancel()
+		testEnvironment.GetEnvironment().Stop()
+	})
 
-func TestDeleteClusterErrors(t *testing.T) {
-	tt := []struct {
-		name      string
-		clusterID string
-		sub       string
-		lists     []client.ObjectList
-		expected  int
-	}{
-		{
-			name:     "test empty",
-			expected: http.StatusBadRequest,
-		},
-		{
-			name:      "test invalid cluster",
-			clusterID: "cluster-123",
-			sub:       "f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-org",
-								Namespace: "test",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "f5cf8f91-2b38-4bf4-bb52-d4d4f79f42c3",
-									},
-								},
-							},
-						},
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Cluster{}, index.UIDField, index.ByUID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	organization := testEnvironment.GetOrganization()
+	superUser := testEnvironment.GetSuperUser()
+	user := testEnvironment.GetUser()
+	reader := testEnvironment.GetReader()
+
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	h := handler{
+		Client: mgr.GetClient(),
+	}
+
+	t.Run("test as super user", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-super-user-",
+				Namespace:    organization.Status.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
 					},
 				},
 			},
-			expected: http.StatusUnauthorized,
-		},
-		{
-			name:      "test invalid organization membership",
-			clusterID: "cluster-123",
-			sub:       "8ce52ca1-1931-49a1-8ddf-62bf3870a4bf",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-org",
-								Namespace: "test",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "0b8f6617-eba7-4360-b73a-11dac2286a40",
-									},
-								},
-							},
-						},
+		}
+
+		err = c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(time.Second)
+
+		u := url.URL{
+			Path: path.Join("/v1/clusters", string(cluster.UID)),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.SetPathValue("clusterID", string(cluster.UID))
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.DeleteCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-user-",
+				Namespace:    organization.Status.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
 					},
 				},
 			},
-			expected: http.StatusUnauthorized,
-		},
-	}
+		}
 
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+		err = c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
+		time.Sleep(time.Second)
 
-			h := handler{
-				Client: fakeClient,
-			}
+		u := url.URL{
+			Path: path.Join("/v1/clusters", string(cluster.UID)),
+		}
 
-			u := url.URL{
-				Path: path.Join("/v1/clusters", tc.clusterID),
-			}
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+		r.SetPathValue("clusterID", string(cluster.UID))
 
-			r.SetPathValue("clusterID", tc.clusterID)
+		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
 
-			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
-			ctx = middleware.ContextWithLogger(ctx, logger)
+		h.DeleteCluster(w, r.Clone(ctx))
 
-			h.DeleteCluster(w, r.Clone(ctx))
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+	})
 
-			statusCode := w.Result().StatusCode
-			if statusCode != tc.expected {
-				t.Fatalf("expected status code %d, got %d", tc.expected, statusCode)
-			}
-		})
-	}
+	t.Run("test as reader", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-reader-",
+				Namespace:    organization.Status.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
+					},
+				},
+			},
+		}
+
+		err = c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(time.Second)
+
+		u := url.URL{
+			Path: path.Join("/v1/clusters", string(cluster.UID)),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.SetPathValue("clusterID", string(cluster.UID))
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.DeleteCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test empty cluster id", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/clusters", ""),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.SetPathValue("clusterID", "")
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.DeleteCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusBadRequest {
+			t.Fatalf("expected status code %d, got %d", http.StatusBadRequest, statusCode)
+		}
+	})
+
+	t.Run("test non-existing cluster", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/clusters", "bda478c3-1556-42fc-bf4b-182b4257ee89"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.SetPathValue("clusterID", "bda478c3-1556-42fc-bf4b-182b4257ee89")
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.DeleteCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test without membership", func(t *testing.T) {
+		otherOrganization := dockyardsv1.Organization{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+			Spec: dockyardsv1.OrganizationSpec{
+				MemberRefs: []dockyardsv1.OrganizationMemberReference{
+					{
+						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+						UID:  user.UID,
+					},
+					{
+						Role: dockyardsv1.OrganizationMemberRoleUser,
+						UID:  reader.UID,
+					},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &otherOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+		}
+
+		err = c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherCluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    namespace.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       otherOrganization.Name,
+						UID:        otherOrganization.UID,
+					},
+				},
+			},
+		}
+
+		err = c.Create(ctx, &otherCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/clusters", "bda478c3-1556-42fc-bf4b-182b4257ee89"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.SetPathValue("clusterID", "bda478c3-1556-42fc-bf4b-182b4257ee89")
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.DeleteCluster(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
 }
 
 func TestGetCluster(t *testing.T) {
