@@ -503,7 +503,7 @@ func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !cluster.Status.APIEndpoint.IsValid() {
-		logger.Info("cluster does not have a valid api endpoint", "uid", cluster.UID)
+		logger.Error("cluster does not have a valid api endpoint", "uid", cluster.UID)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -525,7 +525,7 @@ func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {
 
 	caCertificatePEM, has := secret.Data[corev1.TLSCertKey]
 	if !has {
-		logger.Info("cluster certificate authority has no tls certificate")
+		logger.Error("cluster certificate authority has no tls certificate")
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -533,7 +533,7 @@ func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {
 
 	signingKeyPEM, has := secret.Data[corev1.TLSPrivateKeyKey]
 	if !has {
-		logger.Info("cluster certificate authority has to tls private key")
+		logger.Error("cluster certificate authority has to tls private key")
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -541,7 +541,7 @@ func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {
 
 	block, _ := pem.Decode(caCertificatePEM)
 	if block == nil {
-		logger.Info("unable to decode ca certificate as pem")
+		logger.Error("unable to decode ca certificate as pem")
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -579,7 +579,7 @@ func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(userList.Items) != 1 {
-		logger.Info("unexpected users count", "count", len(userList.Items))
+		logger.Error("unexpected users count", "count", len(userList.Items))
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
