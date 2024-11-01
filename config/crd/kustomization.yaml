@@ -18,3 +18,4 @@ resources:
 - dockyards.io_credentialtemplates.yaml
 - dockyards.io_deploymenttemplates.yaml
 - dockyards.io_organizationvouchers.yaml
+- dockyards.io_workloadtemplates.yaml

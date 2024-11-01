@@ -8,6 +8,7 @@ const (
 	LabelDeploymentName         = "dockyards.io/deployment-name"
 	LabelReleaseName            = "dockyards.io/release-name"
 	LabelCredentialTemplateName = "dockyards.io/credential-template-name"
+	LabelWorkloadTemplateName   = "dockyards.io/workload-template-name"
 )
 
 const (

@@ -95,3 +95,16 @@ func ByCode(obj client.Object) []string {
 
 	return []string{organizationVoucher.Spec.Code}
 }
+
+func ByWorkloadTemplateReference(obj client.Object) []string {
+	workload, ok := obj.(*v1alpha3.Workload)
+	if !ok {
+		return nil
+	}
+
+	if workload.Spec.WorkloadTemplateRef == nil {
+		return nil
+	}
+
+	return []string{TypedObjectRef(workload.Spec.WorkloadTemplateRef)}
+}
