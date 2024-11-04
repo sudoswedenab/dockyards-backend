@@ -293,6 +293,8 @@ spec:
                   - type
                   type: object
                 type: array
+              providerID:
+                type: string
             type: object
         type: object
     served: true

@@ -14,6 +14,7 @@ type VerificationRequestSpec struct {
 }
 
 type VerificationRequestStatus struct {
+	ProviderID string             `json:"providerID,omitempty"`
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
