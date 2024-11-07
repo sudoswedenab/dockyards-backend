@@ -22,7 +22,8 @@ const (
 )
 
 const (
-	AnnotationDefaultTemplate = "dockyards.io/is-default-template"
-	AnnotationVoucherCode     = "dockyards.io/voucher-code"
-	AnnotationDefaultRelease  = "dockyards.io/is-default-release"
+	AnnotationDefaultTemplate   = "dockyards.io/is-default-template"
+	AnnotationVoucherCode       = "dockyards.io/voucher-code"
+	AnnotationDefaultRelease    = "dockyards.io/is-default-release"
+	AnnotationIgnoreDeployments = "dockyards.io/ignore-deployments"
 )
