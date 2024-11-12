@@ -11,10 +11,14 @@ const (
 )
 
 type WorkloadSpec struct {
-	ClusterComponent      bool                         `json:"clusterComponent,omitempty"`
-	TargetNamespace       string                       `json:"targetNamespace"`
-	WorkloadTemplateInput *apiextensionsv1.JSON        `json:"workloadTemplateInput,omitempty"`
-	WorkloadTemplateRef   *corev1.TypedObjectReference `json:"workloadTemplateRef,omitempty"`
+	ClusterComponent bool   `json:"clusterComponent,omitempty"`
+	TargetNamespace  string `json:"targetNamespace"`
+
+	// Deprecated: Use input instead.
+	WorkloadTemplateInput *apiextensionsv1.JSON `json:"workloadTemplateInput,omitempty"`
+
+	Input               *apiextensionsv1.JSON        `json:"input,omitempty"`
+	WorkloadTemplateRef *corev1.TypedObjectReference `json:"workloadTemplateRef,omitempty"`
 
 	// +kubebuilder:validation:Enum=Dockyards;User
 	Provenience string `json:"provenience"`

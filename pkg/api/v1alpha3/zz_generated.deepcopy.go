@@ -1738,6 +1738,11 @@ func (in *WorkloadSpec) DeepCopyInto(out *WorkloadSpec) {
 		*out = new(apiextensionsv1.JSON)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Input != nil {
+		in, out := &in.Input, &out.Input
+		*out = new(apiextensionsv1.JSON)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.WorkloadTemplateRef != nil {
 		in, out := &in.WorkloadTemplateRef, &out.WorkloadTemplateRef
 		*out = new(v1.TypedObjectReference)

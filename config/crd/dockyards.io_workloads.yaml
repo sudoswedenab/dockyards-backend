@@ -43,6 +43,8 @@ spec:
             properties:
               clusterComponent:
                 type: boolean
+              input:
+                x-kubernetes-preserve-unknown-fields: true
               provenience:
                 enum:
                 - Dockyards
@@ -51,6 +53,7 @@ spec:
               targetNamespace:
                 type: string
               workloadTemplateInput:
+                description: 'Deprecated: Use input instead.'
                 x-kubernetes-preserve-unknown-fields: true
               workloadTemplateRef:
                 properties:
