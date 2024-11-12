@@ -51,7 +51,13 @@ spec:
             required:
             - type
             type: object
+          status:
+            properties:
+              inputSchema:
+                x-kubernetes-preserve-unknown-fields: true
+            type: object
         type: object
     served: true
     storage: true
-    subresources: {}
+    subresources:
+      status: {}
