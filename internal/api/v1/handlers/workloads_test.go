@@ -81,7 +81,8 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	t.Run("test as super user", func(t *testing.T) {
 		request := types.Workload{
 			Name:                 ptr.To("test-super-user"),
-			WorkloadTemplateName: ptr.To("testing"),
+			WorkloadTemplateName: ptr.To("test"),
+			Namespace:            ptr.To("testing"),
 		}
 
 		b, err := json.Marshal(request)
@@ -146,10 +147,11 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				UID:               actual.UID,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
-				Provenience: dockyardsv1.ProvenienceUser,
+				Provenience:     dockyardsv1.ProvenienceUser,
+				TargetNamespace: "testing",
 				WorkloadTemplateRef: &corev1.TypedObjectReference{
 					Kind:      dockyardsv1.WorkloadTemplateKind,
-					Name:      "testing",
+					Name:      "test",
 					Namespace: &dockyardsNamespace,
 				},
 			},
@@ -163,7 +165,8 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	t.Run("test as user", func(t *testing.T) {
 		request := types.Workload{
 			Name:                 ptr.To("test-user"),
-			WorkloadTemplateName: ptr.To("testing"),
+			WorkloadTemplateName: ptr.To("test"),
+			Namespace:            ptr.To("testing"),
 		}
 
 		b, err := json.Marshal(request)
@@ -228,10 +231,11 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				UID:               actual.UID,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
-				Provenience: dockyardsv1.ProvenienceUser,
+				Provenience:     dockyardsv1.ProvenienceUser,
+				TargetNamespace: "testing",
 				WorkloadTemplateRef: &corev1.TypedObjectReference{
 					Kind:      dockyardsv1.WorkloadTemplateKind,
-					Name:      "testing",
+					Name:      "test",
 					Namespace: &dockyardsNamespace,
 				},
 			},
@@ -245,7 +249,8 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	t.Run("test as reader", func(t *testing.T) {
 		request := types.Workload{
 			Name:                 ptr.To("test-user"),
-			WorkloadTemplateName: ptr.To("testing"),
+			WorkloadTemplateName: ptr.To("test"),
+			Namespace:            ptr.To("testing"),
 		}
 
 		b, err := json.Marshal(request)
@@ -276,7 +281,8 @@ func TestClusterWorkloads_Create(t *testing.T) {
 
 	t.Run("test no workload template name", func(t *testing.T) {
 		request := types.Workload{
-			Name: ptr.To("test-super-user"),
+			Name:      ptr.To("test-super-user"),
+			Namespace: ptr.To("testing"),
 		}
 
 		b, err := json.Marshal(request)
@@ -316,7 +322,8 @@ func TestClusterWorkloads_Create(t *testing.T) {
 
 		request := types.Workload{
 			Name:                 ptr.To("test-input"),
-			WorkloadTemplateName: ptr.To("testing"),
+			WorkloadTemplateName: ptr.To("test"),
+			Namespace:            ptr.To("testing"),
 			Input:                &input,
 		}
 
@@ -385,10 +392,11 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				UID:               actual.UID,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
-				Provenience: dockyardsv1.ProvenienceUser,
+				Provenience:     dockyardsv1.ProvenienceUser,
+				TargetNamespace: "testing",
 				WorkloadTemplateRef: &corev1.TypedObjectReference{
 					Kind:      dockyardsv1.WorkloadTemplateKind,
-					Name:      "testing",
+					Name:      "test",
 					Namespace: &dockyardsNamespace,
 				},
 				Input: &apiextensionsv1.JSON{

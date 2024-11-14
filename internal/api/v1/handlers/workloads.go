@@ -129,7 +129,7 @@ func (h *handler) CreateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if request.WorkloadTemplateName == nil {
+	if request.WorkloadTemplateName == nil || request.Namespace == nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		return
@@ -152,7 +152,8 @@ func (h *handler) CreateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 			},
 		},
 		Spec: dockyardsv1.WorkloadSpec{
-			Provenience: dockyardsv1.ProvenienceUser,
+			Provenience:     dockyardsv1.ProvenienceUser,
+			TargetNamespace: *request.Namespace,
 			WorkloadTemplateRef: &corev1.TypedObjectReference{
 				Kind:      dockyardsv1.WorkloadTemplateKind,
 				Name:      *request.WorkloadTemplateName,
