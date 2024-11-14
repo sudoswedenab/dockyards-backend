@@ -125,7 +125,14 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("GET /v1/credentials", logger(requireAuth(http.HandlerFunc(h.GetCredentials))))
 
-	mux.Handle("POST /v1/orgs/{organizationName}/clusters/{clusterName}/workloads", logger(requireAuth(http.HandlerFunc(h.CreateClusterWorkload))))
+	mux.Handle("POST /v1/orgs/{organizationName}/clusters/{clusterName}/workloads",
+		logger(
+			requireAuth(
+				validateJSON.WithSchema("#workload")(http.HandlerFunc(h.CreateClusterWorkload)),
+			),
+		),
+	)
+
 	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{workloadName}", logger(requireAuth(http.HandlerFunc(h.DeleteClusterWorkload))))
 
 	return nil

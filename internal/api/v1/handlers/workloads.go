@@ -124,7 +124,7 @@ func (h *handler) CreateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 	err = json.Unmarshal(b, &request)
 	if err != nil {
 		logger.Error("error unmarshalling request", "err", err)
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
