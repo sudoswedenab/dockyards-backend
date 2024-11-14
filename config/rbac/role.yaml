@@ -167,6 +167,16 @@ rules:
   - list
   - watch
 - apiGroups:
+  - dockyards.io
+  resources:
+  - workloads
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
