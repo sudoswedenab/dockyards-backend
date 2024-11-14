@@ -123,7 +123,7 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	organization.Status.ExpirationTimestamp = expiration
 
 	if expiration != nil {
-		requeueAfter := expiration.Sub(time.Now())
+		requeueAfter := time.Until(expiration.Time)
 
 		logger.Info("requeuing organization until expiration", "expiration", expiration, "after", requeueAfter)
 

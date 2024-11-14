@@ -64,7 +64,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	cluster.Status.ExpirationTimestamp = expiration
 
 	if expiration != nil {
-		requeueAfter := expiration.Sub(time.Now())
+		requeueAfter := time.Until(expiration.Time)
 
 		logger.Info("requeuing cluster until expiration", "expiration", expiration, "after", requeueAfter)
 
