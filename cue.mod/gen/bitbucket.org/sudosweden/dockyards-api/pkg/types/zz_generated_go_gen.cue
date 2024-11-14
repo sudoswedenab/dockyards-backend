@@ -164,8 +164,8 @@ import "time"
 	cpu_count?:                     null | int    @go(CPUCount,*int)
 	disk_size?:                     null | string @go(DiskSize,*string)
 	load_balancer?:                 null | bool   @go(LoadBalancer,*bool)
-	name:                           string        @go(Name)
-	quantity:                       int           @go(Quantity)
+	name?:                          null | string @go(Name,*string)
+	quantity?:                      null | int    @go(Quantity,*int)
 	ram_size?:                      null | string @go(RAMSize,*string)
 	storage_resources?: null | [...#StorageResource] @go(StorageResources,*[]StorageResource)
 }
@@ -244,4 +244,14 @@ import "time"
 #UserOverview: {
 	email: string @go(Email)
 	id:    string @go(ID)
+}
+
+// Workload defines model for workload.
+#Workload: {
+	id?: null | string @go(ID,*string)
+	input?: null | {...} @go(Input,*map[string]interface{})
+	name?:                   null | string @go(Name,*string)
+	namespace?:              null | string @go(Namespace,*string)
+	provenience?:            null | string @go(Provenience,*string)
+	workload_template_name?: null | string @go(WorkloadTemplateName,*string)
 }

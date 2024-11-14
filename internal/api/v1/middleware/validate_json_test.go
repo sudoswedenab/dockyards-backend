@@ -48,6 +48,36 @@ func TestValidateJSON(t *testing.T) {
 			body:     `{"name":"hello","node_pool_options":[{"disks":{}}]}`,
 			expected: http.StatusUnprocessableEntity,
 		},
+		{
+			name:     "test valid workload",
+			schema:   "#workload",
+			body:     `{"namespace":"test","workload_template_name":"test"}`,
+			expected: http.StatusOK,
+		},
+		{
+			name:     "test workload missing namespace",
+			schema:   "#workload",
+			body:     `{"workload_template_name":"test"}`,
+			expected: http.StatusUnprocessableEntity,
+		},
+		{
+			name:     "test workload empty namespace",
+			schema:   "#workload",
+			body:     `{"namespace":"","workload_template_name":"test"}`,
+			expected: http.StatusUnprocessableEntity,
+		},
+		{
+			name:     "test workload invalid namespace prefix",
+			schema:   "#workload",
+			body:     `{"namespace":"-test","workload_template_name":"test"}`,
+			expected: http.StatusUnprocessableEntity,
+		},
+		{
+			name:     "test workload invalid namespace suffix",
+			schema:   "#workload",
+			body:     `{"namespace":"test-","workload_template_name":"test"}`,
+			expected: http.StatusUnprocessableEntity,
+		},
 	}
 
 	for _, tc := range tt {
