@@ -33,12 +33,12 @@ func (v validate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err = cuejson.Validate(body, v.schema)
 	if err != nil {
-		logger.Debug("error validating body", "err", err)
-
 		cueerrors := errors.Errors(err)
 		entityErrors := make([]string, len(cueerrors))
 
 		for i, cueerr := range cueerrors {
+			logger.Debug("cue error validating body", "cuerr", cueerr.Error())
+
 			entityErrors[i] = cueerr.Error()
 		}
 
