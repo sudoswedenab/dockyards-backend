@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
@@ -570,4 +571,284 @@ func (h *handler) UpdateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func (h *handler) GetClusterWorkloads(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logger := middleware.LoggerFrom(ctx)
+
+	organizationName := r.PathValue("organizationName")
+	if organizationName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	clusterName := r.PathValue("clusterName")
+	if clusterName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting organization", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	if organization.Status.NamespaceRef == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	subject, err := middleware.SubjectFrom(ctx)
+	if err != nil {
+		logger.Error("error getting subject from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	resourceAttributes := authorizationv1.ResourceAttributes{
+		Group:     dockyardsv1.GroupVersion.Group,
+		Namespace: organization.Status.NamespaceRef.Name,
+		Resource:  "workloads",
+		Verb:      "get",
+	}
+
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+	if err != nil {
+		logger.Error("error reviewing subject", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if !allowed {
+		logger.Debug("subject is not allowed to get workloads", "subject", subject, "organization", organization.Name)
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	objectKey := client.ObjectKey{
+		Name:      clusterName,
+		Namespace: organization.Status.NamespaceRef.Name,
+	}
+
+	var cluster dockyardsv1.Cluster
+	err = h.Get(ctx, objectKey, &cluster)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting cluster", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	matchingLabels := client.MatchingLabels{
+		dockyardsv1.LabelClusterName: cluster.Name,
+	}
+
+	var workloadList dockyardsv1.WorkloadList
+	err = h.List(ctx, &workloadList, matchingLabels, client.InNamespace(cluster.Namespace))
+	if err != nil {
+		logger.Error("error listing workloads", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	response := make([]types.Workload, len(workloadList.Items))
+
+	for i, workload := range workloadList.Items {
+		response[i] = types.Workload{
+			Name:                 ptr.To(strings.TrimPrefix(workload.Name, cluster.Name+"-")),
+			WorkloadTemplateName: &workload.Spec.WorkloadTemplateRef.Name,
+		}
+
+	}
+
+	b, err := json.Marshal(response)
+	if err != nil {
+		logger.Error("error marshalling response", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response", "err", err)
+
+		return
+	}
+}
+
+func (h *handler) GetClusterWorkload(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logger := middleware.LoggerFrom(ctx)
+
+	organizationName := r.PathValue("organizationName")
+	if organizationName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	clusterName := r.PathValue("clusterName")
+	if clusterName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	workloadName := r.PathValue("workloadName")
+	if clusterName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting organization", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	if organization.Status.NamespaceRef == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	subject, err := middleware.SubjectFrom(ctx)
+	if err != nil {
+		logger.Error("error getting subject from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	resourceAttributes := authorizationv1.ResourceAttributes{
+		Group:     dockyardsv1.GroupVersion.Group,
+		Namespace: organization.Status.NamespaceRef.Name,
+		Resource:  "workloads",
+		Verb:      "get",
+	}
+
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+	if err != nil {
+		logger.Error("error reviewing subject", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if !allowed {
+		logger.Debug("subject is not allowed to get workloads", "subject", subject, "organization", organization.Name)
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	objectKey := client.ObjectKey{
+		Name:      clusterName,
+		Namespace: organization.Status.NamespaceRef.Name,
+	}
+
+	var cluster dockyardsv1.Cluster
+	err = h.Get(ctx, objectKey, &cluster)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting cluster", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusNotFound)
+
+		return
+	}
+
+	objectKey = client.ObjectKey{
+		Name:      clusterName + "-" + workloadName,
+		Namespace: organization.Status.NamespaceRef.Name,
+	}
+
+	var workload dockyardsv1.Workload
+	err = h.Get(ctx, objectKey, &workload)
+	if client.IgnoreNotFound(err) != nil {
+		logger.Error("error getting workload", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if apierrors.IsNotFound(err) {
+		w.WriteHeader(http.StatusNotFound)
+
+		return
+	}
+
+	response := types.Workload{
+		Name: ptr.To(strings.TrimPrefix(workload.Name, cluster.Name+"-")),
+	}
+
+	if workload.Spec.WorkloadTemplateRef != nil {
+		response.WorkloadTemplateName = &workload.Spec.WorkloadTemplateRef.Name
+	}
+
+	if workload.Spec.Input != nil {
+		var input map[string]any
+		err := json.Unmarshal(workload.Spec.Input.Raw, &input)
+		if err != nil {
+			logger.Error("error marshalling input", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		response.Input = &input
+	}
+
+	b, err := json.Marshal(response)
+	if err != nil {
+		logger.Error("error marshalling response", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(b)
+	if err != nil {
+		logger.Error("error writing response", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
 }
