@@ -59,3 +59,7 @@ const (
 const (
 	FeatureWorkloads = "workloads"
 )
+
+const (
+	FeatureImmutableStorageResources = "immutable-storage-resources"
+)
