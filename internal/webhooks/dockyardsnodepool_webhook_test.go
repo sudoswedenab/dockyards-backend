@@ -403,6 +403,101 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test storage resource update",
+			oldNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-storage-resource-update",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					StorageResources: []dockyardsv1.NodePoolStorageResource{
+						{
+							Name:     "test",
+							Quantity: resource.MustParse("12Gi"),
+						},
+					},
+				},
+			},
+			newNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-storage-resource-update",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					StorageResources: []dockyardsv1.NodePoolStorageResource{
+						{
+							Name:     "test",
+							Quantity: resource.MustParse("123Gi"),
+						},
+					},
+				},
+			},
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      string(featurenames.FeatureStorageRole),
+							Namespace: "testing",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test immutable storage resources enabled",
+			oldNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-immutable-resources-enabled",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					StorageResources: []dockyardsv1.NodePoolStorageResource{
+						{
+							Name:     "test",
+							Quantity: resource.MustParse("12Gi"),
+						},
+					},
+				},
+			},
+			newNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-immutable-resources-enabled",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					StorageResources: []dockyardsv1.NodePoolStorageResource{
+						{
+							Name:     "test",
+							Quantity: resource.MustParse("123Gi"),
+						},
+					},
+				},
+			},
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      string(featurenames.FeatureImmutableStorageResources),
+							Namespace: "testing",
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      string(featurenames.FeatureStorageRole),
+							Namespace: "testing",
+						},
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"test-immutable-resources-enabled",
+				field.ErrorList{
+					field.Forbidden(field.NewPath("spec", "storageResources"), "immutable-storage-resources feature is enabled"),
+				},
+			),
+		},
 	}
 
 	for _, tc := range tt {

@@ -98,6 +98,23 @@ func (webhook *DockyardsNodePool) validate(ctx context.Context, oldNodePool, new
 			forbidden := field.Forbidden(field.NewPath("spec", "resources"), "immutable-resources feature is enabled")
 			errorList = append(errorList, forbidden)
 		}
+
+		if !cmp.Equal(oldNodePool.Spec.StorageResources, newNodePool.Spec.StorageResources) {
+			forbidden := field.Forbidden(field.NewPath("spec", "storageResources"), "immutable-resources feature is enabled")
+			errorList = append(errorList, forbidden)
+		}
+	}
+
+	immutableStorageResourcesEnabled, err := apiutil.IsFeatureEnabled(ctx, webhook.Client, featurenames.FeatureImmutableStorageResources, corev1.NamespaceAll)
+	if err != nil {
+		return err
+	}
+
+	if oldNodePool != nil && immutableStorageResourcesEnabled {
+		if !cmp.Equal(oldNodePool.Spec.StorageResources, newNodePool.Spec.StorageResources) {
+			forbidden := field.Forbidden(field.NewPath("spec", "storageResources"), "immutable-storage-resources feature is enabled")
+			errorList = append(errorList, forbidden)
+		}
 	}
 
 	names := make(map[string]bool)
