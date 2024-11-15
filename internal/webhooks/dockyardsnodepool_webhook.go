@@ -3,22 +3,26 @@ package webhooks
 import (
 	"context"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
 	"github.com/google/go-cmp/cmp"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // +kubebuilder:webhook:groups=dockyards.io,resources=nodepools,verbs=create;update,path=/validate-dockyards-io-v1alpha3-nodepool,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.nodepool.dockyards.io,versions=v1alpha3
 
-type DockyardsNodePool struct{}
+type DockyardsNodePool struct {
+	Client client.Reader
+}
 
 var _ webhook.CustomValidator = &DockyardsNodePool{}
 
@@ -29,16 +33,16 @@ func (webhook *DockyardsNodePool) SetupWebhookWithManager(m ctrl.Manager) error 
 		Complete()
 }
 
-func (webhook *DockyardsNodePool) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsNodePool) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	dockyardsNodePool, ok := obj.(*dockyardsv1.NodePool)
 	if !ok {
 		return nil, nil
 	}
 
-	return nil, webhook.validate(nil, dockyardsNodePool)
+	return nil, webhook.validate(ctx, nil, dockyardsNodePool)
 }
 
-func (webhook *DockyardsNodePool) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsNodePool) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	oldNodePool, ok := oldObj.(*dockyardsv1.NodePool)
 	if !ok {
 		return nil, nil
@@ -49,32 +53,47 @@ func (webhook *DockyardsNodePool) ValidateUpdate(_ context.Context, oldObj, newO
 		return nil, nil
 	}
 
-	return nil, webhook.validate(oldNodePool, newNodePool)
+	return nil, webhook.validate(ctx, oldNodePool, newNodePool)
 }
 
 func (webhook *DockyardsNodePool) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func (webhook *DockyardsNodePool) validate(oldNodePool, newNodePool *dockyardsv1.NodePool) error {
+func (webhook *DockyardsNodePool) validate(ctx context.Context, oldNodePool, newNodePool *dockyardsv1.NodePool) error {
 	var errorList field.ErrorList
 
-	if newNodePool.Spec.Storage && !feature.IsEnabled(featurenames.FeatureStorageRole) {
+	storageRoleEnabled, err := apiutil.IsFeatureEnabled(ctx, webhook.Client, featurenames.FeatureStorageRole, corev1.NamespaceAll)
+	if err != nil {
+		return err
+	}
+
+	if newNodePool.Spec.Storage && !storageRoleEnabled {
 		invalid := field.Invalid(field.NewPath("spec", "storage"), newNodePool.Spec.Storage, "feature is not enabled")
 		errorList = append(errorList, invalid)
 	}
 
-	if newNodePool.Spec.StorageResources != nil && !feature.IsEnabled(featurenames.FeatureStorageRole) {
+	if newNodePool.Spec.StorageResources != nil && !storageRoleEnabled {
 		invalid := field.Invalid(field.NewPath("spec", "storageResources"), newNodePool.Spec.StorageResources, "feature is not enabled")
 		errorList = append(errorList, invalid)
 	}
 
-	if newNodePool.Spec.LoadBalancer && !feature.IsEnabled(featurenames.FeatureLoadBalancerRole) {
+	loadBalancerRoleEnabled, err := apiutil.IsFeatureEnabled(ctx, webhook.Client, featurenames.FeatureLoadBalancerRole, corev1.NamespaceAll)
+	if err != nil {
+		return err
+	}
+
+	if newNodePool.Spec.LoadBalancer && !loadBalancerRoleEnabled {
 		invalid := field.Invalid(field.NewPath("spec", "loadBalancer"), newNodePool.Spec.LoadBalancer, "feature is not enabled")
 		errorList = append(errorList, invalid)
 	}
 
-	if oldNodePool != nil && feature.IsEnabled(featurenames.FeatureImmutableResources) {
+	immutableResourcesEnabled, err := apiutil.IsFeatureEnabled(ctx, webhook.Client, featurenames.FeatureImmutableResources, corev1.NamespaceAll)
+	if err != nil {
+		return err
+	}
+
+	if oldNodePool != nil && immutableResourcesEnabled {
 		if !cmp.Equal(oldNodePool.Spec.Resources, newNodePool.Spec.Resources) {
 			forbidden := field.Forbidden(field.NewPath("spec", "resources"), "immutable-resources feature is enabled")
 			errorList = append(errorList, forbidden)

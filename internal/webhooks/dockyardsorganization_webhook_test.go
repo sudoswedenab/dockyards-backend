@@ -4,14 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"github.com/google/go-cmp/cmp"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestDockyardsOrganizationValidateCreate(t *testing.T) {
@@ -158,13 +159,19 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			for _, item := range tc.features.Items {
-				feature.Enable(featurenames.FeatureName(item.Name))
+			scheme := runtime.NewScheme()
 
-				defer feature.Disable(featurenames.FeatureName(item.Name))
+			_ = dockyardsv1.AddToScheme(scheme)
+
+			c := fake.
+				NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(&tc.features).
+				Build()
+
+			webhook := webhooks.DockyardsOrganization{
+				Client: c,
 			}
-
-			webhook := webhooks.DockyardsOrganization{}
 
 			_, actual := webhook.ValidateCreate(context.Background(), &tc.dockyardsOrganization)
 			if !cmp.Equal(actual, tc.expected) {

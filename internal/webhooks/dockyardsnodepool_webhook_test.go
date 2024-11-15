@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/feature"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
@@ -13,8 +12,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestDockyardsNodePoolValidateCreate(t *testing.T) {
@@ -246,13 +247,19 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			for _, item := range tc.features.Items {
-				feature.Enable(featurenames.FeatureName(item.Name))
+			scheme := runtime.NewScheme()
 
-				defer feature.Disable(featurenames.FeatureName(item.Name))
+			_ = dockyardsv1.AddToScheme(scheme)
+
+			c := fake.
+				NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(&tc.features).
+				Build()
+
+			webhook := webhooks.DockyardsNodePool{
+				Client: c,
 			}
-
-			webhook := webhooks.DockyardsNodePool{}
 
 			_, actual := webhook.ValidateCreate(context.Background(), &tc.dockyardsNodePool)
 			if !cmp.Equal(actual, tc.expected) {
@@ -400,13 +407,19 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			for _, item := range tc.features.Items {
-				feature.Enable(featurenames.FeatureName(item.Name))
+			scheme := runtime.NewScheme()
 
-				defer feature.Disable(featurenames.FeatureName(item.Name))
+			_ = dockyardsv1.AddToScheme(scheme)
+
+			c := fake.
+				NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(&tc.features).
+				Build()
+
+			webhook := webhooks.DockyardsNodePool{
+				Client: c,
 			}
-
-			webhook := webhooks.DockyardsNodePool{}
 
 			_, actual := webhook.ValidateUpdate(context.Background(), &tc.oldNodePool, &tc.newNodePool)
 			if !cmp.Equal(actual, tc.expected) {
