@@ -325,16 +325,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = (&controller.FeatureReconciler{
-		Client:             mgr.GetClient(),
-		DockyardsNamespace: dockyardsNamespace,
-	}).SetupWithManager(mgr)
-	if err != nil {
-		logger.Error("error creating new feature reconciler", "err", err)
-
-		os.Exit(1)
-	}
-
 	err = (&controller.ClusterReconciler{
 		Client:             mgr.GetClient(),
 		DockyardsNamespace: dockyardsNamespace,
