@@ -54,7 +54,9 @@ func newLogger(logLevel string) (*slog.Logger, error) {
 }
 
 func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
-	err := (&webhooks.DockyardsNodePool{}).SetupWebhookWithManager(mgr)
+	err := (&webhooks.DockyardsNodePool{
+		Client: mgr.GetClient(),
+	}).SetupWebhookWithManager(mgr)
 	if err != nil {
 		return err
 	}
@@ -64,7 +66,9 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 		return err
 	}
 
-	err = (&webhooks.DockyardsOrganization{}).SetupWebhookWithManager(mgr)
+	err = (&webhooks.DockyardsOrganization{
+		Client: mgr.GetClient(),
+	}).SetupWebhookWithManager(mgr)
 	if err != nil {
 		return err
 	}
