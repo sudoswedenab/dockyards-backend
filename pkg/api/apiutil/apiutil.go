@@ -344,3 +344,19 @@ func GetDefaultClusterTemplate(ctx context.Context, c client.Client) (*dockyards
 
 	return nil, nil
 }
+
+func IgnoreClientError(err error) error {
+	if apierrors.IsInvalid(err) {
+		return nil
+	}
+
+	if apierrors.IsConflict(err) {
+		return nil
+	}
+
+	if apierrors.IsInvalid(err) {
+		return nil
+	}
+
+	return err
+}

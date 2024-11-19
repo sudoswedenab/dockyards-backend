@@ -177,7 +177,7 @@ func (h *handler) CreateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 	}
 
 	err = h.Create(ctx, &workload)
-	if err != nil {
+	if apiutil.IgnoreClientError(err) != nil {
 		logger.Error("error creating workload", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 
