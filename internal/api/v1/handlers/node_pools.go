@@ -12,6 +12,7 @@ import (
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
+	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -586,27 +587,6 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting owner organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if organization == nil {
-		logger.Debug("node pool has no owner organization")
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
 		logger.Error("error getting subject from context", "err", err)
@@ -615,16 +595,23 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	member := h.findMember(subject, organization)
-	if member == nil {
-		logger.Debug("could not find subject in organization")
-		w.WriteHeader(http.StatusUnauthorized)
+	resourceAttributes := authorizationv1.ResourceAttributes{
+		Group:     dockyardsv1.GroupVersion.Group,
+		Namespace: nodePool.Namespace,
+		Resource:  "nodepools",
+		Verb:      "patch",
+	}
+
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+	if err != nil {
+		logger.Error("error reviewing subject", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	if !(member.Role == dockyardsv1.OrganizationMemberRoleSuperUser || member.Role == dockyardsv1.OrganizationMemberRoleUser) {
-		logger.Debug("subject does not have permission to edit node pool")
+	if !allowed {
+		logger.Debug("subject is not allowed to patch node pools", "subject", subject, "namespace", nodePool.Namespace)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
@@ -779,9 +766,9 @@ func nodePoolStorageResourcesFromStorageResources(storageResources []types.Stora
 		}
 
 		result[i] = dockyardsv1.NodePoolStorageResource{
-			Name: item.Name,
+			Name:     item.Name,
 			Quantity: quantity,
-			Type: resourceType,
+			Type:     resourceType,
 		}
 	}
 
