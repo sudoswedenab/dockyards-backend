@@ -617,6 +617,8 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	patch := client.MergeFrom(nodePool.DeepCopy())
+
 	replicas := patchRequest.Quantity
 	if replicas != nil {
 		if *replicas <= 0 || *replicas > maxReplicas {
@@ -636,8 +638,6 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	patch := client.MergeFrom(nodePool.DeepCopy())
 
 	if patchRequest.ControlPlane != nil {
 		if nodePool.Spec.ControlPlane != *patchRequest.ControlPlane {

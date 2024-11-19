@@ -1699,6 +1699,27 @@ func TestUpdateNodePool(t *testing.T) {
 		if !cmp.Equal(actual, expected) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual))
 		}
+
+		var actualNodePool dockyardsv1.NodePool
+		err = c.Get(ctx, client.ObjectKeyFromObject(&nodePool), &actualNodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedNodePool := dockyardsv1.NodePool{
+			ObjectMeta: actualNodePool.ObjectMeta,
+			Status:     actualNodePool.Status,
+			Spec: dockyardsv1.NodePoolSpec{
+				Replicas: ptr.To(int32(2)),
+				Resources: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("2"),
+				},
+			},
+		}
+
+		if !cmp.Equal(actualNodePool, expectedNodePool) {
+			t.Errorf("diff: %s", cmp.Diff(expectedNodePool, actualNodePool))
+		}
 	})
 
 	t.Run("test storage resources", func(t *testing.T) {
