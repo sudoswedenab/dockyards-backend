@@ -98,14 +98,6 @@ rules:
 - apiGroups:
   - dockyards.io
   resources:
-  - features
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - dockyards.io
-  resources:
   - helmdeployments
   verbs:
   - create
