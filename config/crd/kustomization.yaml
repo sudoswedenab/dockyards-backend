@@ -19,3 +19,4 @@ resources:
 - dockyards.io_organizationvouchers.yaml
 - dockyards.io_workloadtemplates.yaml
 - dockyards.io_workloads.yaml
+- dockyards.io_worktrees.yaml
