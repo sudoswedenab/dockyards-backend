@@ -27,8 +27,9 @@ type WorktreeSpec struct {
 }
 
 type WorktreeStatus struct {
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-	URL        *string            `json:"url,omitempty"`
+	Conditions    []metav1.Condition `json:"conditions,omitempty"`
+	URL           *string            `json:"url,omitempty"`
+	ReferenceName *string            `json:"referenceName,omitempty"`
 }
 
 // +kubebuilder:object:root=true
