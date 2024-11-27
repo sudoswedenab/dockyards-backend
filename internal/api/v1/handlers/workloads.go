@@ -205,7 +205,41 @@ func (h *handler) CreateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if apierrors.IsInvalid(err) {
+		statusError, ok := err.(*apierrors.StatusError)
+		if !ok {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+
+			return
+		}
+
+		if statusError.ErrStatus.Details == nil {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+
+			return
+		}
+
+		var response types.UnprocessableEntityErrors
+
+		for _, cause := range statusError.ErrStatus.Details.Causes {
+			response.Errors = append(response.Errors, cause.Message)
+		}
+
+		b, err := json.Marshal(response)
+		if err != nil {
+			logger.Error("error marhalling response", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
 		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, err = w.Write(b)
+		if err != nil {
+			logger.Error("error writing response", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
 
 		return
 	}
