@@ -4,7 +4,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 )
 
-#_objectName: =~"^[a-z][a-z0-9.-]{1,}.*[a-z]$"
+#_objectName: =~"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
 
 #clusterOptions: types.#ClusterOptions
 #login:          types.#Login

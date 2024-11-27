@@ -92,6 +92,18 @@ func TestValidateJSON(t *testing.T) {
 			body:     `{"namespace":"test-","workload_template_name":"test"}`,
 			expected: http.StatusUnprocessableEntity,
 		},
+		{
+			name:     "test workload numeric suffix",
+			schema:   "#workload",
+			body:     `{"namespace":"0-test","workload_template_name":"test"}`,
+			expected: http.StatusOK,
+		},
+		{
+			name:     "test workload numeric suffix",
+			schema:   "#workload",
+			body:     `{"namespace":"test-0","workload_template_name":"test"}`,
+			expected: http.StatusOK,
+		},
 	}
 
 	for _, tc := range tt {
