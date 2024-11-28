@@ -28,3 +28,7 @@ const (
 const (
 	CloudProjectAssignedReason = "CloudProjectAssigned"
 )
+
+const (
+	WorkloadTemplateReconciledCondition = "WorkloadTemplateReconciled"
+)
