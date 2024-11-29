@@ -32,3 +32,7 @@ const (
 const (
 	WorkloadTemplateReconciledCondition = "WorkloadTemplateReconciled"
 )
+
+const (
+	ReconcilingCondition = "Reconciling"
+)
