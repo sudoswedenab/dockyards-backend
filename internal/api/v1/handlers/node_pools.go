@@ -150,14 +150,6 @@ func (h *handler) GetNodePool(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
-	if err != nil {
-		logger.Error("error getting owner cluster owner organization", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
 		logger.Error("error getting subject from context", "err", err)
@@ -166,9 +158,23 @@ func (h *handler) GetNodePool(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isMember := h.isMember(subject, organization)
-	if !isMember {
-		logger.Debug("user is not a member of organization", "subject", subject)
+	resourceAttributes := authorizationv1.ResourceAttributes{
+		Group:     dockyardsv1.GroupVersion.Group,
+		Namespace: nodePool.Namespace,
+		Resource:  "nodepools",
+		Verb:      "get",
+	}
+
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+	if err != nil {
+		logger.Error("error reviewing subject", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if !allowed {
+		logger.Debug("subject is not allowed to get node pools", "subject", subject, "namespace", nodePool.Namespace)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
