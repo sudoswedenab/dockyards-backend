@@ -624,3 +624,537 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		}
 	})
 }
+
+func TestClusterWorkloads_Update(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+
+	ctx, cancel := context.WithCancel(context.TODO())
+
+	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		cancel()
+		testEnvironment.GetEnvironment().Stop()
+	})
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.GetOrganization()
+	superUser := testEnvironment.GetSuperUser()
+	user := testEnvironment.GetUser()
+	reader := testEnvironment.GetReader()
+
+	h := handler{
+		Client:    mgr.GetClient(),
+		namespace: testEnvironment.GetDockyardsNamespace(),
+	}
+
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	cluster := dockyardsv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+			Namespace:    organization.Status.NamespaceRef.Name,
+		},
+	}
+
+	err = c.Create(ctx, &cluster)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mgr.GetCache().WaitForCacheSync(ctx)
+
+	t.Run("test as super user", func(t *testing.T) {
+		workloadName := "test-super-user"
+
+		workload := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-" + workloadName,
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				TargetNamespace: "testing",
+				Provenience:     dockyardsv1.ProvenienceUser,
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(time.Second)
+
+		request := types.Workload{
+			Name:                 ptr.To(workloadName),
+			WorkloadTemplateName: ptr.To("test"),
+			Namespace:            ptr.To("update"),
+		}
+
+		b, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("workloadName", workloadName)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.UpdateClusterWorkload(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.Workload
+		err = c.Get(ctx, client.ObjectKeyFromObject(&workload), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:              workload.Name,
+				Namespace:         workload.Namespace,
+				UID:               workload.UID,
+				CreationTimestamp: actual.CreationTimestamp,
+				Generation:        actual.Generation,
+				ManagedFields:     actual.ManagedFields,
+				ResourceVersion:   actual.ResourceVersion,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				Provenience:     dockyardsv1.ProvenienceUser,
+				TargetNamespace: "update",
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		workloadName := "test-user"
+
+		workload := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-" + workloadName,
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				TargetNamespace: "testing",
+				Provenience:     dockyardsv1.ProvenienceUser,
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(time.Second)
+
+		request := types.Workload{
+			Name:                 ptr.To(workloadName),
+			WorkloadTemplateName: ptr.To("test"),
+			Namespace:            ptr.To("update"),
+		}
+
+		b, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("workloadName", workloadName)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.UpdateClusterWorkload(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.Workload
+		err = c.Get(ctx, client.ObjectKeyFromObject(&workload), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:              workload.Name,
+				Namespace:         workload.Namespace,
+				UID:               workload.UID,
+				CreationTimestamp: actual.CreationTimestamp,
+				Generation:        actual.Generation,
+				ManagedFields:     actual.ManagedFields,
+				ResourceVersion:   actual.ResourceVersion,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				Provenience:     dockyardsv1.ProvenienceUser,
+				TargetNamespace: "update",
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test as reader", func(t *testing.T) {
+		workloadName := "test-reader"
+
+		workload := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-" + workloadName,
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				TargetNamespace: "testing",
+				Provenience:     dockyardsv1.ProvenienceUser,
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(time.Second)
+
+		request := types.Workload{
+			Name:                 ptr.To(workloadName),
+			WorkloadTemplateName: ptr.To("test"),
+			Namespace:            ptr.To("update"),
+		}
+
+		b, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("workloadName", workloadName)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.UpdateClusterWorkload(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test input", func(t *testing.T) {
+		workloadName := "test-input"
+
+		workload := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-" + workloadName,
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				TargetNamespace: "testing",
+				Provenience:     dockyardsv1.ProvenienceUser,
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+				Input: &apiextensionsv1.JSON{
+					Raw: []byte(`{"replicas":1}`),
+				},
+			},
+		}
+
+		err := c.Create(ctx, &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(time.Second)
+
+		request := types.Workload{
+			Name:                 ptr.To(workloadName),
+			WorkloadTemplateName: ptr.To("test"),
+			Namespace:            ptr.To("testing"),
+			Input: &map[string]any{
+				"replicas": 2,
+			},
+		}
+
+		b, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("workloadName", workloadName)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.UpdateClusterWorkload(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.Workload
+		err = c.Get(ctx, client.ObjectKeyFromObject(&workload), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:              workload.Name,
+				Namespace:         workload.Namespace,
+				UID:               workload.UID,
+				CreationTimestamp: actual.CreationTimestamp,
+				Generation:        actual.Generation,
+				ManagedFields:     actual.ManagedFields,
+				ResourceVersion:   actual.ResourceVersion,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				Provenience:     dockyardsv1.ProvenienceUser,
+				TargetNamespace: "testing",
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+				Input: &apiextensionsv1.JSON{
+					Raw: []byte(`{"replicas":2}`),
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test remove input", func(t *testing.T) {
+		workloadName := "test-remove-input"
+
+		workload := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-" + workloadName,
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				TargetNamespace: "testing",
+				Provenience:     dockyardsv1.ProvenienceUser,
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+				Input: &apiextensionsv1.JSON{
+					Raw: []byte(`{"replicas":1}`),
+				},
+			},
+		}
+
+		err := c.Create(ctx, &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(time.Second)
+
+		request := types.Workload{
+			Name:                 ptr.To(workloadName),
+			WorkloadTemplateName: ptr.To("test"),
+			Namespace:            ptr.To("testing"),
+		}
+
+		b, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("workloadName", workloadName)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.UpdateClusterWorkload(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.Workload
+		err = c.Get(ctx, client.ObjectKeyFromObject(&workload), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:              workload.Name,
+				Namespace:         workload.Namespace,
+				UID:               workload.UID,
+				CreationTimestamp: actual.CreationTimestamp,
+				Generation:        actual.Generation,
+				ManagedFields:     actual.ManagedFields,
+				ResourceVersion:   actual.ResourceVersion,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				Provenience:     dockyardsv1.ProvenienceUser,
+				TargetNamespace: "testing",
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test workload template name", func(t *testing.T) {
+		workloadName := "test-workload-template-name"
+
+		workload := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-" + workloadName,
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				TargetNamespace: "testing",
+				Provenience:     dockyardsv1.ProvenienceUser,
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(time.Second)
+
+		request := types.Workload{
+			Name:                 ptr.To(workloadName),
+			WorkloadTemplateName: ptr.To("update"),
+			Namespace:            ptr.To("testing"),
+		}
+
+		b, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("workloadName", workloadName)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.UpdateClusterWorkload(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
+		}
+	})
+}
