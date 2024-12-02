@@ -368,6 +368,10 @@ func IgnoreClientError(err error) error {
 		return nil
 	}
 
+	return err
+}
+
+func IgnoreIsInvalid(err error) error {
 	if apierrors.IsInvalid(err) {
 		return nil
 	}
