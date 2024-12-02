@@ -677,7 +677,6 @@ func (h *handler) GetClusterWorkloads(w http.ResponseWriter, r *http.Request) {
 			Name:                 ptr.To(strings.TrimPrefix(workload.Name, cluster.Name+"-")),
 			WorkloadTemplateName: &workload.Spec.WorkloadTemplateRef.Name,
 		}
-
 	}
 
 	b, err := json.Marshal(response)
