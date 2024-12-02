@@ -245,6 +245,7 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
 	nodePoolName := *nodePoolOptions.Name
 	_, isValidName := name.IsValidName(nodePoolName)
 	if !isValidName {
@@ -260,6 +261,7 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
 	nodePoolQuantity := *nodePoolOptions.Quantity
 
 	if nodePoolQuantity > maxReplicas {
@@ -291,21 +293,6 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 
 	cluster := clusterList.Items[0]
 
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
-	if err != nil {
-		logger.Error("error getting owner organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if organization == nil {
-		logger.Debug("node pool has no organization owner")
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
 		logger.Error("error getting subject from context", "err", err)
@@ -314,9 +301,23 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isMember := h.isMember(subject, organization)
-	if !isMember {
-		logger.Debug("subject is not a member of organization")
+	resourceAttributes := authorizationv1.ResourceAttributes{
+		Group:     dockyardsv1.GroupVersion.Group,
+		Namespace: cluster.Namespace,
+		Resource:  "nodepools",
+		Verb:      "create",
+	}
+
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+	if err != nil {
+		logger.Error("error reviewing subject", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	if !allowed {
+		logger.Debug("subject is not allowed to create node pools", "subject", subject, "namespace", cluster.Namespace)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
