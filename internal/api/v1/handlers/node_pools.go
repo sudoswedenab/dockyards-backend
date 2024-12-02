@@ -473,48 +473,6 @@ func (h *handler) DeleteNodePool(w http.ResponseWriter, r *http.Request) {
 
 	nodePool := nodePoolList.Items[0]
 
-	cluster, err := apiutil.GetOwnerCluster(ctx, h.Client, &nodePool)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting owner cluster", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if cluster == nil {
-		logger.Debug("node pool has no owner cluster")
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting owner organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if organization == nil {
-		logger.Debug("node pool has no owner organization")
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
 		logger.Error("error getting subject from context", "err", err)
@@ -523,9 +481,25 @@ func (h *handler) DeleteNodePool(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isMember := h.isMember(subject, organization)
-	if !isMember {
-		logger.Debug("subject is not a member of organization")
+	resourceAttributes := authorizationv1.ResourceAttributes{
+		Group:     dockyardsv1.GroupVersion.Group,
+		Namespace: nodePool.Namespace,
+		Resource:  "nodepools",
+		Verb:      "delete",
+	}
+
+	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+	if err != nil {
+		logger.Error("error reviewing subject", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	logger.Info("subject access review", "allowed", allowed)
+
+	if !allowed {
+		logger.Debug("subject is not allowed to delete node pools", "subject", subject, "namespace", nodePool.Namespace)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
