@@ -21,8 +21,6 @@ import (
 	"path/filepath"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -150,18 +148,4 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{workloadName}", logger(requireAuth(http.HandlerFunc(h.DeleteClusterWorkload))))
 
 	return nil
-}
-
-func (h *handler) findMember(subject string, organization *dockyardsv1.Organization) *dockyardsv1.OrganizationMemberReference {
-	for _, memberRef := range organization.Spec.MemberRefs {
-		if memberRef.UID == types.UID(subject) {
-			return &memberRef
-		}
-	}
-
-	return nil
-}
-
-func (h *handler) isMember(subject string, organization *dockyardsv1.Organization) bool {
-	return h.findMember(subject, organization) != nil
 }
