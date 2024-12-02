@@ -44,509 +44,367 @@ import (
 )
 
 func TestGetNodePool(t *testing.T) {
-	tt := []struct {
-		name       string
-		nodePoolID string
-		sub        string
-		lists      []client.ObjectList
-		expected   types.NodePool
-	}{
-		{
-			name:       "test single node",
-			nodePoolID: "0c386e60-e759-426f-b39d-36588547fac0",
-			sub:        "74eab97f-f635-4ec9-99b1-40f37fde690d",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								UID:  "845e9322-8dbe-4eed-bda2-5efe2b54dc71",
-								Name: "test",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "74eab97f-f635-4ec9-99b1-40f37fde690d",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "test-123",
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterList{
-					Items: []dockyardsv1.Cluster{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "test-123",
-								UID:       "31f38488-c0df-48fe-89f8-e94a6c8c3258",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.OrganizationKind,
-										Name:       "test",
-										UID:        "845e9322-8dbe-4eed-bda2-5efe2b54dc71",
-									},
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.NodePoolList{
-					Items: []dockyardsv1.NodePool{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-pool",
-								Namespace: "test-123",
-								UID:       "0c386e60-e759-426f-b39d-36588547fac0",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.ClusterKind,
-										Name:       "test",
-										UID:        "31f38488-c0df-48fe-89f8-e94a6c8c3258",
-									},
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.NodeList{
-					Items: []dockyardsv1.Node{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-pool-1",
-								Namespace: "test-123",
-								UID:       "55310c2b-589b-4044-8fce-8544ce0faf6c",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.NodePoolKind,
-										Name:       "test-pool",
-										UID:        "0c386e60-e759-426f-b39d-36588547fac0",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: types.NodePool{
-				ID:        "0c386e60-e759-426f-b39d-36588547fac0",
-				ClusterID: "31f38488-c0df-48fe-89f8-e94a6c8c3258",
-				Name:      "test-pool",
-				Nodes: []types.Node{
-					{
-						ID:   "55310c2b-589b-4044-8fce-8544ce0faf6c",
-						Name: "test-pool-1",
-					},
-				},
-			},
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+
+	ctx, cancel := context.WithCancel(context.TODO())
+
+	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		cancel()
+		testEnvironment.GetEnvironment().Stop()
+	})
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.GetOrganization()
+	superUser := testEnvironment.GetSuperUser()
+	user := testEnvironment.GetUser()
+	reader := testEnvironment.GetReader()
+
+	h := handler{
+		Client:    mgr.GetClient(),
+		namespace: testEnvironment.GetDockyardsNamespace(),
+	}
+
+	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.NodePool{}, index.UIDField, index.ByUID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Node{}, index.OwnerReferencesField, index.ByOwnerReferences)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cluster := dockyardsv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+			Namespace:    organization.Status.NamespaceRef.Name,
 		},
-		{
-			name:       "test complex node",
-			nodePoolID: "4386082b-cabe-4235-b6be-a857706ed6f4",
-			sub:        "ab46bc94-446c-4448-bc13-94b25e61bd37",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								UID:  "8be3ef94-5742-4fb7-9302-28d23da783da",
-								Name: "test",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "ab46bc94-446c-4448-bc13-94b25e61bd37",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterList{
-					Items: []dockyardsv1.Cluster{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test",
-								Namespace: "testing",
-								UID:       "3fac0683-34bf-4f8a-908b-28db92cf20a0",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.OrganizationKind,
-										Name:       "test",
-										UID:        "8be3ef94-5742-4fb7-9302-28d23da783da",
-									},
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.NodePoolList{
-					Items: []dockyardsv1.NodePool{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-complex",
-								Namespace: "testing",
-								UID:       "4386082b-cabe-4235-b6be-a857706ed6f4",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.ClusterKind,
-										Name:       "test",
-										UID:        "3fac0683-34bf-4f8a-908b-28db92cf20a0",
-									},
-								},
-							},
-							Spec: dockyardsv1.NodePoolSpec{
-								ControlPlane: true,
-								Replicas:     ptr.To(int32(3)),
-								Resources: corev1.ResourceList{
-									corev1.ResourceStorage: resource.MustParse("123Gi"),
-								},
-							},
-							Status: dockyardsv1.NodePoolStatus{
-								Resources: corev1.ResourceList{
-									corev1.ResourceStorage: resource.MustParse("123Gi"),
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.NodeList{
-					Items: []dockyardsv1.Node{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-complex-1",
-								Namespace: "testing",
-								UID:       "55310c2b-589b-4044-8fce-8544ce0faf6c",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.NodePoolKind,
-										Name:       "test-complex",
-										UID:        "4386082b-cabe-4235-b6be-a857706ed6f4",
-									},
-								},
-							},
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-complex-2",
-								Namespace: "testing",
-								UID:       "0b5f21f5-aa1e-4286-be18-b172cb162ff4",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.NodePoolKind,
-										Name:       "test-complex",
-										UID:        "4386082b-cabe-4235-b6be-a857706ed6f4",
-									},
-								},
-							},
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "test-complex-3",
-								Namespace: "testing",
-								UID:       "e50f48b7-0332-4824-b8ea-139d5a0a5d39",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.NodePoolKind,
-										Name:       "test-complex",
-										UID:        "4386082b-cabe-4235-b6be-a857706ed6f4",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: types.NodePool{
-				ID:           "4386082b-cabe-4235-b6be-a857706ed6f4",
-				ClusterID:    "3fac0683-34bf-4f8a-908b-28db92cf20a0",
-				ControlPlane: ptr.To(true),
-				DiskSize:     "123Gi",
-				Name:         "test-complex",
-				Quantity:     3,
-				Nodes: []types.Node{
-					{
-						Name: "test-complex-1",
-						ID:   "55310c2b-589b-4044-8fce-8544ce0faf6c",
-					},
-					{
-						Name: "test-complex-2",
-						ID:   "0b5f21f5-aa1e-4286-be18-b172cb162ff4",
-					},
-					{
-						Name: "test-complex-3",
-						ID:   "e50f48b7-0332-4824-b8ea-139d5a0a5d39",
-					},
+	}
+
+	err = c.Create(ctx, &cluster)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nodePool := dockyardsv1.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+			Namespace:    organization.Status.NamespaceRef.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: dockyardsv1.GroupVersion.String(),
+					Kind:       dockyardsv1.ClusterKind,
+					Name:       cluster.Name,
+					UID:        cluster.UID,
 				},
 			},
 		},
 	}
 
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-
-			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&dockyardsv1.NodePool{}, index.UIDField, index.ByUID).
-				WithIndex(&dockyardsv1.Node{}, index.OwnerReferencesField, index.ByOwnerReferences).
-				Build()
-
-			h := handler{
-				Client: fakeClient,
-			}
-
-			u := url.URL{
-				Path: path.Join("/v1/node-pools", tc.nodePoolID),
-			}
-
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
-
-			r.SetPathValue("nodePoolID", tc.nodePoolID)
-
-			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
-			ctx = middleware.ContextWithLogger(ctx, logger)
-
-			h.GetNodePool(w, r.Clone(ctx))
-
-			statusCode := w.Result().StatusCode
-			if statusCode != http.StatusOK {
-				t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
-			}
-
-			b, err := io.ReadAll(w.Result().Body)
-			if err != nil {
-				t.Fatalf("unexpected error reading result body: %s", err)
-			}
-
-			var actual types.NodePool
-			err = json.Unmarshal(b, &actual)
-			if err != nil {
-				t.Fatalf("error unmarshalling result body to json: %s", err)
-			}
-
-			if !cmp.Equal(tc.expected, actual) {
-				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
-			}
-		})
+	err = c.Create(ctx, &nodePool)
+	if err != nil {
+		t.Fatal(err)
 	}
-}
 
-func TestGetNodePoolErrors(t *testing.T) {
-	tt := []struct {
-		name       string
-		nodePoolID string
-		sub        string
-		lists      []client.ObjectList
-		expected   int
-	}{
-		{
-			name:       "test invalid node pool",
-			nodePoolID: "c46ece0d-33cc-4097-9f99-98471a2a8acb",
-			expected:   http.StatusUnauthorized,
-		},
-		{
-			name:       "test invalid cluster",
-			nodePoolID: "1864d09d-c68d-4ab0-a47e-24a9eb86235b",
-			lists: []client.ObjectList{
-				&dockyardsv1.NodePoolList{
-					Items: []dockyardsv1.NodePool{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								UID:       "1864d09d-c68d-4ab0-a47e-24a9eb86235b",
-								Name:      "test",
-								Namespace: "testing",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.ClusterKind,
-										Name:       "test",
-										UID:        "941cbe7b-341b-40a3-b4b8-645aa0317b1c",
-									},
-								},
-							},
-						},
-					},
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	node := dockyardsv1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+			Namespace:    organization.Status.NamespaceRef.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: dockyardsv1.GroupVersion.String(),
+					Kind:       dockyardsv1.NodePoolKind,
+					Name:       nodePool.Name,
+					UID:        nodePool.UID,
 				},
 			},
-			expected: http.StatusUnauthorized,
-		},
-		{
-			name:       "test invalid organization",
-			nodePoolID: "c70e8ac9-d415-4596-9e00-f000cf42f277",
-			lists: []client.ObjectList{
-				&dockyardsv1.NodePoolList{
-					Items: []dockyardsv1.NodePool{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								UID:       "c70e8ac9-d415-4596-9e00-f000cf42f277",
-								Name:      "test",
-								Namespace: "testing",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.ClusterKind,
-										Name:       "test",
-										UID:        "484226da-101d-4a7d-9620-f4507cc928c0",
-									},
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterList{
-					Items: []dockyardsv1.Cluster{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								UID:       "484226da-101d-4a7d-9620-f4507cc928c0",
-								Name:      "test",
-								Namespace: "testing",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.OrganizationKind,
-										Name:       "test",
-										UID:        "a7516b46-cbf7-4a3b-a0bc-a7777d233ad2",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: http.StatusUnauthorized,
-		},
-		{
-			name:       "test invalid membership",
-			nodePoolID: "b86ebca0-71d1-498a-ab34-6e6b68600af3",
-			sub:        "e33dbae7-d222-43be-afc2-23e52654a7d3",
-			lists: []client.ObjectList{
-				&dockyardsv1.NodePoolList{
-					Items: []dockyardsv1.NodePool{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								UID:       "b86ebca0-71d1-498a-ab34-6e6b68600af3",
-								Name:      "test",
-								Namespace: "testing",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.ClusterKind,
-										Name:       "test",
-										UID:        "d13e643a-40bc-47d1-acc0-011c4d9c1faf",
-									},
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.ClusterList{
-					Items: []dockyardsv1.Cluster{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								UID:       "d13e643a-40bc-47d1-acc0-011c4d9c1faf",
-								Name:      "test",
-								Namespace: "testing",
-								OwnerReferences: []metav1.OwnerReference{
-									{
-										APIVersion: dockyardsv1.GroupVersion.String(),
-										Kind:       dockyardsv1.OrganizationKind,
-										Name:       "test",
-										UID:        "69bacf70-a70c-4db0-a389-8816e6109a11",
-									},
-								},
-							},
-						},
-					},
-				},
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								UID:  "69bacf70-a70c-4db0-a389-8816e6109a11",
-								Name: "test",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "5125130c-a4af-40b6-8b36-b8be8f4d2fdb",
-									},
-								},
-							},
-							Status: dockyardsv1.OrganizationStatus{
-								NamespaceRef: &corev1.LocalObjectReference{
-									Name: "testing",
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: http.StatusUnauthorized,
 		},
 	}
 
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-
-			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(tc.lists...).Build()
-
-			h := handler{
-				Client: fakeClient,
-			}
-
-			u := url.URL{
-				Path: path.Join("/v1/node-pools", tc.nodePoolID),
-			}
-
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodPost, u.Path, nil)
-
-			r.SetPathValue("nodePoolID", tc.nodePoolID)
-
-			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
-			ctx = middleware.ContextWithLogger(ctx, logger)
-
-			h.GetNodePool(w, r.Clone(ctx))
-
-			statusCode := w.Result().StatusCode
-			if statusCode != tc.expected {
-				t.Errorf("expected status code %d, got %d", tc.expected, statusCode)
-			}
-		})
+	err = c.Create(ctx, &node)
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	t.Run("test as super user", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.SetPathValue("nodePoolID", string(nodePool.UID))
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.GetNodePool(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatalf("unexpected error reading result body: %s", err)
+		}
+
+		var actual types.NodePool
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatalf("error unmarshalling result body to json: %s", err)
+		}
+
+		expected := types.NodePool{
+			ClusterID: string(cluster.UID),
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
+			Nodes: []types.Node{
+				{
+					ID:   string(node.UID),
+					Name: node.Name,
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.SetPathValue("nodePoolID", string(nodePool.UID))
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.GetNodePool(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatalf("unexpected error reading result body: %s", err)
+		}
+
+		var actual types.NodePool
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatalf("error unmarshalling result body to json: %s", err)
+		}
+
+		expected := types.NodePool{
+			ClusterID: string(cluster.UID),
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
+			Nodes: []types.Node{
+				{
+					ID:   string(node.UID),
+					Name: node.Name,
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test as reader", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.SetPathValue("nodePoolID", string(nodePool.UID))
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.GetNodePool(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatalf("unexpected error reading result body: %s", err)
+		}
+
+		var actual types.NodePool
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatalf("error unmarshalling result body to json: %s", err)
+		}
+
+		expected := types.NodePool{
+			ClusterID: string(cluster.UID),
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
+			Nodes: []types.Node{
+				{
+					ID:   string(node.UID),
+					Name: node.Name,
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test non-existing node pool", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/node-pools", "ee346d53-8a20-4bdd-b936-5ddc240153ac"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.SetPathValue("nodePoolID", "ee346d53-8a20-4bdd-b936-5ddc240153ac")
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.GetNodePool(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test without membership", func(t *testing.T) {
+		otherOrganization := dockyardsv1.Organization{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+			Spec: dockyardsv1.OrganizationSpec{
+				MemberRefs: []dockyardsv1.OrganizationMemberReference{
+					{
+						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+						UID:  user.UID,
+					},
+					{
+						Role: dockyardsv1.OrganizationMemberRoleUser,
+						UID:  reader.UID,
+					},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &otherOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+		}
+
+		err = c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherCluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    namespace.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       otherOrganization.Name,
+						UID:        otherOrganization.UID,
+					},
+				},
+			},
+		}
+
+		err = c.Create(ctx, &otherCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherNodePool := dockyardsv1.NodePool{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    namespace.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.ClusterKind,
+						Name:       otherCluster.Name,
+						UID:        otherCluster.UID,
+					},
+				},
+			},
+		}
+
+		err = c.Create(ctx, &otherNodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(time.Second)
+
+		u := url.URL{
+			Path: path.Join("/v1/node-pools", string(otherNodePool.UID)),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.SetPathValue("nodePoolID", string(otherNodePool.UID))
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.GetNodePool(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
 }
 
 func TestPostClusterNodePools(t *testing.T) {
