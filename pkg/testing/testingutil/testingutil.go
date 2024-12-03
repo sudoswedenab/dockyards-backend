@@ -15,14 +15,19 @@
 package testingutil
 
 import (
+	"time"
+
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/authorization"
 	"context"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -240,4 +245,24 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 	}
 
 	return &t, nil
+}
+
+func RetryUntilFound(ctx context.Context, reader client.Reader, obj client.Object) error {
+	backoff := wait.Backoff{
+		Steps:    5,
+		Duration: 100 * time.Millisecond,
+		Factor:   2.0,
+	}
+
+	err := retry.OnError(backoff, apierrors.IsNotFound, func() error {
+		err := reader.Get(ctx, client.ObjectKeyFromObject(obj), obj)
+
+		return err
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
