@@ -365,7 +365,7 @@ func (h *handler) DeleteClusterWorkload(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = h.Delete(ctx, &workload)
+	err = h.Delete(ctx, &workload, client.PropagationPolicy(metav1.DeletePropagationForeground))
 	if err != nil {
 		logger.Error("error deleting workload", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
