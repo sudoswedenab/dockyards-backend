@@ -25,7 +25,6 @@ import (
 	"os"
 	"path"
 	"testing"
-	"time"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
@@ -495,7 +494,10 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", "test-super-user"),
@@ -536,7 +538,10 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", "test-user"),
@@ -577,7 +582,10 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", "test-reader"),
@@ -701,7 +709,10 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		request := types.Workload{
 			Name:                 ptr.To(workloadName),
@@ -789,7 +800,10 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		request := types.Workload{
 			Name:                 ptr.To(workloadName),
@@ -877,7 +891,10 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		request := types.Workload{
 			Name:                 ptr.To(workloadName),
@@ -938,7 +955,10 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		request := types.Workload{
 			Name:                 ptr.To(workloadName),
@@ -1035,7 +1055,10 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		request := types.Workload{
 			Name:                 ptr.To(workloadName),
@@ -1123,7 +1146,10 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		request := types.Workload{
 			Name:                 ptr.To(workloadName),

@@ -26,7 +26,6 @@ import (
 	"os"
 	"path"
 	"testing"
-	"time"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
@@ -138,6 +137,11 @@ func TestGetNodePool(t *testing.T) {
 	}
 
 	err = c.Create(ctx, &node)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &node)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -382,7 +386,10 @@ func TestGetNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherNodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/node-pools", string(otherNodePool.UID)),
@@ -460,6 +467,10 @@ func TestPostClusterNodePools(t *testing.T) {
 			panic(err)
 		}
 	}()
+
+	if mgr.GetCache().WaitForCacheSync(ctx) {
+		logger.Info("could not sync cache")
+	}
 
 	t.Run("test as super user", func(t *testing.T) {
 		nodePoolOptions := types.NodePoolOptions{
@@ -820,7 +831,10 @@ func TestPostClusterNodePools(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		nodePoolOptions := types.NodePoolOptions{
 			Name:     ptr.To("test-conflict"),
@@ -907,7 +921,10 @@ func TestPostClusterNodePools(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		nodePoolOptions := types.NodePoolOptions{
 			Name:     ptr.To("test"),
@@ -1048,7 +1065,10 @@ func TestDeleteNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
@@ -1091,7 +1111,10 @@ func TestDeleteNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
@@ -1134,7 +1157,10 @@ func TestDeleteNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
@@ -1252,7 +1278,10 @@ func TestDeleteNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherNodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/node-pools", string(otherNodePool.UID)),
@@ -1357,7 +1386,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			CPUCount: ptr.To(3),
@@ -1437,7 +1469,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			CPUCount: ptr.To(3),
@@ -1517,7 +1552,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			CPUCount: ptr.To(3),
@@ -1576,7 +1614,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			Quantity: ptr.To(2),
@@ -1680,7 +1721,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			StorageResources: ptr.To([]types.StorageResource{
@@ -1798,7 +1842,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			Name: ptr.To("hello"),
@@ -1882,7 +1929,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			StorageResources: ptr.To([]types.StorageResource{
@@ -1941,7 +1991,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			StorageResources: ptr.To([]types.StorageResource{
@@ -2000,7 +2053,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			DiskSize: ptr.To("foobar"),
@@ -2053,7 +2109,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			RAMSize: ptr.To("foobar"),
@@ -2106,7 +2165,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			StorageResources: ptr.To([]types.StorageResource{
@@ -2165,7 +2227,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			StorageResources: ptr.To([]types.StorageResource{
@@ -2224,7 +2289,10 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		update := types.NodePoolOptions{
 			CPUCount: ptr.To(-1),

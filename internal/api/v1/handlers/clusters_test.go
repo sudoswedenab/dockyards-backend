@@ -968,7 +968,10 @@ func TestDeleteCluster(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/clusters", string(cluster.UID)),
@@ -1011,7 +1014,10 @@ func TestDeleteCluster(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/clusters", string(cluster.UID)),
@@ -1054,7 +1060,10 @@ func TestDeleteCluster(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(time.Second)
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		u := url.URL{
 			Path: path.Join("/v1/clusters", string(cluster.UID)),
