@@ -422,6 +422,89 @@ func TestClusterWorkloads_Create(t *testing.T) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual))
 		}
 	})
+
+	t.Run("test namespace", func(t *testing.T) {
+		name := "test-namespace"
+
+		request := types.Workload{
+			Name:                 &name,
+			WorkloadTemplateName: ptr.To("test"),
+		}
+
+		b, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.CreateClusterWorkload(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Errorf("expected status code %d, got %d", http.StatusCreated, statusCode)
+
+			return
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      cluster.Name + "-" + name,
+			Namespace: cluster.Namespace,
+		}
+
+		var actual dockyardsv1.Workload
+		err = c.Get(ctx, objectKey, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-" + name,
+				Namespace: cluster.Namespace,
+				Labels: map[string]string{
+					dockyardsv1.LabelClusterName: cluster.Name,
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.ClusterKind,
+						Name:       cluster.Name,
+						UID:        cluster.UID,
+					},
+				},
+				CreationTimestamp: actual.CreationTimestamp,
+				Generation:        actual.Generation,
+				ManagedFields:     actual.ManagedFields,
+				ResourceVersion:   actual.ResourceVersion,
+				UID:               actual.UID,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				Provenience:     dockyardsv1.ProvenienceUser,
+				TargetNamespace: name,
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind:      dockyardsv1.WorkloadTemplateKind,
+					Name:      "test",
+					Namespace: &dockyardsNamespace,
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
 }
 
 func TestClusterWorkloads_Delete(t *testing.T) {

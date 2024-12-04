@@ -144,10 +144,14 @@ func (h *handler) CreateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if request.WorkloadTemplateName == nil || request.Namespace == nil {
+	if request.WorkloadTemplateName == nil || request.Name == nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		return
+	}
+
+	if request.Namespace == nil {
+		request.Namespace = request.Name
 	}
 
 	workload := dockyardsv1.Workload{
