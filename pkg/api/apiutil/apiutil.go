@@ -16,6 +16,7 @@ package apiutil
 
 import (
 	"context"
+	"slices"
 
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
@@ -377,4 +378,33 @@ func IgnoreIsInvalid(err error) error {
 	}
 
 	return err
+}
+
+func FindWorkloadReference(references []dockyardsv1.WorkloadReference, reference dockyardsv1.WorkloadReference) *dockyardsv1.WorkloadReference {
+	for i, existing := range references {
+		if existing.TypedObjectReference.String() != reference.TypedObjectReference.String() {
+			continue
+		}
+
+		return &references[i]
+	}
+
+	return nil
+}
+
+func SetWorkloadReference(references *[]dockyardsv1.WorkloadReference, newReference dockyardsv1.WorkloadReference) bool {
+	existingReference := FindWorkloadReference(*references, newReference)
+	if existingReference == nil {
+		*references = append(*references, newReference)
+
+		return true
+	}
+
+	if slices.Compare(existingReference.URLs, newReference.URLs) != 0 {
+		existingReference.URLs = newReference.URLs
+
+		return true
+	}
+
+	return false
 }

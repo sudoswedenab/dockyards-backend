@@ -25,6 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -468,6 +469,240 @@ func TestGetNamespaceOrganization(t *testing.T) {
 
 			if !cmp.Equal(actual, tc.expected) {
 				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
+
+func TestSetWorkloadReference(t *testing.T) {
+	tt := []struct {
+		name          string
+		references    []dockyardsv1.WorkloadReference
+		reference     dockyardsv1.WorkloadReference
+		expected      []dockyardsv1.WorkloadReference
+		expectChanged bool
+	}{
+		{
+			name: "test empty",
+			reference: dockyardsv1.WorkloadReference{
+				TypedObjectReference: corev1.TypedObjectReference{
+					Kind: "Test",
+					Name: "test",
+				},
+			},
+			expected: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+				},
+			},
+			expectChanged: true,
+		},
+		{
+			name: "test existing",
+			references: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+				},
+			},
+			reference: dockyardsv1.WorkloadReference{
+				TypedObjectReference: corev1.TypedObjectReference{
+					Kind: "Test",
+					Name: "test",
+				},
+			},
+			expected: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+				},
+			},
+		},
+		{
+			name: "test new",
+			references: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+				},
+			},
+			reference: dockyardsv1.WorkloadReference{
+				TypedObjectReference: corev1.TypedObjectReference{
+					Kind: "Test",
+					Name: "new",
+				},
+			},
+			expected: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+				},
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "new",
+					},
+				},
+			},
+			expectChanged: true,
+		},
+		{
+			name: "test namespace",
+			references: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+				},
+			},
+			reference: dockyardsv1.WorkloadReference{
+				TypedObjectReference: corev1.TypedObjectReference{
+					Kind:      "Test",
+					Name:      "test",
+					Namespace: ptr.To("testing"),
+				},
+			},
+			expected: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+				},
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind:      "Test",
+						Name:      "test",
+						Namespace: ptr.To("testing"),
+					},
+				},
+			},
+			expectChanged: true,
+		},
+		{
+			name: "test urls",
+			references: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+				},
+			},
+			reference: dockyardsv1.WorkloadReference{
+				TypedObjectReference: corev1.TypedObjectReference{
+					Kind: "Test",
+					Name: "test",
+				},
+				URLs: []string{
+					"http://localhost:8080",
+				},
+			},
+			expected: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+					URLs: []string{
+						"http://localhost:8080",
+					},
+				},
+			},
+			expectChanged: true,
+		},
+		{
+			name: "test existing urls",
+			references: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+					URLs: []string{
+						"http://localhost:1234",
+					},
+				},
+			},
+			reference: dockyardsv1.WorkloadReference{
+				TypedObjectReference: corev1.TypedObjectReference{
+					Kind: "Test",
+					Name: "test",
+				},
+				URLs: []string{
+					"http://localhost:1234",
+				},
+			},
+			expected: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+					URLs: []string{
+						"http://localhost:1234",
+					},
+				},
+			},
+		},
+		{
+			name: "test changed urls",
+			references: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+					URLs: []string{
+						"http://localhost:8080",
+					},
+				},
+			},
+			reference: dockyardsv1.WorkloadReference{
+				TypedObjectReference: corev1.TypedObjectReference{
+					Kind: "Test",
+					Name: "test",
+				},
+				URLs: []string{
+					"https://localhost:6443",
+				},
+			},
+			expected: []dockyardsv1.WorkloadReference{
+				{
+					TypedObjectReference: corev1.TypedObjectReference{
+						Kind: "Test",
+						Name: "test",
+					},
+					URLs: []string{
+						"https://localhost:6443",
+					},
+				},
+			},
+			expectChanged: true,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := apiutil.SetWorkloadReference(&tc.references, tc.reference)
+			if actual != tc.expectChanged {
+				t.Errorf("expected change %t, got %t", tc.expectChanged, actual)
+			}
+
+			if !cmp.Equal(tc.references, tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, tc.references))
 			}
 		})
 	}
