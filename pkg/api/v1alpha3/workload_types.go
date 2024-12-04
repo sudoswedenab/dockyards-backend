@@ -38,10 +38,19 @@ type WorkloadSpec struct {
 	Provenience string `json:"provenience"`
 }
 
+type WorkloadReference struct {
+	*corev1.TypedObjectReference `json:",inline"`
+	Parent                       *corev1.TypedLocalObjectReference `json:"parent,omitempty"`
+	URLs                         []string                          `json:"urls,omitempty"`
+}
+
 type WorkloadStatus struct {
-	Conditions     []metav1.Condition                 `json:"conditions,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// Deprecated: Use references instead.
 	DependencyRefs []corev1.TypedLocalObjectReference `json:"dependencyRefs,omitempty"`
 	URLs           []string                           `json:"urls,omitempty"`
+	References     []WorkloadReference                `json:"references,omitempty"`
 }
 
 // +kubebuilder:object:root=true
