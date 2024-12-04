@@ -39,9 +39,9 @@ type WorkloadSpec struct {
 }
 
 type WorkloadReference struct {
-	*corev1.TypedObjectReference `json:",inline"`
-	Parent                       *corev1.TypedLocalObjectReference `json:"parent,omitempty"`
-	URLs                         []string                          `json:"urls,omitempty"`
+	corev1.TypedObjectReference `json:",inline"`
+	Parent                      *corev1.TypedLocalObjectReference `json:"parent,omitempty"`
+	URLs                        []string                          `json:"urls,omitempty"`
 }
 
 type WorkloadStatus struct {
