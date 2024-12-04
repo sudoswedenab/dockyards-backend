@@ -9,5 +9,6 @@ import (
 #clusterOptions: types.#ClusterOptions
 #login:          types.#Login
 #workload:       types.#Workload
-#workload: namespace!:              #_objectName
+#workload: name!:                   #_objectName
+#workload: namespace?:              #_objectName
 #workload: workload_template_name!: #_objectName

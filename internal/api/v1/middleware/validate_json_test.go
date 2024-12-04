@@ -65,11 +65,11 @@ func TestValidateJSON(t *testing.T) {
 		{
 			name:     "test valid workload",
 			schema:   "#workload",
-			body:     `{"namespace":"test","workload_template_name":"test"}`,
+			body:     `{"namespace":"test","workload_template_name":"test","name":"test"}`,
 			expected: http.StatusOK,
 		},
 		{
-			name:     "test workload missing namespace",
+			name:     "test workload missing name",
 			schema:   "#workload",
 			body:     `{"workload_template_name":"test"}`,
 			expected: http.StatusUnprocessableEntity,
@@ -83,25 +83,25 @@ func TestValidateJSON(t *testing.T) {
 		{
 			name:     "test workload invalid namespace prefix",
 			schema:   "#workload",
-			body:     `{"namespace":"-test","workload_template_name":"test"}`,
+			body:     `{"namespace":"-test","workload_template_name":"test","name":test"}`,
 			expected: http.StatusUnprocessableEntity,
 		},
 		{
 			name:     "test workload invalid namespace suffix",
 			schema:   "#workload",
-			body:     `{"namespace":"test-","workload_template_name":"test"}`,
+			body:     `{"namespace":"test-","workload_template_name":"test","name":"test"}`,
 			expected: http.StatusUnprocessableEntity,
 		},
 		{
 			name:     "test workload numeric suffix",
 			schema:   "#workload",
-			body:     `{"namespace":"0-test","workload_template_name":"test"}`,
+			body:     `{"namespace":"0-test","workload_template_name":"test","name":"test"}`,
 			expected: http.StatusOK,
 		},
 		{
 			name:     "test workload numeric suffix",
 			schema:   "#workload",
-			body:     `{"namespace":"test-0","workload_template_name":"test"}`,
+			body:     `{"namespace":"test-0","workload_template_name":"test","name":"test"}`,
 			expected: http.StatusOK,
 		},
 	}
