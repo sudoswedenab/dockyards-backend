@@ -678,8 +678,12 @@ func (h *handler) GetClusterWorkloads(w http.ResponseWriter, r *http.Request) {
 
 	for i, workload := range workloadList.Items {
 		response[i] = types.Workload{
-			Name:                 ptr.To(strings.TrimPrefix(workload.Name, cluster.Name+"-")),
-			WorkloadTemplateName: &workload.Spec.WorkloadTemplateRef.Name,
+			Name:      ptr.To(strings.TrimPrefix(workload.Name, cluster.Name+"-")),
+			Namespace: ptr.To(workload.Spec.TargetNamespace),
+		}
+
+		if workload.Spec.WorkloadTemplateRef != nil {
+			response[i].WorkloadTemplateName = &workload.Spec.WorkloadTemplateRef.Name
 		}
 	}
 
@@ -818,7 +822,8 @@ func (h *handler) GetClusterWorkload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := types.Workload{
-		Name: ptr.To(strings.TrimPrefix(workload.Name, cluster.Name+"-")),
+		Name:      ptr.To(strings.TrimPrefix(workload.Name, cluster.Name+"-")),
+		Namespace: ptr.To(workload.Spec.TargetNamespace),
 	}
 
 	if workload.Spec.WorkloadTemplateRef != nil {
