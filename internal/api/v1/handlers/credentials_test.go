@@ -106,6 +106,11 @@ func TestCredential_GetOrganizationCredentials(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
@@ -208,6 +213,11 @@ func TestCredential_GetOrganizationCredentials(t *testing.T) {
 			})
 		}
 
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secrets[len(secrets)-1])
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
@@ -259,6 +269,11 @@ func TestCredential_GetOrganizationCredentials(t *testing.T) {
 		}
 
 		err = c.Create(ctx, &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -364,6 +379,11 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		u := url.URL{
 			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
 		}
@@ -407,6 +427,11 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		err := c.Create(ctx, &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -473,6 +498,11 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		err := c.Create(ctx, &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -544,6 +574,11 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		u := url.URL{
 			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
 		}
@@ -605,6 +640,11 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		err := c.Create(ctx, &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -936,6 +976,11 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		u := url.URL{
 			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
 		}
@@ -994,6 +1039,11 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		}
 
 		err := c.Create(ctx, &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1086,6 +1136,11 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		}
 
 		err = c.Create(ctx, &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1204,6 +1259,11 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		u := url.URL{
 			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
 		}
@@ -1240,6 +1300,11 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		u := url.URL{
 			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
 		}
@@ -1272,6 +1337,11 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		}
 
 		err := c.Create(ctx, &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
 		if err != nil {
 			t.Fatal(err)
 		}
