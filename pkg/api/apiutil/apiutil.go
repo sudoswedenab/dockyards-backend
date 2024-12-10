@@ -369,6 +369,10 @@ func IgnoreClientError(err error) error {
 		return nil
 	}
 
+	if apierrors.IsAlreadyExists(err) {
+		return nil
+	}
+
 	return err
 }
 
