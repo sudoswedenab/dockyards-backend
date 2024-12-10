@@ -203,7 +203,7 @@ func (h *handler) CreateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if apierrors.IsConflict(err) {
+	if apierrors.IsConflict(err) || apierrors.IsAlreadyExists(err) {
 		w.WriteHeader(http.StatusConflict)
 
 		return
