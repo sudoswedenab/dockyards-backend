@@ -477,6 +477,12 @@ func (h *handler) UpdateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if workload.Spec.Provenience != dockyardsv1.ProvenienceUser {
+		w.WriteHeader(http.StatusForbidden)
+
+		return
+	}
+
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		logger.Error("error reading request body", "err", err)

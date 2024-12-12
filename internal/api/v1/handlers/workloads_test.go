@@ -1322,4 +1322,66 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
 		}
 	})
+
+	t.Run("test dockyards provenience", func(t *testing.T) {
+		workloadName := "test-dockyards-provenience"
+
+		workload := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-" + workloadName,
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				TargetNamespace: "testing",
+				Provenience:     dockyardsv1.ProvenienceDockyards,
+				WorkloadTemplateRef: &corev1.TypedObjectReference{
+					Kind: dockyardsv1.WorkloadTemplateKind,
+					Name: "test",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		request := types.Workload{
+			Name:                 ptr.To(workloadName),
+			WorkloadTemplateName: ptr.To("test"),
+			Namespace:            ptr.To("update"),
+		}
+
+		b, err := json.Marshal(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("workloadName", workloadName)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		h.UpdateClusterWorkload(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusForbidden {
+			t.Errorf("expected status code %d, got %d", http.StatusForbidden, statusCode)
+		}
+	})
+
 }
