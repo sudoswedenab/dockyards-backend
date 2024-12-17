@@ -3,7 +3,7 @@ module bitbucket.org/sudosweden/dockyards-backend
 go 1.23.1
 
 require (
-	bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20241114091924-e855c580d03f
+	bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20241217115527-6df6d93ecc73
 	bitbucket.org/sudosweden/dockyards-backend/pkg/api v1.2.3
 	cuelang.org/go v0.10.0
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -11,6 +11,7 @@ require (
 	github.com/fluxcd/pkg/runtime v0.47.1
 	github.com/go-logr/logr v1.4.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/google/addlicense v1.1.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/prometheus/client_golang v1.19.0
@@ -51,7 +52,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/google/addlicense v1.1.1 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect

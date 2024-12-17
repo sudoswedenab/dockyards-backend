@@ -9,14 +9,6 @@ package types
 
 import "time"
 
-#DeploymentTypeContainerImage: #DeploymentType & "container_image"
-#DeploymentTypeHelm:           #DeploymentType & "helm"
-#DeploymentTypeKustomize:      #DeploymentType & "kustomize"
-
-#DeploymentStatusHealthError:   #DeploymentStatusHealth & "error"
-#DeploymentStatusHealthHealthy: #DeploymentStatusHealth & "healthy"
-#DeploymentStatusHealthWarning: #DeploymentStatusHealth & "warning"
-
 // App defines model for app.
 #App: {
 	app_steps?: null | [...#AppStep] @go(AppSteps,*[]AppStep)
@@ -75,58 +67,18 @@ import "time"
 	organization: string @go(Organization)
 }
 
-// Deployment defines model for deployment.
-#Deployment: {
-	cluster_id:           string        @go(ClusterID)
-	container_image?:     null | string @go(ContainerImage,*string)
-	credential_name?:     null | string @go(CredentialName,*string)
-	deployment_template?: null | string @go(DeploymentTemplate,*string)
-	deployment_template_input?: null | {...} @go(DeploymentTemplateInput,*map[string]interface{})
-	helm_chart?:      null | string @go(HelmChart,*string)
-	helm_repository?: null | string @go(HelmRepository,*string)
-	helm_values?: null | {...} @go(HelmValues,*map[string]interface{})
-	helm_version?: null | string @go(HelmVersion,*string)
-	id:            string        @go(ID)
-	kustomize?: null | {[string]: bytes} @go(Kustomize,*map[string][]byte)
-	name?:        null | string            @go(Name,*string)
-	namespace?:   null | string            @go(Namespace,*string)
-	port?:        null | int               @go(Port,*int)
-	provenience?: null | string            @go(Provenience,*string)
-	status?:      null | #DeploymentStatus @go(Status,*DeploymentStatus)
-	type:         #DeploymentType          @go(Type)
-}
-
-// DeploymentType defines model for Deployment.Type.
-#DeploymentType: string // #enumDeploymentType
-
-#enumDeploymentType:
-	#DeploymentTypeContainerImage |
-	#DeploymentTypeHelm |
-	#DeploymentTypeKustomize
-
 // DeploymentOverview defines model for deployment_overview.
 #DeploymentOverview: {
 	id:   string @go(ID)
 	name: string @go(Name)
 }
 
-// DeploymentStatus defines model for deployment_status.
-#DeploymentStatus: {
-	created_at:    time.Time                      @go(CreatedAt)
-	deployment_id: string                         @go(DeploymentID)
-	health?:       null | #DeploymentStatusHealth @go(Health,*DeploymentStatusHealth)
-	id:            string                         @go(ID)
-	state?:        null | string                  @go(State,*string)
-	urls?: null | [...string] @go(Urls,*[]string)
+// IPPool defines model for ip_pool.
+#IPPool: {
+	addresses?: null | [...string] @go(Addresses,*[]string)
+	id?:   null | string @go(ID,*string)
+	name?: null | string @go(Name,*string)
 }
-
-// DeploymentStatusHealth defines model for DeploymentStatus.Health.
-#DeploymentStatusHealth: string // #enumDeploymentStatusHealth
-
-#enumDeploymentStatusHealth:
-	#DeploymentStatusHealthError |
-	#DeploymentStatusHealthHealthy |
-	#DeploymentStatusHealthWarning
 
 // Login defines model for login.
 #Login: {

@@ -102,9 +102,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("DELETE /v1/clusters/{clusterID}", logger(requireAuth(http.HandlerFunc(h.DeleteCluster))))
 	mux.Handle("GET /v1/clusters", logger(requireAuth(http.HandlerFunc(h.GetClusters))))
 	mux.Handle("GET /v1/clusters/{clusterID}", logger(requireAuth(http.HandlerFunc(h.GetCluster))))
-	mux.Handle("GET /v1/clusters/{clusterID}/deployments", logger(requireAuth(http.HandlerFunc(h.GetClusterDeployments))))
 	mux.Handle("GET /v1/clusters/{clusterID}/kubeconfig", logger(requireAuth(http.HandlerFunc(h.GetClusterKubeconfig))))
-	mux.Handle("POST /v1/clusters/{clusterID}/deployments", logger(requireAuth(http.HandlerFunc(h.PostClusterDeployments))))
 	mux.Handle("POST /v1/clusters/{clusterID}/node-pools", logger(requireAuth(http.HandlerFunc(h.PostClusterNodePools))))
 
 	mux.Handle("GET /v1/orgs", logger(requireAuth(http.HandlerFunc(h.GetOrgs))))
@@ -116,8 +114,6 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		),
 	)
 
-	mux.Handle("GET /v1/deployments/{deploymentID}", logger(requireAuth(http.HandlerFunc(h.GetDeployment))))
-
 	mux.Handle("GET /v1/whoami", logger(requireAuth(http.HandlerFunc(h.GetWhoami))))
 
 	mux.Handle("GET /v1/apps", logger(requireAuth(http.HandlerFunc(h.GetApps))))
@@ -126,8 +122,6 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.GetNodePool))))
 	mux.Handle("DELETE /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.DeleteNodePool))))
 	mux.Handle("PATCH /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.UpdateNodePool))))
-
-	mux.Handle("DELETE /v1/deployments/{deploymentID}", logger(requireAuth(http.HandlerFunc(h.DeleteDeployment))))
 
 	mux.Handle("DELETE /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(http.HandlerFunc(h.DeleteOrganizationCredential))))
 	mux.Handle("GET /v1/orgs/{organizationName}/credentials", logger(requireAuth(http.HandlerFunc(h.GetOrganizationCredentials))))
