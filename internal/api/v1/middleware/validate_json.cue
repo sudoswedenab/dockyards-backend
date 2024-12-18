@@ -12,3 +12,4 @@ import (
 #workload: name!:                   #_objectName
 #workload: namespace?:              #_objectName
 #workload: workload_template_name!: #_objectName
+#nodePoolOptions: types.#NodePoolOptions

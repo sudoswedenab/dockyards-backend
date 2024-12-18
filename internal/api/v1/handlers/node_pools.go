@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -768,4 +769,102 @@ func nodePoolStorageResourcesFromStorageResources(storageResources []types.Stora
 	}
 
 	return result, nil
+}
+
+func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv1.Cluster, request *types.NodePoolOptions) (*types.NodePool, error) {
+	if request.Name == nil {
+		return nil, nil
+	}
+
+	nodePoolQuantity := *request.Quantity
+	if nodePoolQuantity > maxReplicas {
+		statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.WorkloadKind).GroupKind(), "", nil)
+
+		return nil, statusError
+	}
+
+	resources := make(corev1.ResourceList)
+
+	if request.RAMSize != nil {
+		memory, err := resource.ParseQuantity(*request.RAMSize)
+		if err != nil {
+			return nil, err
+		}
+
+		resources[corev1.ResourceMemory] = memory
+	}
+
+	if request.CPUCount != nil {
+		cpu := resource.NewQuantity(int64(*request.CPUCount), resource.DecimalSI)
+		resources[corev1.ResourceCPU] = *cpu
+	}
+
+	if request.DiskSize != nil {
+		storage, err := resource.ParseQuantity(*request.DiskSize)
+		if err != nil {
+			return nil, err
+		}
+
+		resources[corev1.ResourceStorage] = storage
+	}
+
+	nodePool := dockyardsv1.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cluster.Name + "-" + *request.Name,
+			Namespace: cluster.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: dockyardsv1.GroupVersion.String(),
+					Kind:       dockyardsv1.ClusterKind,
+					Name:       cluster.Name,
+					UID:        cluster.UID,
+				},
+			},
+		},
+		Spec: dockyardsv1.NodePoolSpec{
+			Replicas:  ptr.To(int32(nodePoolQuantity)),
+			Resources: resources,
+		},
+	}
+
+	if request.ControlPlane != nil {
+		nodePool.Spec.ControlPlane = *request.ControlPlane
+	}
+
+	if request.LoadBalancer != nil {
+		nodePool.Spec.LoadBalancer = *request.LoadBalancer
+	}
+
+	if request.ControlPlaneComponentsOnly != nil {
+		nodePool.Spec.DedicatedRole = *request.ControlPlaneComponentsOnly
+	}
+
+	if request.StorageResources != nil {
+		for _, storageResource := range *request.StorageResources {
+			quantity, err := resource.ParseQuantity(storageResource.Quantity)
+			if err != nil {
+				return nil, err
+			}
+
+			nodePoolStorageResource := dockyardsv1.NodePoolStorageResource{
+				Name:     storageResource.Name,
+				Quantity: quantity,
+			}
+
+			if storageResource.Type != nil {
+				nodePoolStorageResource.Type = *storageResource.Type
+			}
+
+			nodePool.Spec.StorageResources = append(nodePool.Spec.StorageResources, nodePoolStorageResource)
+		}
+	}
+
+	err := h.Create(ctx, &nodePool)
+	if err != nil {
+		return nil, err
+	}
+
+	v1NodePool := h.toV1NodePool(&nodePool, cluster, nil)
+
+	return v1NodePool, nil
 }

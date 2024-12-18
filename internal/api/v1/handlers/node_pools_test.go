@@ -2324,3 +2324,592 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 	})
 }
+
+func TestClusterNodePools_Create(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	ctx, cancel := context.WithCancel(context.TODO())
+
+	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		cancel()
+		testEnvironment.GetEnvironment().Stop()
+	})
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.GetOrganization()
+	superUser := testEnvironment.GetSuperUser()
+	user := testEnvironment.GetUser()
+	reader := testEnvironment.GetReader()
+
+	dockyardsNamespace := testEnvironment.GetDockyardsNamespace()
+
+	h := handler{
+		Client:    mgr.GetClient(),
+		namespace: dockyardsNamespace,
+	}
+
+	handlerFunc := CreateClusterResource(&h, "nodepools", h.CreateClusterNodePool)
+
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	cluster := dockyardsv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+			Namespace:    organization.Status.NamespaceRef.Name,
+		},
+	}
+
+	err = c.Create(ctx, &cluster)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("test as super user", func(t *testing.T) {
+		nodePoolOptions := types.NodePoolOptions{
+			Name:     ptr.To("test-super-user"),
+			Quantity: ptr.To(0),
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
+		}
+
+		b, err := json.Marshal(nodePoolOptions)
+		if err != nil {
+			t.Fatalf("unexpected error marshalling test options: %s", err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		b, err = io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatalf("unexpected error reading result body: %s", err)
+		}
+
+		var actual types.NodePool
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatalf("error unmarshalling result body to json: %s", err)
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      cluster.Name + "-" + *nodePoolOptions.Name,
+			Namespace: cluster.Namespace,
+		}
+
+		var nodePool dockyardsv1.NodePool
+		err = c.Get(ctx, objectKey, &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := types.NodePool{
+			ClusterID: string(cluster.UID),
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		nodePoolOptions := types.NodePoolOptions{
+			Name:     ptr.To("test-user"),
+			Quantity: ptr.To(0),
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
+		}
+
+		b, err := json.Marshal(nodePoolOptions)
+		if err != nil {
+			t.Fatalf("unexpected error marshalling test options: %s", err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		b, err = io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatalf("unexpected error reading result body: %s", err)
+		}
+
+		var actual types.NodePool
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatalf("error unmarshalling result body to json: %s", err)
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      cluster.Name + "-" + *nodePoolOptions.Name,
+			Namespace: cluster.Namespace,
+		}
+
+		var nodePool dockyardsv1.NodePool
+		err = c.Get(ctx, objectKey, &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := types.NodePool{
+			ClusterID: string(cluster.UID),
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test as reader", func(t *testing.T) {
+		nodePoolOptions := types.NodePoolOptions{
+			Name:     ptr.To("test-super-user"),
+			Quantity: ptr.To(0),
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
+		}
+
+		b, err := json.Marshal(nodePoolOptions)
+		if err != nil {
+			t.Fatalf("unexpected error marshalling test options: %s", err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test complex options", func(t *testing.T) {
+		nodePoolOptions := types.NodePoolOptions{
+			Name:                       ptr.To("test2"),
+			Quantity:                   ptr.To(3),
+			LoadBalancer:               ptr.To(true),
+			ControlPlaneComponentsOnly: ptr.To(true),
+			RAMSize:                    ptr.To("1234M"),
+			CPUCount:                   ptr.To(12),
+			DiskSize:                   ptr.To("123Gi"),
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
+		}
+
+		b, err := json.Marshal(nodePoolOptions)
+		if err != nil {
+			t.Fatalf("unexpected error marshalling test options: %s", err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		b, err = io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatalf("unexpected error reading result body: %s", err)
+		}
+
+		var actual types.NodePool
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatalf("error unmarshalling result body to json: %s", err)
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      cluster.Name + "-" + *nodePoolOptions.Name,
+			Namespace: cluster.Namespace,
+		}
+
+		var nodePool dockyardsv1.NodePool
+		err = c.Get(ctx, objectKey, &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := types.NodePool{
+			ClusterID:                  string(cluster.UID),
+			ControlPlaneComponentsOnly: ptr.To(true),
+			CPUCount:                   12,
+			DiskSize:                   "123Gi",
+			ID:                         string(nodePool.UID),
+			LoadBalancer:               ptr.To(true),
+			Name:                       nodePool.Name,
+			Quantity:                   3,
+			RAMSize:                    "1234M",
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test storege resource without type", func(t *testing.T) {
+		nodePoolOptions := types.NodePoolOptions{
+			Name:     ptr.To("storage-resources"),
+			Quantity: ptr.To(3),
+			StorageResources: &[]types.StorageResource{
+				{
+					Name:     "test",
+					Quantity: "123",
+				},
+			},
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
+		}
+
+		b, err := json.Marshal(nodePoolOptions)
+		if err != nil {
+			t.Fatalf("unexpected error marshalling test options: %s", err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		b, err = io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatalf("unexpected error reading result body: %s", err)
+		}
+
+		var actual types.NodePool
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatalf("error unmarshalling result body to json: %s", err)
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      cluster.Name + "-" + *nodePoolOptions.Name,
+			Namespace: cluster.Namespace,
+		}
+
+		var nodePool dockyardsv1.NodePool
+		err = c.Get(ctx, objectKey, &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := types.NodePool{
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
+			ClusterID: string(cluster.UID),
+			Quantity:  3,
+			StorageResources: &[]types.StorageResource{
+				{
+					Name:     "test",
+					Quantity: "123",
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test invalid name", func(t *testing.T) {
+		nodePoolOptions := types.NodePoolOptions{
+			Name:     ptr.To("InvalidName"),
+			Quantity: ptr.To(0),
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
+		}
+
+		b, err := json.Marshal(nodePoolOptions)
+		if err != nil {
+			t.Fatalf("unexpected error marshalling test options: %s", err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
+		}
+	})
+
+	t.Run("test conflict name", func(t *testing.T) {
+		nodePool := dockyardsv1.NodePool{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cluster.Name + "-test-conflict",
+				Namespace: organization.Status.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.ClusterKind,
+						Name:       cluster.Name,
+						UID:        cluster.UID,
+					},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		nodePoolOptions := types.NodePoolOptions{
+			Name:     ptr.To("test-conflict"),
+			Quantity: ptr.To(0),
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
+		}
+
+		b, err := json.Marshal(nodePoolOptions)
+		if err != nil {
+			t.Fatalf("unexpected error marshalling test options: %s", err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusConflict {
+			t.Fatalf("expected status code %d, got %d", http.StatusConflict, statusCode)
+		}
+	})
+
+	t.Run("test without membership", func(t *testing.T) {
+		otherOrganization := dockyardsv1.Organization{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+			Spec: dockyardsv1.OrganizationSpec{
+				MemberRefs: []dockyardsv1.OrganizationMemberReference{
+					{
+						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+						UID:  user.UID,
+					},
+					{
+						Role: dockyardsv1.OrganizationMemberRoleUser,
+						UID:  reader.UID,
+					},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &otherOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+		}
+
+		err = c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherOrganization.Status.NamespaceRef = &corev1.LocalObjectReference{
+			Name: namespace.Name,
+		}
+
+		err = c.Status().Update(ctx, &otherOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherCluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    namespace.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       otherOrganization.Name,
+						UID:        otherOrganization.UID,
+					},
+				},
+			},
+		}
+
+		err = c.Create(ctx, &otherCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		nodePoolOptions := types.NodePoolOptions{
+			Name:     ptr.To("test"),
+			Quantity: ptr.To(0),
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
+		}
+
+		b, err := json.Marshal(nodePoolOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", otherOrganization.Name)
+		r.SetPathValue("clusterName", otherCluster.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test high quantity", func(t *testing.T) {
+		nodePoolOptions := types.NodePoolOptions{
+			Name:     ptr.To("test"),
+			Quantity: ptr.To(50),
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
+		}
+
+		b, err := json.Marshal(nodePoolOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
+		}
+	})
+}
