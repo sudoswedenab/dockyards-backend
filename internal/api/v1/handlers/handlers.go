@@ -109,7 +109,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters",
 		logger(
 			requireAuth(
-				validateJSON.WithSchema("#clusterOptions")(http.HandlerFunc(h.CreateCluster)),
+				validateJSON.WithSchema("#clusterOptions")(CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCluster)),
 			),
 		),
 	)

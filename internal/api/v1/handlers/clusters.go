@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -22,7 +23,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
-	"io"
 	"math"
 	"math/big"
 	"net/http"
@@ -171,137 +171,51 @@ func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *types.NodePoolOptio
 	return &nodePool, nil
 }
 
-func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	organizationName := r.PathValue("organizationName")
-	if organizationName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	objectKey := client.ObjectKey{
-		Name: organizationName,
-	}
-
-	var organization dockyardsv1.Organization
-	err := h.Get(ctx, objectKey, &organization)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting organization from kubernetes", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if organization.Status.NamespaceRef == nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Debug("error fetching subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Verb:      "create",
-		Resource:  "clusters",
-		Group:     dockyardsv1.GroupVersion.Group,
-		Namespace: organization.Status.NamespaceRef.Name,
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to create clusters", "subject", subject, "organization", organization.Name)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	r.Body.Close()
-
-	var clusterOptions types.ClusterOptions
-	err = json.Unmarshal(body, &clusterOptions)
-	if err != nil {
-		logger.Debug("error unmarshalling body", "err", err)
-		w.WriteHeader(http.StatusUnprocessableEntity)
-
-		return
-	}
-
-	logger.Debug("create cluster", "organization", organization.Name, "name", clusterOptions.Name, "version", clusterOptions.Version)
-
-	_, validName := name.IsValidName(clusterOptions.Name)
+func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *dockyardsv1.Organization, request *types.ClusterOptions) (*types.Cluster, error) {
+	_, validName := name.IsValidName(request.Name)
 	if !validName {
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", nil)
 
-		return
+		return nil, statusError
 	}
 
-	if clusterOptions.NodePoolOptions != nil && clusterOptions.ClusterTemplate != nil {
-		logger.Debug("both node pool options and cluster template set")
-		w.WriteHeader(http.StatusUnprocessableEntity)
+	if request.NodePoolOptions != nil && request.ClusterTemplate != nil {
+		statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", nil)
 
-		return
+		return nil, statusError
 	}
 
-	if clusterOptions.NodePoolOptions != nil {
-		for _, nodePoolOptions := range *clusterOptions.NodePoolOptions {
+	if request.NodePoolOptions != nil {
+		for _, nodePoolOptions := range *request.NodePoolOptions {
 			if nodePoolOptions.Name == nil {
-				w.WriteHeader(http.StatusUnprocessableEntity)
+				statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", nil)
 
-				return
+				return nil, statusError
 			}
 			_, validName := name.IsValidName(*nodePoolOptions.Name)
 			if !validName {
-				w.WriteHeader(http.StatusUnprocessableEntity)
+				statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", nil)
 
-				return
+				return nil, statusError
 			}
 
 			if nodePoolOptions.Quantity == nil {
-				w.WriteHeader(http.StatusUnprocessableEntity)
+				statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", nil)
 
-				return
+				return nil, statusError
 			}
-			if *nodePoolOptions.Quantity > 9 {
-				w.WriteHeader(http.StatusUnprocessableEntity)
 
-				return
+			if *nodePoolOptions.Quantity > maxReplicas {
+				statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", nil)
+
+				return nil, statusError
 			}
 		}
 	}
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterOptions.Name,
+			Name:      request.Name,
 			Namespace: organization.Status.NamespaceRef.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -316,31 +230,30 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 		Spec: dockyardsv1.ClusterSpec{},
 	}
 
-	if clusterOptions.Version != nil {
-		cluster.Spec.Version = *clusterOptions.Version
+	if request.Version != nil {
+		cluster.Spec.Version = *request.Version
 	} else {
 		release, err := apiutil.GetDefaultRelease(ctx, h.Client, dockyardsv1.ReleaseTypeKubernetes)
-		if err != nil || release == nil {
-			logger.Error("error getting supported kubernetes versions release", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
+		if err != nil {
 
-			return
+			return nil, err
+		}
+
+		if release == nil {
+			return nil, nil
 		}
 
 		cluster.Spec.Version = release.Status.LatestVersion
 	}
 
-	if clusterOptions.AllocateInternalIP != nil {
-		cluster.Spec.AllocateInternalIP = *clusterOptions.AllocateInternalIP
+	if request.AllocateInternalIP != nil {
+		cluster.Spec.AllocateInternalIP = *request.AllocateInternalIP
 	}
 
-	if clusterOptions.Duration != nil {
-		duration, err := time.ParseDuration(*clusterOptions.Duration)
+	if request.Duration != nil {
+		duration, err := time.ParseDuration(*request.Duration)
 		if err != nil {
-			logger.Error("error parsing duration", "err", err)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-
-			return
+			return nil, err
 		}
 
 		cluster.Spec.Duration = &metav1.Duration{
@@ -348,53 +261,38 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = h.Create(ctx, &cluster)
-	if client.IgnoreAlreadyExists(err) != nil {
-		logger.Error("error creating cluster", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+	err := h.Create(ctx, &cluster)
+	if err != nil {
+		return nil, err
 	}
-
-	if apierrors.IsAlreadyExists(err) {
-		w.WriteHeader(http.StatusConflict)
-
-		return
-	}
-
-	hasErrors := false
 
 	var clusterTemplate *dockyardsv1.ClusterTemplate
 
-	if clusterOptions.ClusterTemplate != nil {
+	if request.ClusterTemplate != nil {
 		objectKey := client.ObjectKey{
-			Name:      *clusterOptions.ClusterTemplate,
+			Name:      *request.ClusterTemplate,
 			Namespace: h.namespace,
 		}
 
 		var customTemplate dockyardsv1.ClusterTemplate
 		err := h.Get(ctx, objectKey, &customTemplate)
 		if err != nil {
-			logger.Error("error getting cluster template", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
+			return nil, err
 		}
 
 		clusterTemplate = &customTemplate
 	} else {
 		clusterTemplate, err = apiutil.GetDefaultClusterTemplate(ctx, h.Client)
-		if err != nil || clusterTemplate == nil {
-			logger.Error("error getting default cluster template", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
+		if err != nil {
+			return nil, err
+		}
 
-			return
+		if clusterTemplate == nil {
+			return nil, nil
 		}
 	}
 
-	logger.Debug("using cluster template", "name", clusterTemplate.Name)
-
-	if clusterOptions.NodePoolOptions == nil {
+	if request.NodePoolOptions == nil {
 		for _, nodePoolTemplate := range clusterTemplate.Spec.NodePoolTemplates {
 			var nodePool dockyardsv1.NodePool
 
@@ -416,59 +314,28 @@ func (h *handler) CreateCluster(w http.ResponseWriter, r *http.Request) {
 
 			err = h.Create(ctx, &nodePool)
 			if err != nil {
-				hasErrors = true
-				logger.Debug("error creating node pool", "err", err)
-
-				break
+				return nil, err
 			}
-
-			logger.Debug("created node pool", "uid", nodePool.UID, "name", nodePool.Name)
 		}
 	}
 
-	if clusterOptions.NodePoolOptions != nil {
-		for _, nodePoolOptions := range *clusterOptions.NodePoolOptions {
+	if request.NodePoolOptions != nil {
+		for _, nodePoolOptions := range *request.NodePoolOptions {
 			nodePool, err := h.nodePoolOptionsToNodePool(&nodePoolOptions, &cluster)
 			if err != nil {
-				logger.Error("error converting to node pool", "err", err)
-				hasErrors = true
-
-				break
+				return nil, err
 			}
 
 			err = h.Create(ctx, nodePool)
 			if err != nil {
-				logger.Error("error creating node pool", "err", err)
-				hasErrors = true
-
-				break
+				return nil, err
 			}
-
-			logger.Debug("created cluster node pool", "id", nodePool.UID)
 		}
 	}
 
-	if hasErrors {
-		logger.Error("deleting cluster due to node pool error", "id", cluster.UID)
-		w.WriteHeader(http.StatusInternalServerError)
+	v1Cluster := h.toV1Cluster(organization, &cluster, nil)
 
-		return
-	}
-
-	v1Cluster := h.toV1Cluster(&organization, &cluster, nil)
-
-	b, err := json.Marshal(&v1Cluster)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return v1Cluster, nil
 }
 
 func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {

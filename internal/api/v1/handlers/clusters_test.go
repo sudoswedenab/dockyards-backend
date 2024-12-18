@@ -43,7 +43,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestCreateCluster(t *testing.T) {
+func TestOrganizationClusters_Create(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
@@ -74,6 +74,8 @@ func TestCreateCluster(t *testing.T) {
 		Client:    mgr.GetClient(),
 		namespace: testEnvironment.GetDockyardsNamespace(),
 	}
+
+	handlerFunc := CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCluster)
 
 	go func() {
 		err := mgr.Start(ctx)
@@ -180,7 +182,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -239,7 +241,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -269,7 +271,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -300,7 +302,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -382,7 +384,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -407,34 +409,6 @@ func TestCreateCluster(t *testing.T) {
 		if !cmp.Equal(actualCluster.Spec, expectedCluster) {
 			t.Errorf("diff: %s", cmp.Diff(expectedCluster, actualCluster.Spec))
 		}
-
-		/*expected: []client.Object{
-			&dockyardsv1.NodePool{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            "test-cluster-template-controlplane",
-					Namespace:       "testing",
-					ResourceVersion: "1",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion:         dockyardsv1.GroupVersion.String(),
-							Kind:               dockyardsv1.ClusterKind,
-							Name:               "test-cluster-template",
-							BlockOwnerDeletion: ptr.To(true),
-						},
-					},
-				},
-				Spec: dockyardsv1.NodePoolSpec{
-					Replicas:      ptr.To(int32(1)),
-					ControlPlane:  true,
-					DedicatedRole: true,
-					Resources: corev1.ResourceList{
-						corev1.ResourceCPU:     resource.MustParse("2"),
-						corev1.ResourceMemory:  resource.MustParse("3Mi"),
-						corev1.ResourceStorage: resource.MustParse("4G"),
-					},
-				},
-			},
-		},*/
 	})
 
 	t.Run("test invalid organization", func(t *testing.T) {
@@ -459,7 +433,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -489,7 +463,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -524,7 +498,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -566,7 +540,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusConflict {
@@ -602,7 +576,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -672,7 +646,7 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -697,57 +671,6 @@ func TestCreateCluster(t *testing.T) {
 		if !cmp.Equal(actualCluster.Spec, expectedCluster) {
 			t.Errorf("diff: %s", cmp.Diff(expectedCluster, actualCluster.Spec))
 		}
-
-		/*expected: []client.Object{
-			&dockyardsv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            "test-custom-release",
-					Namespace:       "testing",
-					ResourceVersion: "1",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion:         dockyardsv1.GroupVersion.String(),
-							Kind:               dockyardsv1.OrganizationKind,
-							Name:               "test",
-							BlockOwnerDeletion: ptr.To(true),
-						},
-					},
-				},
-				Spec: dockyardsv1.ClusterSpec{
-					Version: "v2.3.4",
-				},
-			},
-			&dockyardsv1.NodePool{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            "test-custom-release-controlplane",
-					Namespace:       "testing",
-					ResourceVersion: "1",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion:         dockyardsv1.GroupVersion.String(),
-							Kind:               dockyardsv1.ClusterKind,
-							Name:               "test-custom-release",
-							BlockOwnerDeletion: ptr.To(true),
-						},
-					},
-				},
-				Spec: dockyardsv1.NodePoolSpec{
-					Replicas:      ptr.To(int32(1)),
-					ControlPlane:  true,
-					DedicatedRole: true,
-					Resources: corev1.ResourceList{
-						corev1.ResourceCPU:     resource.MustParse("2"),
-						corev1.ResourceMemory:  resource.MustParse("3Mi"),
-						corev1.ResourceStorage: resource.MustParse("4G"),
-					},
-					ReleaseRef: &corev1.TypedObjectReference{
-						Kind:      dockyardsv1.ReleaseKind,
-						Name:      "custom",
-						Namespace: ptr.To("dockyards-testing"),
-					},
-				},
-			},
-		}*/
 	})
 
 	t.Run("test storage resources", func(t *testing.T) {
@@ -788,65 +711,12 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
 			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
 		}
-
-		/*
-			expected: []client.Object{
-				&dockyardsv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-storage-resources",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.OrganizationKind,
-								Name:               "test",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
-					},
-					Spec: dockyardsv1.ClusterSpec{
-						Version: "v1.2.3",
-					},
-				},
-				&dockyardsv1.NodePool{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-storage-resources-worker",
-						Namespace:       "testing",
-						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         dockyardsv1.GroupVersion.String(),
-								Kind:               dockyardsv1.ClusterKind,
-								Name:               "test-storage-resources",
-								BlockOwnerDeletion: ptr.To(true),
-							},
-						},
-					},
-					Spec: dockyardsv1.NodePoolSpec{
-						Replicas: ptr.To(int32(3)),
-						Resources: corev1.ResourceList{
-							corev1.ResourceCPU:     resource.MustParse("2"),
-							corev1.ResourceMemory:  resource.MustParse("3Mi"),
-							corev1.ResourceStorage: resource.MustParse("4G"),
-						},
-						StorageResources: []dockyardsv1.NodePoolStorageResource{
-							{
-								Name:     "test",
-								Quantity: resource.MustParse("123"),
-								Type:     dockyardsv1.StorageResourceTypeHostPath,
-							},
-						},
-					},
-				},
-			}*/
-
 	})
 
 	t.Run("test duration", func(t *testing.T) {
@@ -872,35 +742,12 @@ func TestCreateCluster(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
 			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
 		}
-		/*expected: []client.Object{
-			&dockyardsv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            "test-duration",
-					Namespace:       "testing",
-					ResourceVersion: "1",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion:         dockyardsv1.GroupVersion.String(),
-							Kind:               dockyardsv1.OrganizationKind,
-							Name:               "test",
-							BlockOwnerDeletion: ptr.To(true),
-						},
-					},
-				},
-				Spec: dockyardsv1.ClusterSpec{
-					Version: "v1.2.3",
-					Duration: &metav1.Duration{
-						Duration: time.Minute * 15,
-					},
-				},
-			},
-		}*/
 	})
 }
 
