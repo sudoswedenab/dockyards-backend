@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -143,90 +144,10 @@ func (h *handler) GetOrganizationCredentials(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (h *handler) PostOrganizationCredentials(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	organizationName := r.PathValue("organizationName")
-	if organizationName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	var organization dockyardsv1.Organization
-	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if organization.Status.NamespaceRef == nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Verb:      "patch",
-		Resource:  "clusters",
-		Group:     "dockyards.io",
-		Namespace: organization.Status.NamespaceRef.Name,
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to patch organization", "subject", subject, "organization", organization.Name)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	r.Body.Close()
-
-	var credential types.Credential
-	err = json.Unmarshal(body, &credential)
-	if err != nil {
-		logger.Debug("error unmashalling body", "err", err)
-		w.WriteHeader(http.StatusUnprocessableEntity)
-
-		return
-	}
-
+func (h *handler) CreateOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, request *types.Credential) (*types.Credential, error) {
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "credential-" + credential.Name,
+			Name:      "credential-" + request.Name,
 			Namespace: organization.Status.NamespaceRef.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -240,38 +161,25 @@ func (h *handler) PostOrganizationCredentials(w http.ResponseWriter, r *http.Req
 		Type: dockyardsv1.SecretTypeCredential,
 	}
 
-	if credential.Data != nil {
+	if request.Data != nil {
 		secret.Data = make(map[string][]byte)
 
-		for key, value := range *credential.Data {
+		for key, value := range *request.Data {
 			secret.Data[key] = value
 		}
 	}
 
-	err = h.Create(ctx, &secret)
+	err := h.Create(ctx, &secret)
 	if err != nil {
-		logger.Error("error creating secret", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
-	createdCredential := types.Credential{
+	credential := types.Credential{
 		ID:   string(secret.UID),
 		Name: secret.Name,
 	}
 
-	b, err := json.Marshal(&createdCredential)
-	if err != nil {
-		logger.Debug("error marshalling credential", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return &credential, err
 }
 
 func (h *handler) DeleteOrganizationCredential(w http.ResponseWriter, r *http.Request) {

@@ -696,7 +696,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 	})
 }
 
-func TestCredential_PostOrganizationCredentials(t *testing.T) {
+func TestOrganizationCredentials_Create(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
@@ -735,6 +735,8 @@ func TestCredential_PostOrganizationCredentials(t *testing.T) {
 		Client: mgr.GetClient(),
 	}
 
+	handlerFunc := CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCredential)
+
 	u := url.URL{
 		Path: path.Join("/v1/organizations", organization.Name, "credentials"),
 	}
@@ -760,7 +762,7 @@ func TestCredential_PostOrganizationCredentials(t *testing.T) {
 		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.PostOrganizationCredentials(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		if w.Result().StatusCode != http.StatusCreated {
 			t.Fatalf("expected status code %d, got %d", http.StatusCreated, w.Result().StatusCode)
@@ -805,7 +807,7 @@ func TestCredential_PostOrganizationCredentials(t *testing.T) {
 		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.PostOrganizationCredentials(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		if w.Result().StatusCode != http.StatusCreated {
 			t.Fatalf("expected status code %d, got %d", http.StatusCreated, w.Result().StatusCode)
@@ -854,7 +856,7 @@ func TestCredential_PostOrganizationCredentials(t *testing.T) {
 		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.PostOrganizationCredentials(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		if w.Result().StatusCode != http.StatusCreated {
 			t.Fatalf("expected status code %d, got %d", http.StatusCreated, w.Result().StatusCode)
@@ -903,7 +905,7 @@ func TestCredential_PostOrganizationCredentials(t *testing.T) {
 		ctx = middleware.ContextWithSubject(ctx, string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.PostOrganizationCredentials(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		if w.Result().StatusCode != http.StatusUnauthorized {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, w.Result().StatusCode)
