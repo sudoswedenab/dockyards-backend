@@ -104,6 +104,30 @@ func TestValidateJSON(t *testing.T) {
 			body:     `{"namespace":"test-0","workload_template_name":"test","name":"test"}`,
 			expected: http.StatusOK,
 		},
+		{
+			name:     "test node pool options valid quantity",
+			schema:   "#nodePoolOptions",
+			body:     `{"name":"test","quantity":3}`,
+			expected: http.StatusOK,
+		},
+		{
+			name:     "test node pool options negative quantity",
+			schema:   "#nodePoolOptions",
+			body:     `{"name":"test","quantity":-3}`,
+			expected: http.StatusUnprocessableEntity,
+		},
+		{
+			name:     "test node pool options storage resource",
+			schema:   "#nodePoolOptions",
+			body:     `{"name":"test","quantity":1,"storage_resources":[{"name":"test"}]}`,
+			expected: http.StatusOK,
+		},
+		{
+			name:     "test node pool options storage resource name",
+			schema:   "#nodePoolOptions",
+			body:     `{"name":"test","quantity":1,"storage_resources":[{"name":"Test"}]}`,
+			expected: http.StatusUnprocessableEntity,
+		},
 	}
 
 	for _, tc := range tt {
