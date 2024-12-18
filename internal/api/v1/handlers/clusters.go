@@ -235,7 +235,6 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 	} else {
 		release, err := apiutil.GetDefaultRelease(ctx, h.Client, dockyardsv1.ReleaseTypeKubernetes)
 		if err != nil {
-
 			return nil, err
 		}
 
