@@ -20,3 +20,6 @@ import (
 #nodePoolOptions: storage_resources: [
 	{name!: #_objectName},
 ]
+
+#credential: types.#Credential
+#credential: name!: #_objectName
