@@ -211,3 +211,159 @@ func CreateClusterResource[T1, T2 any](h *handler, resource string, f CreateClus
 		}
 	}
 }
+
+type CreateOrganizationResourceFunc[T1, T2 any] func(context.Context, *dockyardsv1.Organization, *T1) (*T2, error)
+
+func CreateOrganizationResource[T1, T2 any](h *handler, resource string, f CreateOrganizationResourceFunc[T1, T2]) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		logger := middleware.LoggerFrom(ctx).With("resource", resource)
+
+		organizationName := r.PathValue("organizationName")
+		if organizationName == "" {
+			w.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+
+		var organization dockyardsv1.Organization
+		err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
+		if client.IgnoreNotFound(err) != nil {
+			logger.Error("error getting organization", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		if apierrors.IsNotFound(err) {
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
+		if organization.Status.NamespaceRef == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		subject, err := middleware.SubjectFrom(ctx)
+		if err != nil {
+			logger.Error("error getting subject from context", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		resourceAttributes := authorizationv1.ResourceAttributes{
+			Group:     dockyardsv1.GroupVersion.Group,
+			Namespace: organization.Status.NamespaceRef.Name,
+			Resource:  resource,
+			Verb:      "create",
+		}
+
+		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+		if err != nil {
+			logger.Error("error reviewing subject", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		if !allowed {
+			logger.Debug("subject is not allowed to create resource", "subject", subject, "organization", organization.Name)
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			logger.Error("error reading request body", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		var request T1
+		err = json.Unmarshal(b, &request)
+		if err != nil {
+			logger.Error("error unmarshalling request", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		response, err := f(ctx, &organization, &request)
+		if apiutil.IgnoreClientError(err) != nil {
+			logger.Error("error creating resource", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		if apierrors.IsConflict(err) || apierrors.IsAlreadyExists(err) {
+			w.WriteHeader(http.StatusConflict)
+
+			return
+		}
+
+		if apierrors.IsInvalid(err) {
+			statusError, ok := err.(*apierrors.StatusError)
+			if !ok {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+
+				return
+			}
+
+			if statusError.ErrStatus.Details == nil {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+
+				return
+			}
+
+			var response types.UnprocessableEntityErrors
+
+			for _, cause := range statusError.ErrStatus.Details.Causes {
+				response.Errors = append(response.Errors, cause.Message)
+			}
+
+			b, err := json.Marshal(response)
+			if err != nil {
+				logger.Error("error marhalling response", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
+
+				return
+			}
+
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			_, err = w.Write(b)
+			if err != nil {
+				logger.Error("error writing response", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
+
+				return
+			}
+
+			return
+		}
+
+		b, err = json.Marshal(response)
+		if err != nil {
+			logger.Error("error marshalling response", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_, err = w.Write(b)
+		if err != nil {
+			logger.Error("error writing response", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+	}
+}
