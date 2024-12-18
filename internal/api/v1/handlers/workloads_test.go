@@ -72,6 +72,8 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		namespace: dockyardsNamespace,
 	}
 
+	handlerFunc := CreateClusterResource(&h, "workloads", h.CreateClusterWorkload)
+
 	go func() {
 		err := mgr.Start(ctx)
 		if err != nil {
@@ -116,7 +118,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc.ServeHTTP(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -200,7 +202,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc.ServeHTTP(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -284,7 +286,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc.ServeHTTP(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -316,7 +318,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc.ServeHTTP(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -358,7 +360,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc.ServeHTTP(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -449,7 +451,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc.ServeHTTP(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -551,7 +553,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.CreateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc.ServeHTTP(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusConflict {
