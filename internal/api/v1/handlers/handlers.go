@@ -121,7 +121,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.GetNodePool))))
 	mux.Handle("PATCH /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.UpdateNodePool))))
 
-	mux.Handle("DELETE /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(http.HandlerFunc(h.DeleteOrganizationCredential))))
+	mux.Handle("DELETE /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCredential))))
 	mux.Handle("GET /v1/orgs/{organizationName}/credentials", logger(requireAuth(http.HandlerFunc(h.GetOrganizationCredentials))))
 	mux.Handle("GET /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(http.HandlerFunc(h.GetOrganizationCredential))))
 	mux.Handle("PUT /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(http.HandlerFunc(h.PutOrganizationCredential))))

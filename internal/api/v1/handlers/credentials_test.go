@@ -1245,6 +1245,8 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		namespace: testEnvironment.GetDockyardsNamespace(),
 	}
 
+	handlerFunc := DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCredential)
+
 	t.Run("test as super user", func(t *testing.T) {
 		credentialName := "test-super-user"
 
@@ -1274,15 +1276,15 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
 		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.SetPathValue("resourceName", credentialName)
 
 		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteOrganizationCredential(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
-		if w.Result().StatusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Result().StatusCode)
+		if w.Result().StatusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, w.Result().StatusCode)
 		}
 	})
 
@@ -1315,15 +1317,15 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
 		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.SetPathValue("resourceName", credentialName)
 
 		ctx = middleware.ContextWithSubject(ctx, string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteOrganizationCredential(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
-		if w.Result().StatusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Result().StatusCode)
+		if w.Result().StatusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, w.Result().StatusCode)
 		}
 	})
 
@@ -1356,15 +1358,56 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
 		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.SetPathValue("resourceName", credentialName)
 
 		ctx = middleware.ContextWithSubject(ctx, string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteOrganizationCredential(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		if w.Result().StatusCode != http.StatusUnauthorized {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, w.Result().StatusCode)
+		}
+	})
+
+	t.Run("test secret type", func(t *testing.T) {
+		credentialName := "test-secret-type"
+
+		secret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "credential-" + credentialName,
+				Namespace: organization.Status.NamespaceRef.Name,
+			},
+			Type: corev1.SecretTypeOpaque,
+		}
+
+		err := c.Create(ctx, &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", credentialName)
+
+		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		if w.Result().StatusCode != http.StatusInternalServerError {
+			t.Fatalf("expected status code %d, got %d", http.StatusInternalServerError, w.Result().StatusCode)
 		}
 	})
 }

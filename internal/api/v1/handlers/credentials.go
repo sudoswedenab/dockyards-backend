@@ -182,99 +182,28 @@ func (h *handler) CreateOrganizationCredential(ctx context.Context, organization
 	return &credential, err
 }
 
-func (h *handler) DeleteOrganizationCredential(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	organizationName := r.PathValue("organizationName")
-	credentialName := r.PathValue("credentialName")
-	if organizationName == "" || credentialName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	var organization dockyardsv1.Organization
-	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("eror getting organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Verb:      "patch",
-		Resource:  "clusters",
-		Group:     "dockyards.io",
-		Namespace: organization.Status.NamespaceRef.Name,
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to patch clusters", "subject", subject, "organization", organization.Name)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
+func (h *handler) DeleteOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, credentialName string) error {
 	objectKey := client.ObjectKey{
 		Name:      "credential-" + credentialName,
 		Namespace: organization.Status.NamespaceRef.Name,
 	}
 
 	var secret corev1.Secret
-	err = h.Get(ctx, objectKey, &secret)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting secret", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusNotFound)
-
-		return
+	err := h.Get(ctx, objectKey, &secret)
+	if err != nil {
+		return err
 	}
 
 	if secret.Type != dockyardsv1.SecretTypeCredential {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
+		return apierrors.NewUnauthorized("unexpected secret type")
 	}
 
 	err = h.Delete(ctx, &secret)
 	if err != nil {
-		logger.Error("error deleting secret", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return err
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
 func (h *handler) GetOrganizationCredential(w http.ResponseWriter, r *http.Request) {
