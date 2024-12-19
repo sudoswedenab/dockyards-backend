@@ -99,7 +99,6 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("GET /v1/cluster-options", logger(requireAuth(http.HandlerFunc(h.GetClusterOptions))))
 
-	mux.Handle("DELETE /v1/clusters/{clusterID}", logger(requireAuth(http.HandlerFunc(h.DeleteCluster))))
 	mux.Handle("GET /v1/clusters", logger(requireAuth(http.HandlerFunc(h.GetClusters))))
 	mux.Handle("GET /v1/clusters/{clusterID}", logger(requireAuth(http.HandlerFunc(h.GetCluster))))
 	mux.Handle("GET /v1/clusters/{clusterID}/kubeconfig", logger(requireAuth(http.HandlerFunc(h.GetClusterKubeconfig))))
@@ -167,6 +166,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	)
 
 	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools/{resourceName}", logger(requireAuth(DeleteClusterResource(&h, "nodepools", h.DeleteClusterNodePool))))
+	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}", logger(requireAuth(DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCluster))))
 
 	return nil
 }

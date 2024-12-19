@@ -751,7 +751,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 	})
 }
 
-func TestDeleteCluster(t *testing.T) {
+func TestOrganizationClusters_Delete(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
@@ -794,6 +794,8 @@ func TestDeleteCluster(t *testing.T) {
 		Client: mgr.GetClient(),
 	}
 
+	handlerFunc := DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCluster)
+
 	t.Run("test as super user", func(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
@@ -821,18 +823,19 @@ func TestDeleteCluster(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/clusters", string(cluster.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("clusterID", string(cluster.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", cluster.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -867,18 +870,19 @@ func TestDeleteCluster(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/clusters", string(cluster.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("clusterID", string(cluster.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", cluster.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -913,18 +917,19 @@ func TestDeleteCluster(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/clusters", string(cluster.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("clusterID", string(cluster.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", cluster.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -932,20 +937,21 @@ func TestDeleteCluster(t *testing.T) {
 		}
 	})
 
-	t.Run("test empty cluster id", func(t *testing.T) {
+	t.Run("test empty cluster name", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/clusters", ""),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", ""),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("clusterID", "")
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", "")
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusBadRequest {
@@ -955,22 +961,23 @@ func TestDeleteCluster(t *testing.T) {
 
 	t.Run("test non-existing cluster", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/clusters", "bda478c3-1556-42fc-bf4b-182b4257ee89"),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", "non-existing"),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("clusterID", "bda478c3-1556-42fc-bf4b-182b4257ee89")
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", "non-existing")
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusUnauthorized {
-			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		if statusCode != http.StatusNotFound {
+			t.Fatalf("expected status code %d, got %d", http.StatusNotFound, statusCode)
 		}
 	})
 
@@ -1009,6 +1016,15 @@ func TestDeleteCluster(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		otherOrganization.Status.NamespaceRef = &corev1.LocalObjectReference{
+			Name: namespace.Name,
+		}
+
+		err = c.Status().Update(ctx, &otherOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		otherCluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
@@ -1030,18 +1046,19 @@ func TestDeleteCluster(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/clusters", "bda478c3-1556-42fc-bf4b-182b4257ee89"),
+			Path: path.Join("/v1/orgs", otherOrganization.Name, "clusters", otherCluster.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("clusterID", "bda478c3-1556-42fc-bf4b-182b4257ee89")
+		r.SetPathValue("organizationName", otherOrganization.Name)
+		r.SetPathValue("resourceName", otherCluster.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {

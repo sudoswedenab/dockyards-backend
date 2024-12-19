@@ -580,81 +580,24 @@ func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {
 	//c.Data(http.StatusOK, binding.MIMEYAML, kubeconfig)
 }
 
-func (h *handler) DeleteCluster(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	clusterID := r.PathValue("clusterID")
-	if clusterID == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
+func (h *handler) DeleteOrganizationCluster(ctx context.Context, organization *dockyardsv1.Organization, clusterName string) error {
+	objectKey := client.ObjectKey{
+		Name:      clusterName,
+		Namespace: organization.Status.NamespaceRef.Name,
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: clusterID,
-	}
-
-	var clusterList dockyardsv1.ClusterList
-	err := h.List(ctx, &clusterList, matchingFields)
+	var cluster dockyardsv1.Cluster
+	err := h.Get(ctx, objectKey, &cluster)
 	if err != nil {
-		logger.Error("error listing clusters", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if len(clusterList.Items) != 1 {
-		logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	cluster := clusterList.Items[0]
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Debug("error fetching user from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Verb:      "delete",
-		Resource:  "clusters",
-		Group:     dockyardsv1.GroupVersion.Group,
-		Namespace: cluster.Namespace,
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to delete clusters", "subject", subject, "namespace", cluster.Namespace)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
+		return err
 	}
 
 	err = h.Delete(ctx, &cluster, client.PropagationPolicy(metav1.DeletePropagationForeground))
 	if err != nil {
-		logger.Error("error deleting cluster", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return err
 	}
 
-	logger.Debug("deleted cluster", "id", cluster.UID)
-
-	w.WriteHeader(http.StatusAccepted)
+	return nil
 }
 
 func (h *handler) GetClusters(w http.ResponseWriter, r *http.Request) {
