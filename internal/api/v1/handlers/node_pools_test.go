@@ -988,7 +988,7 @@ func TestPostClusterNodePools(t *testing.T) {
 	})
 }
 
-func TestDeleteNodePool(t *testing.T) {
+func TestClusterNodePools_Delete(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
@@ -1020,6 +1020,8 @@ func TestDeleteNodePool(t *testing.T) {
 		namespace: testEnvironment.GetDockyardsNamespace(),
 	}
 
+	handlerFunc := DeleteClusterResource(&h, "nodepools", h.DeleteClusterNodePool)
+
 	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.NodePool{}, index.UIDField, index.ByUID)
 	if err != nil {
 		t.Fatal(err)
@@ -1047,7 +1049,7 @@ func TestDeleteNodePool(t *testing.T) {
 	t.Run("test as super user", func(t *testing.T) {
 		nodePool := dockyardsv1.NodePool{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "delete-as-super-user",
+				GenerateName: cluster.Name + "-delete-super-user",
 				Namespace:    cluster.Namespace,
 				OwnerReferences: []metav1.OwnerReference{
 					{
@@ -1071,22 +1073,24 @@ func TestDeleteNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 	})
 
@@ -1117,22 +1121,24 @@ func TestDeleteNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 	})
 
@@ -1163,18 +1169,20 @@ func TestDeleteNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -1184,22 +1192,24 @@ func TestDeleteNodePool(t *testing.T) {
 
 	t.Run("test non-existing node pool", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", "8cd44090-2021-4cd1-b062-14dd63b272d3"),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", "non-existing"),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("nodePoolID", "8cd44090-2021-4cd1-b062-14dd63b272d3")
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", "non-existing")
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusUnauthorized {
-			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		if statusCode != http.StatusNotFound {
+			t.Fatalf("expected status code %d, got %d", http.StatusNotFound, statusCode)
 		}
 	})
 
@@ -1234,6 +1244,15 @@ func TestDeleteNodePool(t *testing.T) {
 		}
 
 		err = c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherOrganization.Status.NamespaceRef = &corev1.LocalObjectReference{
+			Name: namespace.Name,
+		}
+
+		err = c.Status().Update(ctx, &otherOrganization)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1284,18 +1303,20 @@ func TestDeleteNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(otherNodePool.UID)),
+			Path: path.Join("/v1/orgs", otherOrganization.Name, "clusters", otherCluster.Name, "node-pools", otherNodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("nodePoolID", string(otherNodePool.UID))
+		r.SetPathValue("organizationName", otherOrganization.Name)
+		r.SetPathValue("clusterName", otherCluster.Name)
+		r.SetPathValue("resourceName", otherNodePool.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {

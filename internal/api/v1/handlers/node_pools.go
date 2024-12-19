@@ -441,70 +441,16 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *handler) DeleteNodePool(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	nodePoolID := r.PathValue("nodePoolID")
-	if nodePoolID == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
+func (h *handler) DeleteClusterNodePool(ctx context.Context, cluster *dockyardsv1.Cluster, nodePoolName string) error {
+	objectKey := client.ObjectKey{
+		Name:      nodePoolName,
+		Namespace: cluster.Namespace,
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: nodePoolID,
-	}
-
-	var nodePoolList dockyardsv1.NodePoolList
-	err := h.List(ctx, &nodePoolList, matchingFields)
+	var nodePool dockyardsv1.NodePool
+	err := h.Get(ctx, objectKey, &nodePool)
 	if err != nil {
-		logger.Error("error listing node pools", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if len(nodePoolList.Items) != 1 {
-		logger.Debug("expected exactly one node pool", "count", len(nodePoolList.Items))
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	nodePool := nodePoolList.Items[0]
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Group:     dockyardsv1.GroupVersion.Group,
-		Namespace: nodePool.Namespace,
-		Resource:  "nodepools",
-		Verb:      "delete",
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	logger.Info("subject access review", "allowed", allowed)
-
-	if !allowed {
-		logger.Debug("subject is not allowed to delete node pools", "subject", subject, "namespace", nodePool.Namespace)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
+		return err
 	}
 
 	deleteOptions := client.DeleteOptions{
@@ -513,10 +459,10 @@ func (h *handler) DeleteNodePool(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Delete(ctx, &nodePool, &deleteOptions)
 	if err != nil {
-		logger.Error("error deleting node pool", "err", err)
+		return err
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
 
 func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {

@@ -120,7 +120,6 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/apps/{appID}", logger(requireAuth(http.HandlerFunc(h.GetApp))))
 
 	mux.Handle("GET /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.GetNodePool))))
-	mux.Handle("DELETE /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.DeleteNodePool))))
 	mux.Handle("PATCH /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.UpdateNodePool))))
 
 	mux.Handle("DELETE /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(http.HandlerFunc(h.DeleteOrganizationCredential))))
@@ -166,6 +165,8 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 			),
 		),
 	)
+
+	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools/{resourceName}", logger(requireAuth(DeleteClusterResource(&h, "nodepools", h.DeleteClusterNodePool))))
 
 	return nil
 }
