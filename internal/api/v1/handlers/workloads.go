@@ -323,101 +323,15 @@ func (h *handler) UpdateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (h *handler) GetClusterWorkloads(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	organizationName := r.PathValue("organizationName")
-	if organizationName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	clusterName := r.PathValue("clusterName")
-	if clusterName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	var organization dockyardsv1.Organization
-	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if organization.Status.NamespaceRef == nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Group:     dockyardsv1.GroupVersion.Group,
-		Namespace: organization.Status.NamespaceRef.Name,
-		Resource:  "workloads",
-		Verb:      "get",
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to get workloads", "subject", subject, "organization", organization.Name)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	objectKey := client.ObjectKey{
-		Name:      clusterName,
-		Namespace: organization.Status.NamespaceRef.Name,
-	}
-
-	var cluster dockyardsv1.Cluster
-	err = h.Get(ctx, objectKey, &cluster)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting cluster", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
+func (h *handler) ListClusterWorkloads(ctx context.Context, cluster *dockyardsv1.Cluster) (*[]types.Workload, error) {
 	matchingLabels := client.MatchingLabels{
 		dockyardsv1.LabelClusterName: cluster.Name,
 	}
 
 	var workloadList dockyardsv1.WorkloadList
-	err = h.List(ctx, &workloadList, matchingLabels, client.InNamespace(cluster.Namespace))
+	err := h.List(ctx, &workloadList, matchingLabels, client.InNamespace(cluster.Namespace))
 	if err != nil {
-		logger.Error("error listing workloads", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
 	response := make([]types.Workload, len(workloadList.Items))
@@ -433,21 +347,7 @@ func (h *handler) GetClusterWorkloads(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	b, err := json.Marshal(response)
-	if err != nil {
-		logger.Error("error marshalling response", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response", "err", err)
-
-		return
-	}
+	return &response, err
 }
 
 func (h *handler) GetClusterWorkload(w http.ResponseWriter, r *http.Request) {
