@@ -597,6 +597,8 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		namespace: testEnvironment.GetDockyardsNamespace(),
 	}
 
+	handlerFunc := DeleteClusterResource(&h, "workloads", h.DeleteClusterWorkload)
+
 	go func() {
 		err := mgr.Start(ctx)
 		if err != nil {
@@ -619,9 +621,11 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 	mgr.GetCache().WaitForCacheSync(ctx)
 
 	t.Run("test as super user", func(t *testing.T) {
+		workloadName := "test-super-user"
+
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      cluster.Name + "-test-super-user",
+				Name:      cluster.Name + "-" + workloadName,
 				Namespace: organization.Status.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
@@ -641,7 +645,7 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", "test-super-user"),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
 		}
 
 		w := httptest.NewRecorder()
@@ -649,12 +653,12 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", "test-super-user")
+		r.SetPathValue("resourceName", workloadName)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -663,9 +667,11 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 	})
 
 	t.Run("test as user", func(t *testing.T) {
+		workloadName := "test-user"
+
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      cluster.Name + "-test-user",
+				Name:      cluster.Name + "-" + workloadName,
 				Namespace: organization.Status.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
@@ -685,7 +691,7 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", "test-user"),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
 		}
 
 		w := httptest.NewRecorder()
@@ -693,12 +699,12 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", "test-user")
+		r.SetPathValue("resourceName", workloadName)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -707,9 +713,11 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 	})
 
 	t.Run("test as reader", func(t *testing.T) {
+		workloadName := "test-reader"
+
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      cluster.Name + "-test-reader",
+				Name:      cluster.Name + "-" + workloadName,
 				Namespace: organization.Status.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
@@ -729,7 +737,7 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", "test-reader"),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
 		}
 
 		w := httptest.NewRecorder()
@@ -737,12 +745,12 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", "test-reader")
+		r.SetPathValue("resourceName", workloadName)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -760,12 +768,12 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", "test-non-existing")
+		r.SetPathValue("resourceName", "test-non-existing")
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.DeleteClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusNotFound {

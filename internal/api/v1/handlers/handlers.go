@@ -137,7 +137,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		),
 	)
 
-	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{workloadName}", logger(requireAuth(http.HandlerFunc(h.DeleteClusterWorkload))))
+	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{resourceName}", logger(requireAuth(DeleteClusterResource(&h, "workloads", h.DeleteClusterWorkload))))
 
 	mux.Handle("PUT /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{workloadName}",
 		logger(
