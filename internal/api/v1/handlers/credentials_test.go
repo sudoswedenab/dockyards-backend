@@ -40,7 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestCredential_GetOrganizationCredentials(t *testing.T) {
+func TestOrganizationCredentials_List(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
@@ -61,16 +61,6 @@ func TestCredential_GetOrganizationCredentials(t *testing.T) {
 
 	mgr := testEnvironment.GetManager()
 
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Cluster{}, index.UIDField, index.ByUID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.User{}, index.UIDField, index.ByUID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	go func() {
 		err := mgr.Start(ctx)
 		if err != nil {
@@ -87,6 +77,8 @@ func TestCredential_GetOrganizationCredentials(t *testing.T) {
 	h := handler{
 		Client: mgr.GetClient(),
 	}
+
+	handlerFunc := ListOrganizationResource(&h, "clusters", h.ListOrganizationCredentials)
 
 	u := url.URL{
 		Path: path.Join("/v1/organizations", organization.Name, "credentials"),
@@ -119,7 +111,7 @@ func TestCredential_GetOrganizationCredentials(t *testing.T) {
 		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetOrganizationCredentials(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -226,7 +218,7 @@ func TestCredential_GetOrganizationCredentials(t *testing.T) {
 		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetOrganizationCredentials(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -286,7 +278,7 @@ func TestCredential_GetOrganizationCredentials(t *testing.T) {
 		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetOrganizationCredentials(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {

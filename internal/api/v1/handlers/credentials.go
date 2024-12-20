@@ -36,76 +36,11 @@ import (
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=create;delete;get;list;patch;watch
 // +kubebuilder:rbac:groups=dockyards,resources=organizations,verbs=get;list;watch
 
-func (h *handler) GetOrganizationCredentials(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	organizationName := r.PathValue("organizationName")
-	if organizationName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	var organization dockyardsv1.Organization
-	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if organization.Status.NamespaceRef == nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Verb:     "get",
-		Resource: "organizations",
-		Group:    "dockyards.io",
-		Name:     organization.Name,
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to get organization", "subject", subject, "organization", organization.Name)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
+func (h *handler) ListOrganizationCredentials(ctx context.Context, organization *dockyardsv1.Organization) (*[]types.Credential, error) {
 	var secretList corev1.SecretList
-	err = h.List(ctx, &secretList, client.InNamespace(organization.Status.NamespaceRef.Name))
+	err := h.List(ctx, &secretList, client.InNamespace(organization.Status.NamespaceRef.Name))
 	if err != nil {
-		logger.Error("error listing secrets", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
 	credentials := []types.Credential{}
@@ -129,19 +64,7 @@ func (h *handler) GetOrganizationCredentials(w http.ResponseWriter, r *http.Requ
 		credentials = append(credentials, credential)
 	}
 
-	b, err := json.Marshal(&credentials)
-	if err != nil {
-		logger.Error("error marhalling credentials", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return &credentials, nil
 }
 
 func (h *handler) CreateOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, request *types.Credential) (*types.Credential, error) {
