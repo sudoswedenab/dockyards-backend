@@ -145,7 +145,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	)
 
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/workloads", logger(requireAuth(ListClusterResource(&h, "workloads", h.ListClusterWorkloads))))
-	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{workloadName}", logger(requireAuth(http.HandlerFunc(h.GetClusterWorkload))))
+	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{resourceName}", logger(requireAuth(GetClusterResource(&h, "workloads", h.GetClusterWorkload))))
 
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools",
 		logger(
