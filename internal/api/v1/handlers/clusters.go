@@ -600,66 +600,20 @@ func (h *handler) DeleteOrganizationCluster(ctx context.Context, organization *d
 	return nil
 }
 
-func (h *handler) GetClusters(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	subject, err := middleware.SubjectFrom(ctx)
+func (h *handler) ListOrganizationClusters(ctx context.Context, organization *dockyardsv1.Organization) (*[]types.Cluster, error) {
+	var clusterList dockyardsv1.ClusterList
+	err := h.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef.Name))
 	if err != nil {
-		logger.Debug("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
-	matchingFields := client.MatchingFields{
-		index.MemberReferencesField: subject,
+	response := make([]types.Cluster, len(clusterList.Items))
+
+	for i, cluster := range clusterList.Items {
+		response[i] = *h.toV1Cluster(organization, &cluster, nil)
 	}
 
-	var organizationList dockyardsv1.OrganizationList
-	err = h.List(ctx, &organizationList, matchingFields)
-	if err != nil {
-		logger.Error("error listing organizations", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	clusters := []types.Cluster{}
-
-	for _, organization := range organizationList.Items {
-		if organization.Status.NamespaceRef == nil {
-			continue
-		}
-
-		var clusterList dockyardsv1.ClusterList
-		err = h.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef.Name))
-		if err != nil {
-			logger.Error("error listing clusters", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
-
-		for _, cluster := range clusterList.Items {
-			clusters = append(clusters, *h.toV1Cluster(&organization, &cluster, nil))
-		}
-	}
-
-	b, err := json.Marshal(&clusters)
-	if err != nil {
-		logger.Debug("error marshalling response", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return &response, nil
 }
 
 func (h *handler) GetCluster(w http.ResponseWriter, r *http.Request) {
