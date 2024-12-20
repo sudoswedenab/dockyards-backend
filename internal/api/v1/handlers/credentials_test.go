@@ -954,6 +954,8 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		namespace: testEnvironment.GetDockyardsNamespace(),
 	}
 
+	handlerFunc := GetOrganizationResource(&h, "clusters", h.GetOrganizationCredential)
+
 	t.Run("test empty", func(t *testing.T) {
 		credentialName := "test-empty"
 
@@ -983,12 +985,12 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
 		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.SetPathValue("resourceName", credentialName)
 
 		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetOrganizationCredential(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		if w.Result().StatusCode != http.StatusOK {
 			t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Result().StatusCode)
@@ -1050,12 +1052,12 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
 		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.SetPathValue("resourceName", credentialName)
 
 		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetOrganizationCredential(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		if w.Result().StatusCode != http.StatusOK {
 			t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Result().StatusCode)
@@ -1147,12 +1149,12 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
 		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.SetPathValue("resourceName", credentialName)
 
 		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetOrganizationCredential(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		if w.Result().StatusCode != http.StatusOK {
 			t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Result().StatusCode)
