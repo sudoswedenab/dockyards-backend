@@ -72,6 +72,8 @@ func TestGetNodePool(t *testing.T) {
 		namespace: testEnvironment.GetDockyardsNamespace(),
 	}
 
+	handlerFunc := GetClusterResource(&h, "nodepools", h.GetClusterNodePool)
+
 	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.NodePool{}, index.UIDField, index.ByUID)
 	if err != nil {
 		t.Fatal(err)
@@ -106,6 +108,9 @@ func TestGetNodePool(t *testing.T) {
 					UID:        cluster.UID,
 				},
 			},
+			Labels: map[string]string{
+				dockyardsv1.LabelClusterName: cluster.Name,
+			},
 		},
 	}
 
@@ -133,6 +138,9 @@ func TestGetNodePool(t *testing.T) {
 					UID:        nodePool.UID,
 				},
 			},
+			Labels: map[string]string{
+				dockyardsv1.LabelNodePoolName: nodePool.Name,
+			},
 		},
 	}
 
@@ -148,18 +156,20 @@ func TestGetNodePool(t *testing.T) {
 
 	t.Run("test as super user", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -196,18 +206,20 @@ func TestGetNodePool(t *testing.T) {
 
 	t.Run("test as user", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -244,18 +256,20 @@ func TestGetNodePool(t *testing.T) {
 
 	t.Run("test as reader", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -292,22 +306,24 @@ func TestGetNodePool(t *testing.T) {
 
 	t.Run("test non-existing node pool", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", "ee346d53-8a20-4bdd-b936-5ddc240153ac"),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", "non-existing"),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("nodePoolID", "ee346d53-8a20-4bdd-b936-5ddc240153ac")
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", "non-existing")
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusUnauthorized {
-			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		if statusCode != http.StatusNotFound {
+			t.Fatalf("expected status code %d, got %d", http.StatusNotFound, statusCode)
 		}
 	})
 
@@ -342,6 +358,15 @@ func TestGetNodePool(t *testing.T) {
 		}
 
 		err = c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherOrganization.Status.NamespaceRef = &corev1.LocalObjectReference{
+			Name: namespace.Name,
+		}
+
+		err = c.Status().Update(ctx, &otherOrganization)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -392,18 +417,20 @@ func TestGetNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(otherNodePool.UID)),
+			Path: path.Join("/v1/orgs", otherOrganization.Name, "clusters", otherCluster.Name, "node-pools", otherNodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("nodePoolID", string(otherNodePool.UID))
+		r.SetPathValue("organizationName", otherOrganization.Name)
+		r.SetPathValue("clusterName", otherCluster.Name)
+		r.SetPathValue("resourceName", otherNodePool.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {

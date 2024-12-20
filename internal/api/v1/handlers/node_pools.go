@@ -109,105 +109,31 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyard
 	return &v1NodePool
 }
 
-func (h *handler) GetNodePool(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	nodePoolID := r.PathValue("nodePoolID")
-	if nodePoolID == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
+func (h *handler) GetClusterNodePool(ctx context.Context, cluster *dockyardsv1.Cluster, nodePoolName string) (*types.NodePool, error) {
+	objectKey := client.ObjectKey{
+		Name:      nodePoolName,
+		Namespace: cluster.Namespace,
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: nodePoolID,
-	}
-
-	var nodePoolList dockyardsv1.NodePoolList
-	err := h.List(ctx, &nodePoolList, matchingFields)
+	var nodePool dockyardsv1.NodePool
+	err := h.Get(ctx, objectKey, &nodePool)
 	if err != nil {
-		logger.Error("error listing node pools in kubernetes", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
+		return nil, err
 	}
 
-	if len(nodePoolList.Items) != 1 {
-		logger.Debug("expected exactly one node pool", "length", len(nodePoolList.Items))
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	nodePool := nodePoolList.Items[0]
-
-	cluster, err := apiutil.GetOwnerCluster(ctx, h.Client, &nodePool)
-	if err != nil {
-		logger.Error("error getting owner cluster", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Group:     dockyardsv1.GroupVersion.Group,
-		Namespace: nodePool.Namespace,
-		Resource:  "nodepools",
-		Verb:      "get",
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to get node pools", "subject", subject, "namespace", nodePool.Namespace)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	matchingFields = client.MatchingFields{
-		index.OwnerReferencesField: nodePoolID,
+	matchingLabels := client.MatchingLabels{
+		dockyardsv1.LabelNodePoolName: nodePool.Name,
 	}
 
 	var nodeList dockyardsv1.NodeList
-	err = h.List(ctx, &nodeList, matchingFields)
+	err = h.List(ctx, &nodeList, matchingLabels)
 	if err != nil {
-		logger.Error("error listing nodes", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
 	v1NodePool := h.toV1NodePool(&nodePool, cluster, &nodeList)
 
-	b, err := json.Marshal(&v1NodePool)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return v1NodePool, nil
 }
 
 func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
