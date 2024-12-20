@@ -1105,6 +1105,8 @@ func TestGetCluster(t *testing.T) {
 		Client: mgr.GetClient(),
 	}
 
+	handlerFunc := GetOrganizationResource(&h, "clusters", h.GetOrganizationCluster)
+
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
@@ -1146,6 +1148,9 @@ func TestGetCluster(t *testing.T) {
 					UID:        cluster.UID,
 				},
 			},
+			Labels: map[string]string{
+				dockyardsv1.LabelClusterName: cluster.Name,
+			},
 		},
 	}
 
@@ -1167,18 +1172,19 @@ func TestGetCluster(t *testing.T) {
 
 	t.Run("test as super user", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/clusters", string(cluster.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("clusterID", string(cluster.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", cluster.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -1218,18 +1224,19 @@ func TestGetCluster(t *testing.T) {
 
 	t.Run("test as user", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/clusters", string(cluster.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("clusterID", string(cluster.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", cluster.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -1269,18 +1276,19 @@ func TestGetCluster(t *testing.T) {
 
 	t.Run("test as reader", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/clusters", string(cluster.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("clusterID", string(cluster.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", cluster.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -1318,20 +1326,21 @@ func TestGetCluster(t *testing.T) {
 		}
 	})
 
-	t.Run("test empty cluster id", func(t *testing.T) {
+	t.Run("test empty cluster name", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/clusters", ""),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", ""),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("clusterID", "")
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", "")
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusBadRequest {
@@ -1341,22 +1350,23 @@ func TestGetCluster(t *testing.T) {
 
 	t.Run("test non-existing cluster", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/clusters", "7cb41b7e-fd28-4121-9db2-c875d52e69a2"),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", "non-existing"),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("clusterID", "7cb41b7e-fd28-4121-9db2-c875d52e69a2")
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("resourceName", "non-existing")
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusUnauthorized {
-			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		if statusCode != http.StatusNotFound {
+			t.Fatalf("expected status code %d, got %d", http.StatusNotFound, statusCode)
 		}
 	})
 
@@ -1395,6 +1405,15 @@ func TestGetCluster(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		otherOrganization.Status.NamespaceRef = &corev1.LocalObjectReference{
+			Name: namespace.Name,
+		}
+
+		err = c.Status().Update(ctx, &otherOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		otherCluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
@@ -1416,18 +1435,19 @@ func TestGetCluster(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/clusters", string(otherCluster.UID)),
+			Path: path.Join("/v1/orgs", otherOrganization.Name, "clusters", otherCluster.Name),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("clusterID", string(otherCluster.UID))
+		r.SetPathValue("organizationName", otherOrganization.Name)
+		r.SetPathValue("resourceName", otherCluster.Name)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.GetCluster(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {

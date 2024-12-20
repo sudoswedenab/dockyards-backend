@@ -20,7 +20,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"math"
@@ -616,116 +615,29 @@ func (h *handler) ListOrganizationClusters(ctx context.Context, organization *do
 	return &response, nil
 }
 
-func (h *handler) GetCluster(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	clusterID := r.PathValue("clusterID")
-	if clusterID == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
+func (h *handler) GetOrganizationCluster(ctx context.Context, organization *dockyardsv1.Organization, clusterName string) (*types.Cluster, error) {
+	objectKey := client.ObjectKey{
+		Name:      clusterName,
+		Namespace: organization.Status.NamespaceRef.Name,
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: clusterID,
-	}
-
-	var clusterList dockyardsv1.ClusterList
-	err := h.List(ctx, &clusterList, matchingFields)
+	var cluster dockyardsv1.Cluster
+	err := h.Get(ctx, objectKey, &cluster)
 	if err != nil {
-		logger.Error("error listing clusters", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
-	if len(clusterList.Items) != 1 {
-		logger.Debug("expected exactly one cluster", "count", len(clusterList.Items))
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	cluster := clusterList.Items[0]
-
-	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, &cluster)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting owner organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if organization == nil {
-		logger.Error("cluster has no organization owner", "name", cluster.Name, "namespace", cluster.Namespace)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error fetching user from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Verb:      "get",
-		Resource:  "clusters",
-		Group:     dockyardsv1.GroupVersion.Group,
-		Namespace: cluster.Namespace,
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to get clusters", "subject", subject, "organization", organization.Name)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	matchingFields = client.MatchingFields{
-		index.OwnerReferencesField: clusterID,
+	matchingLabels := client.MatchingLabels{
+		dockyardsv1.LabelClusterName: cluster.Name,
 	}
 
 	var nodePoolList dockyardsv1.NodePoolList
-	err = h.List(ctx, &nodePoolList, matchingFields)
+	err = h.List(ctx, &nodePoolList, matchingLabels)
 	if err != nil {
-		logger.Error("error listing node pools", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
 	v1Cluster := h.toV1Cluster(organization, &cluster, &nodePoolList)
 
-	b, err := json.Marshal(&v1Cluster)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return v1Cluster, nil
 }
