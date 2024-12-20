@@ -814,6 +814,8 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		namespace: testEnvironment.GetDockyardsNamespace(),
 	}
 
+	handlerFunc := UpdateClusterResource(&h, "workloads", h.UpdateClusterWorkload)
+
 	go func() {
 		err := mgr.Start(ctx)
 		if err != nil {
@@ -883,16 +885,16 @@ func TestClusterWorkloads_Update(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", workloadName)
+		r.SetPathValue("resourceName", workloadName)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.UpdateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusAccepted {
-			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		if statusCode != http.StatusNoContent {
+			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
 		}
 
 		var actual dockyardsv1.Workload
@@ -974,16 +976,16 @@ func TestClusterWorkloads_Update(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", workloadName)
+		r.SetPathValue("resourceName", workloadName)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.UpdateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusAccepted {
-			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		if statusCode != http.StatusNoContent {
+			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
 		}
 
 		var actual dockyardsv1.Workload
@@ -1065,12 +1067,12 @@ func TestClusterWorkloads_Update(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", workloadName)
+		r.SetPathValue("resourceName", workloadName)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.UpdateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -1132,16 +1134,16 @@ func TestClusterWorkloads_Update(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", workloadName)
+		r.SetPathValue("resourceName", workloadName)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.UpdateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusAccepted {
-			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		if statusCode != http.StatusNoContent {
+			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
 		}
 
 		var actual dockyardsv1.Workload
@@ -1229,16 +1231,16 @@ func TestClusterWorkloads_Update(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", workloadName)
+		r.SetPathValue("resourceName", workloadName)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.UpdateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusAccepted {
-			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		if statusCode != http.StatusNoContent {
+			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
 		}
 
 		var actual dockyardsv1.Workload
@@ -1320,12 +1322,12 @@ func TestClusterWorkloads_Update(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", workloadName)
+		r.SetPathValue("resourceName", workloadName)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.UpdateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -1381,17 +1383,16 @@ func TestClusterWorkloads_Update(t *testing.T) {
 
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("workloadName", workloadName)
+		r.SetPathValue("resourceName", workloadName)
 
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		h.UpdateClusterWorkload(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusForbidden {
 			t.Errorf("expected status code %d, got %d", http.StatusForbidden, statusCode)
 		}
 	})
-
 }

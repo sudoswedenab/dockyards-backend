@@ -17,15 +17,10 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"io"
-	"net/http"
 	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -120,136 +115,28 @@ func (h *handler) DeleteClusterWorkload(ctx context.Context, cluster *dockyardsv
 	return nil
 }
 
-func (h *handler) UpdateClusterWorkload(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	organizationName := r.PathValue("organizationName")
-	if organizationName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	clusterName := r.PathValue("clusterName")
-	if clusterName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	workloadName := r.PathValue("workloadName")
-	if clusterName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	var organization dockyardsv1.Organization
-	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if organization.Status.NamespaceRef == nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Group:     dockyardsv1.GroupVersion.Group,
-		Namespace: organization.Status.NamespaceRef.Name,
-		Resource:  "workloads",
-		Verb:      "patch",
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to patch workloads", "subject", subject, "organization", organization.Name)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
+func (h *handler) UpdateClusterWorkload(ctx context.Context, cluster *dockyardsv1.Cluster, workloadName string, request *types.Workload) error {
 	objectKey := client.ObjectKey{
-		Name:      clusterName + "-" + workloadName,
-		Namespace: organization.Status.NamespaceRef.Name,
+		Name:      cluster.Name + "-" + workloadName,
+		Namespace: cluster.Namespace,
 	}
 
 	var workload dockyardsv1.Workload
-	err = h.Get(ctx, objectKey, &workload)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting workload", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusNotFound)
-
-		return
+	err := h.Get(ctx, objectKey, &workload)
+	if err != nil {
+		return err
 	}
 
 	if workload.Spec.Provenience != dockyardsv1.ProvenienceUser {
-		w.WriteHeader(http.StatusForbidden)
-
-		return
-	}
-
-	b, err := io.ReadAll(r.Body)
-	if err != nil {
-		logger.Error("error reading request body", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	var request types.Workload
-	err = json.Unmarshal(b, &request)
-	if err != nil {
-		logger.Error("error unmarshalling request", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return apierrors.NewForbidden(dockyardsv1.GroupVersion.WithResource("workloads").GroupResource(), workload.Name, nil)
 	}
 
 	if request.WorkloadTemplateName == nil || request.Namespace == nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-
-		return
+		return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.WorkloadKind).GroupKind(), "", nil)
 	}
 
 	if *request.WorkloadTemplateName != workload.Spec.WorkloadTemplateRef.Name {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-
-		return
+		return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.WorkloadKind).GroupKind(), "", nil)
 	}
 
 	patch := client.MergeFrom(workload.DeepCopy())
@@ -259,10 +146,7 @@ func (h *handler) UpdateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 	if request.Input != nil {
 		raw, err := json.Marshal(*request.Input)
 		if err != nil {
-			logger.Error("error marshalling request input", "err", err)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-
-			return
+			return err
 		}
 
 		workload.Spec.Input = &apiextensionsv1.JSON{
@@ -273,54 +157,11 @@ func (h *handler) UpdateClusterWorkload(w http.ResponseWriter, r *http.Request) 
 	}
 
 	err = h.Patch(ctx, &workload, patch)
-	if apiutil.IgnoreIsInvalid(err) != nil {
-		logger.Error("error patching workload", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+	if err != nil {
+		return err
 	}
 
-	if apierrors.IsInvalid(err) {
-		statusError, ok := err.(*apierrors.StatusError)
-		if !ok {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-
-			return
-		}
-
-		if statusError.ErrStatus.Details == nil {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-
-			return
-		}
-
-		var response types.UnprocessableEntityErrors
-
-		for _, cause := range statusError.ErrStatus.Details.Causes {
-			response.Errors = append(response.Errors, cause.Message)
-		}
-
-		b, err := json.Marshal(response)
-		if err != nil {
-			logger.Error("error marhalling response", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
-
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, err = w.Write(b)
-		if err != nil {
-			logger.Error("error writing response", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
-
-		return
-	}
-
-	w.WriteHeader(http.StatusAccepted)
+	return nil
 }
 
 func (h *handler) ListClusterWorkloads(ctx context.Context, cluster *dockyardsv1.Cluster) (*[]types.Workload, error) {

@@ -135,10 +135,10 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{resourceName}", logger(requireAuth(DeleteClusterResource(&h, "workloads", h.DeleteClusterWorkload))))
 
-	mux.Handle("PUT /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{workloadName}",
+	mux.Handle("PUT /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{resourceName}",
 		logger(
 			requireAuth(
-				validateJSON.WithSchema("#workload")(http.HandlerFunc(h.UpdateClusterWorkload)),
+				validateJSON.WithSchema("#workload")(UpdateClusterResource(&h, "workloads", h.UpdateClusterWorkload)),
 			),
 		),
 	)
