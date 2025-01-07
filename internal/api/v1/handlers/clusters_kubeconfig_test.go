@@ -66,12 +66,7 @@ func TestGetClusterKubeconfig(t *testing.T) {
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Cluster{}, index.UIDField, index.ByUID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.User{}, index.UIDField, index.ByUID)
+	err = index.AddDefaultIndexes(ctx, mgr)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -180,41 +180,9 @@ func main() {
 
 	ctx := context.Background()
 
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.User{}, index.EmailField, index.ByEmail)
+	err = index.AddDefaultIndexes(ctx, mgr)
 	if err != nil {
-		logger.Error("error adding email indexer to manager", "err", err)
-
-		os.Exit(1)
-	}
-
-	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Cluster{}, &dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &corev1.Secret{}, &dockyardsv1.Organization{}} {
-		err = mgr.GetFieldIndexer().IndexField(ctx, object, index.UIDField, index.ByUID)
-		if err != nil {
-			logger.Error("error adding uid indexer to manager", "err", err)
-
-			os.Exit(1)
-		}
-	}
-
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Organization{}, index.MemberReferencesField, index.ByMemberReferences)
-	if err != nil {
-		logger.Error("error adding member refs indexer to manager", "err", err)
-
-		os.Exit(1)
-	}
-
-	for _, object := range []client.Object{&dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &dockyardsv1.Cluster{}} {
-		err = mgr.GetFieldIndexer().IndexField(ctx, object, index.OwnerReferencesField, index.ByOwnerReferences)
-		if err != nil {
-			logger.Error("error adding owner refs indexer to manager", "err", err)
-
-			os.Exit(1)
-		}
-	}
-
-	err = mgr.GetFieldIndexer().IndexField(ctx, &corev1.Secret{}, index.SecretTypeField, index.BySecretType)
-	if err != nil {
-		logger.Error("error adding secret type indexer to manager", "err", err)
+		logger.Error("error adding default indexes", "err", err)
 
 		os.Exit(1)
 	}

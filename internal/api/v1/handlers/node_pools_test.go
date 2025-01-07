@@ -74,12 +74,7 @@ func TestGetNodePool(t *testing.T) {
 
 	handlerFunc := GetClusterResource(&h, "nodepools", h.GetClusterNodePool)
 
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.NodePool{}, index.UIDField, index.ByUID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Node{}, index.OwnerReferencesField, index.ByOwnerReferences)
+	err = index.AddDefaultIndexes(ctx, mgr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -471,7 +466,7 @@ func TestPostClusterNodePools(t *testing.T) {
 		namespace: testEnvironment.GetDockyardsNamespace(),
 	}
 
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Cluster{}, index.UIDField, index.ByUID)
+	err = index.AddDefaultIndexes(ctx, mgr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1049,7 +1044,7 @@ func TestClusterNodePools_Delete(t *testing.T) {
 
 	handlerFunc := DeleteClusterResource(&h, "nodepools", h.DeleteClusterNodePool)
 
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.NodePool{}, index.UIDField, index.ByUID)
+	err = index.AddDefaultIndexes(ctx, mgr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1384,7 +1379,7 @@ func TestUpdateNodePool(t *testing.T) {
 		namespace: testEnvironment.GetDockyardsNamespace(),
 	}
 
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.NodePool{}, index.UIDField, index.ByUID)
+	err = index.AddDefaultIndexes(ctx, mgr)
 	if err != nil {
 		t.Fatal(err)
 	}
