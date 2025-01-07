@@ -68,7 +68,7 @@ func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *d
 	if nodePoolList != nil && len(nodePoolList.Items) > 0 {
 		nodePools := make([]types.NodePool, len(nodePoolList.Items))
 		for i, nodePool := range nodePoolList.Items {
-			nodePools[i] = *h.toV1NodePool(&nodePool, cluster, nil)
+			nodePools[i] = *h.toV1NodePool(&nodePool, nil)
 		}
 
 		v1Cluster.NodePools = nodePools

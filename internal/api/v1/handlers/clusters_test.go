@@ -1204,9 +1204,8 @@ func TestGetCluster(t *testing.T) {
 			Organization: organization.Name,
 			NodePools: []types.NodePool{
 				{
-					ClusterID: string(cluster.UID),
-					ID:        string(nodePool.UID),
-					Name:      nodePool.Name,
+					ID:   string(nodePool.UID),
+					Name: nodePool.Name,
 				},
 			},
 			Version: cluster.Status.Version,
@@ -1256,9 +1255,8 @@ func TestGetCluster(t *testing.T) {
 			Organization: organization.Name,
 			NodePools: []types.NodePool{
 				{
-					ClusterID: string(cluster.UID),
-					ID:        string(nodePool.UID),
-					Name:      nodePool.Name,
+					ID:   string(nodePool.UID),
+					Name: nodePool.Name,
 				},
 			},
 			Version: cluster.Status.Version,
@@ -1308,9 +1306,8 @@ func TestGetCluster(t *testing.T) {
 			Organization: organization.Name,
 			NodePools: []types.NodePool{
 				{
-					ClusterID: string(cluster.UID),
-					ID:        string(nodePool.UID),
-					Name:      nodePool.Name,
+					ID:   string(nodePool.UID),
+					Name: nodePool.Name,
 				},
 			},
 			Version: cluster.Status.Version,

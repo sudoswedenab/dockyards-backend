@@ -43,26 +43,31 @@ import (
 
 const maxReplicas = 9
 
-func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyardsv1.Cluster, nodeList *dockyardsv1.NodeList) *types.NodePool {
+func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, nodeList *dockyardsv1.NodeList) *types.NodePool {
 	v1NodePool := types.NodePool{
-		ID:        string(nodePool.UID),
-		ClusterID: string(cluster.UID),
-		Name:      nodePool.Name,
-		CPUCount:  int(nodePool.Spec.Resources.Cpu().Value()),
+		ID:   string(nodePool.UID),
+		Name: nodePool.Name,
+	}
+
+	resourceCPU := nodePool.Spec.Resources.Cpu()
+	if !resourceCPU.IsZero() {
+		value := resourceCPU.Value()
+		v1NodePool.CPUCount = ptr.To(int(value))
 	}
 
 	resourceStorage := nodePool.Spec.Resources.Storage()
 	if !resourceStorage.IsZero() {
-		v1NodePool.DiskSize = resourceStorage.String()
+		v1NodePool.DiskSize = ptr.To(resourceStorage.String())
 	}
 
 	resourceMemory := nodePool.Spec.Resources.Memory()
 	if !resourceMemory.IsZero() {
-		v1NodePool.RAMSize = resourceMemory.String()
+		v1NodePool.RAMSize = ptr.To(resourceMemory.String())
 	}
 
 	if nodePool.Spec.Replicas != nil {
-		v1NodePool.Quantity = int(*nodePool.Spec.Replicas)
+		replicas := *nodePool.Spec.Replicas
+		v1NodePool.Quantity = ptr.To(int(replicas))
 	}
 
 	if nodeList != nil && len(nodeList.Items) > 0 {
@@ -74,7 +79,7 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, cluster *dockyard
 			}
 		}
 
-		v1NodePool.Nodes = nodes
+		v1NodePool.Nodes = &nodes
 	}
 
 	if nodePool.Spec.ControlPlane {
@@ -131,7 +136,7 @@ func (h *handler) GetClusterNodePool(ctx context.Context, cluster *dockyardsv1.C
 		return nil, err
 	}
 
-	v1NodePool := h.toV1NodePool(&nodePool, cluster, &nodeList)
+	v1NodePool := h.toV1NodePool(&nodePool, &nodeList)
 
 	return v1NodePool, nil
 }
@@ -351,7 +356,7 @@ func (h *handler) PostClusterNodePools(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v1NodePool := h.toV1NodePool(&nodePool, &cluster, nil)
+	v1NodePool := h.toV1NodePool(&nodePool, nil)
 
 	b, err := json.Marshal(&v1NodePool)
 	if err != nil {
@@ -589,7 +594,7 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 		nodePool.Spec.Replicas = ptr.To(int32(*patchRequest.Quantity))
 	}
 
-	responseJSON, err := json.Marshal(h.toV1NodePool(&nodePool, cluster, nil))
+	responseJSON, err := json.Marshal(h.toV1NodePool(&nodePool, nil))
 	if err != nil {
 		logger.Error("error creating JSON response", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -736,7 +741,7 @@ func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv
 		return nil, err
 	}
 
-	v1NodePool := h.toV1NodePool(&nodePool, cluster, nil)
+	v1NodePool := h.toV1NodePool(&nodePool, nil)
 
 	return v1NodePool, nil
 }

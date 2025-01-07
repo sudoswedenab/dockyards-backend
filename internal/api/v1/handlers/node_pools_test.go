@@ -183,10 +183,9 @@ func TestGetNodePool(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID: string(cluster.UID),
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
-			Nodes: []types.Node{
+			ID:   string(nodePool.UID),
+			Name: nodePool.Name,
+			Nodes: &[]types.Node{
 				{
 					ID:   string(node.UID),
 					Name: node.Name,
@@ -233,10 +232,9 @@ func TestGetNodePool(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID: string(cluster.UID),
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
-			Nodes: []types.Node{
+			ID:   string(nodePool.UID),
+			Name: nodePool.Name,
+			Nodes: &[]types.Node{
 				{
 					ID:   string(node.UID),
 					Name: node.Name,
@@ -283,10 +281,9 @@ func TestGetNodePool(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID: string(cluster.UID),
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
-			Nodes: []types.Node{
+			ID:   string(nodePool.UID),
+			Name: nodePool.Name,
+			Nodes: &[]types.Node{
 				{
 					ID:   string(node.UID),
 					Name: node.Name,
@@ -547,9 +544,9 @@ func TestPostClusterNodePools(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID: string(cluster.UID),
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
+			ID:       string(nodePool.UID),
+			Name:     nodePool.Name,
+			Quantity: ptr.To(0),
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -610,9 +607,9 @@ func TestPostClusterNodePools(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID: string(cluster.UID),
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
+			ID:       string(nodePool.UID),
+			Name:     nodePool.Name,
+			Quantity: ptr.To(0),
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -709,15 +706,14 @@ func TestPostClusterNodePools(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID:                  string(cluster.UID),
 			ControlPlaneComponentsOnly: ptr.To(true),
-			CPUCount:                   12,
-			DiskSize:                   "123Gi",
+			CPUCount:                   ptr.To(12),
+			DiskSize:                   ptr.To("123Gi"),
 			ID:                         string(nodePool.UID),
 			LoadBalancer:               ptr.To(true),
 			Name:                       nodePool.Name,
-			Quantity:                   3,
-			RAMSize:                    "1234M",
+			Quantity:                   ptr.To(3),
+			RAMSize:                    ptr.To("1234M"),
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -784,10 +780,9 @@ func TestPostClusterNodePools(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
-			ClusterID: string(cluster.UID),
-			Quantity:  3,
+			ID:       string(nodePool.UID),
+			Name:     nodePool.Name,
+			Quantity: ptr.To(3),
 			StorageResources: &[]types.StorageResource{
 				{
 					Name:     "test",
@@ -1475,10 +1470,9 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID: string(cluster.UID),
-			CPUCount:  3,
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
+			CPUCount: ptr.To(3),
+			ID:       string(nodePool.UID),
+			Name:     nodePool.Name,
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1558,10 +1552,9 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID: string(cluster.UID),
-			CPUCount:  3,
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
+			CPUCount: ptr.To(3),
+			ID:       string(nodePool.UID),
+			Name:     nodePool.Name,
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1703,11 +1696,10 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID: string(cluster.UID),
-			CPUCount:  2,
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
-			Quantity:  2,
+			CPUCount: ptr.To(2),
+			ID:       string(nodePool.UID),
+			Name:     nodePool.Name,
+			Quantity: ptr.To(2),
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1824,8 +1816,7 @@ func TestUpdateNodePool(t *testing.T) {
 					Type:     ptr.To(dockyardsv1.StorageResourceTypeHostPath),
 				},
 			}),
-			ID:        string(nodePool.UID),
-			ClusterID: string(cluster.UID),
+			ID: string(nodePool.UID),
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -2477,9 +2468,9 @@ func TestClusterNodePools_Create(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID: string(cluster.UID),
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
+			ID:       string(nodePool.UID),
+			Name:     nodePool.Name,
+			Quantity: ptr.To(0),
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -2541,9 +2532,9 @@ func TestClusterNodePools_Create(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID: string(cluster.UID),
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
+			ID:       string(nodePool.UID),
+			Name:     nodePool.Name,
+			Quantity: ptr.To(0),
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -2642,15 +2633,14 @@ func TestClusterNodePools_Create(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ClusterID:                  string(cluster.UID),
 			ControlPlaneComponentsOnly: ptr.To(true),
-			CPUCount:                   12,
-			DiskSize:                   "123Gi",
+			CPUCount:                   ptr.To(12),
+			DiskSize:                   ptr.To("123Gi"),
 			ID:                         string(nodePool.UID),
 			LoadBalancer:               ptr.To(true),
 			Name:                       nodePool.Name,
-			Quantity:                   3,
-			RAMSize:                    "1234M",
+			Quantity:                   ptr.To(3),
+			RAMSize:                    ptr.To("1234M"),
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -2718,10 +2708,9 @@ func TestClusterNodePools_Create(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ID:        string(nodePool.UID),
-			Name:      nodePool.Name,
-			ClusterID: string(cluster.UID),
-			Quantity:  3,
+			ID:       string(nodePool.UID),
+			Name:     nodePool.Name,
+			Quantity: ptr.To(3),
 			StorageResources: &[]types.StorageResource{
 				{
 					Name:     "test",
