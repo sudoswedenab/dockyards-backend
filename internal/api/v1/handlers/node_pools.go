@@ -697,6 +697,9 @@ func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv
 					UID:        cluster.UID,
 				},
 			},
+			Labels: map[string]string{
+				dockyardsv1.LabelClusterName: cluster.Name,
+			},
 		},
 		Spec: dockyardsv1.NodePoolSpec{
 			Replicas:  ptr.To(int32(nodePoolQuantity)),

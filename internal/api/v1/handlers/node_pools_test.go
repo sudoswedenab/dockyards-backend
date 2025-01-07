@@ -2467,6 +2467,11 @@ func TestClusterNodePools_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		clusterName, hasLabel := nodePool.Labels[dockyardsv1.LabelClusterName]
+		if !hasLabel || clusterName != cluster.Name {
+			t.Errorf("expected cluster name label %s, got %s", cluster.Name, clusterName)
+		}
+
 		expected := types.NodePool{
 			ID:       string(nodePool.UID),
 			Name:     nodePool.Name,
@@ -2529,6 +2534,11 @@ func TestClusterNodePools_Create(t *testing.T) {
 		err = c.Get(ctx, objectKey, &nodePool)
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		clusterName, hasLabel := nodePool.Labels[dockyardsv1.LabelClusterName]
+		if !hasLabel || clusterName != cluster.Name {
+			t.Errorf("expected cluster name label %s, got %s", cluster.Name, clusterName)
 		}
 
 		expected := types.NodePool{
@@ -2632,6 +2642,11 @@ func TestClusterNodePools_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		clusterName, hasLabel := nodePool.Labels[dockyardsv1.LabelClusterName]
+		if !hasLabel || clusterName != cluster.Name {
+			t.Errorf("expected cluster name label %s, got %s", cluster.Name, clusterName)
+		}
+
 		expected := types.NodePool{
 			ControlPlaneComponentsOnly: ptr.To(true),
 			CPUCount:                   ptr.To(12),
@@ -2705,6 +2720,11 @@ func TestClusterNodePools_Create(t *testing.T) {
 		err = c.Get(ctx, objectKey, &nodePool)
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		clusterName, hasLabel := nodePool.Labels[dockyardsv1.LabelClusterName]
+		if !hasLabel || clusterName != cluster.Name {
+			t.Errorf("expected cluster name label %s, got %s", cluster.Name, clusterName)
 		}
 
 		expected := types.NodePool{
