@@ -165,6 +165,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools/{resourceName}", logger(requireAuth(DeleteClusterResource(&h, "nodepools", h.DeleteClusterNodePool))))
 	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}", logger(requireAuth(DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCluster))))
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools/{resourceName}", logger(requireAuth(GetClusterResource(&h, "nodepools", h.GetClusterNodePool))))
+	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools", logger(requireAuth(ListClusterResource(&h, "nodepools", h.ListClusterNodePools))))
 
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters", logger(requireAuth(ListOrganizationResource(&h, "clusters", h.ListOrganizationClusters))))
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{resourceName}", logger(requireAuth(GetOrganizationResource(&h, "clusters", h.GetOrganizationCluster))))

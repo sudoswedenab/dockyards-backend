@@ -745,3 +745,38 @@ func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv
 
 	return v1NodePool, nil
 }
+
+func (h *handler) ListClusterNodePools(ctx context.Context, cluster *dockyardsv1.Cluster) (*[]types.NodePool, error) {
+	matchingLabels := client.MatchingLabels{
+		dockyardsv1.LabelClusterName: cluster.Name,
+	}
+
+	var nodePoolList dockyardsv1.NodePoolList
+	err := h.List(ctx, &nodePoolList, matchingLabels, client.InNamespace(cluster.Namespace))
+	if err != nil {
+		return nil, err
+	}
+
+	nodePools := []types.NodePool{}
+
+	for _, item := range nodePoolList.Items {
+		nodePool := types.NodePool{
+			CreatedAt: &item.CreationTimestamp.Time,
+			ID:        string(item.UID),
+			Name:      item.Name,
+		}
+
+		if item.Spec.Replicas != nil {
+			quantity := int(*item.Spec.Replicas)
+			nodePool.Quantity = &quantity
+		}
+
+		if !item.DeletionTimestamp.IsZero() {
+			nodePool.DeletedAt = &item.DeletionTimestamp.Time
+		}
+
+		nodePools = append(nodePools, nodePool)
+	}
+
+	return &nodePools, nil
+}
