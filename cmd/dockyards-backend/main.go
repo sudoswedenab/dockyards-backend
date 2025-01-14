@@ -247,7 +247,7 @@ func main() {
 
 	corsOptions := cors.Options{
 		AllowedOrigins:   allowedOrigins,
-		AllowedMethods:   []string{http.MethodPost, http.MethodGet, http.MethodPut, http.MethodDelete},
+		AllowedMethods:   []string{http.MethodPost, http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch},
 		AllowedHeaders:   []string{"Authorization", "Content-Type", "Origin"},
 		AllowCredentials: true,
 		ExposedHeaders:   []string{"Content-Length"},
