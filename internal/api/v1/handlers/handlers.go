@@ -116,8 +116,6 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/apps", logger(requireAuth(http.HandlerFunc(h.GetApps))))
 	mux.Handle("GET /v1/apps/{appID}", logger(requireAuth(http.HandlerFunc(h.GetApp))))
 
-	mux.Handle("PATCH /v1/node-pools/{nodePoolID}", logger(requireAuth(http.HandlerFunc(h.UpdateNodePool))))
-
 	mux.Handle("DELETE /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCredential))))
 	mux.Handle("GET /v1/orgs/{organizationName}/credentials", logger(requireAuth(ListOrganizationResource(&h, "clusters", h.ListOrganizationCredentials))))
 	mux.Handle("GET /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(GetOrganizationResource(&h, "clusters", h.GetOrganizationCredential))))
@@ -166,6 +164,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}", logger(requireAuth(DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCluster))))
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools/{resourceName}", logger(requireAuth(GetClusterResource(&h, "nodepools", h.GetClusterNodePool))))
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools", logger(requireAuth(ListClusterResource(&h, "nodepools", h.ListClusterNodePools))))
+	mux.Handle("PATCH /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools/{resourceName}", logger(requireAuth(UpdateClusterResource(&h, "nodepools", h.UpdateClusterNodePool))))
 
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters", logger(requireAuth(ListOrganizationResource(&h, "clusters", h.ListOrganizationClusters))))
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{resourceName}", logger(requireAuth(GetOrganizationResource(&h, "clusters", h.GetOrganizationCluster))))

@@ -396,98 +396,18 @@ func (h *handler) DeleteClusterNodePool(ctx context.Context, cluster *dockyardsv
 	return nil
 }
 
-func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
+func (h *handler) UpdateClusterNodePool(ctx context.Context, cluster *dockyardsv1.Cluster, nodePoolName string, patchRequest *types.NodePoolOptions) error {
 	logger := middleware.LoggerFrom(ctx)
 
-	nodePoolID := r.PathValue("nodePoolID")
-	if nodePoolID == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
+	objectKey := client.ObjectKey{
+		Name:      nodePoolName,
+		Namespace: cluster.Namespace,
 	}
 
-	var patchRequest types.NodePoolOptions
-	err := json.NewDecoder(r.Body).Decode(&patchRequest)
+	var nodePool dockyardsv1.NodePool
+	err := h.Get(ctx, objectKey, &nodePool)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	matchingFields := client.MatchingFields{
-		index.UIDField: nodePoolID,
-	}
-
-	var nodePoolList dockyardsv1.NodePoolList
-	err = h.List(ctx, &nodePoolList, matchingFields)
-	if err != nil {
-		logger.Error("error listing node pools", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if len(nodePoolList.Items) != 1 {
-		logger.Debug("expected exactly one node pool", "count", len(nodePoolList.Items))
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	nodePool := nodePoolList.Items[0]
-
-	cluster, err := apiutil.GetOwnerCluster(ctx, h.Client, &nodePool)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting owner cluster", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		logger.Error("error getting owner cluster", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if cluster == nil {
-		logger.Debug("node pool has no owner cluster")
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Group:     dockyardsv1.GroupVersion.Group,
-		Namespace: nodePool.Namespace,
-		Resource:  "nodepools",
-		Verb:      "patch",
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to patch node pools", "subject", subject, "namespace", nodePool.Namespace)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
+		return err
 	}
 
 	patch := client.MergeFrom(nodePool.DeepCopy())
@@ -496,9 +416,8 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 	if replicas != nil {
 		if *replicas <= 0 || *replicas > maxReplicas {
 			logger.Debug("invalid amount of replicas", "replicas", *replicas)
-			w.WriteHeader(http.StatusUnprocessableEntity)
 
-			return
+			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
 		nodePool.Spec.Replicas = ptr.To(int32(*replicas))
 	}
@@ -506,18 +425,16 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 	if patchRequest.Name != nil {
 		if nodePool.ObjectMeta.Name != *patchRequest.Name {
 			logger.Debug("cannot change name of node pool")
-			w.WriteHeader(http.StatusUnprocessableEntity)
 
-			return
+			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
 	}
 
 	if patchRequest.ControlPlane != nil {
 		if nodePool.Spec.ControlPlane != *patchRequest.ControlPlane {
 			logger.Error("ControlPlane field may not be changed")
-			w.WriteHeader(http.StatusUnprocessableEntity)
 
-			return
+			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
 	}
 
@@ -533,9 +450,8 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 		storageResource, err := nodePoolStorageResourcesFromStorageResources(*patchRequest.StorageResources)
 		if err != nil {
 			logger.Debug("could not create convert node pool resources", "storageResources", patchRequest.StorageResources)
-			w.WriteHeader(http.StatusInternalServerError)
 
-			return
+			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
 		nodePool.Spec.StorageResources = storageResource
 	}
@@ -543,9 +459,8 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 	if patchRequest.CPUCount != nil {
 		if *patchRequest.CPUCount <= 0 {
 			logger.Debug("invalid cpu count", "count", *patchRequest.CPUCount)
-			w.WriteHeader(http.StatusUnprocessableEntity)
 
-			return
+			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
 
 		cpu := resource.NewQuantity(int64(*patchRequest.CPUCount), resource.DecimalSI)
@@ -554,30 +469,23 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 
 	if patchRequest.DiskSize != nil {
 		size, err := resource.ParseQuantity(*patchRequest.DiskSize)
-
 		if err != nil {
 			logger.Debug("error parsing disk size quantity", "err", err)
-			w.WriteHeader(http.StatusUnprocessableEntity)
 
-			return
+			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
 
 		if !nodePool.Spec.Resources[corev1.ResourceStorage].Equal(size) {
 			logger.Debug("disk size may not be changed")
-			w.WriteHeader(http.StatusUnprocessableEntity)
 
-			return
+			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
 	}
 
 	if patchRequest.RAMSize != nil {
 		size, err := resource.ParseQuantity(*patchRequest.RAMSize)
-
 		if err != nil {
-			logger.Debug("error parsing memory size quantity", "err", err)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-
-			return
+			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
 
 		nodePool.Spec.Resources[corev1.ResourceMemory] = size
@@ -586,35 +494,21 @@ func (h *handler) UpdateNodePool(w http.ResponseWriter, r *http.Request) {
 	if patchRequest.Quantity != nil {
 		if *patchRequest.Quantity > maxReplicas {
 			logger.Debug("invalid amount of replicas", "quantity", patchRequest.Quantity)
-			w.WriteHeader(http.StatusUnprocessableEntity)
 
-			return
+			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
 
 		nodePool.Spec.Replicas = ptr.To(int32(*patchRequest.Quantity))
 	}
 
-	responseJSON, err := json.Marshal(h.toV1NodePool(&nodePool, nil))
-	if err != nil {
-		logger.Error("error creating JSON response", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
 	err = h.Patch(ctx, &nodePool, patch)
 	if err != nil {
 		logger.Error("error patching node pool", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
 
-		return
+		return err
 	}
 
-	w.WriteHeader(http.StatusAccepted)
-	_, err = w.Write(responseJSON)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return nil
 }
 
 func nodePoolStorageResourcesFromStorageResources(storageResources []types.StorageResource) ([]dockyardsv1.NodePoolStorageResource, error) {

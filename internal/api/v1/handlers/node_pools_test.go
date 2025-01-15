@@ -308,7 +308,7 @@ func TestGetNodePool(t *testing.T) {
 		r.SetPathValue("clusterName", cluster.Name)
 		r.SetPathValue("resourceName", "non-existing")
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
 		handlerFunc(w, r.Clone(ctx))
@@ -1342,7 +1342,7 @@ func TestClusterNodePools_Delete(t *testing.T) {
 	})
 }
 
-func TestUpdateNodePool(t *testing.T) {
+func TestClusterNodePools_Update(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
@@ -1373,6 +1373,8 @@ func TestUpdateNodePool(t *testing.T) {
 		Client:    mgr.GetClient(),
 		namespace: testEnvironment.GetDockyardsNamespace(),
 	}
+
+	handlerFunc := UpdateClusterResource(&h, "nodepools", h.UpdateClusterNodePool)
 
 	err = index.AddDefaultIndexes(ctx, mgr)
 	if err != nil {
@@ -1434,14 +1436,14 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 
 		b, err := json.Marshal(update)
 		if err != nil {
-			t.Fatalf("unexpected error marshalling test options: %s", err)
+			t.Fatal(err)
 		}
 
 		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
@@ -1449,30 +1451,31 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
 			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 
-		b, err = io.ReadAll(w.Result().Body)
+		var actual dockyardsv1.NodePool
+		err = c.Get(ctx, client.ObjectKeyFromObject(&nodePool), &actual)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		var actual types.NodePool
-		err = json.Unmarshal(b, &actual)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		expected := types.NodePool{
-			CPUCount: ptr.To(3),
-			ID:       string(nodePool.UID),
-			Name:     nodePool.Name,
+		expected := dockyardsv1.NodePool{
+			ObjectMeta: actual.ObjectMeta,
+			Status:     actual.Status,
+			Spec: dockyardsv1.NodePoolSpec{
+				Resources: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("3"),
+				},
+			},
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1516,14 +1519,14 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 
 		b, err := json.Marshal(update)
 		if err != nil {
-			t.Fatalf("unexpected error marshalling test options: %s", err)
+			t.Fatal(err)
 		}
 
 		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
@@ -1531,30 +1534,31 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
 			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 
-		b, err = io.ReadAll(w.Result().Body)
+		var actual dockyardsv1.NodePool
+		err = c.Get(ctx, client.ObjectKeyFromObject(&nodePool), &actual)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		var actual types.NodePool
-		err = json.Unmarshal(b, &actual)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		expected := types.NodePool{
-			CPUCount: ptr.To(3),
-			ID:       string(nodePool.UID),
-			Name:     nodePool.Name,
+		expected := dockyardsv1.NodePool{
+			ObjectMeta: actual.ObjectMeta,
+			Status:     actual.Status,
+			Spec: dockyardsv1.NodePoolSpec{
+				Resources: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("3"),
+				},
+			},
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1598,14 +1602,14 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 
 		b, err := json.Marshal(update)
 		if err != nil {
-			t.Fatalf("unexpected error marshalling test options: %s", err)
+			t.Fatal(err)
 		}
 
 		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
@@ -1613,9 +1617,11 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -1660,14 +1666,14 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 
 		b, err := json.Marshal(update)
 		if err != nil {
-			t.Fatalf("unexpected error marshalling test options: %s", err)
+			t.Fatal(err)
 		}
 
 		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
@@ -1675,46 +1681,26 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
 			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 
-		b, err = io.ReadAll(w.Result().Body)
+		var actual dockyardsv1.NodePool
+		err = c.Get(ctx, client.ObjectKeyFromObject(&nodePool), &actual)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		var actual types.NodePool
-		err = json.Unmarshal(b, &actual)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		expected := types.NodePool{
-			CPUCount: ptr.To(2),
-			ID:       string(nodePool.UID),
-			Name:     nodePool.Name,
-			Quantity: ptr.To(2),
-		}
-
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
-		}
-
-		var actualNodePool dockyardsv1.NodePool
-		err = c.Get(ctx, client.ObjectKeyFromObject(&nodePool), &actualNodePool)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		expectedNodePool := dockyardsv1.NodePool{
-			ObjectMeta: actualNodePool.ObjectMeta,
-			Status:     actualNodePool.Status,
+		expected := dockyardsv1.NodePool{
+			ObjectMeta: actual.ObjectMeta,
+			Status:     actual.Status,
 			Spec: dockyardsv1.NodePoolSpec{
 				Replicas: ptr.To(int32(2)),
 				Resources: corev1.ResourceList{
@@ -1723,8 +1709,8 @@ func TestUpdateNodePool(t *testing.T) {
 			},
 		}
 
-		if !cmp.Equal(actualNodePool, expectedNodePool) {
-			t.Errorf("diff: %s", cmp.Diff(expectedNodePool, actualNodePool))
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
 		}
 	})
 
@@ -1772,14 +1758,14 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
 
 		b, err := json.Marshal(update)
 		if err != nil {
-			t.Fatalf("unexpected error marshalling test options: %s", err)
+			t.Fatal(err)
 		}
 
 		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
@@ -1787,9 +1773,11 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -1801,22 +1789,24 @@ func TestUpdateNodePool(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		var actual types.NodePool
-		err = json.Unmarshal(b, &actual)
+		var actual dockyardsv1.NodePool
+		err = c.Get(ctx, client.ObjectKeyFromObject(&nodePool), &actual)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expected := types.NodePool{
-			Name: nodePool.Name,
-			StorageResources: ptr.To([]types.StorageResource{
-				{
-					Name:     "foo",
-					Quantity: "1",
-					Type:     ptr.To(dockyardsv1.StorageResourceTypeHostPath),
+		expected := dockyardsv1.NodePool{
+			ObjectMeta: actual.ObjectMeta,
+			Status:     actual.Status,
+			Spec: dockyardsv1.NodePoolSpec{
+				StorageResources: []dockyardsv1.NodePoolStorageResource{
+					{
+						Name:     "foo",
+						Quantity: resource.MustParse("1"),
+						Type:     dockyardsv1.StorageResourceTypeHostPath,
+					},
 				},
-			}),
-			ID: string(nodePool.UID),
+			},
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1830,7 +1820,7 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", ""),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", ""),
 		}
 
 		w := httptest.NewRecorder()
@@ -1845,9 +1835,11 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", "")
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", "")
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusBadRequest {
@@ -1886,7 +1878,7 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
@@ -1901,9 +1893,11 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -1917,7 +1911,7 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", "81d8dc5b-13d3-4250-b59f-34723cf3752c"),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", "test-non-existing"),
 		}
 
 		w := httptest.NewRecorder()
@@ -1932,13 +1926,15 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", "81d8dc5b-13d3-4250-b59f-34723cf3752c")
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", "test-non-existing")
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusUnauthorized {
-			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		if statusCode != http.StatusNotFound {
+			t.Fatalf("expected status code %d, got %d", http.StatusNotFound, statusCode)
 		}
 	})
 
@@ -1979,7 +1975,7 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
@@ -1994,13 +1990,15 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusInternalServerError {
-			t.Fatalf("expected status code %d, got %d", http.StatusInternalServerError, statusCode)
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
 		}
 	})
 
@@ -2041,7 +2039,7 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
@@ -2056,13 +2054,15 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusInternalServerError {
-			t.Fatalf("expected status code %d, got %d", http.StatusInternalServerError, statusCode)
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
 		}
 	})
 
@@ -2097,7 +2097,7 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
@@ -2112,9 +2112,11 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -2153,7 +2155,7 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
@@ -2168,9 +2170,11 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -2215,7 +2219,7 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
@@ -2230,13 +2234,15 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusInternalServerError {
-			t.Fatalf("expected status code %d, got %d", http.StatusInternalServerError, statusCode)
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
 		}
 	})
 
@@ -2277,7 +2283,7 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
@@ -2292,13 +2298,15 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusInternalServerError {
-			t.Fatalf("expected status code %d, got %d", http.StatusInternalServerError, statusCode)
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
 		}
 	})
 
@@ -2333,7 +2341,7 @@ func TestUpdateNodePool(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/node-pools", string(nodePool.UID)),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
 		}
 
 		w := httptest.NewRecorder()
@@ -2348,9 +2356,11 @@ func TestUpdateNodePool(t *testing.T) {
 		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
 		ctx = middleware.ContextWithLogger(ctx, logger)
 
-		r.SetPathValue("nodePoolID", string(nodePool.UID))
+		r.SetPathValue("organizationName", organization.Name)
+		r.SetPathValue("clusterName", cluster.Name)
+		r.SetPathValue("resourceName", nodePool.Name)
 
-		h.UpdateNodePool(w, r.Clone(ctx))
+		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
