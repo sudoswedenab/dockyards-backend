@@ -893,8 +893,8 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 
 		var actual dockyardsv1.Workload
@@ -984,8 +984,8 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 
 		var actual dockyardsv1.Workload
@@ -1142,8 +1142,8 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 
 		var actual dockyardsv1.Workload
@@ -1239,8 +1239,8 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		handlerFunc(w, r.Clone(ctx))
 
 		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, statusCode)
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 
 		var actual dockyardsv1.Workload

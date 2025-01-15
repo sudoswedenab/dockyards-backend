@@ -192,6 +192,6 @@ func UpdateClusterResource[T any](h *handler, resource string, f UpdateClusterRe
 			return
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusAccepted)
 	}
 }
