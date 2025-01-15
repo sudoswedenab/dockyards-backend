@@ -139,6 +139,12 @@ func UpdateClusterResource[T any](h *handler, resource string, f UpdateClusterRe
 			return
 		}
 
+		if apierrors.IsNotFound(err) {
+			w.WriteHeader(http.StatusNotFound)
+
+			return
+		}
+
 		if apierrors.IsInvalid(err) {
 			statusError, ok := err.(*apierrors.StatusError)
 			if !ok {
