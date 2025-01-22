@@ -22,6 +22,7 @@ import (
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -411,4 +412,14 @@ func SetWorkloadReference(references *[]dockyardsv1.WorkloadReference, newRefere
 	}
 
 	return false
+}
+
+type Conditionable interface {
+	GetConditions() []metav1.Condition
+}
+
+func IsReady(conditionable Conditionable) bool {
+	conditions := conditionable.GetConditions()
+
+	return meta.IsStatusConditionTrue(conditions, dockyardsv1.ReadyCondition)
 }
