@@ -17,6 +17,7 @@ package webhooks_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
@@ -138,15 +139,35 @@ func TestDockyardsClusterValidateDelete(t *testing.T) {
 				},
 			),
 		},
+		{
+			name: "test expired cluster with block deletion",
+			dockyardsCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					CreationTimestamp: metav1.Time{
+						Time: time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
+					},
+					Name:      "test-expired-block-deletion",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.ClusterSpec{
+					BlockDeletion: true,
+					Duration: &metav1.Duration{
+						Duration: time.Minute * 15,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tt {
-		webhook := webhooks.DockyardsCluster{}
+		t.Run(tc.name, func(t *testing.T) {
+			webhook := webhooks.DockyardsCluster{}
 
-		_, actual := webhook.ValidateDelete(context.Background(), &tc.dockyardsCluster)
-		if !cmp.Equal(actual, tc.expected) {
-			t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
-		}
+			_, actual := webhook.ValidateDelete(context.Background(), &tc.dockyardsCluster)
+			if !cmp.Equal(actual, tc.expected) {
+				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
 	}
 }
 

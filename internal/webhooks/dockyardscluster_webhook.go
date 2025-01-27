@@ -17,6 +17,7 @@ package webhooks
 import (
 	"context"
 
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -49,6 +50,10 @@ func (webhook *DockyardsCluster) ValidateCreate(_ context.Context, obj runtime.O
 func (webhook *DockyardsCluster) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	dockyardsCluster, ok := obj.(*dockyardsv1.Cluster)
 	if !ok {
+		return nil, nil
+	}
+
+	if apiutil.HasExpired(dockyardsCluster) {
 		return nil, nil
 	}
 
