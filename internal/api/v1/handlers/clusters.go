@@ -103,6 +103,9 @@ func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *types.NodePoolOptio
 					BlockOwnerDeletion: ptr.To(true),
 				},
 			},
+			Labels: map[string]string{
+				dockyardsv1.LabelClusterName: cluster.Name,
+			},
 		},
 		Spec: dockyardsv1.NodePoolSpec{
 			Replicas: ptr.To(int32(*nodePoolOptions.Quantity)),
@@ -306,6 +309,12 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 					BlockOwnerDeletion: ptr.To(true),
 				},
 			}
+
+			if nodePool.Labels == nil {
+				nodePool.Labels = make(map[string]string)
+			}
+
+			nodePool.Labels[dockyardsv1.LabelClusterName] = cluster.Name
 
 			nodePool.Name = cluster.Name + "-" + nodePool.Name
 			nodePool.Namespace = cluster.Namespace
