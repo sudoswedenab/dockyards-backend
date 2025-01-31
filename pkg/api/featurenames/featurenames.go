@@ -71,6 +71,7 @@ const (
 )
 
 const (
+	// Deprecated: workloads no longer an optional feature
 	FeatureWorkloads = "workloads"
 )
 
