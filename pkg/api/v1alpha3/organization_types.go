@@ -63,10 +63,10 @@ type OrganizationStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
-// +kubebuilder:printcolumn:name="Reason",type=string,priority=1,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
-// +kubebuilder:printcolumn:name="NamespaceReference",type=string,JSONPath=".status.namespaceRef.name"
+// +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
+// +kubebuilder:printcolumn:name="NamespaceReference",type=string,priority=1,JSONPath=".status.namespaceRef.name"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:printcolumn:name="Duration",type=string,JSONPath=".spec.duration"
+// +kubebuilder:printcolumn:name="Duration",type=string,priority=1,JSONPath=".spec.duration"
 type Organization struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -247,16 +247,17 @@ spec:
       type: string
     - jsonPath: .status.conditions[?(@.type=="Ready")].reason
       name: Reason
-      priority: 1
       type: string
     - jsonPath: .status.namespaceRef.name
       name: NamespaceReference
+      priority: 1
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
     - jsonPath: .spec.duration
       name: Duration
+      priority: 1
       type: string
     name: v1alpha3
     schema:
