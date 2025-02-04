@@ -36,9 +36,11 @@ const (
 )
 
 const (
-	AnnotationDefaultTemplate   = "dockyards.io/is-default-template"
-	AnnotationVoucherCode       = "dockyards.io/voucher-code"
-	AnnotationDefaultRelease    = "dockyards.io/is-default-release"
+	AnnotationDefaultTemplate = "dockyards.io/is-default-template"
+	AnnotationVoucherCode     = "dockyards.io/voucher-code"
+	AnnotationDefaultRelease  = "dockyards.io/is-default-release"
+
+	// Deprecated: deployments superseded by workloads
 	AnnotationIgnoreDeployments = "dockyards.io/ignore-deployments"
 	AnnotationSkipRemediation   = "dockyards.io/skip-remediation"
 )
