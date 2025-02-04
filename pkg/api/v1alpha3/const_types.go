@@ -40,4 +40,5 @@ const (
 	AnnotationVoucherCode       = "dockyards.io/voucher-code"
 	AnnotationDefaultRelease    = "dockyards.io/is-default-release"
 	AnnotationIgnoreDeployments = "dockyards.io/ignore-deployments"
+	AnnotationSkipRemediation   = "dockyards.io/skip-remediation"
 )
