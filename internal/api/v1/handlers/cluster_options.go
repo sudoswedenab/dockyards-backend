@@ -34,14 +34,19 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 	logger := middleware.LoggerFrom(ctx)
 
 	release, err := apiutil.GetDefaultRelease(ctx, h.Client, dockyardsv1.ReleaseTypeKubernetes)
-	if err != nil || release == nil {
+	if err != nil {
+		logger.Error("error getting default release", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
 	options := types.Options{
-		Version: release.Status.Versions,
+		Version: []string{},
+	}
+
+	if release != nil {
+		options.Version = release.Status.Versions
 	}
 
 	featureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageRole, h.namespace)
