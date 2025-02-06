@@ -20,7 +20,7 @@ definitions:
       name: default
       script:
       - echo "export VERSION=$(git branch --show-current)-$(git rev-parse --short HEAD)-$(date +%s)" >> env.sh
-      - echo "export IMAGE=075899289117.dkr.ecr.eu-north-1.amazonaws.com/dockyards-backend" >> env.sh
+      - echo "export IMAGE=public.ecr.aws/sudosweden/dockyards-backend" >> env.sh
       - echo "export REVISION=$(git branch --show-current)@$(git rev-parse --show-object-format):$(git rev-parse HEAD)" >> env.sh
       artifacts:
       - env.sh
@@ -49,7 +49,7 @@ definitions:
       name: push
       script:
       - source env.sh
-      - echo "${TOKEN}" | docker login --username "AWS" --password-stdin "075899289117.dkr.ecr.eu-north-1.amazonaws.com"
+      - echo "${TOKEN}" | docker login --username AWS --password-stdin public.ecr.aws
       - docker load --input dockyards-backend.tar
       - docker tag dockyards-backend "${IMAGE}:${VERSION}"
       - docker push "${IMAGE}:${VERSION}"
@@ -70,9 +70,9 @@ definitions:
       script:
       - echo $BITBUCKET_STEP_OIDC_TOKEN > /tmp/web-identity-token
       - aws configure --profile bitbucket set region eu-north-1
-      - aws configure --profile bitbucket set role_arn arn:aws:iam::075899289117:role/BitbucketPipelinesBackend
+      - aws configure --profile bitbucket set role_arn arn:aws:iam::075899289117:role/BitbucketPipelinesDockyardsBackendPublic
       - aws configure --profile bitbucket set web_identity_token_file /tmp/web-identity-token
-      - echo "export TOKEN=$(aws ecr get-login-password --profile bitbucket)" >> env.sh
+      - echo "export TOKEN=$(aws ecr-public get-login-password --profile bitbucket --region us-east-1)" >> env.sh
       artifacts:
       - env.sh
   - step: &flux
@@ -85,7 +85,7 @@ definitions:
       name: tag
       script:
       - echo "export VERSION=$(git describe --exact-match)" >> env.sh
-      - echo "export IMAGE=075899289117.dkr.ecr.eu-north-1.amazonaws.com/dockyards-backend" >> env.sh
+      - echo "export IMAGE=public.ecr.aws/sudosweden/dockyards-backend" >> env.sh
       - echo "export REVISION=$(git branch --show-current)@$(git rev-parse --show-object-format):$(git rev-parse HEAD)" >> env.sh
       artifacts:
       - env.sh
