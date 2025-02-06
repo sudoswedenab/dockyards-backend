@@ -139,7 +139,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Debug("process info", "wd", wd, "uid", os.Getuid(), "pid", os.Getpid())
+	logger.Debug("process info", "wd", wd, "uid", os.Getuid(), "pid", os.Getpid(), "namespace", dockyardsNamespace)
 
 	kubeconfig, err := config.GetConfig()
 	if err != nil {
@@ -223,7 +223,7 @@ func main() {
 		}
 	}()
 
-	accessKey, refreshKey, err := jwt.GetOrGenerateKeys(ctx, controllerClient)
+	accessKey, refreshKey, err := jwt.GetOrGenerateKeys(ctx, controllerClient, dockyardsNamespace)
 	if err != nil {
 		logger.Error("error getting private keys for jwt", "err", err)
 

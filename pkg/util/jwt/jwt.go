@@ -33,13 +33,12 @@ import (
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=create;get;list;patch;watch
 
 const (
-	defaultDockyardsNamespace = "dockyards"
 	AccessTokenPrivateKeyKey  = "accessTokenPrivateKey"
 	RefreshTokenPrivateKeyKey = "refreshTokenPrivateKey"
 	AccessTokenPublicKeyKey   = "accessTokenPublicKey"
 )
 
-func GetOrGenerateKeys(ctx context.Context, controllerClient client.Client) (*ecdsa.PrivateKey, *ecdsa.PrivateKey, error) {
+func GetOrGenerateKeys(ctx context.Context, c client.Client, namespace string) (*ecdsa.PrivateKey, *ecdsa.PrivateKey, error) {
 	var (
 		accessTokenPrivateKeyPEM  []byte
 		refreshTokenPrivateKeyPEM []byte
@@ -49,11 +48,11 @@ func GetOrGenerateKeys(ctx context.Context, controllerClient client.Client) (*ec
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dockyards-backend-jwt",
-			Namespace: defaultDockyardsNamespace,
+			Namespace: namespace,
 		},
 	}
 
-	_, err := controllerutil.CreateOrPatch(ctx, controllerClient, &secret, func() error {
+	_, err := controllerutil.CreateOrPatch(ctx, c, &secret, func() error {
 		if secret.Data == nil {
 			secret.Data = make(map[string][]byte)
 		}
@@ -131,11 +130,11 @@ func GetOrGenerateKeys(ctx context.Context, controllerClient client.Client) (*ec
 	configMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dockyards-backend-jwt",
-			Namespace: defaultDockyardsNamespace,
+			Namespace: namespace,
 		},
 	}
 
-	_, err = controllerutil.CreateOrPatch(ctx, controllerClient, &configMap, func() error {
+	_, err = controllerutil.CreateOrPatch(ctx, c, &configMap, func() error {
 		if configMap.Data == nil {
 			configMap.Data = make(map[string]string)
 		}
