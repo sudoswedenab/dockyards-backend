@@ -59,8 +59,6 @@ spec:
             drop:
             - ALL
           readOnlyRootFilesystem: true
-      imagePullSecrets:
-      - name: dockyards-registry
       securityContext:
         fsGroup: 65534
         runAsUser: 65532
