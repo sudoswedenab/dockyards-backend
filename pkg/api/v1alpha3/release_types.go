@@ -37,6 +37,7 @@ type ReleaseSpec struct {
 type ReleaseStatus struct {
 	LatestVersion string   `json:"latestVersion,omitempty"`
 	Versions      []string `json:"versions,omitempty"`
+	LatestURL     *string  `json:"latestURL,omitempty"`
 }
 
 // +kubebuilder:object:root=true
