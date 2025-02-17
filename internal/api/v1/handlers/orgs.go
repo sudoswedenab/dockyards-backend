@@ -15,8 +15,7 @@
 package handlers
 
 import (
-	"encoding/json"
-	"net/http"
+	"context"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
@@ -25,17 +24,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (h *handler) GetOrgs(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
+func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organization, error) {
 	logger := middleware.LoggerFrom(ctx)
 
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
 		logger.Debug("error fetching user from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
 
-		return
+		return nil, err
 	}
 
 	matchingFields := client.MatchingFields{
@@ -46,31 +42,27 @@ func (h *handler) GetOrgs(w http.ResponseWriter, r *http.Request) {
 	err = h.List(ctx, &organizationList, matchingFields)
 	if err != nil {
 		logger.Error("error listing organizations in kubernetes", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
 
-		return
+		return nil, err
 	}
 
-	var organizations []types.Organization
+	organizations := []types.Organization{}
+
 	for _, organization := range organizationList.Items {
 		v1Organization := types.Organization{
-			ID:   string(organization.UID),
-			Name: organization.Name,
+			ID:        string(organization.UID),
+			Name:      organization.Name,
+			CreatedAt: organization.CreationTimestamp.Time,
+		}
+
+		if organization.Spec.Duration != nil {
+			duration := organization.Spec.Duration.String()
+
+			v1Organization.Duration = &duration
 		}
 
 		organizations = append(organizations, v1Organization)
 	}
 
-	b, err := json.Marshal(&organizations)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return &organizations, nil
 }

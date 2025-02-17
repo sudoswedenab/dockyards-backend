@@ -30,239 +30,305 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestGetOrgs(t *testing.T) {
-	tt := []struct {
-		name     string
-		lists    []client.ObjectList
-		sub      string
-		expected []types.Organization
-	}{
-		{
-			name: "test single",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test",
-								UID:  "03582042-318e-4c1e-9728-755c5eaf4267",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "test",
-										},
-										UID: "89a3e0aa-7744-49af-ae7e-1461004c1598",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			sub: "89a3e0aa-7744-49af-ae7e-1461004c1598",
-			expected: []types.Organization{
-				{
-					ID:   "03582042-318e-4c1e-9728-755c5eaf4267",
-					Name: "test",
-				},
-			},
-		},
-		{
-			name: "test multiple organizations",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test1",
-								UID:  "58c282c0-6a68-4ec8-9032-83d33f259bbe",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "user1",
-										},
-										UID: "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
-									},
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "user2",
-										},
-										UID: "5cf0ed84-82f4-43fe-a3fb-b91f2ec7f0b1",
-									},
-								},
-							},
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test2",
-								UID:  "d327da4c-f8fe-4f85-93a1-258b729a40d2",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "user2",
-										},
-										UID: "5cf0ed84-82f4-43fe-a3fb-b91f2ec7f0b1",
-									},
-								},
-							},
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test3",
-								UID:  "5c13be53-fecd-467d-9546-d8ba3bb68103",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "user1",
-										},
-										UID: "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			sub: "2ca9e8a0-7b43-455d-867e-ed8bec4addfb",
-			expected: []types.Organization{
-				{
-					ID:   "58c282c0-6a68-4ec8-9032-83d33f259bbe",
-					Name: "test1",
-				},
-				{
-					ID:   "5c13be53-fecd-467d-9546-d8ba3bb68103",
-					Name: "test3",
-				},
-			},
-		},
-		{
-			name: "test subject without organizations",
-			lists: []client.ObjectList{
-				&dockyardsv1.OrganizationList{
-					Items: []dockyardsv1.Organization{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test1",
-								UID:  "57236ef2-304c-4fa7-9aa7-e8019dfa3070",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "user1",
-										},
-										UID: "92770876-ae7f-493f-b3f8-7d9f0a45b656",
-									},
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "user2",
-										},
-										UID: "29625697-69c7-4142-92dc-dccccfb5b824",
-									},
-								},
-							},
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test2",
-								UID:  "d327da4c-f8fe-4f85-93a1-258b729a40d2",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "user3",
-										},
-										UID: "df8ab98f-7866-4f4d-a9a6-7426879b7032",
-									},
-								},
-							},
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test3",
-								UID:  "5c13be53-fecd-467d-9546-d8ba3bb68103",
-							},
-							Spec: dockyardsv1.OrganizationSpec{
-								MemberRefs: []dockyardsv1.OrganizationMemberReference{
-									{
-										TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-											Name: "user4",
-										},
-										UID: "d734d20f-e03e-44a8-89a5-8bd7f5d176d3",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			sub: "59862b3c-61de-4362-aeac-36366035a914",
-		},
+func TestGlobalOrganizations_List(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
 	}
 
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
-			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().
-				WithScheme(scheme).WithLists(tc.lists...).
-				WithIndex(&dockyardsv1.Organization{}, index.MemberReferencesField, index.ByMemberReferences).
-				Build()
+	ctx, cancel := context.WithCancel(context.TODO())
 
-			h := handler{
-				Client: fakeClient,
-			}
-
-			u := url.URL{
-				Path: path.Join("/v1/orgs"),
-			}
-
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodGet, u.Path, nil)
-
-			ctx := middleware.ContextWithSubject(context.Background(), tc.sub)
-			ctx = middleware.ContextWithLogger(ctx, logger)
-
-			h.GetOrgs(w, r.Clone(ctx))
-
-			statusCode := w.Result().StatusCode
-			if statusCode != http.StatusOK {
-				t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
-			}
-
-			b, err := io.ReadAll(w.Result().Body)
-			if err != nil {
-				t.Fatalf("unexpected error reading result body: %s", err)
-			}
-
-			var actual []types.Organization
-			err = json.Unmarshal(b, &actual)
-			if err != nil {
-				t.Fatalf("error unmarshalling result body to json: %s", err)
-			}
-
-			if !cmp.Equal(tc.expected, actual) {
-				t.Errorf("diff: %s", cmp.Diff(actual, tc.expected))
-			}
-		})
+	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	t.Cleanup(func() {
+		cancel()
+		testEnvironment.GetEnvironment().Stop()
+	})
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	err = index.AddDefaultIndexes(ctx, mgr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	organization := testEnvironment.GetOrganization()
+	superUser := testEnvironment.GetSuperUser()
+	user := testEnvironment.GetUser()
+	reader := testEnvironment.GetReader()
+
+	h := handler{
+		Client: mgr.GetClient(),
+	}
+
+	handlerFunc := ListGlobalResource(&h, "organizations", h.ListGlobalOrganizations)
+
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	mgr.GetCache().WaitForCacheSync(ctx)
+
+	t.Run("test as super user", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual []types.Organization
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := []types.Organization{
+			{
+				ID:        string(organization.UID),
+				Name:      organization.Name,
+				CreatedAt: organization.CreationTimestamp.Time,
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual []types.Organization
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := []types.Organization{
+			{
+				ID:        string(organization.UID),
+				Name:      organization.Name,
+				CreatedAt: organization.CreationTimestamp.Time,
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test as reader", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual []types.Organization
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := []types.Organization{
+			{
+				ID:        string(organization.UID),
+				Name:      organization.Name,
+				CreatedAt: organization.CreationTimestamp.Time,
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test multiple membership", func(t *testing.T) {
+		otherOrganization := dockyardsv1.Organization{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "other-",
+			},
+			Spec: dockyardsv1.OrganizationSpec{
+				MemberRefs: []dockyardsv1.OrganizationMemberReference{
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     user.Name,
+						},
+						UID:  reader.UID,
+						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+					},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &otherOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual []types.Organization
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := []types.Organization{
+			{
+				ID:        string(organization.UID),
+				Name:      organization.Name,
+				CreatedAt: organization.CreationTimestamp.Time,
+			},
+			{
+				ID:        string(otherOrganization.UID),
+				Name:      otherOrganization.Name,
+				CreatedAt: otherOrganization.CreationTimestamp.Time,
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test no membership", func(t *testing.T) {
+		otherUser := dockyardsv1.User{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "other-",
+			},
+		}
+
+		err := c.Create(ctx, &otherUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(otherUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual []types.Organization
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := []types.Organization{}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
 }
