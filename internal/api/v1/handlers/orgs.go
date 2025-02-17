@@ -21,6 +21,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -55,10 +56,20 @@ func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organiz
 			CreatedAt: organization.CreationTimestamp.Time,
 		}
 
+		if !organization.DeletionTimestamp.IsZero() {
+			v1Organization.DeletedAt = &organization.CreationTimestamp.Time
+		}
+
 		if organization.Spec.Duration != nil {
 			duration := organization.Spec.Duration.String()
 
 			v1Organization.Duration = &duration
+		}
+
+		readyCondition := meta.FindStatusCondition(organization.Status.Conditions, dockyardsv1.ReadyCondition)
+		if readyCondition != nil {
+			v1Organization.UpdatedAt = &readyCondition.LastTransitionTime.Time
+			v1Organization.Condition = &readyCondition.Reason
 		}
 
 		organizations = append(organizations, v1Organization)
