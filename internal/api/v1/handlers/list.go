@@ -237,3 +237,37 @@ func ListOrganizationResource[T any](h *handler, resource string, f ListOrganiza
 		}
 	}
 }
+
+type ListGlobalResourceFunc[T any] func(context.Context) (*[]T, error)
+
+func ListGlobalResource[T any](h *handler, resource string, f ListGlobalResourceFunc[T]) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		logger := middleware.LoggerFrom(ctx).With("resource", resource)
+
+		response, err := f(ctx)
+		if err != nil {
+			logger.Error("error listing resource", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		b, err := json.Marshal(response)
+		if err != nil {
+			logger.Error("error marshalling response", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write(b)
+		if err != nil {
+			logger.Error("error writing response", "err", err)
+
+			return
+		}
+	}
+}
