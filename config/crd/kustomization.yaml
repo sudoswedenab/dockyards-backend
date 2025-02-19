@@ -19,6 +19,7 @@ resources:
 - dockyards.io_containerimagedeployments.yaml
 - dockyards.io_deployments.yaml
 - dockyards.io_helmdeployments.yaml
+- dockyards.io_identityproviders.yaml
 - dockyards.io_kustomizedeployments.yaml
 - dockyards.io_nodepools.yaml
 - dockyards.io_nodes.yaml

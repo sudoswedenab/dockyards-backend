@@ -94,6 +94,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 			validateJSON.WithSchema("#login")(http.HandlerFunc(h.Login)),
 		),
 	)
+	mux.Handle("GET /v1/identity-providers", logger(http.HandlerFunc(h.ListIdentityProviders)))
 
 	mux.Handle("POST /v1/refresh", logger(http.HandlerFunc(h.PostRefresh)))
 
