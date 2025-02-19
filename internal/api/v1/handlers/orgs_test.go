@@ -32,6 +32,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -83,6 +84,12 @@ func TestGlobalOrganizations_List(t *testing.T) {
 
 	mgr.GetCache().WaitForCacheSync(ctx)
 
+	less := func(a, b types.Organization) bool {
+		return a.CreatedAt.Before(b.CreatedAt)
+	}
+
+	sortSlices := cmpopts.SortSlices(less)
+
 	t.Run("test as super user", func(t *testing.T) {
 		u := url.URL{
 			Path: path.Join("/v1/orgs"),
@@ -120,8 +127,8 @@ func TestGlobalOrganizations_List(t *testing.T) {
 			},
 		}
 
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !cmp.Equal(actual, expected, sortSlices) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, sortSlices))
 		}
 	})
 
@@ -162,8 +169,8 @@ func TestGlobalOrganizations_List(t *testing.T) {
 			},
 		}
 
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !cmp.Equal(actual, expected, sortSlices) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, sortSlices))
 		}
 	})
 
@@ -204,8 +211,8 @@ func TestGlobalOrganizations_List(t *testing.T) {
 			},
 		}
 
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !cmp.Equal(actual, expected, sortSlices) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, sortSlices))
 		}
 	})
 
@@ -280,8 +287,8 @@ func TestGlobalOrganizations_List(t *testing.T) {
 			},
 		}
 
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !cmp.Equal(actual, expected, sortSlices) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, sortSlices))
 		}
 	})
 
@@ -327,8 +334,8 @@ func TestGlobalOrganizations_List(t *testing.T) {
 
 		expected := []types.Organization{}
 
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !cmp.Equal(actual, expected, sortSlices) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, sortSlices))
 		}
 	})
 }
