@@ -240,7 +240,7 @@ func ListOrganizationResource[T any](h *handler, resource string, f ListOrganiza
 
 type ListGlobalResourceFunc[T any] func(context.Context) (*[]T, error)
 
-func ListGlobalResource[T any](h *handler, resource string, f ListGlobalResourceFunc[T]) http.HandlerFunc {
+func ListGlobalResource[T any](resource string, f ListGlobalResourceFunc[T]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 

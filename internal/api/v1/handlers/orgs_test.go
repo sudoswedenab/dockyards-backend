@@ -73,7 +73,7 @@ func TestGlobalOrganizations_List(t *testing.T) {
 		Client: mgr.GetClient(),
 	}
 
-	handlerFunc := ListGlobalResource(&h, "organizations", h.ListGlobalOrganizations)
+	handlerFunc := ListGlobalResource("organizations", h.ListGlobalOrganizations)
 
 	go func() {
 		err := mgr.Start(ctx)
