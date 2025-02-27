@@ -34,9 +34,9 @@ spec:
       containers:
       - args:
         - --log-level=debug
-        - --dockyards-namespace=$(RUNTIME_NAMESPACE)
+        - --dockyards-namespace=$(METADATA_NAMESPACE)
         env:
-        - name: RUNTIME_NAMESPACE
+        - name: METADATA_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
