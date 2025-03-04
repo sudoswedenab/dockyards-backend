@@ -70,7 +70,7 @@ func DeleteClusterResource(h *handler, resource string, f DeleteClusterResourceF
 			return
 		}
 
-		if organization.Status.NamespaceRef == nil {
+		if organization.Spec.NamespaceRef == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 
 			return
@@ -86,7 +86,7 @@ func DeleteClusterResource(h *handler, resource string, f DeleteClusterResourceF
 
 		resourceAttributes := authorizationv1.ResourceAttributes{
 			Group:     dockyardsv1.GroupVersion.Group,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
 			Verb:      "delete",
 		}
@@ -108,7 +108,7 @@ func DeleteClusterResource(h *handler, resource string, f DeleteClusterResourceF
 
 		objectKey := client.ObjectKey{
 			Name:      clusterName,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
 		var cluster dockyardsv1.Cluster
@@ -181,7 +181,7 @@ func DeleteOrganizationResource(h *handler, resource string, f DeleteOrganizatio
 			return
 		}
 
-		if organization.Status.NamespaceRef == nil {
+		if organization.Spec.NamespaceRef == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 
 			return
@@ -197,7 +197,7 @@ func DeleteOrganizationResource(h *handler, resource string, f DeleteOrganizatio
 
 		resourceAttributes := authorizationv1.ResourceAttributes{
 			Group:     dockyardsv1.GroupVersion.Group,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
 			Verb:      "delete",
 		}

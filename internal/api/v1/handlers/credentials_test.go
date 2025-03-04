@@ -88,7 +88,7 @@ func TestOrganizationCredentials_List(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-test",
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Type: dockyardsv1.SecretTypeCredential,
 		}
@@ -152,14 +152,14 @@ func TestOrganizationCredentials_List(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "credential-dockyards-io-credential",
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 				},
 				Type: dockyardsv1.SecretTypeCredential,
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "credential-kubernetes-io-ssh-auth",
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 				},
 				Data: map[string][]byte{
 					corev1.SSHAuthPrivateKey: []byte("ssh-privatekey"),
@@ -169,7 +169,7 @@ func TestOrganizationCredentials_List(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "credential-kubernetes-io-tls",
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 				},
 				Data: map[string][]byte{
 					corev1.TLSCertKey:       []byte("tls.crt"),
@@ -180,7 +180,7 @@ func TestOrganizationCredentials_List(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "credential-opaque",
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 				},
 				Type: corev1.SecretTypeOpaque,
 			},
@@ -252,7 +252,7 @@ func TestOrganizationCredentials_List(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-test",
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 				Labels: map[string]string{
 					dockyardsv1.LabelCredentialTemplateName: "test",
 				},
@@ -361,7 +361,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Type: dockyardsv1.SecretTypeCredential,
 		}
@@ -413,7 +413,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Type: dockyardsv1.SecretTypeCredential,
 		}
@@ -479,7 +479,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Data: map[string][]byte{
 				"test": []byte("qwfp"),
@@ -552,7 +552,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Data: map[string][]byte{
 				"test": []byte("secret"),
@@ -622,7 +622,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Data: map[string][]byte{
 				"test": []byte("secret"),
@@ -762,7 +762,7 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 
 		objectKey := client.ObjectKey{
 			Name:      "credential-" + credential.Name,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
 		expected := map[string][]byte(nil)
@@ -807,7 +807,7 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 
 		objectKey := client.ObjectKey{
 			Name:      "credential-" + credential.Name,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
 		var actual corev1.Secret
@@ -856,7 +856,7 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 
 		objectKey := client.ObjectKey{
 			Name:      "credential-" + credential.Name,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
 		var actual corev1.Secret
@@ -957,7 +957,7 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Type: dockyardsv1.SecretTypeCredential,
 		}
@@ -1019,7 +1019,7 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Data: map[string][]byte{
 				"qwfp": []byte("arst"),
@@ -1114,7 +1114,7 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 				Labels: map[string]string{
 					dockyardsv1.LabelCredentialTemplateName: credentialTemplate.Name,
 				},
@@ -1237,7 +1237,7 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Type: dockyardsv1.SecretTypeCredential,
 		}
@@ -1278,7 +1278,7 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Type: dockyardsv1.SecretTypeCredential,
 		}
@@ -1319,7 +1319,7 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Type: dockyardsv1.SecretTypeCredential,
 		}
@@ -1360,7 +1360,7 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "credential-" + credentialName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Type: corev1.SecretTypeOpaque,
 		}

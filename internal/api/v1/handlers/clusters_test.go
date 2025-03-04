@@ -189,7 +189,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		expectedCluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      clusterOptions.Name,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion:         dockyardsv1.GroupVersion.String(),
@@ -308,7 +308,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 
 		objectKey := client.ObjectKey{
 			Name:      clusterOptions.Name,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
 		var actual dockyardsv1.Cluster
@@ -394,7 +394,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 
 		objectKey := client.ObjectKey{
 			Name:      clusterOptions.Name,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
 		var actualCluster dockyardsv1.Cluster
@@ -507,7 +507,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
-				Namespace:    organization.Status.NamespaceRef.Name,
+				Namespace:    organization.Spec.NamespaceRef.Name,
 			},
 		}
 
@@ -656,7 +656,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 
 		objectKey := client.ObjectKey{
 			Name:      clusterOptions.Name,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
 		var actualCluster dockyardsv1.Cluster
@@ -797,7 +797,7 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-super-user-",
-				Namespace:    organization.Status.NamespaceRef.Name,
+				Namespace:    organization.Spec.NamespaceRef.Name,
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: dockyardsv1.GroupVersion.String(),
@@ -844,7 +844,7 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-user-",
-				Namespace:    organization.Status.NamespaceRef.Name,
+				Namespace:    organization.Spec.NamespaceRef.Name,
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: dockyardsv1.GroupVersion.String(),
@@ -891,7 +891,7 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-reader-",
-				Namespace:    organization.Status.NamespaceRef.Name,
+				Namespace:    organization.Spec.NamespaceRef.Name,
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: dockyardsv1.GroupVersion.String(),
@@ -979,6 +979,17 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 	})
 
 	t.Run("test without membership", func(t *testing.T) {
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+		}
+
+		err = c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		otherOrganization := dockyardsv1.Organization{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
@@ -994,30 +1005,13 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 						UID:  reader.UID,
 					},
 				},
+				NamespaceRef: &corev1.LocalObjectReference{
+					Name: namespace.Name,
+				},
 			},
 		}
 
 		err := c.Create(ctx, &otherOrganization)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		namespace := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "test-",
-			},
-		}
-
-		err = c.Create(ctx, &namespace)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		otherOrganization.Status.NamespaceRef = &corev1.LocalObjectReference{
-			Name: namespace.Name,
-		}
-
-		err = c.Status().Update(ctx, &otherOrganization)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1105,7 +1099,7 @@ func TestGetCluster(t *testing.T) {
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: dockyardsv1.GroupVersion.String(),
@@ -1363,6 +1357,17 @@ func TestGetCluster(t *testing.T) {
 	})
 
 	t.Run("test without membership", func(t *testing.T) {
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+		}
+
+		err = c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		otherOrganization := dockyardsv1.Organization{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
@@ -1378,30 +1383,13 @@ func TestGetCluster(t *testing.T) {
 						UID:  reader.UID,
 					},
 				},
+				NamespaceRef: &corev1.LocalObjectReference{
+					Name: namespace.Name,
+				},
 			},
 		}
 
 		err := c.Create(ctx, &otherOrganization)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		namespace := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "test-",
-			},
-		}
-
-		err = c.Create(ctx, &namespace)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		otherOrganization.Status.NamespaceRef = &corev1.LocalObjectReference{
-			Name: namespace.Name,
-		}
-
-		err = c.Status().Update(ctx, &otherOrganization)
 		if err != nil {
 			t.Fatal(err)
 		}

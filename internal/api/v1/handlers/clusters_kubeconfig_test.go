@@ -83,7 +83,7 @@ func TestGetClusterKubeconfig(t *testing.T) {
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 		},
 	}
 

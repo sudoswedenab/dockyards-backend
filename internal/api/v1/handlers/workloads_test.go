@@ -84,7 +84,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 		},
 	}
 
@@ -609,7 +609,7 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 		},
 	}
 
@@ -626,7 +626,7 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + workloadName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
 				TargetNamespace: "testing",
@@ -672,7 +672,7 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + workloadName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
 				TargetNamespace: "testing",
@@ -718,7 +718,7 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + workloadName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
 				TargetNamespace: "testing",
@@ -826,7 +826,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 		},
 	}
 
@@ -843,7 +843,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + workloadName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
 				TargetNamespace: "testing",
@@ -934,7 +934,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + workloadName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
 				TargetNamespace: "testing",
@@ -1025,7 +1025,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + workloadName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
 				TargetNamespace: "testing",
@@ -1086,7 +1086,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + workloadName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
 				TargetNamespace: "testing",
@@ -1186,7 +1186,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + workloadName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
 				TargetNamespace: "testing",
@@ -1280,7 +1280,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + workloadName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
 				TargetNamespace: "testing",
@@ -1341,7 +1341,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		workload := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-" + workloadName,
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.WorkloadSpec{
 				TargetNamespace: "testing",

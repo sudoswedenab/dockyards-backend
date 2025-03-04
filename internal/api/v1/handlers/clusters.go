@@ -218,7 +218,7 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      request.Name,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion:         dockyardsv1.GroupVersion.String(),
@@ -591,7 +591,7 @@ func (h *handler) GetClusterKubeconfig(w http.ResponseWriter, r *http.Request) {
 func (h *handler) DeleteOrganizationCluster(ctx context.Context, organization *dockyardsv1.Organization, clusterName string) error {
 	objectKey := client.ObjectKey{
 		Name:      clusterName,
-		Namespace: organization.Status.NamespaceRef.Name,
+		Namespace: organization.Spec.NamespaceRef.Name,
 	}
 
 	var cluster dockyardsv1.Cluster
@@ -610,7 +610,7 @@ func (h *handler) DeleteOrganizationCluster(ctx context.Context, organization *d
 
 func (h *handler) ListOrganizationClusters(ctx context.Context, organization *dockyardsv1.Organization) (*[]types.Cluster, error) {
 	var clusterList dockyardsv1.ClusterList
-	err := h.List(ctx, &clusterList, client.InNamespace(organization.Status.NamespaceRef.Name))
+	err := h.List(ctx, &clusterList, client.InNamespace(organization.Spec.NamespaceRef.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -627,7 +627,7 @@ func (h *handler) ListOrganizationClusters(ctx context.Context, organization *do
 func (h *handler) GetOrganizationCluster(ctx context.Context, organization *dockyardsv1.Organization, clusterName string) (*types.Cluster, error) {
 	objectKey := client.ObjectKey{
 		Name:      clusterName,
-		Namespace: organization.Status.NamespaceRef.Name,
+		Namespace: organization.Spec.NamespaceRef.Name,
 	}
 
 	var cluster dockyardsv1.Cluster

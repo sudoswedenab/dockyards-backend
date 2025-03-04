@@ -73,7 +73,7 @@ func UpdateClusterResource[T any](h *handler, resource string, f UpdateClusterRe
 			return
 		}
 
-		if organization.Status.NamespaceRef == nil {
+		if organization.Spec.NamespaceRef == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 
 			return
@@ -89,7 +89,7 @@ func UpdateClusterResource[T any](h *handler, resource string, f UpdateClusterRe
 
 		resourceAttributes := authorizationv1.ResourceAttributes{
 			Group:     dockyardsv1.GroupVersion.Group,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
 			Verb:      "patch",
 		}
@@ -119,7 +119,7 @@ func UpdateClusterResource[T any](h *handler, resource string, f UpdateClusterRe
 
 		objectKey := client.ObjectKey{
 			Name:      clusterName,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
 		var cluster dockyardsv1.Cluster

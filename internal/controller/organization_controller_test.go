@@ -138,7 +138,7 @@ func TestOrganizationController(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if organization.Status.NamespaceRef != nil {
+		if organization.Spec.NamespaceRef != nil {
 			break
 		}
 
@@ -151,7 +151,7 @@ func TestOrganizationController(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if otherOrganization.Status.NamespaceRef != nil {
+		if otherOrganization.Spec.NamespaceRef != nil {
 			break
 		}
 
@@ -256,7 +256,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(superUser.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 					Resource:  "clusters",
 					Verb:      "get",
 				},
@@ -302,7 +302,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(user.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 					Resource:  "clusters",
 					Verb:      "delete",
 				},
@@ -394,7 +394,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(user.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: otherOrganization.Status.NamespaceRef.Name,
+					Namespace: otherOrganization.Spec.NamespaceRef.Name,
 					Resource:  "clusters",
 					Verb:      "delete",
 				},
@@ -463,7 +463,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(reader.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 					Resource:  "clusters",
 					Verb:      "get",
 				},
@@ -486,7 +486,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(reader.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: otherOrganization.Status.NamespaceRef.Name,
+					Namespace: otherOrganization.Spec.NamespaceRef.Name,
 					Resource:  "clusters",
 					Verb:      "get",
 				},
@@ -509,7 +509,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(reader.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 					Resource:  "clusters",
 					Verb:      "delete",
 				},
@@ -532,7 +532,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(reader.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 					Resource:  "deployments",
 					Verb:      "get",
 				},
@@ -555,7 +555,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(superUser.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 					Resource:  "clusters",
 					Verb:      "create",
 				},
@@ -578,7 +578,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(user.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 					Resource:  "clusters",
 					Verb:      "create",
 				},
@@ -601,7 +601,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(reader.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: organization.Status.NamespaceRef.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
 					Resource:  "clusters",
 					Verb:      "create",
 				},
@@ -624,7 +624,7 @@ func TestOrganizationController(t *testing.T) {
 				User: string(reader.UID),
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
-					Namespace: otherOrganization.Status.NamespaceRef.Name,
+					Namespace: otherOrganization.Spec.NamespaceRef.Name,
 					Resource:  "clusters",
 					Verb:      "get",
 				},

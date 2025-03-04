@@ -109,7 +109,7 @@ func TestClusterController_Upgrades(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-latest-version",
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.ClusterSpec{
 				Version: "v1.30.1",
@@ -147,7 +147,7 @@ func TestClusterController_Upgrades(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-patch-upgrade",
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.ClusterSpec{
 				Version: "v1.30.0",
@@ -189,7 +189,7 @@ func TestClusterController_Upgrades(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-minor-version",
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.ClusterSpec{
 				Version: "v1.29.5",
@@ -231,7 +231,7 @@ func TestClusterController_Upgrades(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-minor-patch-version",
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.ClusterSpec{
 				Version: "v1.29.4",
@@ -276,7 +276,7 @@ func TestClusterController_Upgrades(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-penultimate-version",
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.ClusterSpec{
 				Version: "v1.28.10",
@@ -318,7 +318,7 @@ func TestClusterController_Upgrades(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-old-version",
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.ClusterSpec{
 				Version: "v1.24.17",
@@ -356,7 +356,7 @@ func TestClusterController_Upgrades(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-below-supported-version",
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 			},
 			Spec: dockyardsv1.ClusterSpec{
 				Version: "v1.26.15",

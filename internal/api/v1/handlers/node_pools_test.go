@@ -82,7 +82,7 @@ func TestGetNodePool(t *testing.T) {
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 		},
 	}
 
@@ -94,7 +94,7 @@ func TestGetNodePool(t *testing.T) {
 	nodePool := dockyardsv1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: dockyardsv1.GroupVersion.String(),
@@ -124,7 +124,7 @@ func TestGetNodePool(t *testing.T) {
 	node := dockyardsv1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: dockyardsv1.GroupVersion.String(),
@@ -320,6 +320,17 @@ func TestGetNodePool(t *testing.T) {
 	})
 
 	t.Run("test without membership", func(t *testing.T) {
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+		}
+
+		err = c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		otherOrganization := dockyardsv1.Organization{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
@@ -335,30 +346,13 @@ func TestGetNodePool(t *testing.T) {
 						UID:  reader.UID,
 					},
 				},
+				NamespaceRef: &corev1.LocalObjectReference{
+					Name: namespace.Name,
+				},
 			},
 		}
 
 		err := c.Create(ctx, &otherOrganization)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		namespace := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "test-",
-			},
-		}
-
-		err = c.Create(ctx, &namespace)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		otherOrganization.Status.NamespaceRef = &corev1.LocalObjectReference{
-			Name: namespace.Name,
-		}
-
-		err = c.Status().Update(ctx, &otherOrganization)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -480,7 +474,7 @@ func TestClusterNodePools_Delete(t *testing.T) {
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 		},
 	}
 
@@ -657,6 +651,17 @@ func TestClusterNodePools_Delete(t *testing.T) {
 	})
 
 	t.Run("test without membership", func(t *testing.T) {
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+		}
+
+		err = c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		otherOrganization := dockyardsv1.Organization{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
@@ -672,30 +677,13 @@ func TestClusterNodePools_Delete(t *testing.T) {
 						UID:  reader.UID,
 					},
 				},
+				NamespaceRef: &corev1.LocalObjectReference{
+					Name: namespace.Name,
+				},
 			},
 		}
 
 		err := c.Create(ctx, &otherOrganization)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		namespace := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "test-",
-			},
-		}
-
-		err = c.Create(ctx, &namespace)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		otherOrganization.Status.NamespaceRef = &corev1.LocalObjectReference{
-			Name: namespace.Name,
-		}
-
-		err = c.Status().Update(ctx, &otherOrganization)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -817,7 +805,7 @@ func TestClusterNodePools_Update(t *testing.T) {
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-update-node-pool-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 		},
 	}
 
@@ -1841,7 +1829,7 @@ func TestClusterNodePools_Create(t *testing.T) {
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace:    organization.Status.NamespaceRef.Name,
+			Namespace:    organization.Spec.NamespaceRef.Name,
 		},
 	}
 
@@ -2216,7 +2204,7 @@ func TestClusterNodePools_Create(t *testing.T) {
 		nodePool := dockyardsv1.NodePool{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name + "-test-conflict",
-				Namespace: organization.Status.NamespaceRef.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: dockyardsv1.GroupVersion.String(),
@@ -2270,6 +2258,17 @@ func TestClusterNodePools_Create(t *testing.T) {
 	})
 
 	t.Run("test without membership", func(t *testing.T) {
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+		}
+
+		err = c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		otherOrganization := dockyardsv1.Organization{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
@@ -2285,30 +2284,13 @@ func TestClusterNodePools_Create(t *testing.T) {
 						UID:  reader.UID,
 					},
 				},
+				NamespaceRef: &corev1.LocalObjectReference{
+					Name: namespace.Name,
+				},
 			},
 		}
 
 		err := c.Create(ctx, &otherOrganization)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		namespace := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "test-",
-			},
-		}
-
-		err = c.Create(ctx, &namespace)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		otherOrganization.Status.NamespaceRef = &corev1.LocalObjectReference{
-			Name: namespace.Name,
-		}
-
-		err = c.Status().Update(ctx, &otherOrganization)
 		if err != nil {
 			t.Fatal(err)
 		}

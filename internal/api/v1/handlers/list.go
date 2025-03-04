@@ -64,7 +64,7 @@ func ListClusterResource[T any](h *handler, resource string, f ListClusterResour
 			return
 		}
 
-		if organization.Status.NamespaceRef == nil {
+		if organization.Spec.NamespaceRef == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 
 			return
@@ -80,7 +80,7 @@ func ListClusterResource[T any](h *handler, resource string, f ListClusterResour
 
 		resourceAttributes := authorizationv1.ResourceAttributes{
 			Group:     dockyardsv1.GroupVersion.Group,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
 			Verb:      "get",
 		}
@@ -102,7 +102,7 @@ func ListClusterResource[T any](h *handler, resource string, f ListClusterResour
 
 		objectKey := client.ObjectKey{
 			Name:      clusterName,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
 		var cluster dockyardsv1.Cluster
@@ -176,7 +176,7 @@ func ListOrganizationResource[T any](h *handler, resource string, f ListOrganiza
 			return
 		}
 
-		if organization.Status.NamespaceRef == nil {
+		if organization.Spec.NamespaceRef == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 
 			return
@@ -192,7 +192,7 @@ func ListOrganizationResource[T any](h *handler, resource string, f ListOrganiza
 
 		resourceAttributes := authorizationv1.ResourceAttributes{
 			Group:     dockyardsv1.GroupVersion.Group,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
 			Verb:      "get",
 		}

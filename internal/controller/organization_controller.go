@@ -95,7 +95,7 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	if organization.Status.NamespaceRef == nil {
+	if organization.Spec.NamespaceRef == nil {
 		logger.Info("organization has no namespace reference")
 
 		namespace := corev1.Namespace{
@@ -119,7 +119,11 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, err
 		}
 
-		organization.Status.NamespaceRef = &corev1.LocalObjectReference{
+		organization.Spec.NamespaceRef = &corev1.LocalObjectReference{
+			Name: namespace.Name,
+		}
+
+		organization.Status.NamespaceRef = &corev1.LocalObjectReference{ //nolint:staticcheck
 			Name: namespace.Name,
 		}
 

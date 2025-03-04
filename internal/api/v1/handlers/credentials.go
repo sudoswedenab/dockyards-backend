@@ -38,7 +38,7 @@ import (
 
 func (h *handler) ListOrganizationCredentials(ctx context.Context, organization *dockyardsv1.Organization) (*[]types.Credential, error) {
 	var secretList corev1.SecretList
-	err := h.List(ctx, &secretList, client.InNamespace(organization.Status.NamespaceRef.Name))
+	err := h.List(ctx, &secretList, client.InNamespace(organization.Spec.NamespaceRef.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (h *handler) CreateOrganizationCredential(ctx context.Context, organization
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "credential-" + request.Name,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: dockyardsv1.GroupVersion.String(),
@@ -108,7 +108,7 @@ func (h *handler) CreateOrganizationCredential(ctx context.Context, organization
 func (h *handler) DeleteOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, credentialName string) error {
 	objectKey := client.ObjectKey{
 		Name:      "credential-" + credentialName,
-		Namespace: organization.Status.NamespaceRef.Name,
+		Namespace: organization.Spec.NamespaceRef.Name,
 	}
 
 	var secret corev1.Secret
@@ -132,7 +132,7 @@ func (h *handler) DeleteOrganizationCredential(ctx context.Context, organization
 func (h *handler) GetOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, credentialName string) (*types.Credential, error) {
 	objectKey := client.ObjectKey{
 		Name:      "credential-" + credentialName,
-		Namespace: organization.Status.NamespaceRef.Name,
+		Namespace: organization.Spec.NamespaceRef.Name,
 	}
 
 	var secret corev1.Secret
@@ -222,7 +222,7 @@ func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if organization.Status.NamespaceRef == nil {
+	if organization.Spec.NamespaceRef == nil {
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -238,7 +238,7 @@ func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Reque
 		Verb:      "patch",
 		Resource:  "clusters",
 		Group:     "dockyards.io",
-		Namespace: organization.Status.NamespaceRef.Name,
+		Namespace: organization.Spec.NamespaceRef.Name,
 	}
 
 	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
@@ -258,7 +258,7 @@ func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Reque
 
 	objectKey := client.ObjectKey{
 		Name:      "credential-" + credentialName,
-		Namespace: organization.Status.NamespaceRef.Name,
+		Namespace: organization.Spec.NamespaceRef.Name,
 	}
 
 	var secret corev1.Secret
@@ -351,12 +351,12 @@ func (h *handler) GetCredentials(w http.ResponseWriter, r *http.Request) {
 	credentials := []types.Credential{}
 
 	for _, organization := range organizationList.Items {
-		if organization.Status.NamespaceRef == nil {
+		if organization.Spec.NamespaceRef == nil {
 			continue
 		}
 
 		var secretList corev1.SecretList
-		err := h.List(ctx, &secretList, client.InNamespace(organization.Status.NamespaceRef.Name))
+		err := h.List(ctx, &secretList, client.InNamespace(organization.Spec.NamespaceRef.Name))
 		if err != nil {
 			logger.Error("error listing secrets", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)

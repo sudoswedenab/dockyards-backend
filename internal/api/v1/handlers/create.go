@@ -66,7 +66,7 @@ func CreateClusterResource[T1, T2 any](h *handler, resource string, f CreateClus
 			return
 		}
 
-		if organization.Status.NamespaceRef == nil {
+		if organization.Spec.NamespaceRef == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 
 			return
@@ -82,7 +82,7 @@ func CreateClusterResource[T1, T2 any](h *handler, resource string, f CreateClus
 
 		resourceAttributes := authorizationv1.ResourceAttributes{
 			Group:     dockyardsv1.GroupVersion.Group,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
 			Verb:      "create",
 		}
@@ -104,7 +104,7 @@ func CreateClusterResource[T1, T2 any](h *handler, resource string, f CreateClus
 
 		objectKey := client.ObjectKey{
 			Name:      clusterName,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
 		var cluster dockyardsv1.Cluster
@@ -242,7 +242,7 @@ func CreateOrganizationResource[T1, T2 any](h *handler, resource string, f Creat
 			return
 		}
 
-		if organization.Status.NamespaceRef == nil {
+		if organization.Spec.NamespaceRef == nil {
 			w.WriteHeader(http.StatusInternalServerError)
 
 			return
@@ -258,7 +258,7 @@ func CreateOrganizationResource[T1, T2 any](h *handler, resource string, f Creat
 
 		resourceAttributes := authorizationv1.ResourceAttributes{
 			Group:     dockyardsv1.GroupVersion.Group,
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
 			Verb:      "create",
 		}

@@ -176,11 +176,11 @@ func GetNamespaceOrganization(ctx context.Context, c client.Client, namespace st
 	}
 
 	for _, organization := range organizationList.Items {
-		if organization.Status.NamespaceRef == nil {
+		if organization.Spec.NamespaceRef == nil {
 			continue
 		}
 
-		if organization.Status.NamespaceRef.Name == namespace {
+		if organization.Spec.NamespaceRef.Name == namespace {
 			return &organization, nil
 		}
 	}

@@ -153,6 +153,17 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 		return nil, err
 	}
 
+	namespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+	}
+
+	err = c.Create(ctx, &namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	organization := dockyardsv1.Organization{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
@@ -172,32 +183,13 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 					UID:  reader.UID,
 				},
 			},
+			NamespaceRef: &corev1.LocalObjectReference{
+				Name: namespace.Name,
+			},
 		},
 	}
 
 	err = c.Create(ctx, &organization)
-	if err != nil {
-		return nil, err
-	}
-
-	namespace := corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "test-",
-		},
-	}
-
-	err = c.Create(ctx, &namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	patch := client.MergeFrom(organization.DeepCopy())
-
-	organization.Status.NamespaceRef = &corev1.LocalObjectReference{
-		Name: namespace.Name,
-	}
-
-	err = c.Status().Patch(ctx, &organization, patch)
 	if err != nil {
 		return nil, err
 	}

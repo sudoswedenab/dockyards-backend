@@ -31,7 +31,7 @@ func ReconcileUserRoleAndBindings(ctx context.Context, c client.Client, organiza
 	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dockyards-user",
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		},
 	}
 
@@ -81,7 +81,7 @@ func ReconcileUserRoleAndBindings(ctx context.Context, c client.Client, organiza
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dockyards-user",
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		},
 	}
 
@@ -346,7 +346,7 @@ func ReconcileReaderRoleAndBinding(ctx context.Context, c client.Client, organiz
 	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dockyards-reader",
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		},
 	}
 
@@ -395,7 +395,7 @@ func ReconcileReaderRoleAndBinding(ctx context.Context, c client.Client, organiz
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dockyards-reader",
-			Namespace: organization.Status.NamespaceRef.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		},
 	}
 
