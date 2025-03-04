@@ -367,3 +367,54 @@ func CreateOrganizationResource[T1, T2 any](h *handler, resource string, f Creat
 		}
 	}
 }
+
+type CreateGlobalResourceFunc[T1, T2 any] func(context.Context, *T1) (*T2, error)
+
+func CreateGlobalResource[T1, T2 any](resource string, f CreateGlobalResourceFunc[T1, T2]) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		logger := middleware.LoggerFrom(ctx).With("resource", resource)
+
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			logger.Error("error reading request body", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		var request T1
+		err = json.Unmarshal(b, &request)
+		if err != nil {
+			logger.Error("error unmarshalling request", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		response, err := f(ctx, &request)
+		if err != nil {
+			logger.Error("error creating global resource", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		b, err = json.Marshal(&response)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+
+		_, err = w.Write(b)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+	}
+}
