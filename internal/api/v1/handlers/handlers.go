@@ -103,6 +103,8 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/clusters/{clusterID}/kubeconfig", logger(requireAuth(http.HandlerFunc(h.GetClusterKubeconfig))))
 
 	mux.Handle("GET /v1/orgs", logger(requireAuth(ListGlobalResource("organizations", h.ListGlobalOrganizations))))
+	mux.Handle("POST /v1/orgs", logger(requireAuth(CreateGlobalResource("organizations", h.CreateGlobalOrganization))))
+
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters",
 		logger(
 			requireAuth(

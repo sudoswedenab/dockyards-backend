@@ -16,12 +16,15 @@ package handlers
 
 import (
 	"context"
+	"time"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -76,4 +79,107 @@ func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organiz
 	}
 
 	return &organizations, nil
+}
+
+func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.OrganizationOptions) (*types.Organization, error) {
+	subject, err := middleware.SubjectFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	matchingFields := client.MatchingFields{
+		index.UIDField: subject,
+	}
+
+	var userList dockyardsv1.UserList
+	err = h.List(ctx, &userList, matchingFields)
+	if err != nil {
+		return nil, err
+	}
+
+	user := userList.Items[0]
+
+	namespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "dockyards-",
+		},
+	}
+
+	err = h.Create(ctx, &namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	organization := dockyardsv1.Organization{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace.Name,
+		},
+		Spec: dockyardsv1.OrganizationSpec{
+			MemberRefs: []dockyardsv1.OrganizationMemberReference{
+				{
+					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+						Kind: dockyardsv1.UserKind,
+						Name: user.Name,
+					},
+					Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+					UID:  user.UID,
+				},
+			},
+			NamespaceRef: &corev1.LocalObjectReference{
+				Name: namespace.Name,
+			},
+		},
+	}
+
+	if request.DisplayName != nil {
+		organization.Spec.DisplayName = *request.DisplayName
+	}
+
+	if request.Duration != nil {
+		duration, err := time.ParseDuration(*request.Duration)
+		if err != nil {
+			return nil, err
+		}
+
+		organization.Spec.Duration = &metav1.Duration{
+			Duration: duration,
+		}
+	}
+
+	err = h.Create(ctx, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	patch := client.MergeFrom(namespace.DeepCopy())
+
+	namespace.OwnerReferences = []metav1.OwnerReference{
+		{
+			APIVersion: dockyardsv1.GroupVersion.String(),
+			Kind:       dockyardsv1.ClusterKind,
+			Name:       organization.Name,
+			UID:        organization.UID,
+		},
+	}
+
+	namespace.Labels = map[string]string{
+		dockyardsv1.LabelOrganizationName: organization.Name,
+	}
+
+	err = h.Patch(ctx, &namespace, patch)
+	if err != nil {
+		return nil, err
+	}
+
+	response := types.Organization{
+		CreatedAt: organization.CreationTimestamp.Time,
+		ID:        string(organization.UID),
+		Name:      organization.Name,
+	}
+
+	if organization.Spec.DisplayName != "" {
+		response.DisplayName = &organization.Spec.DisplayName
+	}
+
+	return &response, nil
 }
