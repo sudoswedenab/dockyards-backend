@@ -49,13 +49,17 @@ type OrganizationSpec struct {
 
 	SkipAutoAssign bool             `json:"skipAutoAssign,omitempty"`
 	Duration       *metav1.Duration `json:"duration,omitempty"`
+
+	NamespaceRef *corev1.LocalObjectReference `json:"namespaceRef,omitempty"`
 }
 
 type OrganizationStatus struct {
-	Conditions          []metav1.Condition           `json:"conditions,omitempty"`
-	ExpirationTimestamp *metav1.Time                 `json:"expirationTimestamp,omitempty"`
-	NamespaceRef        *corev1.LocalObjectReference `json:"namespaceRef,omitempty"`
-	ResourceQuotas      corev1.ResourceList          `json:"resourceQuotas,omitempty"`
+	Conditions          []metav1.Condition `json:"conditions,omitempty"`
+	ExpirationTimestamp *metav1.Time       `json:"expirationTimestamp,omitempty"`
+
+	// Deprecated: use spec.namespaceRef
+	NamespaceRef   *corev1.LocalObjectReference `json:"namespaceRef,omitempty"`
+	ResourceQuotas corev1.ResourceList          `json:"resourceQuotas,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -64,7 +68,7 @@ type OrganizationStatus struct {
 // +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
-// +kubebuilder:printcolumn:name="NamespaceReference",type=string,priority=1,JSONPath=".status.namespaceRef.name"
+// +kubebuilder:printcolumn:name="NamespaceReference",type=string,priority=1,JSONPath=".spec.namespaceRef.name"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Duration",type=string,priority=1,JSONPath=".spec.duration"
 type Organization struct {

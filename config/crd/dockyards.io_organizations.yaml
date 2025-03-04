@@ -248,7 +248,7 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="Ready")].reason
       name: Reason
       type: string
-    - jsonPath: .status.namespaceRef.name
+    - jsonPath: .spec.namespaceRef.name
       name: NamespaceReference
       priority: 1
       type: string
@@ -345,6 +345,19 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              namespaceRef:
+                description: |-
+                  LocalObjectReference contains enough information to let you locate the
+                  referenced object inside the same namespace.
+                properties:
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               projectRef:
                 properties:
                   apiGroup:
@@ -449,9 +462,7 @@ spec:
                 format: date-time
                 type: string
               namespaceRef:
-                description: |-
-                  LocalObjectReference contains enough information to let you locate the
-                  referenced object inside the same namespace.
+                description: 'Deprecated: use spec.namespaceRef'
                 properties:
                   name:
                     description: |-
