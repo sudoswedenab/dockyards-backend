@@ -42,6 +42,7 @@ rules:
   - create
   - get
   - list
+  - patch
   - watch
 - apiGroups:
   - ""
@@ -109,6 +110,7 @@ rules:
   resources:
   - organizations
   verbs:
+  - create
   - get
   - list
   - watch

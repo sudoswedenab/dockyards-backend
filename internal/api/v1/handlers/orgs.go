@@ -28,6 +28,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=create;patch
+// +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=create;get;list;watch
+
 func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organization, error) {
 	logger := middleware.LoggerFrom(ctx)
 
