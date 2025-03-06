@@ -111,6 +111,7 @@ rules:
   - organizations
   verbs:
   - create
+  - delete
   - get
   - list
   - watch

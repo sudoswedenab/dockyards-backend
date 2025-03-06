@@ -29,7 +29,7 @@ import (
 )
 
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=create;patch
-// +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=create;get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=create;delete;get;list;watch
 
 func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organization, error) {
 	logger := middleware.LoggerFrom(ctx)
@@ -185,4 +185,19 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 	}
 
 	return &response, nil
+}
+
+func (h *handler) DeleteGlobalOrganization(ctx context.Context, resourceName string) error {
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, client.ObjectKey{Name: resourceName}, &organization)
+	if err != nil {
+		return err
+	}
+
+	err = h.Delete(ctx, &organization, client.PropagationPolicy(metav1.DeletePropagationForeground))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

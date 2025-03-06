@@ -537,3 +537,140 @@ func TestGlobalOrganization_Create(t *testing.T) {
 		}
 	})
 }
+
+func TestGlobalOrganizations_Delete(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+
+	ctx, cancel := context.WithCancel(context.TODO())
+
+	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		cancel()
+		testEnvironment.GetEnvironment().Stop()
+	})
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.GetOrganization()
+
+	reader := testEnvironment.GetReader()
+	user := testEnvironment.GetUser()
+	superUser := testEnvironment.GetSuperUser()
+
+	h := handler{
+		Client: mgr.GetClient(),
+	}
+
+	handlerFunc := DeleteGlobalResource(&h, "organizations", h.DeleteGlobalOrganization)
+
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	mgr.GetCache().WaitForCacheSync(ctx)
+
+	t.Run("test as reader", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.SetPathValue("resourceName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+
+		var actual dockyardsv1.Organization
+		err = c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !actual.DeletionTimestamp.IsZero() {
+			t.Error("expected zero deletion timestamp")
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.SetPathValue("resourceName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+
+		var actual dockyardsv1.Organization
+		err = c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !actual.DeletionTimestamp.IsZero() {
+			t.Error("expected zero deletion timestamp")
+		}
+	})
+
+	t.Run("test as super user", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.SetPathValue("resourceName", organization.Name)
+
+		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
+		ctx = middleware.ContextWithLogger(ctx, logger)
+
+		handlerFunc(w, r.Clone(ctx))
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.Organization
+		err = c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if actual.DeletionTimestamp.IsZero() {
+			t.Error("expected deletion timestamp, got zero")
+		}
+	})
+}
