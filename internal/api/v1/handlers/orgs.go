@@ -159,7 +159,7 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 	namespace.OwnerReferences = []metav1.OwnerReference{
 		{
 			APIVersion: dockyardsv1.GroupVersion.String(),
-			Kind:       dockyardsv1.ClusterKind,
+			Kind:       dockyardsv1.OrganizationKind,
 			Name:       organization.Name,
 			UID:        organization.UID,
 		},

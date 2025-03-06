@@ -344,7 +344,7 @@ func TestGlobalOrganizations_List(t *testing.T) {
 	})
 }
 
-func TestGlobalOrganization_Create(t *testing.T) {
+func TestGlobalOrganizations_Create(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
@@ -459,6 +459,38 @@ func TestGlobalOrganization_Create(t *testing.T) {
 
 		if !cmp.Equal(actual, expected, ignoreFields) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual, ignoreFields))
+		}
+
+		expectedNamespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "dockyards-",
+				Name:         actual.Spec.NamespaceRef.Name,
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
+					corev1.LabelMetadataName:          organization.Name,
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       actual.Name,
+						UID:        actual.UID,
+					},
+				},
+			},
+		}
+
+		var actualNamespace corev1.Namespace
+		err = c.Get(ctx, client.ObjectKeyFromObject(&expectedNamespace), &actualNamespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ignoreObjectMetaFields := cmpopts.IgnoreFields(metav1.ObjectMeta{}, "CreationTimestamp", "UID")
+		ignoreNamespaceFields := cmpopts.IgnoreFields(corev1.Namespace{}, "Spec", "Status")
+
+		if !cmp.Equal(actualNamespace, expectedNamespace, ignoreFields, ignoreObjectMetaFields, ignoreNamespaceFields) {
+			t.Errorf("diff: %s", cmp.Diff(expectedNamespace, actualNamespace, ignoreFields, ignoreObjectMetaFields, ignoreNamespaceFields))
 		}
 	})
 
