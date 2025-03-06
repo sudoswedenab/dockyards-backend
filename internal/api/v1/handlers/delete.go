@@ -234,3 +234,66 @@ func DeleteOrganizationResource(h *handler, resource string, f DeleteOrganizatio
 		w.WriteHeader(http.StatusAccepted)
 	}
 }
+
+type DeleteGlobalResourceFunc func(context.Context, string) error
+
+func DeleteGlobalResource(h *handler, resource string, f DeleteGlobalResourceFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		logger := middleware.LoggerFrom(ctx).With("resource", resource)
+
+		resourceName := r.PathValue("resourceName")
+		if resourceName == "" {
+			w.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+
+		subject, err := middleware.SubjectFrom(ctx)
+		if err != nil {
+			logger.Error("error getting subject from context", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		resourceAttributes := authorizationv1.ResourceAttributes{
+			Group:    dockyardsv1.GroupVersion.Group,
+			Resource: resource,
+			Name:     resourceName,
+			Verb:     "delete",
+		}
+
+		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+		if err != nil {
+			logger.Error("error reviewing subject", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		if !allowed {
+			logger.Debug("subject is not allowed to delete resource", "subject", subject, "name", resourceName)
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
+		err = f(ctx, resourceName)
+		if client.IgnoreNotFound(err) != nil {
+			logger.Error("error deleting resource", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		if apierrors.IsNotFound(err) {
+			w.WriteHeader(http.StatusNotFound)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
