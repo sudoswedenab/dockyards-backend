@@ -78,3 +78,7 @@ const (
 const (
 	FeatureImmutableStorageResources = "immutable-storage-resources"
 )
+
+const (
+	FeatureUserSignUp = "user-sign-up"
+)
