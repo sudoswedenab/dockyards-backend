@@ -116,9 +116,6 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("GET /v1/whoami", logger(requireAuth(http.HandlerFunc(h.GetWhoami))))
 
-	mux.Handle("GET /v1/apps", logger(requireAuth(http.HandlerFunc(h.GetApps))))
-	mux.Handle("GET /v1/apps/{appID}", logger(requireAuth(http.HandlerFunc(h.GetApp))))
-
 	mux.Handle("DELETE /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCredential))))
 	mux.Handle("GET /v1/orgs/{organizationName}/credentials", logger(requireAuth(ListOrganizationResource(&h, "clusters", h.ListOrganizationCredentials))))
 	mux.Handle("GET /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(GetOrganizationResource(&h, "clusters", h.GetOrganizationCredential))))
