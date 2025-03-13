@@ -257,6 +257,41 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 				},
 			),
 		},
+		{
+			name: "test storage resource type host path disabled",
+			dockyardsNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-storage-resource-type-host-path",
+					Namespace: "testing",
+				},
+				Spec: dockyardsv1.NodePoolSpec{
+					StorageResources: []dockyardsv1.NodePoolStorageResource{
+						{
+							Name:     "test",
+							Quantity: resource.MustParse("123"),
+							Type:     dockyardsv1.StorageResourceTypeHostPath,
+						},
+					},
+				},
+			},
+			features: dockyardsv1.FeatureList{
+				Items: []dockyardsv1.Feature{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      string(featurenames.FeatureStorageRole),
+							Namespace: "testing",
+						},
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"test-storage-resource-type-host-path",
+				field.ErrorList{
+					field.Invalid(field.NewPath("spec", "storageResources").Index(0).Child("type"), dockyardsv1.StorageResourceTypeHostPath, "feature is not enabled"),
+				},
+			),
+		},
 	}
 
 	for _, tc := range tt {

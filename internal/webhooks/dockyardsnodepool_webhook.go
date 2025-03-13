@@ -133,7 +133,17 @@ func (webhook *DockyardsNodePool) validate(ctx context.Context, oldNodePool, new
 
 	names := make(map[string]bool)
 
+	hostPathEnabled, err := apiutil.IsFeatureEnabled(ctx, webhook.Client, featurenames.FeatureStorageResourceTypeHostPath, corev1.NamespaceAll)
+	if err != nil {
+		return err
+	}
+
 	for i, storageResource := range newNodePool.Spec.StorageResources {
+		if storageResource.Type == dockyardsv1.StorageResourceTypeHostPath && !hostPathEnabled {
+			invalid := field.Invalid(field.NewPath("spec", "storageResources").Index(i).Child("type"), storageResource.Type, "feature is not enabled")
+			errorList = append(errorList, invalid)
+		}
+
 		_, validName := name.IsValidName(storageResource.Name)
 		if !validName {
 			invalid := field.Invalid(field.NewPath("spec", "storageResources").Index(i).Child("name"), storageResource.Name, "not a valid name")
