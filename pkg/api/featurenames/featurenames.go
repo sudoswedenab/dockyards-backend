@@ -82,3 +82,7 @@ const (
 const (
 	FeatureUserSignUp = "user-sign-up"
 )
+
+const (
+	FeatureStorageResourceTypeHostPath = "storage-resource-type-host-path"
+)
