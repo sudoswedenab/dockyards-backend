@@ -60,9 +60,15 @@ func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *d
 		Version:      cluster.Status.Version,
 	}
 
+	if !cluster.DeletionTimestamp.IsZero() {
+		v1Cluster.DeletedAt = &cluster.DeletionTimestamp.Time
+	}
+
 	condition := meta.FindStatusCondition(cluster.Status.Conditions, dockyardsv1.ReadyCondition)
 	if condition != nil {
-		v1Cluster.State = condition.Message
+		v1Cluster.Condition = &condition.Reason
+
+		v1Cluster.UpdatedAt = &condition.LastTransitionTime.Time
 	}
 
 	if nodePoolList != nil && len(nodePoolList.Items) > 0 {
@@ -71,7 +77,7 @@ func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *d
 			nodePools[i] = *h.toV1NodePool(&nodePool, nil)
 		}
 
-		v1Cluster.NodePools = nodePools
+		v1Cluster.NodePools = &nodePools
 	}
 
 	if cluster.Spec.AllocateInternalIP {

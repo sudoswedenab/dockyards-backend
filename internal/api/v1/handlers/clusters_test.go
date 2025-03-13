@@ -1196,7 +1196,7 @@ func TestGetCluster(t *testing.T) {
 			ID:           string(cluster.UID),
 			Name:         cluster.Name,
 			Organization: organization.Name,
-			NodePools: []types.NodePool{
+			NodePools: &[]types.NodePool{
 				{
 					ID:   string(nodePool.UID),
 					Name: nodePool.Name,
@@ -1247,7 +1247,7 @@ func TestGetCluster(t *testing.T) {
 			ID:           string(cluster.UID),
 			Name:         cluster.Name,
 			Organization: organization.Name,
-			NodePools: []types.NodePool{
+			NodePools: &[]types.NodePool{
 				{
 					ID:   string(nodePool.UID),
 					Name: nodePool.Name,
@@ -1298,7 +1298,7 @@ func TestGetCluster(t *testing.T) {
 			ID:           string(cluster.UID),
 			Name:         cluster.Name,
 			Organization: organization.Name,
-			NodePools: []types.NodePool{
+			NodePools: &[]types.NodePool{
 				{
 					ID:   string(nodePool.UID),
 					Name: nodePool.Name,
