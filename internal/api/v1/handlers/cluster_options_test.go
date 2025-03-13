@@ -108,6 +108,54 @@ func TestGetClusterOptions(t *testing.T) {
 				},
 			},
 			expected: types.Options{
+				StorageResourceTypes: &[]string{},
+				Version: []string{
+					"v1.2.3",
+				},
+			},
+		},
+		{
+			name: "test storage resource type host path feature",
+			lists: []client.ObjectList{
+				&dockyardsv1.ReleaseList{
+					Items: []dockyardsv1.Release{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test",
+								Namespace: "testing",
+								Annotations: map[string]string{
+									dockyardsv1.AnnotationDefaultRelease: "true",
+								},
+							},
+							Spec: dockyardsv1.ReleaseSpec{
+								Type: dockyardsv1.ReleaseTypeKubernetes,
+							},
+							Status: dockyardsv1.ReleaseStatus{
+								Versions: []string{
+									"v1.2.3",
+								},
+							},
+						},
+					},
+				},
+				&dockyardsv1.FeatureList{
+					Items: []dockyardsv1.Feature{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      string(featurenames.FeatureStorageRole),
+								Namespace: "testing",
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      string(featurenames.FeatureStorageResourceTypeHostPath),
+								Namespace: "testing",
+							},
+						},
+					},
+				},
+			},
+			expected: types.Options{
 				StorageResourceTypes: &[]string{
 					dockyardsv1.StorageResourceTypeHostPath,
 				},

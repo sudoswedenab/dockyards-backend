@@ -49,7 +49,7 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 		options.Version = release.Status.Versions
 	}
 
-	featureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageRole, h.namespace)
+	storageRoleFeatureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageRole, h.namespace)
 	if err != nil {
 		logger.Error("error verifying feature", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -57,9 +57,19 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if featureEnabled {
-		storageResourceTypes := []string{
-			dockyardsv1.StorageResourceTypeHostPath,
+	if storageRoleFeatureEnabled {
+		storageResourceTypes := []string{}
+
+		hostPathFeatureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageResourceTypeHostPath, h.namespace)
+		if err != nil {
+			logger.Error("error verifying feature", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		if hostPathFeatureEnabled {
+			storageResourceTypes = append(storageResourceTypes, dockyardsv1.StorageResourceTypeHostPath)
 		}
 
 		options.StorageResourceTypes = &storageResourceTypes
