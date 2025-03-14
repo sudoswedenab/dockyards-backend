@@ -32,7 +32,7 @@ import (
 // +kubebuilder:webhook:groups=dockyards.io,resources=invitations,verbs=create;update,path=/validate-dockyards-io-v1alpha3-invitation,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.invitation.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 
 type DockyardsInvitation struct {
-	Client client.Reader
+Client client.Reader
 }
 
 var _ webhook.CustomValidator = &DockyardsInvitation{}

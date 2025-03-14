@@ -221,5 +221,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/nodes", logger(requireAuth(contentJSON(ListClusterResource(&h, "nodes", h.ListClusterNodes)))))
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/nodes/{resourceName}", logger(requireAuth(contentJSON(GetClusterResource(&h, "nodes", h.GetClusterNode)))))
 
+	mux.Handle("POST /v1/users", logger(CreateGlobalResource("users", h.CreateGlobalUser)))
+
 	return nil
 }
