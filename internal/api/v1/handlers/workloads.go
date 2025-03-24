@@ -33,7 +33,7 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=workloads,verbs=create;delete;get;list;patch;watch
 
-func (h *handler) CreateClusterWorkload(ctx context.Context, cluster *dockyardsv1.Cluster, request *types.Workload) (*types.Workload, error) {
+func (h *handler) CreateClusterWorkload(ctx context.Context, cluster *dockyardsv1.Cluster, request *types.WorkloadOptions) (*types.Workload, error) {
 	if request.WorkloadTemplateName == nil || request.Name == nil {
 		statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.WorkloadKind).GroupKind(), "", nil)
 
@@ -88,8 +88,9 @@ func (h *handler) CreateClusterWorkload(ctx context.Context, cluster *dockyardsv
 	}
 
 	response := types.Workload{
-		ID:   ptr.To(string(workload.UID)),
-		Name: ptr.To(workload.Name),
+		CreatedAt: workload.CreationTimestamp.Time,
+		ID:        string(workload.UID),
+		Name:      workload.Name,
 	}
 
 	return &response, nil
@@ -179,7 +180,8 @@ func (h *handler) ListClusterWorkloads(ctx context.Context, cluster *dockyardsv1
 
 	for i, workload := range workloadList.Items {
 		response[i] = types.Workload{
-			Name:      ptr.To(strings.TrimPrefix(workload.Name, cluster.Name+"-")),
+			ID:        string(workload.UID),
+			Name:      strings.TrimPrefix(workload.Name, cluster.Name+"-"),
 			Namespace: ptr.To(workload.Spec.TargetNamespace),
 		}
 
@@ -204,7 +206,7 @@ func (h *handler) GetClusterWorkload(ctx context.Context, cluster *dockyardsv1.C
 	}
 
 	response := types.Workload{
-		Name:      ptr.To(strings.TrimPrefix(workload.Name, cluster.Name+"-")),
+		Name:      strings.TrimPrefix(workload.Name, cluster.Name+"-"),
 		Namespace: ptr.To(workload.Spec.TargetNamespace),
 	}
 

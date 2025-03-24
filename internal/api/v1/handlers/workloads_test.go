@@ -94,7 +94,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	}
 
 	t.Run("test as super user", func(t *testing.T) {
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To("test-super-user"),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("testing"),
@@ -178,7 +178,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	})
 
 	t.Run("test as user", func(t *testing.T) {
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To("test-user"),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("testing"),
@@ -262,7 +262,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	})
 
 	t.Run("test as reader", func(t *testing.T) {
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To("test-user"),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("testing"),
@@ -295,7 +295,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	})
 
 	t.Run("test no workload template name", func(t *testing.T) {
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:      ptr.To("test-super-user"),
 			Namespace: ptr.To("testing"),
 		}
@@ -335,7 +335,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 			},
 		}
 
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To("test-input"),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("testing"),
@@ -428,7 +428,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	t.Run("test namespace", func(t *testing.T) {
 		name := "test-namespace"
 
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 &name,
 			WorkloadTemplateName: ptr.To("test"),
 		}
@@ -529,7 +529,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To("test-already-exists"),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("testing"),
@@ -865,7 +865,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To(workloadName),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("update"),
@@ -956,7 +956,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To(workloadName),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("update"),
@@ -1047,7 +1047,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To(workloadName),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("update"),
@@ -1111,7 +1111,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To(workloadName),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("testing"),
@@ -1211,7 +1211,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To(workloadName),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("testing"),
@@ -1302,7 +1302,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To(workloadName),
 			WorkloadTemplateName: ptr.To("update"),
 			Namespace:            ptr.To("testing"),
@@ -1363,7 +1363,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		request := types.Workload{
+		request := types.WorkloadOptions{
 			Name:                 ptr.To(workloadName),
 			WorkloadTemplateName: ptr.To("test"),
 			Namespace:            ptr.To("update"),
