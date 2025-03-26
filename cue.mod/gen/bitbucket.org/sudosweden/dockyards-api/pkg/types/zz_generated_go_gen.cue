@@ -9,33 +9,22 @@ package types
 
 import "time"
 
-// App defines model for app.
-#App: {
-	app_steps?: null | [...#AppStep] @go(AppSteps,*[]AppStep)
-	description?: null | string @go(Description,*string)
-	icon?:        null | string @go(Icon,*string)
-	id:           string        @go(ID)
-	name:         string        @go(Name)
-}
-
-// AppStep defines model for app_step.
-#AppStep: {
-	name: string @go(Name)
-	step_options?: null | [...#StepOption] @go(StepOptions,*[]StepOption)
-}
-
 // Cluster defines model for cluster.
 #Cluster: {
-	allocate_internal_ip?: null | bool   @go(AllocateInternalIP,*bool)
-	created_at:            time.Time     @go(CreatedAt)
-	duration?:             null | string @go(Duration,*string)
-	id:                    string        @go(ID)
-	name:                  string        @go(Name)
-	node_count:            int           @go(NodeCount)
-	node_pools: [...#NodePool] @go(NodePools,[]NodePool)
-	organization: string @go(Organization)
-	state:        string @go(State)
-	version:      string @go(Version)
+	allocate_internal_ip?: null | bool      @go(AllocateInternalIP,*bool)
+	condition?:            null | string    @go(Condition,*string)
+	created_at:            time.Time        @go(CreatedAt)
+	deleted_at?:           null | time.Time @go(DeletedAt,*time.Time)
+	dns_zones?: null | [...string] @go(DNSZones,*[]string)
+	duration?:   null | string @go(Duration,*string)
+	id:          string        @go(ID)
+	name:        string        @go(Name)
+	node_count?: null | int    @go(NodeCount,*int)
+	node_pools?: null | [...#NodePool] @go(NodePools,*[]NodePool)
+	organization: string           @go(Organization)
+	state?:       null | string    @go(State,*string)
+	updated_at?:  null | time.Time @go(UpdatedAt,*time.Time)
+	version:      string           @go(Version)
 }
 
 // ClusterOptions defines model for cluster_options.
@@ -51,13 +40,6 @@ import "time"
 	version?: null | string @go(Version,*string)
 }
 
-// ClusterOverview defines model for cluster_overview.
-#ClusterOverview: {
-	deployments?: null | [...#DeploymentOverview] @go(Deployments,*[]DeploymentOverview)
-	id:   string @go(ID)
-	name: string @go(Name)
-}
-
 // Credential defines model for credential.
 #Credential: {
 	credential_template?: null | string @go(CredentialTemplate,*string)
@@ -67,10 +49,11 @@ import "time"
 	organization: string @go(Organization)
 }
 
-// DeploymentOverview defines model for deployment_overview.
-#DeploymentOverview: {
-	id:   string @go(ID)
-	name: string @go(Name)
+// IdentityProvider defines model for identity_provider.
+#IdentityProvider: {
+	display_name?: null | string @go(DisplayName,*string)
+	id:            string        @go(ID)
+	name:          string        @go(Name)
 }
 
 // IPPool defines model for ip_pool.
@@ -95,18 +78,21 @@ import "time"
 
 // NodePool defines model for node_pool.
 #NodePool: {
-	cluster_id:                     string      @go(ClusterID)
-	control_plane?:                 null | bool @go(ControlPlane,*bool)
-	control_plane_components_only?: null | bool @go(ControlPlaneComponentsOnly,*bool)
-	cpu_count:                      int         @go(CPUCount)
-	disk_size:                      string      @go(DiskSize)
-	id:                             string      @go(ID)
-	load_balancer?:                 null | bool @go(LoadBalancer,*bool)
-	name:                           string      @go(Name)
-	nodes: [...#Node] @go(Nodes,[]Node)
-	quantity: int    @go(Quantity)
-	ram_size: string @go(RAMSize)
+	cluster_id?:                    null | string    @go(ClusterID,*string)
+	control_plane?:                 null | bool      @go(ControlPlane,*bool)
+	control_plane_components_only?: null | bool      @go(ControlPlaneComponentsOnly,*bool)
+	cpu_count?:                     null | int       @go(CPUCount,*int)
+	created_at?:                    null | time.Time @go(CreatedAt,*time.Time)
+	deleted_at?:                    null | time.Time @go(DeletedAt,*time.Time)
+	disk_size?:                     null | string    @go(DiskSize,*string)
+	id:                             string           @go(ID)
+	load_balancer?:                 null | bool      @go(LoadBalancer,*bool)
+	name:                           string           @go(Name)
+	nodes?: null | [...#Node] @go(Nodes,*[]Node)
+	quantity?: null | int    @go(Quantity,*int)
+	ram_size?: null | string @go(RAMSize,*string)
 	storage_resources?: null | [...#StorageResource] @go(StorageResources,*[]StorageResource)
+	updated_at?: null | time.Time @go(UpdatedAt,*time.Time)
 }
 
 // NodePoolOptions defines model for node_pool_options.
@@ -130,38 +116,20 @@ import "time"
 
 // Organization defines model for organization.
 #Organization: {
-	created_at:    time.Time     @go(CreatedAt)
+	condition?:    null | string    @go(Condition,*string)
+	created_at:    time.Time        @go(CreatedAt)
+	deleted_at?:   null | time.Time @go(DeletedAt,*time.Time)
+	display_name?: null | string    @go(DisplayName,*string)
+	duration?:     null | string    @go(Duration,*string)
+	id:            string           @go(ID)
+	name:          string           @go(Name)
+	updated_at?:   null | time.Time @go(UpdatedAt,*time.Time)
+}
+
+// OrganizationOptions defines model for organization_options.
+#OrganizationOptions: {
 	display_name?: null | string @go(DisplayName,*string)
 	duration?:     null | string @go(Duration,*string)
-	id:            string        @go(ID)
-	name:          string        @go(Name)
-	updated_at:    time.Time     @go(UpdatedAt)
-}
-
-// OrganizationOverview defines model for organization_overview.
-#OrganizationOverview: {
-	clusters?: null | [...#ClusterOverview] @go(Clusters,*[]ClusterOverview)
-	id:   string @go(ID)
-	name: string @go(Name)
-	users?: null | [...#UserOverview] @go(Users,*[]UserOverview)
-}
-
-// Overview defines model for overview.
-#Overview: {
-	organizations: [...#OrganizationOverview] @go(Organizations,[]OrganizationOverview)
-}
-
-// StepOption defines model for step_option.
-#StepOption: {
-	default?:      null | string @go(Default,*string)
-	display_name?: null | string @go(DisplayName,*string)
-	hidden?:       null | bool   @go(Hidden,*bool)
-	json_pointer?: null | string @go(JSONPointer,*string)
-	managed?:      null | bool   @go(Managed,*bool)
-	selection?: null | [...string] @go(Selection,*[]string)
-	tags?: null | [...string] @go(Tags,*[]string)
-	toggle?: null | [...string] @go(Toggle,*[]string)
-	type?: null | string @go(Type,*string)
 }
 
 // StorageResource defines model for storage_resource.
@@ -184,26 +152,41 @@ import "time"
 
 // User defines model for user.
 #User: {
-	created_at?: null | time.Time @go(CreatedAt,*time.Time)
-	email:       string           @go(Email)
-	id:          string           @go(ID)
-	name:        string           @go(Name)
-	password?:   null | string    @go(Password,*string)
-	updated_at?: null | time.Time @go(UpdatedAt,*time.Time)
+	created_at?:   null | time.Time @go(CreatedAt,*time.Time)
+	display_name?: null | string    @go(DisplayName,*string)
+	email:         string           @go(Email)
+	id:            string           @go(ID)
+	name:          string           @go(Name)
+	password?:     null | string    @go(Password,*string)
+	provider_id?:  null | string    @go(ProviderID,*string)
+	updated_at?:   null | time.Time @go(UpdatedAt,*time.Time)
 }
 
-// UserOverview defines model for user_overview.
-#UserOverview: {
-	email: string @go(Email)
-	id:    string @go(ID)
+// UserOptions defines model for user_options.
+#UserOptions: {
+	display_name?: null | string @go(DisplayName,*string)
+	email:         string        @go(Email)
+	password:      string        @go(Password)
 }
 
 // Workload defines model for workload.
 #Workload: {
-	id?: null | string @go(ID,*string)
+	condition?:  null | string    @go(Condition,*string)
+	created_at:  time.Time        @go(CreatedAt)
+	deleted_at?: null | time.Time @go(DeletedAt,*time.Time)
+	id:          string           @go(ID)
+	input?: null | {...} @go(Input,*map[string]interface{})
+	name:                    string           @go(Name)
+	namespace?:              null | string    @go(Namespace,*string)
+	provenience?:            null | string    @go(Provenience,*string)
+	updated_at?:             null | time.Time @go(UpdatedAt,*time.Time)
+	workload_template_name?: null | string    @go(WorkloadTemplateName,*string)
+}
+
+// WorkloadOptions defines model for workload_options.
+#WorkloadOptions: {
 	input?: null | {...} @go(Input,*map[string]interface{})
 	name?:                   null | string @go(Name,*string)
 	namespace?:              null | string @go(Namespace,*string)
-	provenience?:            null | string @go(Provenience,*string)
 	workload_template_name?: null | string @go(WorkloadTemplateName,*string)
 }

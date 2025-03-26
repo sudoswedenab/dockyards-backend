@@ -9,10 +9,10 @@ import (
 #clusterOptions: types.#ClusterOptions
 #login:          types.#Login
 
-#workload: types.#Workload
-#workload: name!:                   #_objectName
-#workload: namespace?:              #_objectName
-#workload: workload_template_name!: #_objectName
+#workloadOptions: types.#WorkloadOptions
+#workloadOptions: name!:                   #_objectName
+#workloadOptions: namespace?:              #_objectName
+#workloadOptions: workload_template_name!: #_objectName
 
 #nodePoolOptions: types.#NodePoolOptions
 #nodePoolOptions: name!:    #_objectName

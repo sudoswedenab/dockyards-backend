@@ -127,7 +127,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters/{clusterName}/workloads",
 		logger(
 			requireAuth(
-				validateJSON.WithSchema("#workload")(CreateClusterResource(&h, "workloads", h.CreateClusterWorkload)),
+				validateJSON.WithSchema("#workloadOptions")(CreateClusterResource(&h, "workloads", h.CreateClusterWorkload)),
 			),
 		),
 	)
@@ -137,7 +137,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("PUT /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{resourceName}",
 		logger(
 			requireAuth(
-				validateJSON.WithSchema("#workload")(UpdateClusterResource(&h, "workloads", h.UpdateClusterWorkload)),
+				validateJSON.WithSchema("#workloadOptions")(UpdateClusterResource(&h, "workloads", h.UpdateClusterWorkload)),
 			),
 		),
 	)
