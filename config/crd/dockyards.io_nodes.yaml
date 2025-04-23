@@ -226,6 +226,9 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="Ready")].reason
       name: Reason
       type: string
+    - jsonPath: .spec.providerID
+      name: ProviderID
+      type: string
     - jsonPath: .status.resources.cpu
       name: CPU
       priority: 1
@@ -262,11 +265,20 @@ spec:
             type: string
           metadata:
             type: object
+          spec:
+            properties:
+              providerID:
+                type: string
+            type: object
           status:
             properties:
               cloudServiceID:
+                description: 'Deprecated: This field is deprecated, use spec.providerID
+                  instead.'
                 type: string
               clusterServiceID:
+                description: 'Deprecated: This field is deprecated and will be removed
+                  in the next version.'
                 type: string
               conditions:
                 items:

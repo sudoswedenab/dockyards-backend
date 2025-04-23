@@ -23,12 +23,19 @@ const (
 	NodeKind = "Node"
 )
 
+type NodeSpec struct {
+	ProviderID *string `json:"providerID,omitempty"`
+}
+
 type NodeStatus struct {
-	ClusterServiceID string                 `json:"clusterServiceID,omitempty"`
-	Conditions       []metav1.Condition     `json:"conditions,omitempty"`
-	Resources        corev1.ResourceList    `json:"resources,omitempty"`
-	CloudServiceID   string                 `json:"cloudServiceID,omitempty"`
-	SystemInfo       *corev1.NodeSystemInfo `json:"systemInfo,omitempty"`
+	// Deprecated: This field is deprecated and will be removed in the next version.
+	ClusterServiceID string              `json:"clusterServiceID,omitempty"`
+	Conditions       []metav1.Condition  `json:"conditions,omitempty"`
+	Resources        corev1.ResourceList `json:"resources,omitempty"`
+
+	// Deprecated: This field is deprecated, use spec.providerID instead.
+	CloudServiceID string                 `json:"cloudServiceID,omitempty"`
+	SystemInfo     *corev1.NodeSystemInfo `json:"systemInfo,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -36,6 +43,7 @@ type NodeStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
+// +kubebuilder:printcolumn:name="ProviderID",type=string,JSONPath=".spec.providerID"
 // +kubebuilder:printcolumn:name="CPU",type=string,priority=1,JSONPath=".status.resources.cpu"
 // +kubebuilder:printcolumn:name="Memory",type=string,priority=1,JSONPath=".status.resources.memory"
 // +kubebuilder:printcolumn:name="Storage",type=string,priority=1,JSONPath=".status.resources.storage"
@@ -44,6 +52,7 @@ type Node struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	Spec   NodeSpec   `json:"spec,omitempty"`
 	Status NodeStatus `json:"status,omitempty"`
 }
 
