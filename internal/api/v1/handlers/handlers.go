@@ -182,5 +182,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters", logger(requireAuth(contentJSON(ListOrganizationResource(&h, "clusters", h.ListOrganizationClusters)))))
 	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{resourceName}", logger(requireAuth(contentJSON(GetOrganizationResource(&h, "clusters", h.GetOrganizationCluster)))))
 
+	mux.Handle("POST /v1/orgs/{organizationName}/clusters/{clusterName}/kubeconfig", logger(requireAuth(contentYAML(CreateClusterResource(&h, "clusters", h.CreateClusterKubeconfig)))))
+
 	return nil
 }
