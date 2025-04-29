@@ -83,6 +83,8 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	logger := middleware.NewLogger(h.logger).Handler
 	requireAuth := middleware.NewRequireAuth(h.jwtAccessPublicKey).Handler
+	contentJSON := middleware.NewContentType("application/json").Handler
+	contentYAML := middleware.NewContentType("application/yaml").Handler
 
 	validateJSON, err := middleware.NewValidateJSON(filepath.Join("internal", "api", "v1", "middleware"))
 	if err != nil {
@@ -103,31 +105,35 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("GET /v1/clusters/{clusterID}/kubeconfig", logger(requireAuth(http.HandlerFunc(h.GetClusterKubeconfig))))
 
-	mux.Handle("GET /v1/orgs", logger(requireAuth(ListGlobalResource("organizations", h.ListGlobalOrganizations))))
-	mux.Handle("POST /v1/orgs", logger(requireAuth(CreateGlobalResource("organizations", h.CreateGlobalOrganization))))
+	mux.Handle("GET /v1/orgs", logger(requireAuth(contentJSON(ListGlobalResource("organizations", h.ListGlobalOrganizations)))))
+	mux.Handle("POST /v1/orgs", logger(requireAuth(contentJSON(CreateGlobalResource("organizations", h.CreateGlobalOrganization)))))
 	mux.Handle("DELETE /v1/orgs/{resourceName}", logger(requireAuth(DeleteGlobalResource(&h, "organizations", h.DeleteGlobalOrganization))))
 
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters",
 		logger(
 			requireAuth(
-				validateJSON.WithSchema("#clusterOptions")(CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCluster)),
+				contentJSON(
+					validateJSON.WithSchema("#clusterOptions")(CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCluster)),
+				),
 			),
 		),
 	)
 
-	mux.Handle("GET /v1/whoami", logger(requireAuth(http.HandlerFunc(h.GetWhoami))))
+	mux.Handle("GET /v1/whoami", logger(requireAuth(contentJSON(http.HandlerFunc(h.GetWhoami)))))
 
 	mux.Handle("DELETE /v1/orgs/{organizationName}/credentials/{resourceName}", logger(requireAuth(DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCredential))))
-	mux.Handle("GET /v1/orgs/{organizationName}/credentials", logger(requireAuth(ListOrganizationResource(&h, "clusters", h.ListOrganizationCredentials))))
-	mux.Handle("GET /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(GetOrganizationResource(&h, "clusters", h.GetOrganizationCredential))))
-	mux.Handle("PUT /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(http.HandlerFunc(h.PutOrganizationCredential))))
+	mux.Handle("GET /v1/orgs/{organizationName}/credentials", logger(requireAuth(contentJSON(ListOrganizationResource(&h, "clusters", h.ListOrganizationCredentials)))))
+	mux.Handle("GET /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(contentJSON(GetOrganizationResource(&h, "clusters", h.GetOrganizationCredential)))))
+	mux.Handle("PUT /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(contentJSON(http.HandlerFunc(h.PutOrganizationCredential)))))
 
 	mux.Handle("GET /v1/credentials", logger(requireAuth(http.HandlerFunc(h.GetCredentials))))
 
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters/{clusterName}/workloads",
 		logger(
 			requireAuth(
-				validateJSON.WithSchema("#workloadOptions")(CreateClusterResource(&h, "workloads", h.CreateClusterWorkload)),
+				contentJSON(
+					validateJSON.WithSchema("#workloadOptions")(CreateClusterResource(&h, "workloads", h.CreateClusterWorkload)),
+				),
 			),
 		),
 	)
@@ -137,18 +143,22 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("PUT /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{resourceName}",
 		logger(
 			requireAuth(
-				validateJSON.WithSchema("#workloadOptions")(UpdateClusterResource(&h, "workloads", h.UpdateClusterWorkload)),
+				contentJSON(
+					validateJSON.WithSchema("#workloadOptions")(UpdateClusterResource(&h, "workloads", h.UpdateClusterWorkload)),
+				),
 			),
 		),
 	)
 
-	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/workloads", logger(requireAuth(ListClusterResource(&h, "workloads", h.ListClusterWorkloads))))
-	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{resourceName}", logger(requireAuth(GetClusterResource(&h, "workloads", h.GetClusterWorkload))))
+	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/workloads", logger(requireAuth(contentJSON(ListClusterResource(&h, "workloads", h.ListClusterWorkloads)))))
+	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/workloads/{resourceName}", logger(requireAuth(contentJSON(GetClusterResource(&h, "workloads", h.GetClusterWorkload)))))
 
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools",
 		logger(
 			requireAuth(
-				validateJSON.WithSchema("#nodePoolOptions")(CreateClusterResource(&h, "nodepools", h.CreateClusterNodePool)),
+				contentJSON(
+					validateJSON.WithSchema("#nodePoolOptions")(CreateClusterResource(&h, "nodepools", h.CreateClusterNodePool)),
+				),
 			),
 		),
 	)
@@ -156,19 +166,21 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("POST /v1/orgs/{organizationName}/credentials",
 		logger(
 			requireAuth(
-				validateJSON.WithSchema("#credential")(CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCredential)),
+				contentJSON(
+					validateJSON.WithSchema("#credential")(CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCredential)),
+				),
 			),
 		),
 	)
 
 	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools/{resourceName}", logger(requireAuth(DeleteClusterResource(&h, "nodepools", h.DeleteClusterNodePool))))
 	mux.Handle("DELETE /v1/orgs/{organizationName}/clusters/{resourceName}", logger(requireAuth(DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCluster))))
-	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools/{resourceName}", logger(requireAuth(GetClusterResource(&h, "nodepools", h.GetClusterNodePool))))
-	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools", logger(requireAuth(ListClusterResource(&h, "nodepools", h.ListClusterNodePools))))
+	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools/{resourceName}", logger(requireAuth(contentJSON(GetClusterResource(&h, "nodepools", h.GetClusterNodePool)))))
+	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools", logger(requireAuth(contentJSON(ListClusterResource(&h, "nodepools", h.ListClusterNodePools)))))
 	mux.Handle("PATCH /v1/orgs/{organizationName}/clusters/{clusterName}/node-pools/{resourceName}", logger(requireAuth(UpdateClusterResource(&h, "nodepools", h.UpdateClusterNodePool))))
 
-	mux.Handle("GET /v1/orgs/{organizationName}/clusters", logger(requireAuth(ListOrganizationResource(&h, "clusters", h.ListOrganizationClusters))))
-	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{resourceName}", logger(requireAuth(GetOrganizationResource(&h, "clusters", h.GetOrganizationCluster))))
+	mux.Handle("GET /v1/orgs/{organizationName}/clusters", logger(requireAuth(contentJSON(ListOrganizationResource(&h, "clusters", h.ListOrganizationClusters)))))
+	mux.Handle("GET /v1/orgs/{organizationName}/clusters/{resourceName}", logger(requireAuth(contentJSON(GetOrganizationResource(&h, "clusters", h.GetOrganizationCluster)))))
 
 	return nil
 }
