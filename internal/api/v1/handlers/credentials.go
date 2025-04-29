@@ -25,7 +25,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -320,81 +319,4 @@ func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *handler) GetCredentials(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	matchingFields := client.MatchingFields{
-		index.MemberReferencesField: subject,
-	}
-
-	var organizationList dockyardsv1.OrganizationList
-	err = h.List(ctx, &organizationList, matchingFields)
-	if err != nil {
-		logger.Error("error listing organizations", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	credentials := []types.Credential{}
-
-	for _, organization := range organizationList.Items {
-		if organization.Spec.NamespaceRef == nil {
-			continue
-		}
-
-		var secretList corev1.SecretList
-		err := h.List(ctx, &secretList, client.InNamespace(organization.Spec.NamespaceRef.Name))
-		if err != nil {
-			logger.Error("error listing secrets", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
-
-		for _, secret := range secretList.Items {
-			if secret.Type != dockyardsv1.SecretTypeCredential {
-				continue
-			}
-
-			credential := types.Credential{
-				ID:           string(secret.UID),
-				Name:         strings.TrimPrefix(secret.Name, "credential-"),
-				Organization: organization.Name,
-			}
-
-			credentialTemplate, has := secret.Labels[dockyardsv1.LabelCredentialTemplateName]
-			if has {
-				credential.CredentialTemplate = &credentialTemplate
-			}
-
-			credentials = append(credentials, credential)
-		}
-	}
-
-	b, err := json.Marshal(&credentials)
-	if err != nil {
-		logger.Error("error marshalling credentials", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
 }

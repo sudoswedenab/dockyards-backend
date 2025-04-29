@@ -126,8 +126,6 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(contentJSON(GetOrganizationResource(&h, "clusters", h.GetOrganizationCredential)))))
 	mux.Handle("PUT /v1/orgs/{organizationName}/credentials/{credentialName}", logger(requireAuth(contentJSON(http.HandlerFunc(h.PutOrganizationCredential)))))
 
-	mux.Handle("GET /v1/credentials", logger(requireAuth(http.HandlerFunc(h.GetCredentials))))
-
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters/{clusterName}/workloads",
 		logger(
 			requireAuth(
