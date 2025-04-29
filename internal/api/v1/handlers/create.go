@@ -193,12 +193,15 @@ func CreateClusterResource[T1, T2 any](h *handler, resource string, f CreateClus
 			return
 		}
 
-		b, err = json.Marshal(response)
-		if err != nil {
-			logger.Error("error marshalling response", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
+		b, bytes := any(*response).([]byte)
+		if !bytes {
+			b, err = json.Marshal(response)
+			if err != nil {
+				logger.Error("error marshalling response", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
 
-			return
+				return
+			}
 		}
 
 		w.WriteHeader(http.StatusCreated)
