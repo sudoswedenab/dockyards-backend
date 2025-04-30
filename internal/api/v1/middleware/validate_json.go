@@ -16,9 +16,12 @@ package middleware
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
+	"path"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"cuelang.org/go/cue"
@@ -101,10 +104,22 @@ func (j *ValidateJSON) WithSchema(s string) func(http.Handler) http.Handler {
 	return fn
 }
 
-func NewValidateJSON(dir string) (*ValidateJSON, error) {
+//go:embed validate_json.cue
+var s string
+
+func NewValidateJSON() (*ValidateJSON, error) {
+	source := load.FromString(s)
+
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
 	instances := load.Instances([]string{}, &load.Config{
-		Dir:     dir,
 		Package: "middleware",
+		Overlay: map[string]load.Source{
+			path.Join(wd, "validate_json.cue"): source,
+		},
 	})
 
 	for _, instance := range instances {

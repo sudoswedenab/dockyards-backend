@@ -18,7 +18,6 @@ import (
 	"crypto/ecdsa"
 	"log/slog"
 	"net/http"
-	"path/filepath"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -86,7 +85,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	contentJSON := middleware.NewContentType("application/json").Handler
 	contentYAML := middleware.NewContentType("application/yaml").Handler
 
-	validateJSON, err := middleware.NewValidateJSON(filepath.Join("internal", "api", "v1", "middleware"))
+	validateJSON, err := middleware.NewValidateJSON()
 	if err != nil {
 		return err
 	}

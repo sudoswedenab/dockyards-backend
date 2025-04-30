@@ -132,7 +132,7 @@ func TestValidateJSON(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			validateJSON, err := middleware.NewValidateJSON("")
+			validateJSON, err := middleware.NewValidateJSON()
 			if err != nil {
 				t.Fatalf("error creating test middleware: %s", err)
 			}
