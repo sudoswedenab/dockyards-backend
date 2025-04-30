@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-image: docker.io/library/golang:1.23.1
+image: docker.io/library/golang:1.24.2
 
 definitions:
   steps:
@@ -34,7 +34,7 @@ definitions:
       name: build
       script:
       - source env.sh
-      - go install cuelang.org/go/cmd/cue@v0.10.0
+      - go install cuelang.org/go/cmd/cue@v0.12.1
       - docker build . --file Containerfile --tag dockyards-backend
       - docker save dockyards-backend --output dockyards-backend.tar
       - cue eval hack/kustomization.cue --inject "name=${IMAGE}" --inject "tag=${VERSION}" --out yaml --outfile config/kustomization.yaml

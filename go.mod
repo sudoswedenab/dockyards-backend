@@ -1,6 +1,6 @@
 module bitbucket.org/sudosweden/dockyards-backend
 
-go 1.23.1
+go 1.24.2
 
 require (
 	bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20250429113045-32429ae58602
