@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package handlers_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -28,9 +26,7 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -45,41 +41,18 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	organization := testEnvironment.GetOrganization()
-	superUser := testEnvironment.GetSuperUser()
-	user := testEnvironment.GetUser()
-	reader := testEnvironment.GetReader()
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	h := handler{
-		Client:    mgr.GetClient(),
-		namespace: testEnvironment.GetDockyardsNamespace(),
-	}
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	handlerFunc := CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCluster)
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	clusterTemplate := dockyardsv1.ClusterTemplate{
 		ObjectMeta: metav1.ObjectMeta{
@@ -123,7 +96,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		},
 	}
 
-	err = c.Create(ctx, &clusterTemplate)
+	err := c.Create(ctx, &clusterTemplate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,12 +147,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -233,12 +203,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -263,12 +230,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -294,12 +258,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -376,12 +337,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -425,12 +383,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", "invalid-organization")
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -455,12 +410,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -490,12 +442,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -532,12 +481,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusConflict {
@@ -568,12 +514,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -638,12 +581,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -703,12 +643,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -734,12 +671,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -753,45 +687,18 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	err = index.AddDefaultIndexes(ctx, mgr)
-	if err != nil {
-		t.Fatal(err)
-	}
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	organization := testEnvironment.GetOrganization()
-	superUser := testEnvironment.GetSuperUser()
-	user := testEnvironment.GetUser()
-	reader := testEnvironment.GetReader()
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	h := handler{
-		Client: mgr.GetClient(),
-	}
-
-	handlerFunc := DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCluster)
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	t.Run("test as super user", func(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
@@ -809,7 +716,7 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 			},
 		}
 
-		err = c.Create(ctx, &cluster)
+		err := c.Create(ctx, &cluster)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -826,13 +733,9 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", cluster.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -856,7 +759,7 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 			},
 		}
 
-		err = c.Create(ctx, &cluster)
+		err := c.Create(ctx, &cluster)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -873,13 +776,9 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", cluster.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -903,7 +802,7 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 			},
 		}
 
-		err = c.Create(ctx, &cluster)
+		err := c.Create(ctx, &cluster)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -920,39 +819,13 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", cluster.Name)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
-		}
-	})
-
-	t.Run("test empty cluster name", func(t *testing.T) {
-		u := url.URL{
-			Path: path.Join("/v1/orgs", organization.Name, "clusters", ""),
-		}
-
-		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
-
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", "")
-
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
-
-		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusBadRequest {
-			t.Fatalf("expected status code %d, got %d", http.StatusBadRequest, statusCode)
 		}
 	})
 
@@ -964,13 +837,9 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", "non-existing")
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusNotFound {
@@ -985,7 +854,7 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 			},
 		}
 
-		err = c.Create(ctx, &namespace)
+		err := c.Create(ctx, &namespace)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1011,7 +880,7 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 			},
 		}
 
-		err := c.Create(ctx, &otherOrganization)
+		err = c.Create(ctx, &otherOrganization)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1043,13 +912,9 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", otherOrganization.Name)
-		r.SetPathValue("resourceName", otherCluster.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -1058,43 +923,23 @@ func TestOrganizationClusters_Delete(t *testing.T) {
 	})
 }
 
-func TestGetCluster(t *testing.T) {
+func TestOrganizationClusters_Get(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	err = index.AddDefaultIndexes(ctx, mgr)
-	if err != nil {
-		t.Fatal(err)
-	}
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	organization := testEnvironment.GetOrganization()
-	superUser := testEnvironment.GetSuperUser()
-	user := testEnvironment.GetUser()
-	reader := testEnvironment.GetReader()
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	h := handler{
-		Client: mgr.GetClient(),
-	}
-
-	handlerFunc := GetOrganizationResource(&h, "clusters", h.GetOrganizationCluster)
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1111,7 +956,7 @@ func TestGetCluster(t *testing.T) {
 		},
 	}
 
-	err = c.Create(ctx, &cluster)
+	err := c.Create(ctx, &cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1148,13 +993,6 @@ func TestGetCluster(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	if !mgr.GetCache().WaitForCacheSync(ctx) {
 		t.Log("could not sync cache")
 	}
@@ -1170,10 +1008,9 @@ func TestGetCluster(t *testing.T) {
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("resourceName", cluster.Name)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -1221,10 +1058,9 @@ func TestGetCluster(t *testing.T) {
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("resourceName", cluster.Name)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -1272,10 +1108,9 @@ func TestGetCluster(t *testing.T) {
 		r.SetPathValue("organizationName", organization.Name)
 		r.SetPathValue("resourceName", cluster.Name)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -1312,28 +1147,6 @@ func TestGetCluster(t *testing.T) {
 		}
 	})
 
-	t.Run("test empty cluster name", func(t *testing.T) {
-		u := url.URL{
-			Path: path.Join("/v1/orgs", organization.Name, "clusters", ""),
-		}
-
-		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
-
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", "")
-
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
-
-		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusBadRequest {
-			t.Fatalf("expected status code %d, got %d", http.StatusBadRequest, statusCode)
-		}
-	})
-
 	t.Run("test non-existing cluster", func(t *testing.T) {
 		u := url.URL{
 			Path: path.Join("/v1/orgs", organization.Name, "clusters", "non-existing"),
@@ -1342,13 +1155,9 @@ func TestGetCluster(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", "non-existing")
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusNotFound {
@@ -1421,13 +1230,9 @@ func TestGetCluster(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("organizationName", otherOrganization.Name)
-		r.SetPathValue("resourceName", otherCluster.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
