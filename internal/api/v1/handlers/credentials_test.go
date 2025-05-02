@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package handlers_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -29,9 +27,7 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -45,43 +41,15 @@ func TestOrganizationCredentials_List(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	organization := testEnvironment.GetOrganization()
-
 	c := testEnvironment.GetClient()
 
-	superUser := testEnvironment.GetSuperUser()
-
-	h := handler{
-		Client: mgr.GetClient(),
-	}
-
-	handlerFunc := ListOrganizationResource(&h, "clusters", h.ListOrganizationCredentials)
+	organization := testEnvironment.MustCreateOrganization(t)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	superUserToken := MustSignToken(t, string(superUser.UID))
 
 	u := url.URL{
-		Path: path.Join("/v1/organizations", organization.Name, "credentials"),
+		Path: path.Join("/v1/orgs", organization.Name, "credentials"),
 	}
 
 	t.Run("test single credential", func(t *testing.T) {
@@ -93,7 +61,7 @@ func TestOrganizationCredentials_List(t *testing.T) {
 			Type: dockyardsv1.SecretTypeCredential,
 		}
 
-		err = c.Create(ctx, &secret)
+		err := c.Create(ctx, &secret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -106,12 +74,9 @@ func TestOrganizationCredentials_List(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -205,7 +170,7 @@ func TestOrganizationCredentials_List(t *testing.T) {
 			})
 		}
 
-		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secrets[len(secrets)-1])
+		err := testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secrets[len(secrets)-1])
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -213,12 +178,9 @@ func TestOrganizationCredentials_List(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -260,7 +222,7 @@ func TestOrganizationCredentials_List(t *testing.T) {
 			Type: dockyardsv1.SecretTypeCredential,
 		}
 
-		err = c.Create(ctx, &secret)
+		err := c.Create(ctx, &secret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -273,12 +235,9 @@ func TestOrganizationCredentials_List(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -316,44 +275,21 @@ func TestOrganizationCredentials_List(t *testing.T) {
 	})
 }
 
-func TestCredential_PutOrganizationCredential(t *testing.T) {
+func TestOrganizationCredentials_Update(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	organization := testEnvironment.GetOrganization()
-
 	c := testEnvironment.GetClient()
 
-	superUser := testEnvironment.GetSuperUser()
-	reader := testEnvironment.GetReader()
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	h := handler{
-		Client: mgr.GetClient(),
-	}
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	t.Run("test update as reader", func(t *testing.T) {
 		credentialName := "test-update-reader"
@@ -377,7 +313,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		update := types.Credential{
@@ -392,15 +328,11 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		h.PutOrganizationCredential(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusUnauthorized {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, w.Result().StatusCode)
@@ -429,7 +361,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		update := types.Credential{
@@ -444,18 +376,14 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		mux.ServeHTTP(w, r)
 
-		h.PutOrganizationCredential(w, r.Clone(ctx))
-
-		if w.Result().StatusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, w.Result().StatusCode)
+		if w.Result().StatusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, w.Result().StatusCode)
 		}
 
 		expected := map[string][]byte{
@@ -500,7 +428,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		update := types.Credential{
@@ -515,18 +443,14 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		mux.ServeHTTP(w, r)
 
-		h.PutOrganizationCredential(w, r.Clone(ctx))
-
-		if w.Result().StatusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, w.Result().StatusCode)
+		if w.Result().StatusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, w.Result().StatusCode)
 		}
 
 		expected := map[string][]byte{
@@ -572,7 +496,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		update := types.Credential{
@@ -587,18 +511,14 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		mux.ServeHTTP(w, r)
 
-		h.PutOrganizationCredential(w, r.Clone(ctx))
-
-		if w.Result().StatusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, w.Result().StatusCode)
+		if w.Result().StatusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, w.Result().StatusCode)
 		}
 
 		expected := map[string][]byte{
@@ -642,7 +562,7 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		update := types.Credential{
@@ -657,18 +577,14 @@ func TestCredential_PutOrganizationCredential(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("credentialName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		mux.ServeHTTP(w, r)
 
-		h.PutOrganizationCredential(w, r.Clone(ctx))
-
-		if w.Result().StatusCode != http.StatusNoContent {
-			t.Fatalf("expected status code %d, got %d", http.StatusNoContent, w.Result().StatusCode)
+		if w.Result().StatusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, w.Result().StatusCode)
 		}
 
 		expected := map[string][]byte{
@@ -693,44 +609,19 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	organization := testEnvironment.GetOrganization()
-
 	c := testEnvironment.GetClient()
 
-	superUser := testEnvironment.GetSuperUser()
-	reader := testEnvironment.GetReader()
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	h := handler{
-		Client: mgr.GetClient(),
-	}
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	handlerFunc := CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCredential)
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	u := url.URL{
-		Path: path.Join("/v1/organizations", organization.Name, "credentials"),
+		Path: path.Join("/v1/orgs", organization.Name, "credentials"),
 	}
 
 	mgr.GetCache().WaitForCacheSync(ctx)
@@ -749,12 +640,9 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusCreated {
 			t.Fatalf("expected status code %d, got %d", http.StatusCreated, w.Result().StatusCode)
@@ -794,12 +682,9 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusCreated {
 			t.Fatalf("expected status code %d, got %d", http.StatusCreated, w.Result().StatusCode)
@@ -843,12 +728,9 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusCreated {
 			t.Fatalf("expected status code %d, got %d", http.StatusCreated, w.Result().StatusCode)
@@ -892,12 +774,9 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusUnauthorized {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, w.Result().StatusCode)
@@ -905,51 +784,17 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 	})
 }
 
-func TestCredential_GetOrganizationCredential(t *testing.T) {
+func TestOrganizationCredentials_Get(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
-
-	err = index.AddDefaultIndexes(ctx, mgr)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	organization := testEnvironment.GetOrganization()
-
 	c := testEnvironment.GetClient()
 
-	superUser := testEnvironment.GetSuperUser()
-
-	h := handler{
-		Client:    mgr.GetClient(),
-		namespace: testEnvironment.GetDockyardsNamespace(),
-	}
-
-	handlerFunc := GetOrganizationResource(&h, "clusters", h.GetOrganizationCredential)
+	organization := testEnvironment.MustCreateOrganization(t)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	superUserToken := MustSignToken(t, string(superUser.UID))
 
 	t.Run("test empty", func(t *testing.T) {
 		credentialName := "test-empty"
@@ -973,19 +818,15 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusOK {
 			t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Result().StatusCode)
@@ -1040,19 +881,15 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusOK {
 			t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Result().StatusCode)
@@ -1137,19 +974,15 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusOK {
 			t.Fatalf("expected status code %d, got %d", http.StatusOK, w.Result().StatusCode)
@@ -1183,53 +1016,23 @@ func TestCredential_GetOrganizationCredential(t *testing.T) {
 	})
 }
 
-func TestCredential_DeleteOrganizationCredential(t *testing.T) {
+func TestOrganizationCredentials_Delete(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
-
-	err = index.AddDefaultIndexes(ctx, mgr)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	organization := testEnvironment.GetOrganization()
-
 	c := testEnvironment.GetClient()
 
-	superUser := testEnvironment.GetSuperUser()
-	user := testEnvironment.GetUser()
-	reader := testEnvironment.GetReader()
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	h := handler{
-		Client:    mgr.GetClient(),
-		namespace: testEnvironment.GetDockyardsNamespace(),
-	}
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	handlerFunc := DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCredential)
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	t.Run("test as super user", func(t *testing.T) {
 		credentialName := "test-super-user"
@@ -1253,19 +1056,15 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusAccepted {
 			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, w.Result().StatusCode)
@@ -1294,19 +1093,15 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusAccepted {
 			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, w.Result().StatusCode)
@@ -1335,19 +1130,15 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusUnauthorized {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, w.Result().StatusCode)
@@ -1376,19 +1167,15 @@ func TestCredential_DeleteOrganizationCredential(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/organizations", organization.Name, "credentials", credentialName),
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("resourceName", credentialName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx = middleware.ContextWithSubject(ctx, string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		if w.Result().StatusCode != http.StatusInternalServerError {
 			t.Fatalf("expected status code %d, got %d", http.StatusInternalServerError, w.Result().StatusCode)
