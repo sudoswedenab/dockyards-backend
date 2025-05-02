@@ -15,6 +15,8 @@
 package testingutil
 
 import (
+	"errors"
+	"testing"
 	"time"
 
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
@@ -76,6 +78,164 @@ func (e *TestEnvironment) GetReader() *dockyardsv1.User {
 
 func (e *TestEnvironment) GetDockyardsNamespace() string {
 	return e.namespaceName
+}
+
+func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.Organization, error) {
+	c := e.GetClient()
+
+	superUser := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "superuser-",
+		},
+		Spec: dockyardsv1.UserSpec{
+			Email: "superuser@dockyards.dev",
+		},
+	}
+
+	err := c.Create(ctx, &superUser)
+	if err != nil {
+		return nil, err
+	}
+
+	user := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "user-",
+		},
+		Spec: dockyardsv1.UserSpec{
+			Email: "user@dockyards.dev",
+		},
+	}
+
+	err = c.Create(ctx, &user)
+	if err != nil {
+		return nil, err
+	}
+
+	reader := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "reader-",
+		},
+		Spec: dockyardsv1.UserSpec{
+			Email: "reader@dockyards.dev",
+		},
+	}
+
+	err = c.Create(ctx, &reader)
+	if err != nil {
+		return nil, err
+	}
+
+	namespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+	}
+
+	err = c.Create(ctx, &namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	organization := dockyardsv1.Organization{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+		Spec: dockyardsv1.OrganizationSpec{
+			MemberRefs: []dockyardsv1.OrganizationMemberReference{
+				{
+					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+						Name: superUser.Name,
+					},
+					Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+					UID:  superUser.UID,
+				},
+				{
+					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+						Name: user.Name,
+					},
+					Role: dockyardsv1.OrganizationMemberRoleUser,
+					UID:  user.UID,
+				},
+				{
+					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+						Name: reader.Name,
+					},
+					Role: dockyardsv1.OrganizationMemberRoleReader,
+					UID:  reader.UID,
+				},
+			},
+			NamespaceRef: &corev1.LocalObjectReference{
+				Name: namespace.Name,
+			},
+		},
+	}
+
+	err = c.Create(ctx, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	err = authorization.ReconcileSuperUserClusterRoleAndBinding(ctx, c, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	err = authorization.ReconcileUserRoleAndBindings(ctx, c, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	err = authorization.ReconcileReaderClusterRoleAndBinding(ctx, c, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	err = authorization.ReconcileReaderRoleAndBinding(ctx, c, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	return &organization, nil
+}
+
+func (e *TestEnvironment) MustCreateOrganization(t *testing.T) *dockyardsv1.Organization {
+	ctx := t.Context()
+
+	organization, err := e.CreateOrganization(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return organization
+}
+
+func (e *TestEnvironment) GetOrganizationUser(ctx context.Context, organization *dockyardsv1.Organization, role dockyardsv1.OrganizationMemberRole) (*dockyardsv1.User, error) {
+	for _, memberRef := range organization.Spec.MemberRefs {
+		if memberRef.Role != role {
+			continue
+		}
+
+		var user dockyardsv1.User
+		err := e.c.Get(ctx, client.ObjectKey{Name: memberRef.TypedLocalObjectReference.Name}, &user)
+		if err != nil {
+			return nil, err
+		}
+
+		return &user, nil
+	}
+
+	return nil, errors.New("no such user")
+}
+
+func (e *TestEnvironment) MustGetOrganizationUser(t *testing.T, organization *dockyardsv1.Organization, role dockyardsv1.OrganizationMemberRole) *dockyardsv1.User {
+	ctx := t.Context()
+
+	user, err := e.GetOrganizationUser(ctx, organization, role)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return user
 }
 
 func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestEnvironment, error) {
