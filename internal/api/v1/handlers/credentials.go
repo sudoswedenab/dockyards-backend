@@ -16,16 +16,10 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
-	"io"
-	"net/http"
 	"strings"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -190,114 +184,20 @@ func (h *handler) GetOrganizationCredential(ctx context.Context, organization *d
 	return &v1Credential, nil
 }
 
-func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	organizationName := r.PathValue("organizationName")
-	credentialName := r.PathValue("credentialName")
-
-	if organizationName == "" || credentialName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	var organization dockyardsv1.Organization
-	err = h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting organization", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if organization.Spec.NamespaceRef == nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	resourceAttributes := authorizationv1.ResourceAttributes{
-		Verb:      "patch",
-		Resource:  "clusters",
-		Group:     "dockyards.io",
-		Namespace: organization.Spec.NamespaceRef.Name,
-	}
-
-	allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
-	if err != nil {
-		logger.Error("error reviewing subject", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to patch organization", "subject", subject, "organization", organization.Name)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
+func (h *handler) UpdateOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, credentialName string, request *types.Credential) error {
 	objectKey := client.ObjectKey{
 		Name:      "credential-" + credentialName,
 		Namespace: organization.Spec.NamespaceRef.Name,
 	}
 
 	var secret corev1.Secret
-	err = h.Get(ctx, objectKey, &secret)
-	if client.IgnoreNotFound(err) != nil {
-		logger.Error("error getting secret", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	if apierrors.IsNotFound(err) || secret.Type != dockyardsv1.SecretTypeCredential {
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	body, err := io.ReadAll(r.Body)
+	err := h.Get(ctx, objectKey, &secret)
 	if err != nil {
-		logger.Error("error reading request body", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return err
 	}
 
-	defer r.Body.Close()
-
-	var credential types.Credential
-	err = json.Unmarshal(body, &credential)
-	if err != nil {
-		logger.Error("error unmarshalling request body", "err", err, "body", body)
-		w.WriteHeader(http.StatusUnprocessableEntity)
-
-		return
-	}
-
-	if credential.Data == nil {
-		w.WriteHeader(http.StatusNoContent)
-
-		return
+	if request.Data == nil {
+		return nil
 	}
 
 	patch := client.MergeFrom(secret.DeepCopy())
@@ -306,17 +206,14 @@ func (h *handler) PutOrganizationCredential(w http.ResponseWriter, r *http.Reque
 		secret.Data = make(map[string][]byte)
 	}
 
-	for key, value := range *credential.Data {
+	for key, value := range *request.Data {
 		secret.Data[key] = value
 	}
 
 	err = h.Patch(ctx, &secret, patch)
 	if err != nil {
-		logger.Error("error patching secret", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return err
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
