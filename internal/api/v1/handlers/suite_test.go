@@ -1,0 +1,108 @@
+package handlers_test
+
+import (
+	"context"
+	"crypto/ecdsa"
+	"log/slog"
+	"net/http"
+	"os"
+	"path"
+	"testing"
+	"time"
+
+	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/handlers"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
+	utiljwt "bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
+	"github.com/golang-jwt/jwt/v5"
+)
+
+var (
+	ctx             context.Context
+	cancel          context.CancelFunc
+	logger          *slog.Logger
+	testEnvironment *testingutil.TestEnvironment
+	mux             *http.ServeMux
+	accessKey       *ecdsa.PrivateKey
+	refreshKey      *ecdsa.PrivateKey
+)
+
+func TestMain(m *testing.M) {
+	var err error
+
+	ctx, cancel = context.WithCancel(context.TODO())
+	logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+
+	testEnvironment, err = testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
+	if err != nil {
+		panic(err)
+	}
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	err = index.AddDefaultIndexes(ctx, mgr)
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	accessKey, refreshKey, err = utiljwt.GetOrGenerateKeys(ctx, c, testEnvironment.GetDockyardsNamespace())
+	if err != nil {
+		panic(err)
+	}
+
+	handlerOptions := []handlers.HandlerOption{
+		handlers.WithManager(mgr),
+		handlers.WithNamespace(testEnvironment.GetDockyardsNamespace()),
+		handlers.WithLogger(logger),
+		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
+	}
+
+	mux = http.NewServeMux()
+
+	err = handlers.RegisterRoutes(mux, handlerOptions...)
+	if err != nil {
+		panic(err)
+	}
+
+	code := m.Run()
+
+	cancel()
+	err = testEnvironment.GetEnvironment().Stop()
+	if err != nil {
+		panic(err)
+	}
+
+	os.Exit(code)
+}
+
+func SignToken(subject string) (string, error) {
+	claims := jwt.RegisteredClaims{
+		Subject:   subject,
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	signedToken, err := token.SignedString(accessKey)
+	if err != nil {
+		return "", err
+	}
+
+	return signedToken, nil
+}
+
+func MustSignToken(t *testing.T, subject string) string {
+	signedToken, err := SignToken(subject)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return signedToken
+}
