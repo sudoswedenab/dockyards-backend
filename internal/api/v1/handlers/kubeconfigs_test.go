@@ -1,8 +1,7 @@
-package handlers
+package handlers_test
 
 import (
 	"bytes"
-	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -11,7 +10,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -22,10 +20,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
-	utiljwt "bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	corev1 "k8s.io/api/core/v1"
@@ -41,38 +36,15 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
-	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	organization := testEnvironment.GetOrganization()
-	superUser := testEnvironment.GetSuperUser()
-	reader := testEnvironment.GetReader()
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	err = index.AddDefaultIndexes(ctx, mgr)
-	if err != nil {
-		t.Fatal(err)
-	}
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -81,7 +53,7 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 		},
 	}
 
-	err = c.Create(ctx, &cluster)
+	err := c.Create(ctx, &cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,24 +137,7 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	accessKey, refreshKey, err := utiljwt.GetOrGenerateKeys(ctx, c, testEnvironment.GetDockyardsNamespace())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	m := http.NewServeMux()
-
-	handlerOptions := []HandlerOption{
-		WithManager(mgr),
-		WithNamespace(testEnvironment.GetDockyardsNamespace()),
-		WithLogger(logger),
-		WithJWTPrivateKeys(accessKey, refreshKey),
-	}
-
-	err = RegisterRoutes(m, handlerOptions...)
-	if err != nil {
-		t.Fatal(err)
-	}
+	mgr := testEnvironment.GetManager()
 
 	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &cluster)
 	if err != nil {
@@ -197,17 +152,6 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		claims := jwt.RegisteredClaims{
-			Subject:   string(superUser.UID),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-		signedToken, err := token.SignedString(accessKey)
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		u := url.URL{
 			Path: path.Join("/v1/orgs/", organization.Name, "clusters", cluster.Name, "kubeconfig"),
 		}
@@ -215,9 +159,9 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.Header.Add("Authorization", "Bearer "+signedToken)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		m.ServeHTTP(w, r)
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -334,17 +278,6 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		claims := jwt.RegisteredClaims{
-			Subject:   string(reader.UID),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-		signedToken, err := token.SignedString(accessKey)
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		u := url.URL{
 			Path: path.Join("/v1/orgs/", organization.Name, "clusters", cluster.Name, "kubeconfig"),
 		}
@@ -352,9 +285,9 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.Header.Add("Authorization", "Bearer "+signedToken)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		m.ServeHTTP(w, r)
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
