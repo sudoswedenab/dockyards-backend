@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package handlers_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -27,7 +25,6 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
@@ -43,43 +40,20 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	organization := testEnvironment.GetOrganization()
-	superUser := testEnvironment.GetSuperUser()
-	user := testEnvironment.GetUser()
-	reader := testEnvironment.GetReader()
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	dockyardsNamespace := testEnvironment.GetDockyardsNamespace()
-
-	h := handler{
-		Client:    mgr.GetClient(),
-		namespace: dockyardsNamespace,
-	}
-
-	handlerFunc := CreateClusterResource(&h, "workloads", h.CreateClusterWorkload)
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -88,7 +62,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		},
 	}
 
-	err = c.Create(ctx, &cluster)
+	err := c.Create(ctx, &cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,13 +86,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc.ServeHTTP(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -190,19 +160,15 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		}
 
 		u := url.URL{
-			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads"),
 		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc.ServeHTTP(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -280,13 +246,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc.ServeHTTP(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -312,13 +274,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc.ServeHTTP(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -354,13 +312,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc.ServeHTTP(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -445,13 +399,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc.ServeHTTP(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -547,13 +497,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc.ServeHTTP(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusConflict {
@@ -570,41 +516,18 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	organization := testEnvironment.GetOrganization()
-	superUser := testEnvironment.GetSuperUser()
-	user := testEnvironment.GetUser()
-	reader := testEnvironment.GetReader()
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	h := handler{
-		Client:    mgr.GetClient(),
-		namespace: testEnvironment.GetDockyardsNamespace(),
-	}
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	handlerFunc := DeleteClusterResource(&h, "workloads", h.DeleteClusterWorkload)
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -613,7 +536,7 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		},
 	}
 
-	err = c.Create(ctx, &cluster)
+	err := c.Create(ctx, &cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -651,14 +574,9 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", workloadName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -697,14 +615,9 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", workloadName)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -743,14 +656,9 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", workloadName)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -766,14 +674,9 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", "test-non-existing")
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusNotFound {
@@ -787,41 +690,18 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	organization := testEnvironment.GetOrganization()
-	superUser := testEnvironment.GetSuperUser()
-	user := testEnvironment.GetUser()
-	reader := testEnvironment.GetReader()
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	h := handler{
-		Client:    mgr.GetClient(),
-		namespace: testEnvironment.GetDockyardsNamespace(),
-	}
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	handlerFunc := UpdateClusterResource(&h, "workloads", h.UpdateClusterWorkload)
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -830,7 +710,7 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		},
 	}
 
-	err = c.Create(ctx, &cluster)
+	err := c.Create(ctx, &cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -883,14 +763,9 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", workloadName)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -972,16 +847,11 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodDelete, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", workloadName)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -1063,16 +933,11 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodDelete, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", workloadName)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -1130,16 +995,11 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodDelete, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", workloadName)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -1227,16 +1087,11 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodDelete, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", workloadName)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -1318,16 +1173,11 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodDelete, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", workloadName)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
@@ -1381,14 +1231,9 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
 
-		r.SetPathValue("organizationName", organization.Name)
-		r.SetPathValue("clusterName", cluster.Name)
-		r.SetPathValue("resourceName", workloadName)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusForbidden {
