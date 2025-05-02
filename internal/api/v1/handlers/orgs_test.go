@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package handlers_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -28,9 +26,7 @@ import (
 	"testing"
 
 	apitypes "bitbucket.org/sudosweden/dockyards-api/pkg/types"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -46,50 +42,23 @@ func TestGlobalOrganizations_List(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	err = index.AddDefaultIndexes(ctx, mgr)
-	if err != nil {
-		t.Fatal(err)
-	}
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	organization := testEnvironment.GetOrganization()
-	superUser := testEnvironment.GetSuperUser()
-	user := testEnvironment.GetUser()
-	reader := testEnvironment.GetReader()
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	h := handler{
-		Client: mgr.GetClient(),
-	}
-
-	handlerFunc := ListGlobalResource("organizations", h.ListGlobalOrganizations)
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	mgr.GetCache().WaitForCacheSync(ctx)
 
 	less := func(a, b apitypes.Organization) bool {
-		return a.CreatedAt.Before(b.CreatedAt)
+		return a.Name < b.Name
 	}
 
 	sortSlices := cmpopts.SortSlices(less)
@@ -102,10 +71,9 @@ func TestGlobalOrganizations_List(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -144,10 +112,9 @@ func TestGlobalOrganizations_List(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -186,10 +153,9 @@ func TestGlobalOrganizations_List(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -257,10 +223,9 @@ func TestGlobalOrganizations_List(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -308,6 +273,11 @@ func TestGlobalOrganizations_List(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		otherUserToken, err := SignToken(string(otherUser.UID))
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		u := url.URL{
 			Path: path.Join("/v1/orgs"),
 		}
@@ -315,10 +285,9 @@ func TestGlobalOrganizations_List(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(otherUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
 
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -349,42 +318,24 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	err = index.AddDefaultIndexes(ctx, mgr)
+	otherUser := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "other-",
+		},
+	}
+
+	err := c.Create(ctx, &otherUser)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	reader := testEnvironment.GetReader()
-
-	h := handler{
-		Client: mgr.GetClient(),
+	otherUserToken, err := SignToken(string(otherUser.UID))
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	handlerFunc := CreateGlobalResource("organizations", h.CreateGlobalOrganization)
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
 
 	mgr.GetCache().WaitForCacheSync(ctx)
 
@@ -405,10 +356,9 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
 
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -439,10 +389,10 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 					{
 						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
 							Kind: dockyardsv1.UserKind,
-							Name: reader.Name,
+							Name: otherUser.Name,
 						},
 						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-						UID:  reader.UID,
+						UID:  otherUser.UID,
 					},
 				},
 				NamespaceRef: &corev1.LocalObjectReference{
@@ -511,10 +461,9 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
 
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
@@ -546,10 +495,10 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 					{
 						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
 							Kind: dockyardsv1.UserKind,
-							Name: reader.Name,
+							Name: otherUser.Name,
 						},
 						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-						UID:  reader.UID,
+						UID:  otherUser.UID,
 					},
 				},
 				NamespaceRef: &corev1.LocalObjectReference{
@@ -575,41 +524,18 @@ func TestGlobalOrganizations_Delete(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	ctx, cancel := context.WithCancel(context.TODO())
-
-	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		cancel()
-		testEnvironment.GetEnvironment().Stop()
-	})
-
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
-	organization := testEnvironment.GetOrganization()
+	organization := testEnvironment.MustCreateOrganization(t)
 
-	reader := testEnvironment.GetReader()
-	user := testEnvironment.GetUser()
-	superUser := testEnvironment.GetSuperUser()
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	h := handler{
-		Client: mgr.GetClient(),
-	}
-
-	handlerFunc := DeleteGlobalResource(&h, "organizations", h.DeleteGlobalOrganization)
-
-	go func() {
-		err := mgr.Start(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
 
 	mgr.GetCache().WaitForCacheSync(ctx)
 
@@ -621,12 +547,9 @@ func TestGlobalOrganizations_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("resourceName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+readerToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(reader.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -634,7 +557,7 @@ func TestGlobalOrganizations_Delete(t *testing.T) {
 		}
 
 		var actual dockyardsv1.Organization
-		err = c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		err := c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -652,12 +575,9 @@ func TestGlobalOrganizations_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("resourceName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(user.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
@@ -665,7 +585,7 @@ func TestGlobalOrganizations_Delete(t *testing.T) {
 		}
 
 		var actual dockyardsv1.Organization
-		err = c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		err := c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -683,12 +603,9 @@ func TestGlobalOrganizations_Delete(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
 
-		r.SetPathValue("resourceName", organization.Name)
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
-		ctx := middleware.ContextWithSubject(context.Background(), string(superUser.UID))
-		ctx = middleware.ContextWithLogger(ctx, logger)
-
-		handlerFunc(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
@@ -696,7 +613,7 @@ func TestGlobalOrganizations_Delete(t *testing.T) {
 		}
 
 		var actual dockyardsv1.Organization
-		err = c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		err := c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
 		if err != nil {
 			t.Fatal(err)
 		}
