@@ -102,8 +102,6 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("GET /v1/cluster-options", logger(requireAuth(http.HandlerFunc(h.GetClusterOptions))))
 
-	mux.Handle("GET /v1/clusters/{clusterID}/kubeconfig", logger(requireAuth(http.HandlerFunc(h.GetClusterKubeconfig))))
-
 	mux.Handle("GET /v1/orgs", logger(requireAuth(contentJSON(ListGlobalResource("organizations", h.ListGlobalOrganizations)))))
 	mux.Handle("POST /v1/orgs", logger(requireAuth(contentJSON(CreateGlobalResource("organizations", h.CreateGlobalOrganization)))))
 	mux.Handle("DELETE /v1/orgs/{resourceName}", logger(requireAuth(DeleteGlobalResource(&h, "organizations", h.DeleteGlobalOrganization))))
