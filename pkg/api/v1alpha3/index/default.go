@@ -53,5 +53,10 @@ func AddDefaultIndexes(ctx context.Context, mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.OrganizationVoucher{}, CodeField, ByCode)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
