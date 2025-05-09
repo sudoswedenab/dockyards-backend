@@ -23,6 +23,7 @@ import (
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -146,6 +147,36 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 
 		organization.Spec.Duration = &metav1.Duration{
 			Duration: duration,
+		}
+	}
+
+	if request.VoucherCode != nil {
+		matchingFields := client.MatchingFields{
+			index.CodeField: *request.VoucherCode,
+		}
+
+		var organizationVoucherList dockyardsv1.OrganizationVoucherList
+		err := h.List(ctx, &organizationVoucherList, matchingFields, client.InNamespace(h.namespace))
+		if err != nil {
+			return nil, err
+		}
+
+		if len(organizationVoucherList.Items) != 1 {
+			statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.OrganizationKind).GroupKind(), "", nil)
+
+			return nil, statusError
+		}
+
+		organizationVoucher := organizationVoucherList.Items[0]
+
+		if organizationVoucher.Status.Redeemed {
+			statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.OrganizationKind).GroupKind(), "", nil)
+
+			return nil, statusError
+		}
+
+		organization.Annotations = map[string]string{
+			dockyardsv1.AnnotationVoucherCode: organizationVoucher.Spec.Code,
 		}
 	}
 

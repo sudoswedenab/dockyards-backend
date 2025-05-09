@@ -517,6 +517,193 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual, ignoreFields))
 		}
 	})
+
+	t.Run("test voucher code", func(t *testing.T) {
+		organizationVoucher := dockyardsv1.OrganizationVoucher{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    testEnvironment.GetDockyardsNamespace(),
+			},
+			Spec: dockyardsv1.OrganizationVoucherSpec{
+				Code: "TEST-123",
+				PoolRef: &corev1.TypedObjectReference{
+					Kind: "TestPool",
+					Name: "testing",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &organizationVoucher)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &organizationVoucher)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		req := apitypes.Organization{
+			VoucherCode: &organizationVoucher.Spec.Code,
+		}
+
+		b, err := json.Marshal(&req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		b, err = io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var organization apitypes.Organization
+		err = json.Unmarshal(b, &organization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Organization{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dockyardsv1.AnnotationVoucherCode: organizationVoucher.Spec.Code,
+				},
+				Name: organization.Name,
+				CreationTimestamp: metav1.Time{
+					Time: organization.CreatedAt,
+				},
+				UID: types.UID(organization.ID),
+			},
+			Spec: dockyardsv1.OrganizationSpec{
+				MemberRefs: []dockyardsv1.OrganizationMemberReference{
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							Kind: dockyardsv1.UserKind,
+							Name: otherUser.Name,
+						},
+						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+						UID:  otherUser.UID,
+					},
+				},
+				NamespaceRef: &corev1.LocalObjectReference{
+					Name: organization.Name,
+				},
+			},
+		}
+
+		var actual dockyardsv1.Organization
+		err = c.Get(ctx, client.ObjectKeyFromObject(&expected), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actual, expected, ignoreFields) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, ignoreFields))
+		}
+	})
+
+	t.Run("test redeemed voucher code", func(t *testing.T) {
+		organizationVoucher := dockyardsv1.OrganizationVoucher{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    testEnvironment.GetDockyardsNamespace(),
+			},
+			Spec: dockyardsv1.OrganizationVoucherSpec{
+				Code: "TEST-REDEEMED",
+				PoolRef: &corev1.TypedObjectReference{
+					Kind: "TestPool",
+					Name: "testing",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &organizationVoucher)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		patch := client.MergeFrom(organizationVoucher.DeepCopy())
+
+		organizationVoucher.Status.Redeemed = true
+
+		err = c.Status().Patch(ctx, &organizationVoucher, patch)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &organizationVoucher)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		req := apitypes.Organization{
+			VoucherCode: &organizationVoucher.Spec.Code,
+		}
+
+		b, err := json.Marshal(&req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
+		}
+	})
+
+	t.Run("test invalid voucher code", func(t *testing.T) {
+		req := apitypes.Organization{
+			VoucherCode: ptr.To("TEST-INVALID"),
+		}
+
+		b, err := json.Marshal(&req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
+		}
+	})
 }
 
 func TestGlobalOrganizations_Delete(t *testing.T) {

@@ -3,7 +3,7 @@ module bitbucket.org/sudosweden/dockyards-backend
 go 1.24.2
 
 require (
-	bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20250429113045-32429ae58602
+	bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20250509124906-22dc7cd896e9
 	bitbucket.org/sudosweden/dockyards-backend/pkg/api v1.2.3
 	cuelang.org/go v0.10.0
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -23,7 +23,6 @@ require (
 	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
 	sigs.k8s.io/controller-runtime v0.18.1
 	sigs.k8s.io/controller-tools v0.14.0
-	sigs.k8s.io/yaml v1.4.0
 )
 
 replace bitbucket.org/sudosweden/dockyards-backend/pkg/api => ./pkg/api
@@ -93,4 +92,5 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240411171206-dc4e619f62f3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 )
