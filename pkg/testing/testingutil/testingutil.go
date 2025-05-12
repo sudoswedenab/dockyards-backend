@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -167,6 +168,7 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 			NamespaceRef: &corev1.LocalObjectReference{
 				Name: namespace.Name,
 			},
+			ProviderID: ptr.To(dockyardsv1.ProviderPrefixDockyards),
 		},
 	}
 
