@@ -101,6 +101,12 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 		return nil, err
 	}
 
+	if len(userList.Items) != 1 {
+		statusError := apierrors.NewInternalError(nil)
+
+		return nil, statusError
+	}
+
 	user := userList.Items[0]
 
 	namespace := corev1.Namespace{

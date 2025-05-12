@@ -337,7 +337,10 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mgr.GetCache().WaitForCacheSync(ctx)
+	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherUser)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ignoreFields := cmpopts.IgnoreFields(metav1.ObjectMeta{}, "Generation", "ResourceVersion", "ManagedFields")
 
