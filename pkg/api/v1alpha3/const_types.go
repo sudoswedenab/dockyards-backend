@@ -24,6 +24,7 @@ const (
 	LabelCredentialTemplateName = "dockyards.io/credential-template-name"
 	LabelWorkloadName           = "dockyards.io/workload-name"
 	LabelWorkloadTemplateName   = "dockyards.io/workload-template-name"
+	LabelNamespaceName          = "dockyards.io/namespace-name"
 )
 
 const (
