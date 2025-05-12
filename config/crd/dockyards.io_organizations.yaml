@@ -382,6 +382,8 @@ spec:
                 - kind
                 - name
                 type: object
+              providerID:
+                type: string
               skipAutoAssign:
                 type: boolean
             required:

@@ -51,6 +51,7 @@ type OrganizationSpec struct {
 	Duration       *metav1.Duration `json:"duration,omitempty"`
 
 	NamespaceRef *corev1.LocalObjectReference `json:"namespaceRef,omitempty"`
+	ProviderID   *string                      `json:"providerID,omitempty"`
 }
 
 type OrganizationStatus struct {
