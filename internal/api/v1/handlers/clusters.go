@@ -70,6 +70,10 @@ func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockya
 		v1Cluster.AllocateInternalIP = &cluster.Spec.AllocateInternalIP
 	}
 
+	if cluster.Status.APIEndpoint.IsValid() {
+		v1Cluster.APIEndpoint = ptr.To(cluster.Status.APIEndpoint.String())
+	}
+
 	return &v1Cluster
 }
 
