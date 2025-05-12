@@ -105,6 +105,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/orgs", logger(requireAuth(contentJSON(ListGlobalResource("organizations", h.ListGlobalOrganizations)))))
 	mux.Handle("POST /v1/orgs", logger(requireAuth(contentJSON(CreateGlobalResource("organizations", h.CreateGlobalOrganization)))))
 	mux.Handle("DELETE /v1/orgs/{resourceName}", logger(requireAuth(DeleteGlobalResource(&h, "organizations", h.DeleteGlobalOrganization))))
+	mux.Handle("GET /v1/orgs/{resourceName}", logger(requireAuth(GetGlobalResource(&h, "organizations", h.GetGlobalOrganization))))
 
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters",
 		logger(

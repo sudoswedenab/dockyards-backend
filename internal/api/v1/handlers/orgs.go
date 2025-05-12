@@ -244,3 +244,51 @@ func (h *handler) DeleteGlobalOrganization(ctx context.Context, resourceName str
 
 	return nil
 }
+
+func (h *handler) GetGlobalOrganization(ctx context.Context, organizationName string) (*types.Organization, error) {
+	objectKey := client.ObjectKey{
+		Name: organizationName,
+	}
+
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, objectKey, &organization)
+	if err != nil {
+		return nil, err
+	}
+
+	response := types.Organization{
+		CreatedAt: organization.CreationTimestamp.Time,
+		ID:        string(organization.UID),
+		Name:      organization.Name,
+	}
+
+	readyCondition := meta.FindStatusCondition(organization.Status.Conditions, dockyardsv1.ReadyCondition)
+	if readyCondition != nil {
+		response.UpdatedAt = &readyCondition.LastTransitionTime.Time
+		response.Condition = &readyCondition.Reason
+	}
+
+	if len(organization.Spec.DisplayName) > 0 {
+		response.DisplayName = &organization.Spec.DisplayName
+	}
+
+	if organization.Spec.ProviderID != nil {
+		response.ProviderID = organization.Spec.ProviderID
+	}
+
+	voucherCode, hasAnnotation := organization.Annotations[dockyardsv1.AnnotationVoucherCode]
+	if hasAnnotation {
+		response.VoucherCode = &voucherCode
+	}
+
+	expiration := organization.GetExpiration()
+	if expiration != nil {
+		response.ExpiresAt = &expiration.Time
+	}
+
+	if !organization.DeletionTimestamp.IsZero() {
+		response.DeletedAt = &organization.DeletionTimestamp.Time
+	}
+
+	return &response, nil
+}
