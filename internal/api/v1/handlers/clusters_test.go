@@ -1033,17 +1033,16 @@ func TestOrganizationClusters_Get(t *testing.T) {
 		}
 
 		expected := types.Cluster{
-			CreatedAt:    cluster.CreationTimestamp.Time,
-			ID:           string(cluster.UID),
-			Name:         cluster.Name,
-			Organization: organization.Name,
+			CreatedAt: cluster.CreationTimestamp.Time,
+			ID:        string(cluster.UID),
+			Name:      cluster.Name,
 			NodePools: &[]types.NodePool{
 				{
 					ID:   string(nodePool.UID),
 					Name: nodePool.Name,
 				},
 			},
-			Version: cluster.Status.Version,
+			Version: &cluster.Status.Version,
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1083,17 +1082,16 @@ func TestOrganizationClusters_Get(t *testing.T) {
 		}
 
 		expected := types.Cluster{
-			CreatedAt:    cluster.CreationTimestamp.Time,
-			ID:           string(cluster.UID),
-			Name:         cluster.Name,
-			Organization: organization.Name,
+			CreatedAt: cluster.CreationTimestamp.Time,
+			ID:        string(cluster.UID),
+			Name:      cluster.Name,
 			NodePools: &[]types.NodePool{
 				{
 					ID:   string(nodePool.UID),
 					Name: nodePool.Name,
 				},
 			},
-			Version: cluster.Status.Version,
+			Version: &cluster.Status.Version,
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1133,17 +1131,16 @@ func TestOrganizationClusters_Get(t *testing.T) {
 		}
 
 		expected := types.Cluster{
-			CreatedAt:    cluster.CreationTimestamp.Time,
-			ID:           string(cluster.UID),
-			Name:         cluster.Name,
-			Organization: organization.Name,
+			CreatedAt: cluster.CreationTimestamp.Time,
+			ID:        string(cluster.UID),
+			Name:      cluster.Name,
 			NodePools: &[]types.NodePool{
 				{
 					ID:   string(nodePool.UID),
 					Name: nodePool.Name,
 				},
 			},
-			Version: cluster.Status.Version,
+			Version: &cluster.Status.Version,
 		}
 
 		if !cmp.Equal(actual, expected) {

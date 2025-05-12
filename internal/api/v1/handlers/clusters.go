@@ -38,13 +38,12 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=nodepools,verbs=create
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
 
-func (h *handler) toV1Cluster(organization *dockyardsv1.Organization, cluster *dockyardsv1.Cluster, nodePoolList *dockyardsv1.NodePoolList) *types.Cluster {
+func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockyardsv1.NodePoolList) *types.Cluster {
 	v1Cluster := types.Cluster{
-		ID:           string(cluster.UID),
-		Name:         cluster.Name,
-		Organization: organization.Name,
-		CreatedAt:    cluster.CreationTimestamp.Time,
-		Version:      cluster.Status.Version,
+		ID:        string(cluster.UID),
+		Name:      cluster.Name,
+		CreatedAt: cluster.CreationTimestamp.Time,
+		Version:   &cluster.Status.Version,
 	}
 
 	if !cluster.DeletionTimestamp.IsZero() {
@@ -333,7 +332,7 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 		}
 	}
 
-	v1Cluster := h.toV1Cluster(organization, &cluster, nil)
+	v1Cluster := h.toV1Cluster(&cluster, nil)
 
 	return v1Cluster, nil
 }
@@ -368,7 +367,7 @@ func (h *handler) ListOrganizationClusters(ctx context.Context, organization *do
 	response := make([]types.Cluster, len(clusterList.Items))
 
 	for i, cluster := range clusterList.Items {
-		response[i] = *h.toV1Cluster(organization, &cluster, nil)
+		response[i] = *h.toV1Cluster(&cluster, nil)
 	}
 
 	return &response, nil
@@ -396,7 +395,7 @@ func (h *handler) GetOrganizationCluster(ctx context.Context, organization *dock
 		return nil, err
 	}
 
-	v1Cluster := h.toV1Cluster(organization, &cluster, &nodePoolList)
+	v1Cluster := h.toV1Cluster(&cluster, &nodePoolList)
 
 	return v1Cluster, nil
 }
