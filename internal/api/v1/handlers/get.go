@@ -265,3 +265,81 @@ func GetOrganizationResource[T any](h *handler, resource string, f GetOrganizati
 		}
 	}
 }
+
+type GetGlobalResourceFunc[T any] func(context.Context, string) (*T, error)
+
+func GetGlobalResource[T any](h *handler, resource string, f GetGlobalResourceFunc[T]) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		logger := middleware.LoggerFrom(ctx).With("resource", resource)
+
+		resourceName := r.PathValue("resourceName")
+		if resourceName == "" {
+			w.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+
+		subject, err := middleware.SubjectFrom(ctx)
+		if err != nil {
+			logger.Error("error getting subject from context", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		resourceAttributes := authorizationv1.ResourceAttributes{
+			Group:    dockyardsv1.GroupVersion.Group,
+			Name:     resourceName,
+			Resource: resource,
+			Verb:     "get",
+		}
+
+		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+		if err != nil {
+			logger.Error("error reviewing subject", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		if !allowed {
+			logger.Debug("subject is not allowed to get resource", "subject", subject)
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
+		response, err := f(ctx, resourceName)
+		if client.IgnoreNotFound(err) != nil {
+			logger.Error("error getting resource", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		if apierrors.IsNotFound(err) {
+			w.WriteHeader(http.StatusNotFound)
+
+			return
+		}
+
+		b, err := json.Marshal(response)
+		if err != nil {
+			logger.Error("error marshalling response", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write(b)
+		if err != nil {
+			logger.Error("error writing response", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+	}
+}
