@@ -128,7 +128,10 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mgr.GetCache().WaitForCacheSync(ctx)
+	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &release)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("test default as super user", func(t *testing.T) {
 		clusterOptions := types.ClusterOptions{
@@ -993,8 +996,9 @@ func TestOrganizationClusters_Get(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !mgr.GetCache().WaitForCacheSync(ctx) {
-		t.Log("could not sync cache")
+	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	t.Run("test as super user", func(t *testing.T) {
