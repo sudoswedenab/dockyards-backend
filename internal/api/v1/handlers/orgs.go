@@ -59,9 +59,9 @@ func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organiz
 
 	for _, organization := range organizationList.Items {
 		v1Organization := types.Organization{
+			CreatedAt: organization.CreationTimestamp.Time,
 			ID:        string(organization.UID),
 			Name:      organization.Name,
-			CreatedAt: organization.CreationTimestamp.Time,
 		}
 
 		if !organization.DeletionTimestamp.IsZero() {
@@ -78,10 +78,6 @@ func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organiz
 		if readyCondition != nil {
 			v1Organization.UpdatedAt = &readyCondition.LastTransitionTime.Time
 			v1Organization.Condition = &readyCondition.Reason
-		}
-
-		if organization.Spec.ProviderID != nil {
-			v1Organization.ProviderID = organization.Spec.ProviderID
 		}
 
 		organizations = append(organizations, v1Organization)
