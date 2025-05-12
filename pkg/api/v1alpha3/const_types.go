@@ -45,3 +45,7 @@ const (
 	AnnotationIgnoreDeployments = "dockyards.io/ignore-deployments"
 	AnnotationSkipRemediation   = "dockyards.io/skip-remediation"
 )
+
+const (
+	ProviderPrefixDockyards string = "dockyards://"
+)

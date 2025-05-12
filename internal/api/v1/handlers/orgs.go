@@ -26,6 +26,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -77,6 +78,10 @@ func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organiz
 		if readyCondition != nil {
 			v1Organization.UpdatedAt = &readyCondition.LastTransitionTime.Time
 			v1Organization.Condition = &readyCondition.Reason
+		}
+
+		if organization.Spec.ProviderID != nil {
+			v1Organization.ProviderID = organization.Spec.ProviderID
 		}
 
 		organizations = append(organizations, v1Organization)
@@ -138,6 +143,7 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 			NamespaceRef: &corev1.LocalObjectReference{
 				Name: namespace.Name,
 			},
+			ProviderID: ptr.To(dockyardsv1.ProviderPrefixDockyards),
 		},
 	}
 

@@ -401,6 +401,7 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				NamespaceRef: &corev1.LocalObjectReference{
 					Name: organization.Name,
 				},
+				ProviderID: ptr.To(dockyardsv1.ProviderPrefixDockyards),
 			},
 		}
 
@@ -507,6 +508,7 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				NamespaceRef: &corev1.LocalObjectReference{
 					Name: organization.Name,
 				},
+				ProviderID: ptr.To(dockyardsv1.ProviderPrefixDockyards),
 			},
 		}
 
@@ -607,6 +609,7 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				NamespaceRef: &corev1.LocalObjectReference{
 					Name: organization.Name,
 				},
+				ProviderID: ptr.To(dockyardsv1.ProviderPrefixDockyards),
 			},
 		}
 
