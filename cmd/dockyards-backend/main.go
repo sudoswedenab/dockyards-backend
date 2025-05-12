@@ -119,7 +119,7 @@ func main() {
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
 	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
 	pflag.StringSliceVar(&allowedOrigins, "allow-origin", []string{"http://localhost", "http://localhost:8000"}, "allow origin")
-	pflag.StringVar(&dockyardsNamespace, "dockyards-namespace", "dockyards", "dockyards namespace")
+	pflag.StringVar(&dockyardsNamespace, "dockyards-namespace", "dockyards-system", "dockyards namespace")
 	pflag.StringSliceVar(&allowedDomains, "allow-domain", nil, "allow domain")
 	pflag.Parse()
 
