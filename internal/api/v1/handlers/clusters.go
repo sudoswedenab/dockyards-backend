@@ -370,8 +370,24 @@ func (h *handler) ListOrganizationClusters(ctx context.Context, organization *do
 
 	response := make([]types.Cluster, len(clusterList.Items))
 
-	for i, cluster := range clusterList.Items {
-		response[i] = *h.toV1Cluster(&cluster, nil)
+	for i, item := range clusterList.Items {
+		cluster := types.Cluster{
+			CreatedAt: item.CreationTimestamp.Time,
+			ID:        string(item.UID),
+			Name:      item.Name,
+		}
+
+		readyCondition := meta.FindStatusCondition(item.Status.Conditions, dockyardsv1.ReadyCondition)
+		if readyCondition != nil {
+			cluster.UpdatedAt = &readyCondition.LastTransitionTime.Time
+			cluster.Condition = &readyCondition.Reason
+		}
+
+		if !item.DeletionTimestamp.IsZero() {
+			cluster.DeletedAt = &item.DeletionTimestamp.Time
+		}
+
+		response[i] = cluster
 	}
 
 	return &response, nil
