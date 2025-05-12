@@ -74,6 +74,10 @@ func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockya
 		v1Cluster.APIEndpoint = ptr.To(cluster.Status.APIEndpoint.String())
 	}
 
+	if len(cluster.Status.DNSZones) > 0 {
+		v1Cluster.DNSZones = &cluster.Status.DNSZones
+	}
+
 	return &v1Cluster
 }
 
