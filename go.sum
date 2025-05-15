@@ -1,5 +1,5 @@
-bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20250515105627-97f10675b131 h1:fNQkdMeePcoNwgTpA+3Y/qBJIulaGUINsekhIjrxgmk=
-bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20250515105627-97f10675b131/go.mod h1:o86wddU3GnqWiAXC4OBIFcXbYVDjdYqLwUSkhnwRWKw=
+bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20250515124751-9b24cfcce0fe h1:OrWksRBNWLYjGdJOOUsVd5g+1jZ3I4xJlKMMX402ItA=
+bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20250515124751-9b24cfcce0fe/go.mod h1:o86wddU3GnqWiAXC4OBIFcXbYVDjdYqLwUSkhnwRWKw=
 cuelabs.dev/go/oci/ociregistry v0.0.0-20241125120445-2c00c104c6e1 h1:mRwydyTyhtRX2wXS3mqYWzR2qlv6KsmoKXmlz5vInjg=
 cuelabs.dev/go/oci/ociregistry v0.0.0-20241125120445-2c00c104c6e1/go.mod h1:5A4xfTzHTXfeVJBU6RAUf+QrlfTCW+017q/QiW+sMLg=
 cuelang.org/go v0.12.1 h1:5I+zxmXim9MmiN2tqRapIqowQxABv2NKTgbOspud1Eo=

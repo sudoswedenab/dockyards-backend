@@ -286,5 +286,9 @@ func (h *handler) GetGlobalOrganization(ctx context.Context, organizationName st
 		response.DeletedAt = &organization.DeletionTimestamp.Time
 	}
 
+	if organization.Spec.CredentialRef != nil {
+		response.CredentialReferenceName = &organization.Spec.CredentialRef.Name
+	}
+
 	return &response, nil
 }

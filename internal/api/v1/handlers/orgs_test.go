@@ -992,4 +992,68 @@ func TestGlobalOrganizations_Get(t *testing.T) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual))
 		}
 	})
+
+	t.Run("test credential reference", func(t *testing.T) {
+		otherOrganization := testEnvironment.MustCreateOrganization(t)
+
+		otherUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleUser)
+
+		otherUserToken := MustSignToken(t, string(otherUser.UID))
+
+		patch := client.MergeFrom(otherOrganization.DeepCopy())
+
+		otherOrganization.Spec.CredentialRef = &corev1.TypedObjectReference{
+			Kind: "Secret",
+			Name: "testing",
+		}
+
+		err := c.Patch(ctx, otherOrganization, patch)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), otherOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", otherOrganization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual apitypes.Organization
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := apitypes.Organization{
+			ID:                      string(otherOrganization.UID),
+			Name:                    otherOrganization.Name,
+			ProviderID:              otherOrganization.Spec.ProviderID,
+			CreatedAt:               otherOrganization.CreationTimestamp.Time,
+			CredentialReferenceName: ptr.To("testing"),
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
 }
