@@ -36,3 +36,9 @@ const (
 const (
 	ReconcilingCondition = "Reconciling"
 )
+
+const (
+	RoleBindingsReadyCondition = "RoleBindingsReady"
+
+	RoleBindingReconcileFailedReason = "RoleBindingsReconcileFailed"
+)

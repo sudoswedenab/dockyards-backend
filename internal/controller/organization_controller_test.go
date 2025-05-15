@@ -25,9 +25,12 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
+	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/go-logr/logr"
 	authorizationv1 "k8s.io/api/authorization/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -74,6 +77,17 @@ func TestOrganizationController(t *testing.T) {
 	user := testEnvironment.GetUser()
 	reader := testEnvironment.GetReader()
 
+	namespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+	}
+
+	err = c.Create(ctx, &namespace)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	organization := dockyardsv1.Organization{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
@@ -93,10 +107,24 @@ func TestOrganizationController(t *testing.T) {
 					Role: dockyardsv1.OrganizationMemberRoleReader,
 				},
 			},
+			NamespaceRef: &corev1.LocalObjectReference{
+				Name: namespace.Name,
+			},
 		},
 	}
 
 	err = c.Create(ctx, &organization)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherNamespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+	}
+
+	err = c.Create(ctx, &otherNamespace)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,6 +148,9 @@ func TestOrganizationController(t *testing.T) {
 					Role: dockyardsv1.OrganizationMemberRoleReader,
 				},
 			},
+			NamespaceRef: &corev1.LocalObjectReference{
+				Name: otherNamespace.Name,
+			},
 		},
 	}
 
@@ -132,30 +163,36 @@ func TestOrganizationController(t *testing.T) {
 		t.Fatal("unable to wait for cache sync")
 	}
 
-	for i := 0; i < 5; i++ {
+	err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 		err := c.Get(ctx, client.ObjectKeyFromObject(&organization), &organization)
 		if err != nil {
-			t.Fatal(err)
+			return true, err
 		}
 
-		if organization.Spec.NamespaceRef != nil {
-			break
+		if conditions.IsTrue(&organization, dockyardsv1.RoleBindingsReadyCondition) {
+			return true, nil
 		}
 
-		time.Sleep(time.Second)
+		return false, nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	for i := 0; i < 5; i++ {
+	err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 		err := c.Get(ctx, client.ObjectKeyFromObject(&otherOrganization), &otherOrganization)
 		if err != nil {
-			t.Fatal(err)
+			return true, err
 		}
 
-		if otherOrganization.Spec.NamespaceRef != nil {
-			break
+		if conditions.IsTrue(&otherOrganization, dockyardsv1.RoleBindingsReadyCondition) {
+			return true, nil
 		}
 
-		time.Sleep(time.Second)
+		return false, nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	t.Run("test super user getting organization", func(t *testing.T) {
