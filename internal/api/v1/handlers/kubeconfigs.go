@@ -26,6 +26,7 @@ import (
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
 	corev1 "k8s.io/api/core/v1"
@@ -125,7 +126,19 @@ func (h *handler) CreateClusterKubeconfig(ctx context.Context, cluster *dockyard
 
 	user := userList.Items[0]
 
-	contextName := user.Name + "@" + cluster.Name
+	ownerOrganization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	if ownerOrganization == nil {
+		return nil, errors.New("the cluster has no owner organization")
+	}
+
+	userAlias := user.Name + "/" + cluster.Name
+	clusterAlias := cluster.Name + "/" + ownerOrganization.Name
+
+	contextName := userAlias + "@" + clusterAlias
 
 	tmpl := x509.Certificate{
 		Subject: pkix.Name{
@@ -175,12 +188,12 @@ func (h *handler) CreateClusterKubeconfig(ctx context.Context, cluster *dockyard
 		},
 		Contexts: map[string]*api.Context{
 			contextName: {
-				Cluster:  cluster.Name,
-				AuthInfo: user.Name,
+				Cluster:  clusterAlias,
+				AuthInfo: userAlias,
 			},
 		},
 		AuthInfos: map[string]*api.AuthInfo{
-			user.Name: {
+			userAlias: {
 				ClientCertificateData: certificatePEM,
 				ClientKeyData:         privateKeyPEM,
 			},

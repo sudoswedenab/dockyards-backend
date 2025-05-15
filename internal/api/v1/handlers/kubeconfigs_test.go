@@ -33,6 +33,7 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
@@ -64,6 +65,14 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
 			Namespace:    organization.Spec.NamespaceRef.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Kind:       dockyardsv1.OrganizationKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
+					Name:       organization.Name,
+					UID:        organization.UID,
+				},
+			},
 		},
 	}
 
@@ -192,8 +201,20 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		ownerOrganization, err := apiutil.GetOwnerOrganization(ctx, c, &cluster)
+		if err != nil {
+			t.Fatal("could not get cluster oranization owner")
+		}
+
+		if ownerOrganization.Name == "" {
+			t.Fatal("could not get organization name")
+		}
+
+		superUserAlias := superUser.Name + "/" + cluster.Name
+		clusterAlias := cluster.Name + "/" + ownerOrganization.Name
+
 		expected := &clientcmdapi.Config{
-			CurrentContext: superUser.Name + "@" + cluster.Name,
+			CurrentContext: superUserAlias + "@" + clusterAlias,
 			Clusters: map[string]*clientcmdapi.Cluster{
 				cluster.Name: {
 					Server:                   "https://localhost:6443",
@@ -202,9 +223,9 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 				},
 			},
 			Contexts: map[string]*clientcmdapi.Context{
-				superUser.Name + "@" + cluster.Name: {
-					Cluster:    cluster.Name,
-					AuthInfo:   superUser.Name,
+				superUserAlias + "@" + clusterAlias: {
+					Cluster:    clusterAlias,
+					AuthInfo:   superUserAlias,
 					Extensions: map[string]runtime.Object{},
 				},
 			},
@@ -220,7 +241,7 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual, opts))
 		}
 
-		block, _ := pem.Decode(actual.AuthInfos[superUser.Name].ClientCertificateData)
+		block, _ := pem.Decode(actual.AuthInfos[superUserAlias].ClientCertificateData)
 
 		actualCertificate, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
