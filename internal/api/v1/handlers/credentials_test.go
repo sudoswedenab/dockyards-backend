@@ -316,7 +316,7 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
-		update := types.Credential{
+		update := types.CredentialOptions{
 			Data: &map[string][]byte{
 				"test": []byte("secret"),
 			},
@@ -364,7 +364,7 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
-		update := types.Credential{
+		update := types.CredentialOptions{
 			Data: &map[string][]byte{
 				"test": []byte("secret"),
 			},
@@ -431,7 +431,7 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
-		update := types.Credential{
+		update := types.CredentialOptions{
 			Data: &map[string][]byte{
 				"test": []byte("secret"),
 			},
@@ -499,7 +499,7 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
-		update := types.Credential{
+		update := types.CredentialOptions{
 			Data: &map[string][]byte{
 				"test": nil,
 			},
@@ -565,7 +565,7 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
 		}
 
-		update := types.Credential{
+		update := types.CredentialOptions{
 			Data: &map[string][]byte{
 				"test": []byte(""),
 			},
@@ -602,6 +602,52 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 			t.Errorf("diff: %s", cmp.Diff(actual.Data, expected))
 		}
 	})
+
+	t.Run("test update name", func(t *testing.T) {
+		credentialName := "test-update-name"
+
+		secret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "credential-" + credentialName,
+				Namespace: organization.Spec.NamespaceRef.Name,
+			},
+			Type: dockyardsv1.SecretTypeCredential,
+		}
+
+		err := c.Create(ctx, &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "credentials", credentialName),
+		}
+
+		update := types.CredentialOptions{
+			Name: ptr.To("new-name"),
+		}
+
+		b, err := json.Marshal(update)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		if w.Result().StatusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, w.Result().StatusCode)
+		}
+	})
 }
 
 func TestOrganizationCredentials_Create(t *testing.T) {
@@ -627,8 +673,8 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 	mgr.GetCache().WaitForCacheSync(ctx)
 
 	t.Run("test create empty credential", func(t *testing.T) {
-		credential := types.Credential{
-			Name: "test-create-empty",
+		credential := types.CredentialOptions{
+			Name: ptr.To("test-create-empty"),
 			Data: &map[string][]byte{},
 		}
 
@@ -649,7 +695,7 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 		}
 
 		objectKey := client.ObjectKey{
-			Name:      "credential-" + credential.Name,
+			Name:      "credential-" + *credential.Name,
 			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
@@ -667,8 +713,8 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 	})
 
 	t.Run("test single key", func(t *testing.T) {
-		credential := types.Credential{
-			Name: "test-create-empty-credential",
+		credential := types.CredentialOptions{
+			Name: ptr.To("test-create-empty-credential"),
 			Data: &map[string][]byte{
 				"test": []byte("secret"),
 			},
@@ -678,6 +724,8 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		t.Logf("b: %s", b)
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
@@ -691,7 +739,7 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 		}
 
 		objectKey := client.ObjectKey{
-			Name:      "credential-" + credential.Name,
+			Name:      "credential-" + *credential.Name,
 			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
@@ -711,8 +759,8 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 	})
 
 	t.Run("test multiple keys", func(t *testing.T) {
-		credential := types.Credential{
-			Name: "test-credential-with-multiple-keys",
+		credential := types.CredentialOptions{
+			Name: ptr.To("test-credential-with-multiple-keys"),
 			Data: &map[string][]byte{
 				"qwfp": []byte("arst"),
 				"zxcv": []byte("neio"),
@@ -737,7 +785,7 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 		}
 
 		objectKey := client.ObjectKey{
-			Name:      "credential-" + credential.Name,
+			Name:      "credential-" + *credential.Name,
 			Namespace: organization.Spec.NamespaceRef.Name,
 		}
 
@@ -759,8 +807,8 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 	})
 
 	t.Run("test as reader", func(t *testing.T) {
-		credential := types.Credential{
-			Name: "test-reader",
+		credential := types.CredentialOptions{
+			Name: ptr.To("test-reader"),
 			Data: &map[string][]byte{
 				"test": []byte("secret"),
 			},

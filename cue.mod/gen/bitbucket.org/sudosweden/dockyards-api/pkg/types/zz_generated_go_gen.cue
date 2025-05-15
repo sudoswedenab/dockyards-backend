@@ -12,19 +12,21 @@ import "time"
 // Cluster defines model for cluster.
 #Cluster: {
 	allocate_internal_ip?: null | bool      @go(AllocateInternalIP,*bool)
+	api_endpoint?:         null | string    @go(APIEndpoint,*string)
 	condition?:            null | string    @go(Condition,*string)
 	created_at:            time.Time        @go(CreatedAt)
 	deleted_at?:           null | time.Time @go(DeletedAt,*time.Time)
 	dns_zones?: null | [...string] @go(DNSZones,*[]string)
-	duration?:   null | string @go(Duration,*string)
-	id:          string        @go(ID)
-	name:        string        @go(Name)
-	node_count?: null | int    @go(NodeCount,*int)
+	duration?:   null | string    @go(Duration,*string)
+	expires_at?: null | time.Time @go(ExpiresAt,*time.Time)
+	id:          string           @go(ID)
+	name:        string           @go(Name)
+	node_count?: null | int       @go(NodeCount,*int)
 	node_pools?: null | [...#NodePool] @go(NodePools,*[]NodePool)
-	organization: string           @go(Organization)
-	state?:       null | string    @go(State,*string)
-	updated_at?:  null | time.Time @go(UpdatedAt,*time.Time)
-	version:      string           @go(Version)
+	organization?: null | string    @go(Organization,*string)
+	state?:        null | string    @go(State,*string)
+	updated_at?:   null | time.Time @go(UpdatedAt,*time.Time)
+	version?:      null | string    @go(Version,*string)
 }
 
 // ClusterOptions defines model for cluster_options.
@@ -42,11 +44,20 @@ import "time"
 
 // Credential defines model for credential.
 #Credential: {
-	credential_template?: null | string @go(CredentialTemplate,*string)
+	created_at?:               null | time.Time @go(CreatedAt,*time.Time)
+	credential_template_name?: null | string    @go(CredentialTemplateName,*string)
 	data?: null | {[string]: bytes} @go(Data,*map[string][]byte)
-	id:           string @go(ID)
-	name:         string @go(Name)
-	organization: string @go(Organization)
+	deleted_at?: null | time.Time @go(DeletedAt,*time.Time)
+	id:          string           @go(ID)
+	name:        string           @go(Name)
+	updated_at?: null | time.Time @go(UpdatedAt,*time.Time)
+}
+
+// CredentialOptions defines model for credential_options.
+#CredentialOptions: {
+	credential_template_name?: null | string @go(CredentialTemplateName,*string)
+	data?: null | {[string]: bytes} @go(Data,*map[string][]byte)
+	name?: null | string @go(Name,*string)
 }
 
 // IdentityProvider defines model for identity_provider.
@@ -61,6 +72,11 @@ import "time"
 	addresses?: null | [...string] @go(Addresses,*[]string)
 	id?:   null | string @go(ID,*string)
 	name?: null | string @go(Name,*string)
+}
+
+// KubeconfigOptions defines model for kubeconfig_options.
+#KubeconfigOptions: {
+	duration?: null | string @go(Duration,*string)
 }
 
 // Login defines model for login.
@@ -121,15 +137,19 @@ import "time"
 	deleted_at?:   null | time.Time @go(DeletedAt,*time.Time)
 	display_name?: null | string    @go(DisplayName,*string)
 	duration?:     null | string    @go(Duration,*string)
+	expires_at?:   null | time.Time @go(ExpiresAt,*time.Time)
 	id:            string           @go(ID)
 	name:          string           @go(Name)
+	provider_id?:  null | string    @go(ProviderID,*string)
 	updated_at?:   null | time.Time @go(UpdatedAt,*time.Time)
+	voucher_code?: null | string    @go(VoucherCode,*string)
 }
 
 // OrganizationOptions defines model for organization_options.
 #OrganizationOptions: {
 	display_name?: null | string @go(DisplayName,*string)
 	duration?:     null | string @go(Duration,*string)
+	voucher_code?: null | string @go(VoucherCode,*string)
 }
 
 // StorageResource defines model for storage_resource.

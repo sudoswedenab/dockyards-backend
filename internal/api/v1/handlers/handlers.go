@@ -123,7 +123,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		logger(
 			requireAuth(
 				contentJSON(
-					CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCredential),
+					validateJSON.WithSchema("#credentialOptionsCreate")(CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCredential)),
 				),
 			),
 		),
@@ -132,7 +132,16 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("DELETE /v1/orgs/{organizationName}/credentials/{resourceName}", logger(requireAuth(DeleteOrganizationResource(&h, "clusters", h.DeleteOrganizationCredential))))
 	mux.Handle("GET /v1/orgs/{organizationName}/credentials", logger(requireAuth(contentJSON(ListOrganizationResource(&h, "clusters", h.ListOrganizationCredentials)))))
 	mux.Handle("GET /v1/orgs/{organizationName}/credentials/{resourceName}", logger(requireAuth(contentJSON(GetOrganizationResource(&h, "clusters", h.GetOrganizationCredential)))))
-	mux.Handle("PATCH /v1/orgs/{organizationName}/credentials/{resourceName}", logger(requireAuth(contentJSON(UpdateOrganizationResource(&h, "clusters", h.UpdateOrganizationCredential)))))
+
+	mux.Handle("PATCH /v1/orgs/{organizationName}/credentials/{resourceName}",
+		logger(
+			requireAuth(
+				contentJSON(
+					validateJSON.WithSchema("#credentialOptionsUpdate")(UpdateOrganizationResource(&h, "clusters", h.UpdateOrganizationCredential)),
+				),
+			),
+		),
+	)
 
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters/{clusterName}/workloads",
 		logger(
