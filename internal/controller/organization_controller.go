@@ -24,7 +24,6 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/authorization"
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
-	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,7 +42,6 @@ type OrganizationReconciler struct {
 }
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=*,verbs=*
-// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=create;get;list;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=create;get;list;patch;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=create;get;list;patch;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=create;get;list;patch;watch
@@ -97,40 +95,9 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	if organization.Spec.NamespaceRef == nil {
-		logger.Info("organization has no namespace reference")
+		logger.Info("ignoring organization without namespace reference")
 
-		namespace := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: organization.Name + "-",
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind:       dockyardsv1.OrganizationKind,
-						Name:       organization.Name,
-						UID:        organization.UID,
-					},
-				},
-			},
-		}
-
-		err := r.Create(ctx, &namespace)
-		if err != nil {
-			logger.Error(err, "error creating namespace")
-
-			return ctrl.Result{}, err
-		}
-
-		organization.Spec.NamespaceRef = &corev1.LocalObjectReference{
-			Name: namespace.Name,
-		}
-
-		organization.Status.NamespaceRef = &corev1.LocalObjectReference{ //nolint:staticcheck
-			Name: namespace.Name,
-		}
-
-		logger.Info("created namespace for organization")
-
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 
 	result, err = r.reconcileRoleBindings(ctx, &organization)
