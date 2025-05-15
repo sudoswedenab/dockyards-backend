@@ -96,9 +96,9 @@ func TestOrganizationCredentials_List(t *testing.T) {
 
 		expected := []types.Credential{
 			{
-				ID:           string(secret.UID),
-				Name:         "test",
-				Organization: organization.Name,
+				ID:        string(secret.UID),
+				Name:      "test",
+				CreatedAt: &secret.CreationTimestamp.Time,
 			},
 		}
 
@@ -164,9 +164,9 @@ func TestOrganizationCredentials_List(t *testing.T) {
 			}
 
 			expected = append(expected, types.Credential{
-				ID:           string(secret.UID),
-				Name:         strings.TrimPrefix(secret.Name, "credential-"),
-				Organization: organization.Name,
+				ID:        string(secret.UID),
+				Name:      strings.TrimPrefix(secret.Name, "credential-"),
+				CreatedAt: &secret.CreationTimestamp.Time,
 			})
 		}
 
@@ -257,10 +257,10 @@ func TestOrganizationCredentials_List(t *testing.T) {
 
 		expected := []types.Credential{
 			{
-				ID:                 string(secret.UID),
-				Name:               "test",
-				Organization:       organization.Name,
-				CredentialTemplate: ptr.To("test"),
+				ID:                     string(secret.UID),
+				Name:                   "test",
+				CredentialTemplateName: ptr.To("test"),
+				CreatedAt:              &secret.CreationTimestamp.Time,
 			},
 		}
 
@@ -844,9 +844,9 @@ func TestOrganizationCredentials_Get(t *testing.T) {
 		}
 
 		expected := types.Credential{
-			ID:           string(secret.UID),
-			Name:         credentialName,
-			Organization: organization.Name,
+			ID:        string(secret.UID),
+			Name:      credentialName,
+			CreatedAt: &secret.CreationTimestamp.Time,
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -907,14 +907,14 @@ func TestOrganizationCredentials_Get(t *testing.T) {
 		}
 
 		expected := types.Credential{
-			ID:           string(secret.UID),
-			Name:         credentialName,
-			Organization: organization.Name,
+			ID:   string(secret.UID),
+			Name: credentialName,
 			Data: &map[string][]byte{
 				"qwfp": nil,
 				"zxcv": nil,
 				"hjkl": nil,
 			},
+			CreatedAt: &secret.CreationTimestamp.Time,
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1000,14 +1000,14 @@ func TestOrganizationCredentials_Get(t *testing.T) {
 		}
 
 		expected := types.Credential{
-			ID:                 string(secret.UID),
-			Name:               credentialName,
-			Organization:       organization.Name,
-			CredentialTemplate: ptr.To(credentialTemplate.Name),
+			ID:                     string(secret.UID),
+			Name:                   credentialName,
+			CredentialTemplateName: ptr.To(credentialTemplate.Name),
 			Data: &map[string][]byte{
 				"qwfp": []byte("arst"),
 				"test": nil,
 			},
+			CreatedAt: &secret.CreationTimestamp.Time,
 		}
 
 		if !cmp.Equal(actual, expected) {

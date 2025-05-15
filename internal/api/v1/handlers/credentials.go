@@ -44,14 +44,18 @@ func (h *handler) ListOrganizationCredentials(ctx context.Context, organization 
 		}
 
 		credential := types.Credential{
-			ID:           string(secret.UID),
-			Name:         strings.TrimPrefix(secret.Name, "credential-"),
-			Organization: organization.Name,
+			ID:        string(secret.UID),
+			Name:      strings.TrimPrefix(secret.Name, "credential-"),
+			CreatedAt: &secret.CreationTimestamp.Time,
 		}
 
-		credentialTemplate, has := secret.Labels[dockyardsv1.LabelCredentialTemplateName]
+		credentialTemplateName, has := secret.Labels[dockyardsv1.LabelCredentialTemplateName]
 		if has {
-			credential.CredentialTemplate = &credentialTemplate
+			credential.CredentialTemplateName = &credentialTemplateName
+		}
+
+		if !secret.DeletionTimestamp.IsZero() {
+			credential.DeletedAt = &secret.DeletionTimestamp.Time
 		}
 
 		credentials = append(credentials, credential)
@@ -60,10 +64,10 @@ func (h *handler) ListOrganizationCredentials(ctx context.Context, organization 
 	return &credentials, nil
 }
 
-func (h *handler) CreateOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, request *types.Credential) (*types.Credential, error) {
+func (h *handler) CreateOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, request *types.CredentialOptions) (*types.Credential, error) {
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "credential-" + request.Name,
+			Name:      "credential-" + *request.Name,
 			Namespace: organization.Spec.NamespaceRef.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -141,9 +145,9 @@ func (h *handler) GetOrganizationCredential(ctx context.Context, organization *d
 	plaintextKeys := make(map[string]bool)
 
 	v1Credential := types.Credential{
-		ID:           string(secret.UID),
-		Name:         strings.TrimPrefix(secret.Name, "credential-"),
-		Organization: organization.Name,
+		ID:        string(secret.UID),
+		Name:      strings.TrimPrefix(secret.Name, "credential-"),
+		CreatedAt: &secret.CreationTimestamp.Time,
 	}
 
 	credentialTemplateName, has := secret.Labels[dockyardsv1.LabelCredentialTemplateName]
@@ -162,7 +166,7 @@ func (h *handler) GetOrganizationCredential(ctx context.Context, organization *d
 			}
 		}
 
-		v1Credential.CredentialTemplate = &credentialTemplateName
+		v1Credential.CredentialTemplateName = &credentialTemplateName
 	}
 
 	if secret.Data != nil {
@@ -184,7 +188,7 @@ func (h *handler) GetOrganizationCredential(ctx context.Context, organization *d
 	return &v1Credential, nil
 }
 
-func (h *handler) UpdateOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, credentialName string, request *types.Credential) error {
+func (h *handler) UpdateOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, credentialName string, request *types.CredentialOptions) error {
 	objectKey := client.ObjectKey{
 		Name:      "credential-" + credentialName,
 		Namespace: organization.Spec.NamespaceRef.Name,
