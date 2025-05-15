@@ -328,7 +328,7 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
 
 		r.Header.Add("Authorization", "Bearer "+readerToken)
 
@@ -376,7 +376,7 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
 
 		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
@@ -443,7 +443,7 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
 
 		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
@@ -511,7 +511,7 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
 
 		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
@@ -577,7 +577,7 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPut, u.Path, bytes.NewBuffer(b))
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
 
 		r.Header.Add("Authorization", "Bearer "+superUserToken)
 
