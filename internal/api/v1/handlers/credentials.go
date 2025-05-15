@@ -89,6 +89,12 @@ func (h *handler) CreateOrganizationCredential(ctx context.Context, organization
 		}
 	}
 
+	if request.CredentialTemplateName != nil {
+		secret.Labels = map[string]string{
+			dockyardsv1.LabelCredentialTemplateName: *request.CredentialTemplateName,
+		}
+	}
+
 	err := h.Create(ctx, &secret)
 	if err != nil {
 		return nil, err

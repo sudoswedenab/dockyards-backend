@@ -830,6 +830,61 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, w.Result().StatusCode)
 		}
 	})
+
+	t.Run("test credential template name", func(t *testing.T) {
+		options := types.CredentialOptions{
+			Name:                   ptr.To("test-credential-template-name"),
+			CredentialTemplateName: ptr.To("testing"),
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		if w.Result().StatusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, w.Result().StatusCode)
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      "credential-" + *options.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
+		}
+
+		var actual corev1.Secret
+		err = c.Get(ctx, objectKey, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{
+					dockyardsv1.LabelCredentialTemplateName: *options.CredentialTemplateName,
+				},
+				//
+				CreationTimestamp: actual.CreationTimestamp,
+				ManagedFields:     actual.ManagedFields,
+				Name:              actual.Name,
+				Namespace:         actual.Namespace,
+				OwnerReferences:   actual.OwnerReferences,
+				ResourceVersion:   actual.ResourceVersion,
+				UID:               actual.UID,
+			},
+			Type: dockyardsv1.SecretTypeCredential,
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
 }
 
 func TestOrganizationCredentials_Get(t *testing.T) {
