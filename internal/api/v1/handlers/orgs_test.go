@@ -1004,7 +1004,7 @@ func TestGlobalOrganizations_Get(t *testing.T) {
 
 		otherOrganization.Spec.CredentialRef = &corev1.TypedObjectReference{
 			Kind: "Secret",
-			Name: "testing",
+			Name: "credential-testing",
 		}
 
 		err := c.Patch(ctx, otherOrganization, patch)

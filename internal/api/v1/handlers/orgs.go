@@ -16,6 +16,7 @@ package handlers
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
@@ -287,7 +288,8 @@ func (h *handler) GetGlobalOrganization(ctx context.Context, organizationName st
 	}
 
 	if organization.Spec.CredentialRef != nil {
-		response.CredentialReferenceName = &organization.Spec.CredentialRef.Name
+		credentialReferenceName := strings.TrimPrefix(organization.Spec.CredentialRef.Name, "credential-")
+		response.CredentialReferenceName = &credentialReferenceName
 	}
 
 	return &response, nil
