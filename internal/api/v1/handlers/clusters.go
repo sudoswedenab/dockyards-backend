@@ -57,13 +57,10 @@ func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockya
 		v1Cluster.UpdatedAt = &condition.LastTransitionTime.Time
 	}
 
-	if nodePoolList != nil && len(nodePoolList.Items) > 0 {
-		nodePools := make([]types.NodePool, len(nodePoolList.Items))
-		for i, nodePool := range nodePoolList.Items {
-			nodePools[i] = *h.toV1NodePool(&nodePool, nil)
-		}
-
-		v1Cluster.NodePools = &nodePools
+	nodePoolsCount := 0
+	if nodePoolList != nil {
+		nodePoolsCount = len(nodePoolList.Items)
+		v1Cluster.NodePoolsCount = &nodePoolsCount
 	}
 
 	if cluster.Spec.AllocateInternalIP {

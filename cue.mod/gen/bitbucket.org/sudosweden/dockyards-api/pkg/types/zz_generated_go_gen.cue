@@ -17,16 +17,16 @@ import "time"
 	created_at:            time.Time        @go(CreatedAt)
 	deleted_at?:           null | time.Time @go(DeletedAt,*time.Time)
 	dns_zones?: null | [...string] @go(DNSZones,*[]string)
-	duration?:   null | string    @go(Duration,*string)
-	expires_at?: null | time.Time @go(ExpiresAt,*time.Time)
-	id:          string           @go(ID)
-	name:        string           @go(Name)
-	node_count?: null | int       @go(NodeCount,*int)
-	node_pools?: null | [...#NodePool] @go(NodePools,*[]NodePool)
-	organization?: null | string    @go(Organization,*string)
-	state?:        null | string    @go(State,*string)
-	updated_at?:   null | time.Time @go(UpdatedAt,*time.Time)
-	version?:      null | string    @go(Version,*string)
+	duration?:         null | string    @go(Duration,*string)
+	expires_at?:       null | time.Time @go(ExpiresAt,*time.Time)
+	id:                string           @go(ID)
+	name:              string           @go(Name)
+	node_pools_count?: null | int       @go(NodePoolsCount,*int)
+	nodes_count?:      null | int       @go(NodesCount,*int)
+	organization?:     null | string    @go(Organization,*string)
+	state?:            null | string    @go(State,*string)
+	updated_at?:       null | time.Time @go(UpdatedAt,*time.Time)
+	version?:          null | string    @go(Version,*string)
 }
 
 // ClusterOptions defines model for cluster_options.
@@ -132,24 +132,26 @@ import "time"
 
 // Organization defines model for organization.
 #Organization: {
-	condition?:    null | string    @go(Condition,*string)
-	created_at:    time.Time        @go(CreatedAt)
-	deleted_at?:   null | time.Time @go(DeletedAt,*time.Time)
-	display_name?: null | string    @go(DisplayName,*string)
-	duration?:     null | string    @go(Duration,*string)
-	expires_at?:   null | time.Time @go(ExpiresAt,*time.Time)
-	id:            string           @go(ID)
-	name:          string           @go(Name)
-	provider_id?:  null | string    @go(ProviderID,*string)
-	updated_at?:   null | time.Time @go(UpdatedAt,*time.Time)
-	voucher_code?: null | string    @go(VoucherCode,*string)
+	condition?:                 null | string    @go(Condition,*string)
+	created_at:                 time.Time        @go(CreatedAt)
+	credential_reference_name?: null | string    @go(CredentialReferenceName,*string)
+	deleted_at?:                null | time.Time @go(DeletedAt,*time.Time)
+	display_name?:              null | string    @go(DisplayName,*string)
+	duration?:                  null | string    @go(Duration,*string)
+	expires_at?:                null | time.Time @go(ExpiresAt,*time.Time)
+	id:                         string           @go(ID)
+	name:                       string           @go(Name)
+	provider_id?:               null | string    @go(ProviderID,*string)
+	updated_at?:                null | time.Time @go(UpdatedAt,*time.Time)
+	voucher_code?:              null | string    @go(VoucherCode,*string)
 }
 
 // OrganizationOptions defines model for organization_options.
 #OrganizationOptions: {
-	display_name?: null | string @go(DisplayName,*string)
-	duration?:     null | string @go(Duration,*string)
-	voucher_code?: null | string @go(VoucherCode,*string)
+	credential_reference_name?: null | string @go(CredentialReferenceName,*string)
+	display_name?:              null | string @go(DisplayName,*string)
+	duration?:                  null | string @go(Duration,*string)
+	voucher_code?:              null | string @go(VoucherCode,*string)
 }
 
 // StorageResource defines model for storage_resource.

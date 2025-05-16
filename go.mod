@@ -3,7 +3,7 @@ module bitbucket.org/sudosweden/dockyards-backend
 go 1.24.2
 
 require (
-	bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20250515124751-9b24cfcce0fe
+	bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20250515131816-b28419c8351f
 	bitbucket.org/sudosweden/dockyards-backend/pkg/api v1.2.3
 	cuelang.org/go v0.12.1
 	github.com/Masterminds/semver/v3 v3.2.1
