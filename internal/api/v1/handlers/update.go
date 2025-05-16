@@ -363,3 +363,123 @@ func UpdateOrganizationResource[T any](h *handler, resource string, f UpdateOrga
 		w.WriteHeader(http.StatusAccepted)
 	}
 }
+
+type UpdateGlobalResourceFunc[T any] func(context.Context, string, *T) error
+
+func UpdateGlobalResource[T any](h *handler, resource string, f UpdateGlobalResourceFunc[T]) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		logger := middleware.LoggerFrom(ctx).With("resource", resource)
+
+		resourceName := r.PathValue("resourceName")
+		if resourceName == "" {
+			w.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+
+		subject, err := middleware.SubjectFrom(ctx)
+		if err != nil {
+			logger.Error("error getting subject from context", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		resourceAttributes := authorizationv1.ResourceAttributes{
+			Group:    dockyardsv1.GroupVersion.Group,
+			Name:     resourceName,
+			Resource: resource,
+			Verb:     "patch",
+		}
+
+		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
+		if err != nil {
+			logger.Error("error reviewing subject", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		if !allowed {
+			logger.Debug("subject is not allowed to patch resource", "subject", subject, "resourceName", resourceName)
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			logger.Error("error reading request body", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		var request T
+		err = json.Unmarshal(b, &request)
+		if err != nil {
+			logger.Error("error unmarshalling request", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		err = f(ctx, resourceName, &request)
+		if apierrors.IsNotFound(err) {
+			w.WriteHeader(http.StatusNotFound)
+
+			return
+		}
+
+		if apierrors.IsInvalid(err) {
+			statusError, ok := err.(*apierrors.StatusError)
+			if !ok {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+
+				return
+			}
+
+			if statusError.ErrStatus.Details == nil {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+
+				return
+			}
+
+			var response types.UnprocessableEntityErrors
+
+			for _, cause := range statusError.ErrStatus.Details.Causes {
+				response.Errors = append(response.Errors, cause.Message)
+			}
+
+			b, err := json.Marshal(response)
+			if err != nil {
+				logger.Error("error marhalling response", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
+
+				return
+			}
+
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			_, err = w.Write(b)
+			if err != nil {
+				logger.Error("error writing response", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
+
+				return
+			}
+
+			return
+		}
+
+		if err != nil {
+			logger.Error("error updating resource", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
