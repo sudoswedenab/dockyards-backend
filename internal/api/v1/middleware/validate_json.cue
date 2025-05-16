@@ -33,3 +33,6 @@ import (
 #credentialOptionsCreate: data: null | {[string]: #_base64Bytes}
 
 #credentialOptionsUpdate: data: null | {[string]: null | #_base64Bytes}
+
+#updateOrganization: types.#OrganizationOptions
+#updateOrganization: voucher_code?: _|_

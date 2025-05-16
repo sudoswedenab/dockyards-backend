@@ -16,6 +16,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -293,4 +294,62 @@ func (h *handler) GetGlobalOrganization(ctx context.Context, organizationName st
 	}
 
 	return &response, nil
+}
+
+func (h *handler) UpdateGlobalOrganization(ctx context.Context, organizationName string, request *types.OrganizationOptions) error {
+	objectKey := client.ObjectKey{
+		Name: organizationName,
+	}
+
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, objectKey, &organization)
+	if err != nil {
+		return err
+	}
+
+	if organization.Spec.NamespaceRef == nil {
+		return errors.New("qwfp")
+	}
+
+	patch := client.MergeFrom(organization.DeepCopy())
+	needsPatch := false
+
+	if request.DisplayName != nil {
+		organization.Spec.DisplayName = *request.DisplayName
+		needsPatch = true
+	}
+
+	if request.CredentialReferenceName != nil {
+		organization.Spec.CredentialRef = &corev1.TypedObjectReference{
+			Kind:      "Secret",
+			Name:      "credential-" + *request.CredentialReferenceName,
+			Namespace: &organization.Spec.NamespaceRef.Name,
+		}
+
+		needsPatch = true
+	}
+
+	if request.Duration != nil {
+		duration, err := time.ParseDuration(*request.Duration)
+		if err != nil {
+			return err
+		}
+
+		organization.Spec.Duration = &metav1.Duration{
+			Duration: duration,
+		}
+
+		needsPatch = true
+	}
+
+	if !needsPatch {
+		return nil
+	}
+
+	err = h.Patch(ctx, &organization, patch)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

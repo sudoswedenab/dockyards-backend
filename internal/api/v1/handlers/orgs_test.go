@@ -1057,3 +1057,271 @@ func TestGlobalOrganizations_Get(t *testing.T) {
 		}
 	})
 }
+
+func TestGlobalOrganizations_Update(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
+
+	err := testingutil.RetryUntilFound(ctx, mgr.GetClient(), organization)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("test as super user", func(t *testing.T) {
+		options := apitypes.OrganizationOptions{
+			DisplayName: ptr.To("testing"),
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		b, err = io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual dockyardsv1.Organization
+		err = c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Organization{
+			ObjectMeta: actual.ObjectMeta,
+			Spec: dockyardsv1.OrganizationSpec{
+				DisplayName: "testing",
+				//
+				MemberRefs:   organization.Spec.MemberRefs,
+				NamespaceRef: organization.Spec.NamespaceRef,
+				ProviderID:   organization.Spec.ProviderID,
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		options := apitypes.OrganizationOptions{
+			DisplayName: ptr.To("testing"),
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		options := apitypes.OrganizationOptions{
+			DisplayName: ptr.To("testing"),
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+readerToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test voucher code", func(t *testing.T) {
+		options := apitypes.OrganizationOptions{
+			VoucherCode: ptr.To("TST-123"),
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
+		}
+	})
+
+	t.Run("test credential reference", func(t *testing.T) {
+		otherOrganization := testEnvironment.MustCreateOrganization(t)
+		otherSuperUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleSuperUser)
+		otherSuperUserToken := MustSignToken(t, string(otherSuperUser.UID))
+
+		options := apitypes.OrganizationOptions{
+			CredentialReferenceName: ptr.To("testing"),
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", otherOrganization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+otherSuperUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.Organization
+		err = c.Get(ctx, client.ObjectKeyFromObject(otherOrganization), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Organization{
+			ObjectMeta: actual.ObjectMeta,
+			Spec: dockyardsv1.OrganizationSpec{
+				CredentialRef: &corev1.TypedObjectReference{
+					Kind:      "Secret",
+					Name:      "credential-testing",
+					Namespace: &otherOrganization.Spec.NamespaceRef.Name,
+				},
+				//
+				MemberRefs:   otherOrganization.Spec.MemberRefs,
+				NamespaceRef: otherOrganization.Spec.NamespaceRef,
+				ProviderID:   otherOrganization.Spec.ProviderID,
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test duration", func(t *testing.T) {
+		otherOrganization := testEnvironment.MustCreateOrganization(t)
+		otherSuperUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleSuperUser)
+		otherSuperUserToken := MustSignToken(t, string(otherSuperUser.UID))
+
+		options := apitypes.OrganizationOptions{
+			Duration: ptr.To("15m"),
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", otherOrganization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+otherSuperUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.Organization
+		err = c.Get(ctx, client.ObjectKeyFromObject(otherOrganization), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Organization{
+			ObjectMeta: actual.ObjectMeta,
+			Spec: dockyardsv1.OrganizationSpec{
+				Duration: &metav1.Duration{
+					Duration: time.Minute * 15,
+				},
+				//
+				MemberRefs:   otherOrganization.Spec.MemberRefs,
+				NamespaceRef: otherOrganization.Spec.NamespaceRef,
+				ProviderID:   otherOrganization.Spec.ProviderID,
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+}
