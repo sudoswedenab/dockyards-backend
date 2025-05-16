@@ -133,7 +133,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		logger(
 			requireAuth(
 				contentJSON(
-					validateJSON.WithSchema("#credentialOptionsCreate")(CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCredential)),
+					validateJSON.WithSchema("#createCredential")(CreateOrganizationResource(&h, "clusters", h.CreateOrganizationCredential)),
 				),
 			),
 		),
@@ -147,7 +147,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		logger(
 			requireAuth(
 				contentJSON(
-					validateJSON.WithSchema("#credentialOptionsUpdate")(UpdateOrganizationResource(&h, "clusters", h.UpdateOrganizationCredential)),
+					validateJSON.WithSchema("#updateCredential")(UpdateOrganizationResource(&h, "clusters", h.UpdateOrganizationCredential)),
 				),
 			),
 		),

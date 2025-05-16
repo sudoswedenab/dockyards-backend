@@ -28,11 +28,13 @@ import (
 	#valid: base64.Decode(null, b)
 }
 
-#credentialOptionsCreate: name!:                     #_objectName
-#credentialOptionsCreate: credential_template_name?: #_objectName
-#credentialOptionsCreate: data: null | {[string]: #_base64Bytes}
+#createCredential: name!:                     #_objectName
+#createCredential: credential_template_name?: #_objectName
+#createCredential: data: null | {[string]: null | #_base64Bytes}
 
-#credentialOptionsUpdate: data: null | {[string]: null | #_base64Bytes}
+#updateCredential: name?:                     _|_
+#updateCredential: credential_template_name?: _|_
+#updateCredential: data: null | {[string]: null | #_base64Bytes}
 
 #updateOrganization: types.#OrganizationOptions
 #updateOrganization: voucher_code?: _|_
