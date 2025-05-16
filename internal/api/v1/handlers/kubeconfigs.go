@@ -181,7 +181,7 @@ func (h *handler) CreateClusterKubeconfig(ctx context.Context, cluster *dockyard
 
 	cfg := api.Config{
 		Clusters: map[string]*api.Cluster{
-			cluster.Name: {
+			clusterAlias: {
 				Server:                   cluster.Status.APIEndpoint.String(),
 				CertificateAuthorityData: caCertificatePEM,
 			},

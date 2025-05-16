@@ -216,7 +216,7 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 		expected := &clientcmdapi.Config{
 			CurrentContext: superUserAlias + "@" + clusterAlias,
 			Clusters: map[string]*clientcmdapi.Cluster{
-				cluster.Name: {
+				clusterAlias: {
 					Server:                   "https://localhost:6443",
 					CertificateAuthorityData: crt,
 					Extensions:               map[string]runtime.Object{},
