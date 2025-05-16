@@ -33,7 +33,6 @@ type PrometheusMetrics struct {
 	registry           *prometheus.Registry
 	organizationMetric *prometheus.GaugeVec
 	userMetric         *prometheus.GaugeVec
-	deploymentMetric   *prometheus.GaugeVec
 	credentialMetric   *prometheus.GaugeVec
 	controllerClient   client.Client
 	clusterMetric      *prometheus.GaugeVec
@@ -80,16 +79,6 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 		},
 	)
 
-	deploymentMetric := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "dockyards_backend_deployment",
-		},
-		[]string{
-			"name",
-			"cluster_id",
-		},
-	)
-
 	credentialMetric := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "dockyards_backend_credential",
@@ -113,7 +102,6 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 	m := PrometheusMetrics{
 		organizationMetric: organizationMetric,
 		userMetric:         userMetric,
-		deploymentMetric:   deploymentMetric,
 		credentialMetric:   credentialMetric,
 		clusterMetric:      clusterMetric,
 	}
@@ -124,7 +112,6 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 
 	m.registry.MustRegister(m.organizationMetric)
 	m.registry.MustRegister(m.userMetric)
-	m.registry.MustRegister(m.deploymentMetric)
 	m.registry.MustRegister(m.credentialMetric)
 	m.registry.MustRegister(m.clusterMetric)
 
@@ -199,38 +186,6 @@ func (m *PrometheusMetrics) CollectMetrics() error {
 		}
 
 		m.userMetric.With(labels).Set(1)
-	}
-
-	m.deploymentMetric.Reset()
-
-	var deploymentList dockyardsv1.DeploymentList
-	err = m.controllerClient.List(ctx, &deploymentList)
-	if err != nil {
-		m.logger.Error("error listing deployments", "err", err)
-
-		return err
-	}
-
-	for _, deployment := range deploymentList.Items {
-		ownerCluster, err := apiutil.GetOwnerCluster(ctx, m.controllerClient, &deployment)
-		if err != nil {
-			m.logger.Warn("error getting owner cluster")
-
-			continue
-		}
-
-		if ownerCluster == nil {
-			m.logger.Warn("deployment has no owner cluster", "name", deployment.Name)
-
-			continue
-		}
-
-		labels := prometheus.Labels{
-			"name":       deployment.Name,
-			"cluster_id": string(ownerCluster.UID),
-		}
-
-		m.deploymentMetric.With(labels).Set(1)
 	}
 
 	m.credentialMetric.Reset()
