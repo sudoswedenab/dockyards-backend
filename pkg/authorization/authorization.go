@@ -528,3 +528,32 @@ func ReconcileSuperUserRoleAndBindings(ctx context.Context, c client.Client, org
 
 	return nil
 }
+
+func ReconcileOrganizationAuthorization(ctx context.Context, c client.Client, organization *dockyardsv1.Organization) error {
+	err := ReconcileSuperUserClusterRoleAndBinding(ctx, c, organization)
+	if err != nil {
+		return err
+	}
+
+	err = ReconcileSuperUserRoleAndBindings(ctx, c, organization)
+	if err != nil {
+		return err
+	}
+
+	err = ReconcileUserRoleAndBindings(ctx, c, organization)
+	if err != nil {
+		return err
+	}
+
+	err = ReconcileReaderClusterRoleAndBinding(ctx, c, organization)
+	if err != nil {
+		return err
+	}
+
+	err = ReconcileReaderRoleAndBinding(ctx, c, organization)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
