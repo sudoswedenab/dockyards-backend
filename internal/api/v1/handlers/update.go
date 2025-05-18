@@ -433,6 +433,12 @@ func UpdateGlobalResource[T any](h *handler, resource string, f UpdateGlobalReso
 			return
 		}
 
+		if apierrors.IsUnauthorized(err) {
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
 		if apierrors.IsInvalid(err) {
 			statusError, ok := err.(*apierrors.StatusError)
 			if !ok {
