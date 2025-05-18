@@ -63,7 +63,9 @@ func ReconcileUserRoleAndBindings(ctx context.Context, c client.Client, organiza
 					dockyardsv1.GroupVersion.Group,
 				},
 				Resources: []string{
-					"*",
+					"clusters",
+					"workloads",
+					"nodepools",
 				},
 			},
 		}
@@ -431,6 +433,97 @@ func ReconcileReaderRoleAndBinding(ctx context.Context, c client.Client, organiz
 
 	if operationResult != controllerutil.OperationResultNone {
 		logger.Info("reconciled rolebinding", "roleBindingName", roleBinding.Name, "result", operationResult)
+	}
+
+	return nil
+}
+
+func ReconcileSuperUserRoleAndBindings(ctx context.Context, c client.Client, organization *dockyardsv1.Organization) error {
+	role := rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dockyards-super-user",
+			Namespace: organization.Spec.NamespaceRef.Name,
+		},
+	}
+
+	_, err := controllerutil.CreateOrPatch(ctx, c, &role, func() error {
+		role.OwnerReferences = []metav1.OwnerReference{
+			{
+				APIVersion: dockyardsv1.GroupVersion.String(),
+				Kind:       dockyardsv1.OrganizationKind,
+				Name:       organization.Name,
+				UID:        organization.UID,
+			},
+		}
+
+		if role.Labels == nil {
+			role.Labels = make(map[string]string)
+		}
+
+		role.Labels[dockyardsv1.LabelOrganizationName] = organization.Name
+
+		role.Rules = []rbacv1.PolicyRule{
+			{
+				Verbs: []string{
+					"create",
+					"delete",
+					"patch",
+					"watch",
+				},
+				APIGroups: []string{
+					dockyardsv1.GroupVersion.Group,
+				},
+				Resources: []string{
+					"invitations",
+				},
+			},
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	roleBinding := rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dockyards-super-users",
+			Namespace: organization.Spec.NamespaceRef.Name,
+		},
+	}
+
+	_, err = controllerutil.CreateOrPatch(ctx, c, &roleBinding, func() error {
+		if roleBinding.Labels == nil {
+			roleBinding.Labels = make(map[string]string)
+		}
+
+		roleBinding.Labels[dockyardsv1.LabelOrganizationName] = organization.Name
+
+		roleBinding.RoleRef = rbacv1.RoleRef{
+			Kind: "Role",
+			Name: role.Name,
+		}
+
+		subjects := []rbacv1.Subject{}
+
+		for _, memberRef := range organization.Spec.MemberRefs {
+			if memberRef.Role != dockyardsv1.OrganizationMemberRoleSuperUser {
+				continue
+			}
+
+			subjects = append(subjects, rbacv1.Subject{
+				APIGroup: rbacv1.GroupName,
+				Kind:     rbacv1.UserKind,
+				Name:     string(memberRef.UID),
+			})
+		}
+
+		roleBinding.Subjects = subjects
+
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil
