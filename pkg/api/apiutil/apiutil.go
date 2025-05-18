@@ -272,6 +272,9 @@ func GetOwnerContainerImageDeployment(ctx context.Context, c client.Client, o cl
 func IsSubjectAllowed(ctx context.Context, c client.Client, subject string, resourceAttributes *authorizationv1.ResourceAttributes) (bool, error) {
 	accessReview := authorizationv1.SubjectAccessReview{
 		Spec: authorizationv1.SubjectAccessReviewSpec{
+			Groups: []string{
+				"system:authenticated",
+			},
 			User:               subject,
 			ResourceAttributes: resourceAttributes,
 		},
