@@ -35,3 +35,4 @@ resources:
 - dockyards.io_workloadtemplates.yaml
 - dockyards.io_workloads.yaml
 - dockyards.io_worktrees.yaml
+- dockyards.io_invitations.yaml
