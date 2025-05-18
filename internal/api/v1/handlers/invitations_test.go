@@ -112,7 +112,15 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 				GenerateName: "pending-",
 				Name:         response.Name,
 				Namespace:    organization.Spec.NamespaceRef.Name,
-				UID:          types.UID(response.ID),
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
+					},
+				},
+				UID: types.UID(response.ID),
 				//
 				Finalizers:      actual.Finalizers,
 				Generation:      actual.Generation,
@@ -272,7 +280,15 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 				GenerateName: "pending-",
 				Name:         response.Name,
 				Namespace:    organization.Spec.NamespaceRef.Name,
-				UID:          types.UID(response.ID),
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
+					},
+				},
+				UID: types.UID(response.ID),
 				//
 				Finalizers:      actual.Finalizers,
 				Generation:      actual.Generation,

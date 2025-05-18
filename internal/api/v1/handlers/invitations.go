@@ -35,6 +35,14 @@ func (h *handler) CreateOrganizationInvitation(ctx context.Context, organization
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "pending-",
 			Namespace:    organization.Spec.NamespaceRef.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: dockyardsv1.GroupVersion.String(),
+					Kind:       dockyardsv1.OrganizationKind,
+					Name:       organization.Name,
+					UID:        organization.UID,
+				},
+			},
 		},
 		Spec: dockyardsv1.InvitationSpec{
 			Email: request.Email,
