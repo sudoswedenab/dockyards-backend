@@ -177,22 +177,7 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 		return nil, err
 	}
 
-	err = authorization.ReconcileSuperUserClusterRoleAndBinding(ctx, c, &organization)
-	if err != nil {
-		return nil, err
-	}
-
-	err = authorization.ReconcileUserRoleAndBindings(ctx, c, &organization)
-	if err != nil {
-		return nil, err
-	}
-
-	err = authorization.ReconcileReaderClusterRoleAndBinding(ctx, c, &organization)
-	if err != nil {
-		return nil, err
-	}
-
-	err = authorization.ReconcileReaderRoleAndBinding(ctx, c, &organization)
+	err = authorization.ReconcileOrganizationAuthorization(ctx, c, &organization)
 	if err != nil {
 		return nil, err
 	}
@@ -356,22 +341,7 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 		return nil, err
 	}
 
-	err = authorization.ReconcileSuperUserClusterRoleAndBinding(ctx, c, &organization)
-	if err != nil {
-		return nil, err
-	}
-
-	err = authorization.ReconcileUserRoleAndBindings(ctx, c, &organization)
-	if err != nil {
-		return nil, err
-	}
-
-	err = authorization.ReconcileReaderClusterRoleAndBinding(ctx, c, &organization)
-	if err != nil {
-		return nil, err
-	}
-
-	err = authorization.ReconcileReaderRoleAndBinding(ctx, c, &organization)
+	err = authorization.ReconcileOrganizationAuthorization(ctx, c, &organization)
 	if err != nil {
 		return nil, err
 	}
