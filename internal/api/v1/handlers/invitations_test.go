@@ -28,6 +28,7 @@ import (
 
 	apitypes "bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -579,6 +580,131 @@ func TestOrganizationInvitations_List(t *testing.T) {
 
 		if !cmp.Equal(actual, expected, byID) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual, byID))
+		}
+	})
+}
+
+func TestGlobalInvitations_List(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	mgr.GetCache().WaitForCacheSync(ctx)
+
+	otherUser := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+		Spec: dockyardsv1.UserSpec{
+			Email: "test@dockyards.dev",
+		},
+	}
+
+	err := c.Create(ctx, &otherUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherUserToken := MustSignToken(t, string(otherUser.UID))
+
+	t.Run("test as other user", func(t *testing.T) {
+		invitation := dockyardsv1.Invitation{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
+					},
+				},
+			},
+			Spec: dockyardsv1.InvitationSpec{
+				Email: otherUser.Spec.Email,
+				Role:  dockyardsv1.OrganizationMemberRoleUser,
+			},
+		}
+
+		err := c.Create(ctx, &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherInvitation := dockyardsv1.Invitation{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
+					},
+				},
+			},
+			Spec: dockyardsv1.InvitationSpec{
+				Email: "other@dockyards.dev",
+				Role:  dockyardsv1.OrganizationMemberRoleUser,
+			},
+		}
+
+		err = c.Create(ctx, &otherInvitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherInvitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/invitations"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual []apitypes.Invitation
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := []apitypes.Invitation{
+			{
+				CreatedAt:        invitation.CreationTimestamp.Time,
+				ID:               string(invitation.UID),
+				Name:             invitation.Name,
+				OrganizationName: &organization.Name,
+				Role:             string(dockyardsv1.OrganizationMemberRoleUser),
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Fatalf("diff: %s", cmp.Diff(expected, actual))
 		}
 	})
 }

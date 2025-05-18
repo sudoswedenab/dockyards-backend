@@ -212,5 +212,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("DELETE /v1/orgs/{organizationName}/invitations/{resourceName}", logger(requireAuth(DeleteOrganizationResource(&h, "invitations", h.DeleteOrganizationInvitation))))
 	mux.Handle("GET /v1/orgs/{organizationName}/invitations", logger(requireAuth(contentJSON(ListOrganizationResource(&h, "invitations", h.ListOrganizationInvitations)))))
 
+	mux.Handle("GET /v1/invitations", logger(requireAuth(contentJSON(ListGlobalResource("invitations", h.ListGlobalInvitations)))))
+
 	return nil
 }
