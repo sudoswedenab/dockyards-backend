@@ -31,6 +31,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
@@ -773,6 +774,177 @@ func TestGlobalInvitations_Delete(t *testing.T) {
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusAccepted {
 			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+	})
+}
+
+func TestGlobalInvitations_Update(t *testing.T) {
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+
+	otherUser := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+		Spec: dockyardsv1.UserSpec{
+			Email: "other@dockyards.dev",
+		},
+	}
+
+	err := c.Create(ctx, &otherUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherUserToken := MustSignToken(t, string(otherUser.UID))
+
+	byUID := cmpopts.SortSlices(func(a, b dockyardsv1.OrganizationMemberReference) bool {
+		return a.UID < b.UID
+	})
+
+	t.Run("test without invitation", func(t *testing.T) {
+		options := apitypes.InvitationOptions{}
+
+		b, err := json.Marshal(&options)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+		u := url.URL{
+			Path: path.Join("/v1/invitations", organization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test as other user", func(t *testing.T) {
+		invitation := dockyardsv1.Invitation{
+			ObjectMeta: metav1.ObjectMeta{
+				Finalizers: []string{
+					"backend.dockyards.io/testing",
+				},
+				GenerateName: "pending-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.InvitationSpec{
+				Email: otherUser.Spec.Email,
+				Role:  dockyardsv1.OrganizationMemberRoleUser,
+			},
+		}
+
+		err := c.Create(ctx, &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		options := apitypes.InvitationOptions{}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/invitations", organization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actualInvitation dockyardsv1.Invitation
+		err = c.Get(ctx, client.ObjectKeyFromObject(&invitation), &actualInvitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if actualInvitation.DeletionTimestamp.IsZero() {
+			t.Error("expected actual invitation deletion timestamp, got zero")
+		}
+
+		var actualOrganization dockyardsv1.Organization
+		err = c.Get(ctx, client.ObjectKeyFromObject(organization), &actualOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedOrganization := dockyardsv1.Organization{
+			ObjectMeta: actualOrganization.ObjectMeta,
+			Spec: dockyardsv1.OrganizationSpec{
+				MemberRefs: []dockyardsv1.OrganizationMemberReference{
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     otherUser.Name,
+						},
+						Role: invitation.Spec.Role,
+						UID:  otherUser.UID,
+					},
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     superUser.Name,
+						},
+						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+						UID:  superUser.UID,
+					},
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     user.Name,
+						},
+						Role: dockyardsv1.OrganizationMemberRoleUser,
+						UID:  user.UID,
+					},
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     reader.Name,
+						},
+						Role: dockyardsv1.OrganizationMemberRoleReader,
+						UID:  reader.UID,
+					},
+				},
+				NamespaceRef: actualOrganization.Spec.NamespaceRef,
+				ProviderID:   actualOrganization.Spec.ProviderID,
+			},
+		}
+
+		if !cmp.Equal(actualOrganization, expectedOrganization, byUID) {
+			t.Errorf("diff: %s", cmp.Diff(expectedOrganization, actualOrganization, byUID))
 		}
 	})
 }

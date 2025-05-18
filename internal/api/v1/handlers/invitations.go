@@ -23,6 +23,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -230,6 +231,91 @@ func (h *handler) DeleteGlobalInvitation(ctx context.Context, invitationName str
 
 	err = h.Delete(ctx, &invitation)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *handler) UpdateGlobalInvitation(ctx context.Context, organizationName string, _ *types.InvitationOptions) error {
+	logger := middleware.LoggerFrom(ctx)
+
+	objectKey := client.ObjectKey{
+		Name: organizationName,
+	}
+
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, objectKey, &organization)
+	if err != nil {
+		return err
+	}
+
+	subject, err := middleware.SubjectFrom(ctx)
+	if err != nil {
+		return err
+	}
+
+	matchingFields := client.MatchingFields{
+		index.UIDField: subject,
+	}
+
+	var userList dockyardsv1.UserList
+	err = h.List(ctx, &userList, matchingFields)
+	if err != nil {
+		return err
+	}
+
+	if len(userList.Items) != 1 {
+		statusError := apierrors.NewUnauthorized("unexpected users count")
+
+		return statusError
+	}
+
+	user := userList.Items[0]
+
+	matchingFields = client.MatchingFields{
+		index.EmailField: user.Spec.Email,
+	}
+
+	var invitationList dockyardsv1.InvitationList
+	err = h.List(ctx, &invitationList, matchingFields, client.InNamespace(organization.Spec.NamespaceRef.Name))
+	if err != nil {
+		return err
+	}
+
+	if len(invitationList.Items) != 1 {
+		statusError := apierrors.NewUnauthorized("unexpected invitations count")
+
+		return statusError
+	}
+
+	invitation := invitationList.Items[0]
+
+	patch := client.MergeFrom(organization.DeepCopy())
+
+	memberRef := dockyardsv1.OrganizationMemberReference{
+		TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+			APIGroup: &dockyardsv1.GroupVersion.Group,
+			Kind:     dockyardsv1.UserKind,
+			Name:     user.Name,
+		},
+		UID:  user.UID,
+		Role: invitation.Spec.Role,
+	}
+
+	organization.Spec.MemberRefs = append(organization.Spec.MemberRefs, memberRef)
+
+	err = h.Patch(ctx, &organization, patch)
+	if err != nil {
+		logger.Error("error patching organization", "err", err)
+
+		return err
+	}
+
+	err = h.Delete(ctx, &invitation)
+	if err != nil {
+		logger.Error("error deleting invitation", "err", err)
+
 		return err
 	}
 
