@@ -67,6 +67,28 @@ import "time"
 	name:          string        @go(Name)
 }
 
+// Invitation defines model for invitation.
+#Invitation: {
+	created_at:                 time.Time        @go(CreatedAt)
+	deleted_at?:                null | time.Time @go(DeletedAt,*time.Time)
+	duration?:                  null | string    @go(Duration,*string)
+	email?:                     null | string    @go(Email,*string)
+	expires_at?:                null | time.Time @go(ExpiresAt,*time.Time)
+	id:                         string           @go(ID)
+	name:                       string           @go(Name)
+	organization_display_name?: null | string    @go(OrganizationDisplayName,*string)
+	organization_name?:         null | string    @go(OrganizationName,*string)
+	role:                       string           @go(Role)
+	updated_at?:                null | time.Time @go(UpdatedAt,*time.Time)
+}
+
+// InvitationOptions defines model for invitation_options.
+#InvitationOptions: {
+	duration?: null | string @go(Duration,*string)
+	email:     string        @go(Email)
+	role:      string        @go(Role)
+}
+
 // IPPool defines model for ip_pool.
 #IPPool: {
 	addresses?: null | [...string] @go(Addresses,*[]string)

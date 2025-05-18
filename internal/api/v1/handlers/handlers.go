@@ -199,5 +199,15 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("POST /v1/orgs/{organizationName}/clusters/{clusterName}/kubeconfig", logger(requireAuth(contentYAML(CreateClusterResource(&h, "clusters", h.CreateClusterKubeconfig)))))
 
+	mux.Handle("POST /v1/orgs/{organizationName}/invitations",
+		logger(
+			requireAuth(
+				contentJSON(
+					validateJSON.WithSchema("#createInvitation")(CreateOrganizationResource(&h, "invitations", h.CreateOrganizationInvitation)),
+				),
+			),
+		),
+	)
+
 	return nil
 }

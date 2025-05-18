@@ -38,3 +38,6 @@ import (
 
 #updateOrganization: types.#OrganizationOptions
 #updateOrganization: voucher_code?: _|_
+
+#createInvitation: types.#InvitationOptions
+#createInvitation: role!: "SuperUser" | "User" | "Reader"
