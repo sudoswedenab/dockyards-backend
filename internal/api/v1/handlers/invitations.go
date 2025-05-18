@@ -179,3 +179,59 @@ func (h *handler) ListGlobalInvitations(ctx context.Context) (*[]types.Invitatio
 
 	return &response, nil
 }
+
+func (h *handler) DeleteGlobalInvitation(ctx context.Context, invitationName string) error {
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, client.ObjectKey{Name: invitationName}, &organization)
+	if err != nil {
+		return err
+	}
+
+	subject, err := middleware.SubjectFrom(ctx)
+	if err != nil {
+		return err
+	}
+
+	matchingFields := client.MatchingFields{
+		index.UIDField: subject,
+	}
+
+	var userList dockyardsv1.UserList
+	err = h.List(ctx, &userList, matchingFields)
+	if err != nil {
+		return err
+	}
+
+	if len(userList.Items) != 1 {
+		statusError := apierrors.NewUnauthorized("unexpected users count")
+
+		return statusError
+	}
+
+	user := userList.Items[0]
+
+	matchingFields = client.MatchingFields{
+		index.EmailField: user.Spec.Email,
+	}
+
+	var invitationList dockyardsv1.InvitationList
+	err = h.List(ctx, &invitationList, matchingFields, client.InNamespace(organization.Spec.NamespaceRef.Name))
+	if err != nil {
+		return err
+	}
+
+	if len(invitationList.Items) != 1 {
+		statusError := apierrors.NewUnauthorized("unexpected invitations count")
+
+		return statusError
+	}
+
+	invitation := invitationList.Items[0]
+
+	err = h.Delete(ctx, &invitation)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

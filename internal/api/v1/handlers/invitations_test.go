@@ -708,3 +708,71 @@ func TestGlobalInvitations_List(t *testing.T) {
 		}
 	})
 }
+
+func TestGlobalInvitations_Delete(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	mgr.GetCache().WaitForCacheSync(ctx)
+
+	otherUser := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+		Spec: dockyardsv1.UserSpec{
+			Email: "test@dockyards.dev",
+		},
+	}
+
+	err := c.Create(ctx, &otherUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherUserToken := MustSignToken(t, string(otherUser.UID))
+
+	t.Run("test as other user", func(t *testing.T) {
+		invitation := dockyardsv1.Invitation{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.InvitationSpec{
+				Email: otherUser.Spec.Email,
+				Role:  dockyardsv1.OrganizationMemberRoleReader,
+			},
+		}
+
+		err := c.Create(ctx, &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/invitations", organization.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+otherUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+	})
+}
