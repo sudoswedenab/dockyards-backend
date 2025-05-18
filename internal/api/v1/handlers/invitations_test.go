@@ -290,3 +290,126 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 		}
 	})
 }
+
+func TestOrganizationInvitations_Delete(t *testing.T) {
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
+
+	t.Run("test as super user", func(t *testing.T) {
+		invitation := dockyardsv1.Invitation{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "delete-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+				Finalizers: []string{
+					"backend.dockyards.io/testing",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "invitations", invitation.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.Invitation
+		err = c.Get(ctx, client.ObjectKeyFromObject(&invitation), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if actual.DeletionTimestamp.IsZero() {
+			t.Error("expected actual deletion timestamp, got zero")
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		invitation := dockyardsv1.Invitation{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "delete-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+				Finalizers: []string{
+					"backend.dockyards.io/testing",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "invitations", invitation.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test as reader", func(t *testing.T) {
+		invitation := dockyardsv1.Invitation{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "delete-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+				Finalizers: []string{
+					"backend.dockyards.io/testing",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "invitations", invitation.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+readerToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+}

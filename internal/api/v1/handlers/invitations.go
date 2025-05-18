@@ -21,6 +21,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (h *handler) CreateOrganizationInvitation(ctx context.Context, organization *dockyardsv1.Organization, request *types.InvitationOptions) (*types.Invitation, error) {
@@ -58,4 +59,24 @@ func (h *handler) CreateOrganizationInvitation(ctx context.Context, organization
 	}
 
 	return &response, nil
+}
+
+func (h *handler) DeleteOrganizationInvitation(ctx context.Context, organization *dockyardsv1.Organization, invitationName string) error {
+	objectKey := client.ObjectKey{
+		Name:      invitationName,
+		Namespace: organization.Spec.NamespaceRef.Name,
+	}
+
+	var invitation dockyardsv1.Invitation
+	err := h.Get(ctx, objectKey, &invitation)
+	if err != nil {
+		return err
+	}
+
+	err = h.Delete(ctx, &invitation)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
