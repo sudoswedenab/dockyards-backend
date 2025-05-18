@@ -486,6 +486,7 @@ func TestOrganizationInvitations_List(t *testing.T) {
 
 		expected[i] = apitypes.Invitation{
 			CreatedAt: invitation.CreationTimestamp.Time,
+			Email:     &invitation.Spec.Email,
 			ID:        string(invitation.UID),
 			Name:      invitation.Name,
 			Role:      string(invitation.Spec.Role),

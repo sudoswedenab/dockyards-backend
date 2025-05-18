@@ -107,6 +107,7 @@ func (h *handler) ListOrganizationInvitations(ctx context.Context, organization 
 	for i, item := range invitationList.Items {
 		result[i] = types.Invitation{
 			CreatedAt: item.CreationTimestamp.Time,
+			Email:     &item.Spec.Email,
 			ID:        string(item.UID),
 			Name:      item.Name,
 			Role:      string(item.Spec.Role),
