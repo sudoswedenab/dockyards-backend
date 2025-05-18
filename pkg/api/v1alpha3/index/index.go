@@ -61,12 +61,14 @@ func ByUID(obj client.Object) []string {
 }
 
 func ByEmail(obj client.Object) []string {
-	user, ok := obj.(*v1alpha3.User)
-	if !ok {
-		return nil
+	switch t := obj.(type) {
+	case *v1alpha3.User:
+		return []string{t.Spec.Email}
+	case *v1alpha3.Invitation:
+		return []string{t.Spec.Email}
 	}
 
-	return []string{user.Spec.Email}
+	return nil
 }
 
 func BySecretType(obj client.Object) []string {
