@@ -131,8 +131,9 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 			MemberRefs: []dockyardsv1.OrganizationMemberReference{
 				{
 					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-						Kind: dockyardsv1.UserKind,
-						Name: user.Name,
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     user.Name,
 					},
 					Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 					UID:  user.UID,

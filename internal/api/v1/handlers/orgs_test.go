@@ -393,8 +393,9 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				MemberRefs: []dockyardsv1.OrganizationMemberReference{
 					{
 						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							Kind: dockyardsv1.UserKind,
-							Name: otherUser.Name,
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     otherUser.Name,
 						},
 						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 						UID:  otherUser.UID,
@@ -500,8 +501,9 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				MemberRefs: []dockyardsv1.OrganizationMemberReference{
 					{
 						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							Kind: dockyardsv1.UserKind,
-							Name: otherUser.Name,
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     otherUser.Name,
 						},
 						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 						UID:  otherUser.UID,
@@ -601,8 +603,9 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				MemberRefs: []dockyardsv1.OrganizationMemberReference{
 					{
 						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							Kind: dockyardsv1.UserKind,
-							Name: otherUser.Name,
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     otherUser.Name,
 						},
 						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 						UID:  otherUser.UID,

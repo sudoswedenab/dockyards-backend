@@ -145,21 +145,27 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 			MemberRefs: []dockyardsv1.OrganizationMemberReference{
 				{
 					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-						Name: superUser.Name,
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     superUser.Name,
 					},
 					Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 					UID:  superUser.UID,
 				},
 				{
 					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-						Name: user.Name,
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     user.Name,
 					},
 					Role: dockyardsv1.OrganizationMemberRoleUser,
 					UID:  user.UID,
 				},
 				{
 					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-						Name: reader.Name,
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     reader.Name,
 					},
 					Role: dockyardsv1.OrganizationMemberRoleReader,
 					UID:  reader.UID,
