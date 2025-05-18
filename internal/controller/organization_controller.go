@@ -120,28 +120,7 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 }
 
 func (r *OrganizationReconciler) reconcileRoleBindings(ctx context.Context, organization *dockyardsv1.Organization) (ctrl.Result, error) {
-	err := authorization.ReconcileSuperUserClusterRoleAndBinding(ctx, r.Client, organization)
-	if err != nil {
-		conditions.MarkFalse(organization, dockyardsv1.RoleBindingsReadyCondition, dockyardsv1.RoleBindingReconcileFailedReason, "%s", err)
-
-		return ctrl.Result{}, err
-	}
-
-	err = authorization.ReconcileUserRoleAndBindings(ctx, r.Client, organization)
-	if err != nil {
-		conditions.MarkFalse(organization, dockyardsv1.RoleBindingsReadyCondition, dockyardsv1.RoleBindingReconcileFailedReason, "%s", err)
-
-		return ctrl.Result{}, err
-	}
-
-	err = authorization.ReconcileReaderClusterRoleAndBinding(ctx, r.Client, organization)
-	if err != nil {
-		conditions.MarkFalse(organization, dockyardsv1.RoleBindingsReadyCondition, dockyardsv1.RoleBindingReconcileFailedReason, "%s", err)
-
-		return ctrl.Result{}, err
-	}
-
-	err = authorization.ReconcileReaderRoleAndBinding(ctx, r.Client, organization)
+	err := authorization.ReconcileOrganizationAuthorization(ctx, r.Client, organization)
 	if err != nil {
 		conditions.MarkFalse(organization, dockyardsv1.RoleBindingsReadyCondition, dockyardsv1.RoleBindingReconcileFailedReason, "%s", err)
 
