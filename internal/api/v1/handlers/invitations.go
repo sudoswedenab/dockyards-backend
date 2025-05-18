@@ -21,6 +21,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -79,4 +80,30 @@ func (h *handler) DeleteOrganizationInvitation(ctx context.Context, organization
 	}
 
 	return nil
+}
+
+func (h *handler) ListOrganizationInvitations(ctx context.Context, organization *dockyardsv1.Organization) (*[]types.Invitation, error) {
+	var invitationList dockyardsv1.InvitationList
+	err := h.List(ctx, &invitationList, client.InNamespace(organization.Spec.NamespaceRef.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]types.Invitation, len(invitationList.Items))
+
+	for i, item := range invitationList.Items {
+		result[i] = types.Invitation{
+			CreatedAt: item.CreationTimestamp.Time,
+			ID:        string(item.UID),
+			Name:      item.Name,
+			Role:      string(item.Spec.Role),
+		}
+
+		if item.Spec.Duration != nil {
+			result[i].Duration = ptr.To(item.Spec.Duration.String())
+			result[i].ExpiresAt = &item.GetExpiration().Time
+		}
+	}
+
+	return &result, nil
 }

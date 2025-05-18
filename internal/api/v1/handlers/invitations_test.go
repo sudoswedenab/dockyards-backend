@@ -29,6 +29,7 @@ import (
 	apitypes "bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
@@ -410,6 +411,174 @@ func TestOrganizationInvitations_Delete(t *testing.T) {
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+}
+
+func TestOrganizationInvitations_List(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
+
+	invitations := []dockyardsv1.Invitation{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "pending-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.InvitationSpec{
+				Email: "test@dockyards.dev",
+				Role:  dockyardsv1.OrganizationMemberRoleUser,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "pending-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.InvitationSpec{
+				Email: "duration@dockyards.dev",
+				Role:  dockyardsv1.OrganizationMemberRoleSuperUser,
+				Duration: &metav1.Duration{
+					Duration: time.Minute * 15,
+				},
+			},
+		},
+	}
+
+	expected := make([]apitypes.Invitation, len(invitations))
+
+	for i, invitation := range invitations {
+		err := c.Create(ctx, &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected[i] = apitypes.Invitation{
+			CreatedAt: invitation.CreationTimestamp.Time,
+			ID:        string(invitation.UID),
+			Name:      invitation.Name,
+			Role:      string(invitation.Spec.Role),
+		}
+
+		if invitation.Spec.Duration != nil {
+			expected[i].Duration = ptr.To(invitation.Spec.Duration.String())
+			expected[i].ExpiresAt = &invitation.GetExpiration().Time
+		}
+	}
+
+	byID := cmpopts.SortSlices(func(a, b apitypes.Invitation) bool {
+		return a.ID < b.ID
+	})
+
+	t.Run("test as super user", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "invitations"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual []apitypes.Invitation
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actual, expected, byID) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, byID))
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "invitations"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual []apitypes.Invitation
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actual, expected, byID) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, byID))
+		}
+	})
+
+	t.Run("test as reader", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "invitations"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+readerToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual []apitypes.Invitation
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actual, expected, byID) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, byID))
 		}
 	})
 }
