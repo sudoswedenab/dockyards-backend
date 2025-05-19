@@ -19,6 +19,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	InvitationKind = "Invitation"
+)
+
 type InvitationSpec struct {
 	Duration  *metav1.Duration             `json:"duration,omitempty"`
 	Email     string                       `json:"email"`
