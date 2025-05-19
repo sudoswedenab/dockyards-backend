@@ -42,3 +42,10 @@ const (
 
 	RoleBindingReconcileFailedReason = "RoleBindingsReconcileFailed"
 )
+
+const (
+	ClusterUpgradesReadyCondition = "ClusterUpgradesReady"
+
+	ClusterUpgradesReconcileFailedReason = "ClusterUpgradesReconcileFailed"
+	WaitingForDefaultReleaseReason       = "WaitingForDefaultRelease"
+)

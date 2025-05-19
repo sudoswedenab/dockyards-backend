@@ -25,9 +25,11 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
+	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -54,9 +56,9 @@ func TestClusterController_Upgrades(t *testing.T) {
 	})
 
 	mgr := testEnvironment.GetManager()
-
-	organization := testEnvironment.GetOrganization()
 	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
 
 	release := dockyardsv1.Release{
 		ObjectMeta: metav1.ObjectMeta{
@@ -105,6 +107,15 @@ func TestClusterController_Upgrades(t *testing.T) {
 		}
 	}()
 
+	if !mgr.GetCache().WaitForCacheSync(ctx) {
+		t.Fatal("unable to wait for cache sync")
+	}
+
+	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &release)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Run("test latest version", func(t *testing.T) {
 		cluster := dockyardsv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
@@ -123,17 +134,20 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
-		for i := 0; i < 5; i++ {
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
-				t.Fatal(err)
+				return true, err
 			}
 
-			if actual.Spec.Upgrades != nil {
-				break
+			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
+				return true, nil
 			}
 
-			time.Sleep(time.Second)
+			return false, nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		var expected []dockyardsv1.ClusterUpgrade
@@ -161,17 +175,20 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
-		for i := 0; i < 5; i++ {
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
-				t.Fatal(err)
+				return true, err
 			}
 
-			if actual.Spec.Upgrades != nil {
-				break
+			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
+				return true, nil
 			}
 
-			time.Sleep(time.Second)
+			return false, nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		expected := []dockyardsv1.ClusterUpgrade{
@@ -203,17 +220,20 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
-		for i := 0; i < 5; i++ {
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
-				t.Fatal(err)
+				return true, err
 			}
 
-			if actual.Spec.Upgrades != nil {
-				break
+			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
+				return true, nil
 			}
 
-			time.Sleep(time.Second)
+			return false, nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		expected := []dockyardsv1.ClusterUpgrade{
@@ -245,17 +265,20 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
-		for i := 0; i < 5; i++ {
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
-				t.Fatal(err)
+				return true, err
 			}
 
-			if actual.Spec.Upgrades != nil {
-				break
+			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
+				return true, nil
 			}
 
-			time.Sleep(time.Second)
+			return false, nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		expected := []dockyardsv1.ClusterUpgrade{
@@ -290,17 +313,20 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
-		for i := 0; i < 5; i++ {
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
-				t.Fatal(err)
+				return true, err
 			}
 
-			if actual.Spec.Upgrades != nil {
-				break
+			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
+				return true, nil
 			}
 
-			time.Sleep(time.Second)
+			return false, nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		expected := []dockyardsv1.ClusterUpgrade{
@@ -332,17 +358,20 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
-		for i := 0; i < 5; i++ {
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
-				t.Fatal(err)
+				return true, err
 			}
 
-			if actual.Spec.Upgrades != nil {
-				break
+			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
+				return true, nil
 			}
 
-			time.Sleep(time.Second)
+			return false, nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		var expected []dockyardsv1.ClusterUpgrade
@@ -370,17 +399,20 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
-		for i := 0; i < 5; i++ {
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
-				t.Fatal(err)
+				return true, err
 			}
 
-			if actual.Spec.Upgrades != nil {
-				break
+			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
+				return true, nil
 			}
 
-			time.Sleep(time.Second)
+			return false, nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		expected := []dockyardsv1.ClusterUpgrade{

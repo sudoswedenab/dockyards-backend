@@ -21,6 +21,7 @@ import (
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	semverv3 "github.com/Masterminds/semver/v3"
+	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -97,18 +98,20 @@ func (r *ClusterReconciler) reconcileClusterUpgrades(ctx context.Context, dockya
 
 	currentVersion, err := semverv3.NewVersion(dockyardsCluster.Spec.Version)
 	if err != nil {
-		logger.Error(err, "error parsing current cluster version as semver", "version", dockyardsCluster.Spec.Version)
+		conditions.MarkFalse(dockyardsCluster, dockyardsv1.ClusterUpgradesReadyCondition, dockyardsv1.ClusterUpgradesReconcileFailedReason, "%s", err)
 
 		return ctrl.Result{}, nil
 	}
 
 	release, err := apiutil.GetDefaultRelease(ctx, r.Client, dockyardsv1.ReleaseTypeKubernetes)
 	if err != nil {
+		conditions.MarkFalse(dockyardsCluster, dockyardsv1.ClusterUpgradesReadyCondition, dockyardsv1.ClusterUpgradesReconcileFailedReason, "%s", err)
+
 		return ctrl.Result{}, err
 	}
 
 	if release == nil {
-		logger.Info("ignoring cluster with missing release")
+		conditions.MarkFalse(dockyardsCluster, dockyardsv1.ClusterUpgradesReadyCondition, dockyardsv1.WaitingForDefaultReleaseReason, "")
 
 		return ctrl.Result{}, nil
 	}
@@ -140,6 +143,8 @@ func (r *ClusterReconciler) reconcileClusterUpgrades(ctx context.Context, dockya
 	}
 
 	dockyardsCluster.Spec.Upgrades = upgrades
+
+	conditions.MarkTrue(dockyardsCluster, dockyardsv1.ClusterUpgradesReadyCondition, dockyardsv1.ReadyReason, "")
 
 	return ctrl.Result{}, nil
 }
