@@ -426,3 +426,35 @@ func IsReady(conditionable Conditionable) bool {
 
 	return meta.IsStatusConditionTrue(conditions, dockyardsv1.ReadyCondition)
 }
+
+func GetOwnerWorkload(ctx context.Context, c client.Client, obj client.Object) (*dockyardsv1.Workload, error) {
+	for _, ownerReference := range obj.GetOwnerReferences() {
+		if ownerReference.Kind != dockyardsv1.WorkloadKind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
+			continue
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      ownerReference.Name,
+			Namespace: obj.GetNamespace(),
+		}
+
+		var workload dockyardsv1.Workload
+		err = c.Get(ctx, objectKey, &workload)
+		if err != nil {
+			return nil, err
+		}
+
+		return &workload, nil
+	}
+
+	return nil, nil
+}
