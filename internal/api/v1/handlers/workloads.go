@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -182,11 +183,17 @@ func (h *handler) ListClusterWorkloads(ctx context.Context, cluster *dockyardsv1
 		response[i] = types.Workload{
 			ID:        string(workload.UID),
 			Name:      strings.TrimPrefix(workload.Name, cluster.Name+"-"),
-			Namespace: ptr.To(workload.Spec.TargetNamespace),
+			CreatedAt: workload.CreationTimestamp.Time,
 		}
 
-		if workload.Spec.WorkloadTemplateRef != nil {
-			response[i].WorkloadTemplateName = &workload.Spec.WorkloadTemplateRef.Name
+		readyCondition := meta.FindStatusCondition(workload.Status.Conditions, dockyardsv1.ReadyCondition)
+		if readyCondition != nil {
+			response[i].Condition = &readyCondition.Reason
+			response[i].UpdatedAt = &readyCondition.LastTransitionTime.Time
+		}
+
+		if !workload.DeletionTimestamp.IsZero() {
+			response[i].DeletedAt = &workload.DeletionTimestamp.Time
 		}
 	}
 
