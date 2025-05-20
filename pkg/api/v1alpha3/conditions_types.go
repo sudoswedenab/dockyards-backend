@@ -49,3 +49,7 @@ const (
 	ClusterUpgradesReconcileFailedReason = "ClusterUpgradesReconcileFailed"
 	WaitingForDefaultReleaseReason       = "WaitingForDefaultRelease"
 )
+
+const (
+	WorkloadInventoryReadyCondition = "WorkloadInventoryReady"
+)
