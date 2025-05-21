@@ -93,6 +93,13 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 		return err
 	}
 
+	err = (&webhooks.DockyardsInvitation{
+		Client: mgr.GetClient(),
+	}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		return err
+	}
+
 	err = (&v1alpha2.Organization{}).SetupWebhookWithManager(mgr)
 	if err != nil {
 		return err
