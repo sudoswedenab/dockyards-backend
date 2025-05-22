@@ -23,6 +23,8 @@ const (
 )
 
 type WorkloadInventorySpec struct {
+	Selector metav1.LabelSelector `json:"selector"`
+
 	URLs []string `json:"urls,omitempty"`
 }
 
