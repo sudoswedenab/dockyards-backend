@@ -15,8 +15,11 @@
 package index
 
 import (
+	"context"
+
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,6 +32,7 @@ const (
 	CredentialReferenceField       = ".spec.credentialRef"
 	CodeField                      = ".spec.code"
 	WorkloadTemplateReferenceField = ".spec.workloadTemplateRef"
+	SelectorField                  = ".spec.selector"
 )
 
 func ByMemberReferences(obj client.Object) []string {
@@ -124,4 +128,34 @@ func ByWorkloadTemplateReference(obj client.Object) []string {
 	}
 
 	return []string{TypedObjectRef(workload.Spec.WorkloadTemplateRef)}
+}
+
+func BySelector(ctx context.Context, mgr ctrl.Manager) error {
+	err := mgr.GetFieldIndexer().IndexField(ctx, &v1alpha3.WorkloadInventory{},
+		SelectorField,
+		bySelector,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func MatchLabelsSummary(labels map[string]string) string {
+	var s string
+	for k, v := range labels {
+		s = s + k + v
+	}
+
+	return s
+}
+
+func bySelector(obj client.Object) []string {
+	workloadInventory, ok := obj.(*v1alpha3.WorkloadInventory)
+	if !ok {
+		return nil
+	}
+
+	return []string{MatchLabelsSummary(workloadInventory.Spec.Selector.MatchLabels)}
 }
