@@ -321,6 +321,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = (&controller.WorkloadReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr)
+	if err != nil {
+		logger.Error("error creating new workload reconciler", "err", err)
+
+		os.Exit(1)
+	}
+
 	if enableWebhooks {
 		logger.Info("enabling webhooks", "domains", allowedDomains)
 
