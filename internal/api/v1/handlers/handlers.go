@@ -92,7 +92,9 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("POST /v1/login",
 		logger(
-			validateJSON.WithSchema("#login")(http.HandlerFunc(h.Login)),
+			contentJSON(
+				validateJSON.WithSchema("#login")(CreateGlobalResource("users", h.CreateGlobalTokens)),
+			),
 		),
 	)
 

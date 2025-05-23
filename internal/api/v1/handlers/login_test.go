@@ -12,293 +12,211 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package handlers_test
 
 import (
 	"bytes"
-	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
+	"net/url"
+	"path"
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestLogin(t *testing.T) {
+func TestGlobalTokens_Create(t *testing.T) {
 	hash, err := bcrypt.GenerateFromPassword([]byte("password"), 10)
 	if err != nil {
 		t.Fatalf("unexpected error hashing string 'password'")
 	}
 
-	tt := []struct {
-		name  string
-		lists []client.ObjectList
-		login types.Login
-	}{
-		{
-			name: "test valid user",
-			lists: []client.ObjectList{
-				&dockyardsv1.UserList{
-					Items: []dockyardsv1.User{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test",
-							},
-							Spec: dockyardsv1.UserSpec{
-								Email:    "test@dockyards.dev",
-								Password: string(hash),
-							},
-							Status: dockyardsv1.UserStatus{
-								Conditions: []metav1.Condition{
-									{
-										Type:   dockyardsv1.ReadyCondition,
-										Status: metav1.ConditionTrue,
-										Reason: "testing",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			login: types.Login{
-				Email:    "test@dockyards.dev",
-				Password: "password",
-			},
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	user := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
 		},
-		{
-			name: "test multiple users",
-			lists: []client.ObjectList{
-				&dockyardsv1.UserList{
-					Items: []dockyardsv1.User{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test1",
-							},
-							Spec: dockyardsv1.UserSpec{
-								Email:    "test1@dockyards.dev",
-								Password: string(hash),
-							},
-							Status: dockyardsv1.UserStatus{
-								Conditions: []metav1.Condition{
-									{
-										Type:   dockyardsv1.ReadyCondition,
-										Status: metav1.ConditionTrue,
-										Reason: "testing",
-									},
-								},
-							},
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test2",
-							},
-							Spec: dockyardsv1.UserSpec{
-								Email:    "test2@dockyards.dev",
-								Password: string(hash),
-							},
-							Status: dockyardsv1.UserStatus{
-								Conditions: []metav1.Condition{
-									{
-										Type:   dockyardsv1.ReadyCondition,
-										Status: metav1.ConditionTrue,
-										Reason: "testing",
-									},
-								},
-							},
-						},
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test3",
-							},
-							Spec: dockyardsv1.UserSpec{
-								Email:    "test3@dockyards.dev",
-								Password: string(hash),
-							},
-							Status: dockyardsv1.UserStatus{
-								Conditions: []metav1.Condition{
-									{
-										Type:   dockyardsv1.ReadyCondition,
-										Status: metav1.ConditionTrue,
-										Reason: "testing",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			login: types.Login{
-				Email:    "test3@dockyards.dev",
-				Password: "password",
-			},
+		Spec: dockyardsv1.UserSpec{
+			Password: string(hash),
+		},
+		Status: dockyardsv1.UserStatus{
+			Conditions: []metav1.Condition{},
 		},
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	accessPrivateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	refreshPrivateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithLists(tc.lists...).
-				WithIndex(&dockyardsv1.User{}, index.EmailField, index.ByEmail).
-				Build()
-
-			h := handler{
-				logger:               logger,
-				Client:               fakeClient,
-				jwtAccessPrivateKey:  accessPrivateKey,
-				jwtRefreshPrivateKey: refreshPrivateKey,
-			}
-
-			b, err := json.Marshal(tc.login)
-			if err != nil {
-				t.Fatalf("unexpected error marshalling: %s", err)
-			}
-
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodPost, "/v1/login", bytes.NewBuffer(b))
-
-			ctx := middleware.ContextWithLogger(context.Background(), logger)
-
-			h.Login(w, r.Clone(ctx))
-
-			if w.Code != http.StatusOK {
-				t.Errorf("expected code %d, got %d", http.StatusOK, w.Code)
-			}
-		})
-	}
-}
-
-func TestLoginErrors(t *testing.T) {
-	hash, err := bcrypt.GenerateFromPassword([]byte("password"), 10)
+	err = c.Create(ctx, &user)
 	if err != nil {
-		t.Fatalf("unexpected error hashing string 'password'")
+		t.Fatal(err)
 	}
 
-	tt := []struct {
-		name     string
-		lists    []client.ObjectList
-		login    types.Login
-		expected int
-	}{
+	patch := client.MergeFrom(user.DeepCopy())
+
+	user.Spec.Email = user.Name + "@dockyards.dev"
+
+	err = c.Patch(ctx, &user, patch)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	patch = client.MergeFrom(user.DeepCopy())
+
+	user.Status.Conditions = []metav1.Condition{
 		{
-			name: "test incorrect password",
-			lists: []client.ObjectList{
-				&dockyardsv1.UserList{
-					Items: []dockyardsv1.User{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test",
-							},
-							Spec: dockyardsv1.UserSpec{
-								Email:    "test@dockyards.dev",
-								Password: string(hash),
-							},
-							Status: dockyardsv1.UserStatus{
-								Conditions: []metav1.Condition{
-									{
-										Type:   dockyardsv1.ReadyCondition,
-										Status: metav1.ConditionTrue,
-										Reason: "testing",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			login: types.Login{
-				Email:    "test@dockyards.dev",
-				Password: "incorrect",
-			},
-			expected: http.StatusUnauthorized,
-		},
-		{
-			name: "test missing user",
-			login: types.Login{
-				Email:    "test@dockyards.dev",
-				Password: "password",
-			},
-			expected: http.StatusUnauthorized,
-		},
-		{
-			name: "test unverified user",
-			lists: []client.ObjectList{
-				&dockyardsv1.UserList{
-					Items: []dockyardsv1.User{
-						{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "test",
-							},
-							Spec: dockyardsv1.UserSpec{
-								Email:    "test@dockyards.dev",
-								Password: string(hash),
-							},
-							Status: dockyardsv1.UserStatus{},
-						},
-					},
-				},
-			},
-			login: types.Login{
-				Email:    "test@dockyards.dev",
-				Password: "password",
-			},
-			expected: http.StatusForbidden,
+			Type:               dockyardsv1.ReadyCondition,
+			Status:             metav1.ConditionTrue,
+			Reason:             "testing",
+			LastTransitionTime: metav1.Now(),
 		},
 	}
 
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError + 1}))
-
-			scheme := scheme.Scheme
-			dockyardsv1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().
-				WithScheme(scheme).
-				WithLists(tc.lists...).
-				WithIndex(&dockyardsv1.User{}, index.EmailField, index.ByEmail).
-				Build()
-
-			h := handler{
-				Client: fakeClient,
-			}
-
-			b, err := json.Marshal(tc.login)
-			if err != nil {
-				t.Fatalf("unexpected error marshalling: %s", err)
-			}
-
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodPost, "/v1/login", bytes.NewBuffer(b))
-
-			ctx := middleware.ContextWithLogger(context.Background(), logger)
-
-			h.Login(w, r.Clone(ctx))
-
-			if w.Code != tc.expected {
-				t.Errorf("expected code %d, got %d", tc.expected, w.Code)
-			}
-		})
+	err = c.Status().Patch(ctx, &user, patch)
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("test password", func(t *testing.T) {
+		options := types.LoginOptions{
+			Email:    user.Spec.Email,
+			Password: "password",
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/login"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+	})
+
+	t.Run("test invalid password", func(t *testing.T) {
+		options := types.LoginOptions{
+			Email:    user.Spec.Email,
+			Password: "invalid",
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/login"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test non-existing user", func(t *testing.T) {
+		options := types.LoginOptions{
+			Email:    "non-existing@dockyards.dev",
+			Password: "password",
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/login"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+
+	})
+
+	t.Run("test missing condition", func(t *testing.T) {
+		otherUser := dockyardsv1.User{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+			},
+			Spec: dockyardsv1.UserSpec{
+				Password: string(hash),
+			},
+		}
+
+		err := c.Create(ctx, &otherUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		patch := client.MergeFrom(otherUser.DeepCopy())
+
+		user.Spec.Email = otherUser.Name + "@dockyards.dev"
+
+		err = c.Patch(ctx, &otherUser, patch)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		options := types.LoginOptions{
+			Email:    otherUser.Spec.Email,
+			Password: "password",
+		}
+
+		b, err := json.Marshal(&options)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/login"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
 }
