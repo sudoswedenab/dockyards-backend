@@ -24,11 +24,9 @@ import (
 )
 
 func AddDefaultIndexes(ctx context.Context, mgr ctrl.Manager) error {
-	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Invitation{}} {
-		err := mgr.GetFieldIndexer().IndexField(ctx, object, EmailField, ByEmail)
-		if err != nil {
-			return err
-		}
+	err := ByEmail(ctx, mgr)
+	if err != nil {
+		return err
 	}
 
 	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Cluster{}, &dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &dockyardsv1.Organization{}} {
@@ -38,7 +36,7 @@ func AddDefaultIndexes(ctx context.Context, mgr ctrl.Manager) error {
 		}
 	}
 
-	err := mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Organization{}, MemberReferencesField, ByMemberReferences)
+	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Organization{}, MemberReferencesField, ByMemberReferences)
 	if err != nil {
 		return err
 	}

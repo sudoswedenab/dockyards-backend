@@ -64,7 +64,27 @@ func ByUID(obj client.Object) []string {
 	return []string{string(obj.GetUID())}
 }
 
-func ByEmail(obj client.Object) []string {
+func ByEmail(ctx context.Context, mgr ctrl.Manager) error {
+	err := mgr.GetFieldIndexer().IndexField(ctx, &v1alpha3.User{},
+		EmailField,
+		byEmail,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = mgr.GetFieldIndexer().IndexField(ctx, &v1alpha3.Invitation{},
+		EmailField,
+		byEmail,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func byEmail(obj client.Object) []string {
 	switch t := obj.(type) {
 	case *v1alpha3.User:
 		return []string{t.Spec.Email}
