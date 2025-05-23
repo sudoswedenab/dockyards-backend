@@ -397,13 +397,6 @@ func CreateGlobalResource[T1, T2 any](resource string, f CreateGlobalResourceFun
 		}
 
 		response, err := f(ctx, &request)
-		if apiutil.IgnoreIsInvalid(err) != nil {
-			logger.Error("error creating global resource", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
-
 		if apierrors.IsInvalid(err) {
 			statusError, ok := err.(*apierrors.StatusError)
 			if !ok {
@@ -440,6 +433,20 @@ func CreateGlobalResource[T1, T2 any](resource string, f CreateGlobalResourceFun
 
 				return
 			}
+
+			return
+		}
+
+		if apierrors.IsUnauthorized(err) {
+			logger.Error("error creating global resource", "err", err)
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
+		if err != nil {
+			logger.Error("error creating global resource", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			return
 		}
