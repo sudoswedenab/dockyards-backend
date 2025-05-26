@@ -28,10 +28,10 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3/index"
 	"github.com/golang-jwt/jwt/v5"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
+	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"

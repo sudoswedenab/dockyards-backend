@@ -17,9 +17,9 @@ package controller
 import (
 	"context"
 
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"

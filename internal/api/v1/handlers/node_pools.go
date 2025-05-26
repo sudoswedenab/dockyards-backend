@@ -19,9 +19,9 @@ import (
 	"errors"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/name"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
+	"github.com/sudoswedenab/dockyards-backend/pkg/util/name"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"

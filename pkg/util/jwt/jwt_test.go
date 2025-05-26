@@ -23,8 +23,8 @@ import (
 	"encoding/pem"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
 	"github.com/google/go-cmp/cmp"
+	"github.com/sudoswedenab/dockyards-backend/pkg/util/jwt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

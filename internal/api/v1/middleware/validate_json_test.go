@@ -22,7 +22,7 @@ import (
 	"os"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
+	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 )
 
 func TestValidateJSON(t *testing.T) {

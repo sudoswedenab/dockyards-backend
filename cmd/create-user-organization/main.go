@@ -20,9 +20,9 @@ import (
 	"os"
 	"os/signal"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/apiutil"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha2"
 	"github.com/spf13/pflag"
+	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha2"
 	"golang.org/x/crypto/bcrypt"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

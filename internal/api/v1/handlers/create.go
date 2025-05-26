@@ -20,10 +20,10 @@ import (
 	"io"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/api/apiutil"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"

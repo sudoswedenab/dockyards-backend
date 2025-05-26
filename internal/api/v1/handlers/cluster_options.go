@@ -18,11 +18,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/api/apiutil"
-	"bitbucket.org/sudosweden/dockyards-backend/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=clustertemplates,verbs=get;list;watch

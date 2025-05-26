@@ -23,9 +23,9 @@ import (
 	"path"
 	"testing"
 
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
 	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"

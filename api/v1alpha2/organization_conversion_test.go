@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1alpha2"
-	"bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/api/v1alpha2"
+	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

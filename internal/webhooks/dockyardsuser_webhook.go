@@ -19,7 +19,7 @@ import (
 	"net/mail"
 	"strings"
 
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"

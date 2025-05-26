@@ -18,11 +18,11 @@ import (
 	"context"
 	"time"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/apiutil"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	semverv3 "github.com/Masterminds/semver/v3"
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
+	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"

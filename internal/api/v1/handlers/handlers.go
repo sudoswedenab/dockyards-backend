@@ -19,7 +19,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
+	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

@@ -19,7 +19,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
+	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 )
 
 func TestContentType(t *testing.T) {

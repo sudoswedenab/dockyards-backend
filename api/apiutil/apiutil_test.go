@@ -18,9 +18,9 @@ import (
 	"context"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/apiutil"
-	"bitbucket.org/sudosweden/dockyards-backend/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

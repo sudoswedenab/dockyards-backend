@@ -18,8 +18,8 @@ import (
 	"context"
 	"slices"
 
-	"bitbucket.org/sudosweden/dockyards-backend/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
