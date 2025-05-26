@@ -3,7 +3,6 @@ module bitbucket.org/sudosweden/dockyards-backend
 go 1.24.2
 
 require (
-	bitbucket.org/sudosweden/dockyards-api/pkg v0.0.0-20250523172134-cee2c4752b92
 	bitbucket.org/sudosweden/dockyards-backend/pkg/api v1.2.3
 	cuelang.org/go v0.12.1
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -15,6 +14,7 @@ require (
 	github.com/prometheus/client_golang v1.19.0
 	github.com/rs/cors v1.11.0
 	github.com/spf13/pflag v1.0.5
+	github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20250526071850-0dd9cb602606
 	golang.org/x/crypto v0.32.0
 	k8s.io/api v0.30.0
 	k8s.io/apiextensions-apiserver v0.30.0

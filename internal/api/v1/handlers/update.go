@@ -20,7 +20,7 @@ import (
 	"io"
 	"net/http"
 
-	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"

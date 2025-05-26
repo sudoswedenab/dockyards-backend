@@ -24,7 +24,7 @@ import (
 	"path"
 	"testing"
 
-	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"

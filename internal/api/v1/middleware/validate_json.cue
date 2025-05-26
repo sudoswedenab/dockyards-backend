@@ -3,13 +3,13 @@ package middleware
 import (
 	"encoding/base64"
 
-	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-api/pkg/types"
 )
 
 #_objectName: =~"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
 
 #clusterOptions: types.#ClusterOptions
-#login:          types.#Login
+#login:          types.#LoginOptions
 
 #workloadOptions: types.#WorkloadOptions
 #workloadOptions: name!:                   #_objectName

@@ -23,12 +23,12 @@ import (
 	"os"
 	"path"
 
-	"bitbucket.org/sudosweden/dockyards-api/pkg/types"
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
 	"cuelang.org/go/cue/errors"
 	"cuelang.org/go/cue/load"
 	cuejson "cuelang.org/go/encoding/json"
+	"github.com/sudoswedenab/dockyards-api/pkg/types"
 )
 
 type validate struct {
