@@ -19,9 +19,9 @@ import (
 	"log/slog"
 	"runtime/debug"
 
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	"bitbucket.org/sudosweden/dockyards-backend/api/apiutil"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3/index"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"

@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/handlers"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	utiljwt "bitbucket.org/sudosweden/dockyards-backend/pkg/util/jwt"
 	"github.com/golang-jwt/jwt/v5"

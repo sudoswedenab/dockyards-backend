@@ -15,7 +15,7 @@
 package v1alpha2
 
 import (
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"

@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/authorization"
 	"context"
 	authorizationv1 "k8s.io/api/authorization/v1"

@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3/index"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"

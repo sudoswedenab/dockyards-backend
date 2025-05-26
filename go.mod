@@ -3,7 +3,7 @@ module bitbucket.org/sudosweden/dockyards-backend
 go 1.24.2
 
 require (
-	bitbucket.org/sudosweden/dockyards-backend/pkg/api v1.2.3
+	bitbucket.org/sudosweden/dockyards-backend/api v1.2.3
 	cuelang.org/go v0.12.1
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/fluxcd/pkg/runtime v0.47.1
@@ -25,7 +25,7 @@ require (
 	sigs.k8s.io/controller-tools v0.14.0
 )
 
-replace bitbucket.org/sudosweden/dockyards-backend/pkg/api => ./pkg/api
+replace bitbucket.org/sudosweden/dockyards-backend/api => ./api
 
 require (
 	cuelabs.dev/go/oci/ociregistry v0.0.0-20241125120445-2c00c104c6e1 // indirect

@@ -17,8 +17,8 @@ package handlers
 import (
 	"context"
 
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"golang.org/x/crypto/bcrypt"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

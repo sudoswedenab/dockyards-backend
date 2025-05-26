@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/webhooks"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3/index"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3/index"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"

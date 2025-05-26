@@ -25,8 +25,8 @@ import (
 	"testing"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/api/featurenames"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

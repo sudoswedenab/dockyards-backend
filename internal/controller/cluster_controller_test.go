@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/controller"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/go-logr/logr"

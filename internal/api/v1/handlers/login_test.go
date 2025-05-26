@@ -23,7 +23,7 @@ import (
 	"path"
 	"testing"
 
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"golang.org/x/crypto/bcrypt"

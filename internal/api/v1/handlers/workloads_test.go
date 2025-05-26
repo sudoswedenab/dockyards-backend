@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	"bitbucket.org/sudosweden/dockyards-backend/pkg/testing/testingutil"
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"

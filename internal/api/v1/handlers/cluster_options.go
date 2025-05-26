@@ -19,9 +19,9 @@ import (
 	"net/http"
 
 	"bitbucket.org/sudosweden/dockyards-backend/internal/api/v1/middleware"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/apiutil"
-	"bitbucket.org/sudosweden/dockyards-backend/pkg/api/featurenames"
-	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/pkg/api/v1alpha3"
+	"bitbucket.org/sudosweden/dockyards-backend/api/apiutil"
+	"bitbucket.org/sudosweden/dockyards-backend/api/featurenames"
+	dockyardsv1 "bitbucket.org/sudosweden/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 )
 
