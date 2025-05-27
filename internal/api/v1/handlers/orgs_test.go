@@ -937,11 +937,22 @@ func TestGlobalOrganizations_Get(t *testing.T) {
 	t.Run("test deleted organization", func(t *testing.T) {
 		otherOrganization := testEnvironment.MustCreateOrganization(t)
 
+		patch := client.MergeFrom(otherOrganization.DeepCopy())
+
+		otherOrganization.Finalizers = []string{
+			"backend.dockyards.io/testing",
+		}
+
+		err := c.Patch(ctx, otherOrganization, patch)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		otherUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleUser)
 
 		otherUserToken := MustSignToken(t, string(otherUser.UID))
 
-		err := c.Delete(ctx, otherOrganization, client.PropagationPolicy(metav1.DeletePropagationForeground))
+		err = c.Delete(ctx, otherOrganization, client.PropagationPolicy(metav1.DeletePropagationForeground))
 		if err != nil {
 			t.Fatal(err)
 		}
