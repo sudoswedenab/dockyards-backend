@@ -213,8 +213,9 @@ func (h *handler) GetClusterWorkload(ctx context.Context, cluster *dockyardsv1.C
 	}
 
 	response := types.Workload{
-		Name:      strings.TrimPrefix(workload.Name, cluster.Name+"-"),
+		ID:        string(workload.UID),
 		Namespace: ptr.To(workload.Spec.TargetNamespace),
+		Name:      strings.TrimPrefix(workload.Name, cluster.Name+"-"),
 	}
 
 	if workload.Spec.WorkloadTemplateRef != nil {
@@ -229,6 +230,10 @@ func (h *handler) GetClusterWorkload(ctx context.Context, cluster *dockyardsv1.C
 		}
 
 		response.Input = &input
+	}
+
+	if len(workload.Status.URLs) > 0 {
+		response.URLs = &workload.Status.URLs
 	}
 
 	return &response, nil

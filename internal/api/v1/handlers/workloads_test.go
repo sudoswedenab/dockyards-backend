@@ -17,11 +17,13 @@ package handlers_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -1238,6 +1240,112 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusForbidden {
 			t.Errorf("expected status code %d, got %d", http.StatusForbidden, statusCode)
+		}
+	})
+}
+
+func TestClusterWorkloads_Get(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+
+	readerToken := MustSignToken(t, string(reader.UID))
+
+	cluster := dockyardsv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+			Namespace:    organization.Spec.NamespaceRef.Name,
+		},
+	}
+
+	err := c.Create(ctx, &cluster)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mgr.GetCache().WaitForCacheSync(ctx)
+
+	t.Run("test urls", func(t *testing.T) {
+		workload := dockyardsv1.Workload{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: cluster.Name + "-test-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.WorkloadSpec{
+				Provenience:     dockyardsv1.ProvenienceDockyards,
+				TargetNamespace: "testing",
+			},
+		}
+
+		err := c.Create(ctx, &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		patch := client.MergeFrom(workload.DeepCopy())
+
+		workload.Status.URLs = []string{
+			"http://testing.dockyards.dev",
+		}
+
+		err = c.Status().Patch(ctx, &workload, patch)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		workloadName := strings.TrimPrefix(workload.Name, cluster.Name+"-")
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
+		}
+
+		t.Logf("u: %s", u.Path)
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+readerToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Errorf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual types.Workload
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Logf("b: %s", string(b))
+			t.Fatal(err)
+		}
+
+		expected := types.Workload{
+			ID:        string(workload.UID),
+			Namespace: &workload.Spec.TargetNamespace,
+			Name:      workloadName,
+			URLs:      &workload.Status.URLs,
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
 		}
 	})
 }
