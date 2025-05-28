@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:1.24.2 as builder
+FROM docker.io/library/golang:1.24.2 AS builder
 COPY . /src
 WORKDIR /src
 ENV CGO_ENABLED=0
