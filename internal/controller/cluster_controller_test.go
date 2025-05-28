@@ -175,26 +175,22 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
+		expected := []dockyardsv1.ClusterUpgrade{
+			{
+				To: "v1.30.1",
+			},
+		}
+
 		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
 				return true, err
 			}
 
-			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
-				return true, nil
-			}
-
-			return false, nil
+			return cmp.Equal(actual.Spec.Upgrades, expected), nil
 		})
 		if err != nil {
 			t.Fatal(err)
-		}
-
-		expected := []dockyardsv1.ClusterUpgrade{
-			{
-				To: "v1.30.1",
-			},
 		}
 
 		if !cmp.Equal(actual.Spec.Upgrades, expected) {
@@ -220,26 +216,22 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
+		expected := []dockyardsv1.ClusterUpgrade{
+			{
+				To: "v1.30.1",
+			},
+		}
+
 		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
 				return true, err
 			}
 
-			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
-				return true, nil
-			}
-
-			return false, nil
+			return cmp.Equal(actual.Spec.Upgrades, expected), nil
 		})
 		if err != nil {
 			t.Fatal(err)
-		}
-
-		expected := []dockyardsv1.ClusterUpgrade{
-			{
-				To: "v1.30.1",
-			},
 		}
 
 		if !cmp.Equal(actual.Spec.Upgrades, expected) {
@@ -265,22 +257,6 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
-		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
-			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
-			if err != nil {
-				return true, err
-			}
-
-			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
-				return true, nil
-			}
-
-			return false, nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		expected := []dockyardsv1.ClusterUpgrade{
 			{
 				To: "v1.30.1",
@@ -288,6 +264,18 @@ func TestClusterController_Upgrades(t *testing.T) {
 			{
 				To: "v1.29.5",
 			},
+		}
+
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
+			if err != nil {
+				return true, err
+			}
+
+			return cmp.Equal(actual.Spec.Upgrades, expected), nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		if !cmp.Equal(actual.Spec.Upgrades, expected) {
@@ -313,26 +301,22 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
+		expected := []dockyardsv1.ClusterUpgrade{
+			{
+				To: "v1.29.5",
+			},
+		}
+
 		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
 				return true, err
 			}
 
-			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
-				return true, nil
-			}
-
-			return false, nil
+			return cmp.Equal(actual.Spec.Upgrades, expected), nil
 		})
 		if err != nil {
 			t.Fatal(err)
-		}
-
-		expected := []dockyardsv1.ClusterUpgrade{
-			{
-				To: "v1.29.5",
-			},
 		}
 
 		if !cmp.Equal(actual.Spec.Upgrades, expected) {
@@ -399,26 +383,22 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 		var actual dockyardsv1.Cluster
 
+		expected := []dockyardsv1.ClusterUpgrade{
+			{
+				To: "v1.27.14",
+			},
+		}
+
 		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
 			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
 			if err != nil {
 				return true, err
 			}
 
-			if conditions.IsTrue(&actual, dockyardsv1.ClusterUpgradesReadyCondition) {
-				return true, nil
-			}
-
-			return false, nil
+			return cmp.Equal(actual.Spec.Upgrades, expected), nil
 		})
 		if err != nil {
 			t.Fatal(err)
-		}
-
-		expected := []dockyardsv1.ClusterUpgrade{
-			{
-				To: "v1.27.14",
-			},
 		}
 
 		if !cmp.Equal(actual.Spec.Upgrades, expected) {
