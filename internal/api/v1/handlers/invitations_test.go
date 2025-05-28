@@ -311,6 +311,7 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 }
 
 func TestOrganizationInvitations_Delete(t *testing.T) {
+	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
@@ -335,6 +336,11 @@ func TestOrganizationInvitations_Delete(t *testing.T) {
 		}
 
 		err := c.Create(ctx, &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &invitation)
 		if err != nil {
 			t.Fatal(err)
 		}
