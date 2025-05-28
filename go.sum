@@ -157,8 +157,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20250528113216-ddb7b2fb9d1f h1:YZi07iIwiO5X7MQwd8zJZgdoCU+nPmEaYfm87yTms48=
-github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20250528113216-ddb7b2fb9d1f/go.mod h1:vrza2nx/tVgIUTq0AqA/jzyWNstlyVdcpzh+1+mu22s=
+github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20250528142301-23bb99fffa4b h1:Apu7mI479df8w6aQsKsWITYoVVy7al+vHqBW8ttghCI=
+github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20250528142301-23bb99fffa4b/go.mod h1:vrza2nx/tVgIUTq0AqA/jzyWNstlyVdcpzh+1+mu22s=
 github.com/tetratelabs/wazero v1.6.0 h1:z0H1iikCdP8t+q341xqepY4EWvHEw8Es7tlqiVzlP3g=
 github.com/tetratelabs/wazero v1.6.0/go.mod h1:0U0G41+ochRKoPKCJlh0jMg1CHkyfK8kDqiirMmKY8A=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
