@@ -209,7 +209,7 @@ func (e *TestEnvironment) GetOrganizationUser(ctx context.Context, organization 
 		}
 
 		var user dockyardsv1.User
-		err := e.c.Get(ctx, client.ObjectKey{Name: memberRef.TypedLocalObjectReference.Name}, &user)
+		err := e.c.Get(ctx, client.ObjectKey{Name: memberRef.Name}, &user)
 		if err != nil {
 			return nil, err
 		}

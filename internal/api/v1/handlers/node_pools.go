@@ -186,7 +186,7 @@ func (h *handler) UpdateClusterNodePool(ctx context.Context, cluster *dockyardsv
 	}
 
 	if patchRequest.Name != nil {
-		if nodePool.ObjectMeta.Name != *patchRequest.Name {
+		if nodePool.Name != *patchRequest.Name {
 			logger.Debug("cannot change name of node pool")
 
 			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
