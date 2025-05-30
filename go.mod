@@ -4,7 +4,7 @@ go 1.24.2
 
 require (
 	cuelang.org/go v0.12.1
-	github.com/Masterminds/semver/v3 v3.2.1
+	github.com/blang/semver/v4 v4.0.0
 	github.com/fluxcd/pkg/runtime v0.47.1
 	github.com/go-logr/logr v1.4.3
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -30,7 +30,6 @@ replace github.com/sudoswedenab/dockyards-backend/api => ./api
 require (
 	cuelabs.dev/go/oci/ociregistry v0.0.0-20241125120445-2c00c104c6e1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect

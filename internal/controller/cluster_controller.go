@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	semverv3 "github.com/Masterminds/semver/v3"
+	semverv4 "github.com/blang/semver/v4"
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
@@ -109,8 +109,9 @@ func (r *ClusterReconciler) reconcileClusterUpgrades(ctx context.Context, dockya
 		return ctrl.Result{}, nil
 	}
 
-	currentVersion, err := semverv3.NewVersion(dockyardsCluster.Spec.Version)
+	currentVersion, err := semverv4.ParseTolerant(dockyardsCluster.Spec.Version)
 	if err != nil {
+		logger.Error(err, "error parsing semver")
 		conditions.MarkFalse(dockyardsCluster, dockyardsv1.ClusterUpgradesReadyCondition, dockyardsv1.ClusterUpgradesReconcileFailedReason, "%s", err)
 
 		return ctrl.Result{}, nil
@@ -129,24 +130,39 @@ func (r *ClusterReconciler) reconcileClusterUpgrades(ctx context.Context, dockya
 		return ctrl.Result{}, nil
 	}
 
-	nextMinor := currentVersion.IncMinor()
-	maxVersionSkew := nextMinor.IncMinor()
+	nextMinor := currentVersion
+	err = nextMinor.IncrementMinor()
+	if err != nil {
+		logger.Error(err, "error incrementing current version")
+
+		return ctrl.Result{}, nil
+	}
+
+	maxVersionSkew := nextMinor
+	err = maxVersionSkew.IncrementMinor()
+	if err != nil {
+		logger.Error(err, "error incrementing next minor version")
+		
+		return ctrl.Result{}, nil
+	}
 
 	upgrades := []dockyardsv1.ClusterUpgrade{}
 
 	for _, version := range release.Status.Versions {
-		newVersion, err := semverv3.NewVersion(version)
+		newVersion, err := semverv4.ParseTolerant(version)
 		if err != nil {
 			logger.Error(err, "error parsing version as semver")
 
 			continue
 		}
 
-		if currentVersion.GreaterThan(newVersion) || currentVersion.Equal(newVersion) {
+		logger.Info("upgrade", "newVersion", newVersion.String(), "nextMinor", nextMinor.String(), "maxVersionSkew", maxVersionSkew.String())
+
+		if currentVersion.GTE(newVersion) {
 			continue
 		}
 
-		if newVersion.GreaterThan(&maxVersionSkew) {
+		if newVersion.GT(maxVersionSkew) {
 			continue
 		}
 
