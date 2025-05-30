@@ -20,6 +20,7 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
@@ -28,6 +29,7 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -127,11 +129,6 @@ func TestWorkloadInventory_BySelectorIndex(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workloadInventory)
-		if err != nil {
-			t.Fatal(err)
-		}
 	}
 
 	ignoreFields := cmpopts.IgnoreFields(metav1.ObjectMeta{}, "UID", "ResourceVersion", "Generation", "CreationTimestamp", "ManagedFields")
@@ -148,7 +145,14 @@ func TestWorkloadInventory_BySelectorIndex(t *testing.T) {
 
 		var actual dockyardsv1.WorkloadInventoryList
 
-		err := c.List(ctx, &actual, matchingFields, client.InNamespace(organization.Spec.NamespaceRef.Name))
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
+			err := mgr.GetClient().List(ctx, &actual, matchingFields, client.InNamespace(organization.Spec.NamespaceRef.Name))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			return len(actual.Items) > 0, nil
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -188,7 +192,14 @@ func TestWorkloadInventory_BySelectorIndex(t *testing.T) {
 
 		var actual dockyardsv1.WorkloadInventoryList
 
-		err := c.List(ctx, &actual, matchingFields, client.InNamespace(otherOrganization.Spec.NamespaceRef.Name))
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
+			err := mgr.GetClient().List(ctx, &actual, matchingFields, client.InNamespace(otherOrganization.Spec.NamespaceRef.Name))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			return len(actual.Items) > 0, nil
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
