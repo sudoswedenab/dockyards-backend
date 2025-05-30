@@ -16,18 +16,21 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
 	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -82,7 +85,14 @@ func TestGlobalTokens_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &user)
+	err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
+		err := mgr.GetClient().Get(ctx, client.ObjectKeyFromObject(&user), &user)
+		if err != nil {
+			return true, err
+		}
+
+		return len(user.Status.Conditions) > 0, nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
