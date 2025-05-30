@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/fluxcd/pkg/runtime v0.47.1
 	github.com/go-logr/logr v1.4.1
-	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/addlicense v1.1.1
 	github.com/google/go-cmp v0.6.0
 	github.com/prometheus/client_golang v1.19.0
