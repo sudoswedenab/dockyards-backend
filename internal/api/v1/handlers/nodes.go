@@ -60,3 +60,52 @@ func (h *handler) ListClusterNodes(ctx context.Context, cluster *dockyardsv1.Clu
 
 	return &result, nil
 }
+
+func (h *handler) GetClusterNode(ctx context.Context, cluster *dockyardsv1.Cluster, nodeName string) (*types.Node, error) {
+	objectKey := client.ObjectKey{
+		Name:      nodeName,
+		Namespace: cluster.Namespace,
+	}
+
+	var node dockyardsv1.Node
+	err := h.Get(ctx, objectKey, &node)
+	if err != nil {
+		return nil, err
+	}
+
+	result := types.Node{
+		CreatedAt: node.CreationTimestamp.Time,
+		ID:        string(node.UID),
+		Name:      node.Name,
+	}
+
+	readyCondition := meta.FindStatusCondition(node.Status.Conditions, dockyardsv1.ReadyCondition)
+	if readyCondition != nil {
+		result.UpdatedAt = &readyCondition.LastTransitionTime.Time
+		result.Condition = &readyCondition.Reason
+	}
+
+	if !node.DeletionTimestamp.IsZero() {
+		result.DeletedAt = &node.DeletionTimestamp.Time
+	}
+
+	if node.Spec.ProviderID != nil {
+		result.ProviderID = node.Spec.ProviderID
+	}
+
+	if node.Status.SystemInfo != nil {
+		result.SystemInfo = &types.SystemInfo{
+			Architecture:            &node.Status.SystemInfo.Architecture,
+			BootID:                  &node.Status.SystemInfo.BootID,
+			ContainerRuntimeVersion: &node.Status.SystemInfo.ContainerRuntimeVersion,
+			KernelVersion:           &node.Status.SystemInfo.KernelVersion,
+			KubeletVersion:          &node.Status.SystemInfo.KubeletVersion,
+			MachineID:               &node.Status.SystemInfo.MachineID,
+			OperatingSystem:         &node.Status.SystemInfo.OperatingSystem,
+			OsImage:                 &node.Status.SystemInfo.OSImage,
+			SystemUUID:              &node.Status.SystemInfo.SystemUUID,
+		}
+	}
+
+	return &result, nil
+}
