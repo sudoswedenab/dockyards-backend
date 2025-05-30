@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
@@ -157,6 +158,10 @@ func TestClusterNodes_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	byID := cmpopts.SortSlices(func(a, b types.Node) bool {
+		return a.ID < b.ID
+	})
+
 	t.Run("test as super user", func(t *testing.T) {
 		u := url.URL{
 			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "nodes"),
@@ -185,8 +190,8 @@ func TestClusterNodes_List(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !cmp.Equal(actual, expected) {
-			t.Fatalf("diff: %s", cmp.Diff(expected, actual))
+		if !cmp.Equal(actual, expected, byID) {
+			t.Fatalf("diff: %s", cmp.Diff(expected, actual, byID))
 		}
 	})
 
