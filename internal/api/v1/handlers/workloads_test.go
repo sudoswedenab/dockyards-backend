@@ -16,6 +16,7 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -25,6 +26,7 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
@@ -33,6 +35,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -1302,7 +1305,14 @@ func TestClusterWorkloads_Get(t *testing.T) {
 
 		workloadName := strings.TrimPrefix(workload.Name, cluster.Name+"-")
 
-		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &workload)
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
+			err := mgr.GetClient().Get(ctx, client.ObjectKeyFromObject(&workload), &workload)
+			if err != nil {
+				return true, err
+			}
+
+			return len(workload.Status.URLs) > 0, nil
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
