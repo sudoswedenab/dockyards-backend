@@ -27,7 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:groups=dockyards.io,resources=clusters,verbs=create;delete;update,path=/validate-dockyards-io-v1alpha3-cluster,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.cluster.dockyards.io,versions=v1alpha3
+// +kubebuilder:webhook:groups=dockyards.io,resources=clusters,verbs=create;delete;update,path=/validate-dockyards-io-v1alpha3-cluster,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.cluster.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
+// +kubebuilder:webhookconfiguration:mutating=false,name=dockyards-backend
 
 type DockyardsCluster struct{}
 

@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:groups=dockyards.io,resources=invitations,verbs=create;update,path=/validate-dockyards-io-v1alpha3-invitation,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.invitation.dockyards.io,versions=v1alpha3
+// +kubebuilder:webhook:groups=dockyards.io,resources=invitations,verbs=create;update,path=/validate-dockyards-io-v1alpha3-invitation,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.invitation.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 
 type DockyardsInvitation struct {
 	Client client.Reader
