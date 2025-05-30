@@ -19,24 +19,9 @@ metadata:
   name: dockyards-backend
 rules:
 - apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
-- apiGroups:
   - ""
   resources:
   - configmaps
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - namespaces
   verbs:
   - create
@@ -56,6 +41,12 @@ rules:
   - patch
   - watch
 - apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
   - dockyards
   resources:
   - organizations
@@ -73,6 +64,7 @@ rules:
   - dockyards.io
   resources:
   - clusters
+  - workloads
   verbs:
   - create
   - delete
@@ -84,6 +76,10 @@ rules:
   - dockyards.io
   resources:
   - clustertemplates
+  - nodes
+  - releases
+  - users
+  - workloadinventories
   verbs:
   - get
   - list
@@ -100,14 +96,6 @@ rules:
 - apiGroups:
   - dockyards.io
   resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - dockyards.io
-  resources:
   - organizations
   verbs:
   - create
@@ -116,73 +104,11 @@ rules:
   - list
   - watch
 - apiGroups:
-  - dockyards.io
-  resources:
-  - releases
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - users
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - workloadinventories
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - workloads
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - watch
-- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
   - clusterroles
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
   - rolebindings
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
   - roles
   verbs:
   - create
