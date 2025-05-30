@@ -8,7 +8,6 @@ require (
 	github.com/fluxcd/pkg/runtime v0.47.1
 	github.com/go-logr/logr v1.4.3
 	github.com/golang-jwt/jwt/v5 v5.2.2
-	github.com/google/addlicense v1.1.1
 	github.com/google/go-cmp v0.7.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/cors v1.11.0
@@ -46,6 +45,7 @@ require (
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/google/addlicense v1.1.1 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -95,4 +95,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-tool cuelang.org/go/cmd/cue
+tool (
+	cuelang.org/go/cmd/cue
+	github.com/google/addlicense
+)
