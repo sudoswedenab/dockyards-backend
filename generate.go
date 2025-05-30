@@ -14,5 +14,5 @@
 
 package main
 
-//go:generate go run sigs.k8s.io/controller-tools/cmd/controller-gen crd:generateEmbeddedObjectMeta=true object rbac:roleName=dockyards-backend webhook paths="./..."
+//go:generate go tool controller-gen crd:generateEmbeddedObjectMeta=true object rbac:roleName=dockyards-backend webhook paths="./..."
 //go:generate go tool addlicense -c "Sudo Sweden AB" -y 2024 .

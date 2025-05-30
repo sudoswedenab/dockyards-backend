@@ -98,4 +98,5 @@ require (
 tool (
 	cuelang.org/go/cmd/cue
 	github.com/google/addlicense
+	sigs.k8s.io/controller-tools/cmd/controller-gen
 )
