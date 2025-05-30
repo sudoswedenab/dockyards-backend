@@ -25,6 +25,7 @@ import (
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
+	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/internal/controller"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
@@ -57,6 +58,18 @@ func TestClusterController_Upgrades(t *testing.T) {
 
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
+
+	feature := dockyardsv1.Feature{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      featurenames.FeatureClusterUpgrades,
+			Namespace: testEnvironment.GetDockyardsNamespace(),
+		},
+	}
+
+	err = c.Create(ctx, &feature)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	organization := testEnvironment.MustCreateOrganization(t)
 

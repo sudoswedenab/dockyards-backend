@@ -22,7 +22,9 @@ import (
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -93,6 +95,17 @@ func (r *ClusterReconciler) reconcileClusterUpgrades(ctx context.Context, dockya
 	logger := ctrl.LoggerFrom(ctx)
 
 	if dockyardsCluster.Spec.Version == "" {
+		return ctrl.Result{}, nil
+	}
+
+	featureEnabled, err := apiutil.IsFeatureEnabled(ctx, r, featurenames.FeatureClusterUpgrades, corev1.NamespaceAll)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if !featureEnabled {
+		dockyardsCluster.Spec.Upgrades = nil
+
 		return ctrl.Result{}, nil
 	}
 
