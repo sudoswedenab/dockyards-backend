@@ -87,6 +87,7 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 	}
 
 	err = (&webhooks.DockyardsUser{
+		Client:         mgr.GetClient(),
 		AllowedDomains: allowedDomains,
 	}).SetupWebhookWithManager(mgr)
 	if err != nil {

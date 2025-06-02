@@ -20,16 +20,20 @@ import (
 	"strings"
 
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // +kubebuilder:webhook:groups=dockyards.io,resources=users,verbs=create;update,path=/validate-dockyards-io-v1alpha3-user,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.user.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 
 type DockyardsUser struct {
+	Client client.Reader
+
 	AllowedDomains []string
 }
 
@@ -40,29 +44,29 @@ func (webhook *DockyardsUser) SetupWebhookWithManager(m ctrl.Manager) error {
 		Complete()
 }
 
-func (webhook *DockyardsUser) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsUser) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	dockyardsUser, ok := obj.(*dockyardsv1.User)
 	if !ok {
 		return nil, nil
 	}
 
-	return nil, webhook.validate(dockyardsUser)
+	return nil, webhook.validate(ctx, dockyardsUser)
 }
 
-func (webhook *DockyardsUser) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsUser) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
 	dockyardsUser, ok := newObj.(*dockyardsv1.User)
 	if !ok {
 		return nil, nil
 	}
 
-	return nil, webhook.validate(dockyardsUser)
+	return nil, webhook.validate(ctx, dockyardsUser)
 }
 
 func (webhook *DockyardsUser) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func (webhook *DockyardsUser) validate(dockyardsUser *dockyardsv1.User) error {
+func (webhook *DockyardsUser) validate(ctx context.Context, dockyardsUser *dockyardsv1.User) error {
 	address, err := mail.ParseAddress(dockyardsUser.Spec.Email)
 	if err != nil {
 		invalid := field.Invalid(
@@ -79,6 +83,35 @@ func (webhook *DockyardsUser) validate(dockyardsUser *dockyardsv1.User) error {
 			field.ErrorList{
 				invalid,
 			},
+		)
+	}
+
+	matchingFields := client.MatchingFields{
+		index.EmailField: dockyardsUser.Spec.Email,
+	}
+
+	var userList dockyardsv1.UserList
+	err = webhook.Client.List(ctx, &userList, matchingFields)
+	if err != nil {
+		return err
+	}
+
+	for _, user := range userList.Items {
+		if user.UID == dockyardsUser.UID {
+			continue
+		}
+
+		forbidden := field.Forbidden(
+			field.NewPath("spec", "email"),
+			"address is forbidden",
+		)
+
+		qualifiedResource := dockyardsv1.GroupVersion.WithResource(dockyardsv1.UserKind).GroupResource()
+
+		return apierrors.NewForbidden(
+			qualifiedResource,
+			dockyardsUser.Name,
+			forbidden,
 		)
 	}
 

@@ -15,18 +15,89 @@
 package webhooks_test
 
 import (
-	"context"
+	"path"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/webhooks"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func TestDockyardsUserValidateCreate(t *testing.T) {
+	ctx := t.Context()
+
+	env := envtest.Environment{
+		CRDDirectoryPaths: []string{
+			path.Join("../../config/crd"),
+		},
+	}
+
+	cfg, err := env.Start()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		err := env.Stop()
+		if err != nil {
+			panic(err)
+		}
+	})
+
+	scheme := runtime.NewScheme()
+
+	_ = corev1.AddToScheme(scheme)
+	_ = dockyardsv1.AddToScheme(scheme)
+
+	c, err := client.New(cfg, client.Options{Scheme: scheme})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	existingUser := dockyardsv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-",
+		},
+		Spec: dockyardsv1.UserSpec{
+			Email: "existing@dockyards.dev",
+		},
+	}
+
+	err = c.Create(ctx, &existingUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mgr, err := manager.New(cfg, manager.Options{Scheme: scheme})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = index.AddDefaultIndexes(ctx, mgr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	if !mgr.GetCache().WaitForCacheSync(ctx) {
+		t.Fatal("could not wait for cache sync")
+	}
+
 	tt := []struct {
 		name           string
 		allowedDomains []string
@@ -134,15 +205,45 @@ func TestDockyardsUserValidateCreate(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test existing user",
+			dockyardsUser: dockyardsv1.User{
+				ObjectMeta: existingUser.ObjectMeta,
+				Spec: dockyardsv1.UserSpec{
+					DisplayName: "testing",
+					Email:       existingUser.Spec.Email,
+				},
+			},
+		},
+		{
+			name: "test existing email",
+			dockyardsUser: dockyardsv1.User{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-existing-email",
+				},
+				Spec: dockyardsv1.UserSpec{
+					Email: existingUser.Spec.Email,
+				},
+			},
+			expected: apierrors.NewForbidden(
+				dockyardsv1.GroupVersion.WithResource(dockyardsv1.UserKind).GroupResource(),
+				"test-existing-email",
+				field.Forbidden(
+					field.NewPath("spec", "email"),
+					"address is forbidden",
+				),
+			),
+		},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			webhook := webhooks.DockyardsUser{
+				Client:         mgr.GetClient(),
 				AllowedDomains: tc.allowedDomains,
 			}
 
-			_, actual := webhook.ValidateCreate(context.Background(), &tc.dockyardsUser)
+			_, actual := webhook.ValidateCreate(ctx, &tc.dockyardsUser)
 			if !cmp.Equal(actual, tc.expected) {
 				t.Errorf("diff: %s", cmp.Diff(tc.expected, actual))
 			}
