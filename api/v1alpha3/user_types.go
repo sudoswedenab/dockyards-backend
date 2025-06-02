@@ -28,6 +28,7 @@ type UserSpec struct {
 	Password    string           `json:"password"`
 	Phone       string           `json:"phone,omitempty"`
 	Duration    *metav1.Duration `json:"duration,omitempty"`
+	ProviderID  *string          `json:"providerID,omitempty"`
 }
 
 type UserStatus struct {

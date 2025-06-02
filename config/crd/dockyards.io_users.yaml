@@ -200,6 +200,8 @@ spec:
                 type: string
               phone:
                 type: string
+              providerID:
+                type: string
             required:
             - email
             - password
