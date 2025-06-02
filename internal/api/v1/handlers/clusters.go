@@ -75,6 +75,10 @@ func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockya
 		v1Cluster.DNSZones = &cluster.Status.DNSZones
 	}
 
+	if cluster.Spec.NoDefaultNetworkPlugin {
+		v1Cluster.NoDefaultNetworkPlugin = &cluster.Spec.NoDefaultNetworkPlugin
+	}
+
 	return &v1Cluster
 }
 
@@ -257,6 +261,10 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 		cluster.Spec.Duration = &metav1.Duration{
 			Duration: duration,
 		}
+	}
+
+	if request.NoDefaultNetworkPlugin != nil && *request.NoDefaultNetworkPlugin {
+		cluster.Spec.NoDefaultNetworkPlugin = true
 	}
 
 	err := h.Create(ctx, &cluster)

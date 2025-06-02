@@ -17,28 +17,34 @@ import "time"
 	created_at:            time.Time        @go(CreatedAt)
 	deleted_at?:           null | time.Time @go(DeletedAt,*time.Time)
 	dns_zones?: null | [...string] @go(DNSZones,*[]string)
-	duration?:         null | string    @go(Duration,*string)
-	expires_at?:       null | time.Time @go(ExpiresAt,*time.Time)
-	id:                string           @go(ID)
-	name:              string           @go(Name)
-	node_pools_count?: null | int       @go(NodePoolsCount,*int)
-	nodes_count?:      null | int       @go(NodesCount,*int)
-	organization?:     null | string    @go(Organization,*string)
-	state?:            null | string    @go(State,*string)
-	updated_at?:       null | time.Time @go(UpdatedAt,*time.Time)
-	version?:          null | string    @go(Version,*string)
+	duration?:                  null | string    @go(Duration,*string)
+	expires_at?:                null | time.Time @go(ExpiresAt,*time.Time)
+	id:                         string           @go(ID)
+	name:                       string           @go(Name)
+	no_default_network_plugin?: null | bool      @go(NoDefaultNetworkPlugin,*bool)
+	node_pools_count?:          null | int       @go(NodePoolsCount,*int)
+	nodes_count?:               null | int       @go(NodesCount,*int)
+	organization?:              null | string    @go(Organization,*string)
+	pod_subnets?: null | [...string] @go(PodSubnets,*[]string)
+	service_subnets?: null | [...string] @go(ServiceSubnets,*[]string)
+	state?:      null | string    @go(State,*string)
+	updated_at?: null | time.Time @go(UpdatedAt,*time.Time)
+	version?:    null | string    @go(Version,*string)
 }
 
 // ClusterOptions defines model for cluster_options.
 #ClusterOptions: {
-	allocate_internal_ip?: null | bool   @go(AllocateInternalIP,*bool)
-	cluster_template?:     null | string @go(ClusterTemplate,*string)
-	duration?:             null | string @go(Duration,*string)
-	ingress_provider?:     null | string @go(IngressProvider,*string)
-	name:                  string        @go(Name)
-	no_cluster_apps?:      null | bool   @go(NoClusterApps,*bool)
-	no_ingress_provider?:  null | bool   @go(NoIngressProvider,*bool)
+	allocate_internal_ip?:      null | bool   @go(AllocateInternalIP,*bool)
+	cluster_template?:          null | string @go(ClusterTemplate,*string)
+	duration?:                  null | string @go(Duration,*string)
+	ingress_provider?:          null | string @go(IngressProvider,*string)
+	name:                       string        @go(Name)
+	no_cluster_apps?:           null | bool   @go(NoClusterApps,*bool)
+	no_default_network_plugin?: null | bool   @go(NoDefaultNetworkPlugin,*bool)
+	no_ingress_provider?:       null | bool   @go(NoIngressProvider,*bool)
 	node_pool_options?: null | [...#NodePoolOptions] @go(NodePoolOptions,*[]NodePoolOptions)
+	pod_subnets?: null | [...string] @go(PodSubnets,*[]string)
+	service_subnets?: null | [...string] @go(ServiceSubnets,*[]string)
 	version?: null | string @go(Version,*string)
 }
 
@@ -109,9 +115,14 @@ import "time"
 
 // Node defines model for node.
 #Node: {
-	id:    string @go(ID)
-	name:  string @go(Name)
-	state: string @go(State)
+	condition?:   null | string      @go(Condition,*string)
+	created_at:   time.Time          @go(CreatedAt)
+	deleted_at?:  null | time.Time   @go(DeletedAt,*time.Time)
+	id:           string             @go(ID)
+	name:         string             @go(Name)
+	provider_id?: null | string      @go(ProviderID,*string)
+	system_info?: null | #SystemInfo @go(SystemInfo,*SystemInfo)
+	updated_at?:  null | time.Time   @go(UpdatedAt,*time.Time)
 }
 
 // NodePool defines model for node_pool.
@@ -183,6 +194,19 @@ import "time"
 	type?:    null | string @go(Type,*string)
 }
 
+// SystemInfo defines model for system_info.
+#SystemInfo: {
+	architecture?:              null | string @go(Architecture,*string)
+	boot_id?:                   null | string @go(BootID,*string)
+	container_runtime_version?: null | string @go(ContainerRuntimeVersion,*string)
+	kernel_version?:            null | string @go(KernelVersion,*string)
+	kubelet_version?:           null | string @go(KubeletVersion,*string)
+	machine_id?:                null | string @go(MachineID,*string)
+	operating_system?:          null | string @go(OperatingSystem,*string)
+	os_image?:                  null | string @go(OsImage,*string)
+	system_uuid?:               null | string @go(SystemUUID,*string)
+}
+
 // Tokens defines model for tokens.
 #Tokens: {
 	AccessToken:  string
@@ -220,11 +244,12 @@ import "time"
 	deleted_at?: null | time.Time @go(DeletedAt,*time.Time)
 	id:          string           @go(ID)
 	input?: null | {...} @go(Input,*map[string]interface{})
-	name:                    string           @go(Name)
-	namespace?:              null | string    @go(Namespace,*string)
-	provenience?:            null | string    @go(Provenience,*string)
-	updated_at?:             null | time.Time @go(UpdatedAt,*time.Time)
-	workload_template_name?: null | string    @go(WorkloadTemplateName,*string)
+	name:         string           @go(Name)
+	namespace?:   null | string    @go(Namespace,*string)
+	provenience?: null | string    @go(Provenience,*string)
+	updated_at?:  null | time.Time @go(UpdatedAt,*time.Time)
+	urls?: null | [...string] @go(URLs,*[]string)
+	workload_template_name?: null | string @go(WorkloadTemplateName,*string)
 }
 
 // WorkloadOptions defines model for workload_options.
