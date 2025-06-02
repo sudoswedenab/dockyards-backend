@@ -16,6 +16,7 @@ package webhooks
 
 import (
 	"context"
+	"net/netip"
 
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
@@ -145,5 +146,33 @@ func (webhook *DockyardsCluster) validate(dockyardsCluster *dockyardsv1.Cluster)
 		)
 	}
 
-	return nil
+	errorList := field.ErrorList{}
+
+	for i, subnet := range dockyardsCluster.Spec.PodSubnets {
+		_, err := netip.ParsePrefix(subnet)
+		if err != nil {
+			invalid := field.Invalid(field.NewPath("spec", "podSubnets").Index(i), subnet, "unable to parse pod subnet as prefix")
+			errorList = append(errorList, invalid)
+		}
+	}
+
+	for i, subnet := range dockyardsCluster.Spec.ServiceSubnets {
+		_, err := netip.ParsePrefix(subnet)
+		if err != nil {
+			invalid := field.Invalid(field.NewPath("spec", "serviceSubnets").Index(i), subnet, "unable to parse service subnet as prefix")
+			errorList = append(errorList, invalid)
+		}
+	}
+
+	if len(errorList) == 0 {
+		return nil
+	}
+
+	qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind()
+
+	return apierrors.NewInvalid(
+		qualifiedKind,
+		dockyardsCluster.Name,
+		errorList,
+	)
 }

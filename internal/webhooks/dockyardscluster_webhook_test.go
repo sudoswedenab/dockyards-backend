@@ -88,6 +88,126 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test custom pod subnets",
+			dockyardsCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "custom-pod-subnets",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: dockyardsv1.GroupVersion.String(),
+							Kind:       dockyardsv1.OrganizationKind,
+							Name:       "testing",
+							UID:        "cbfab09e-d289-4ad9-b05f-ec465374ca2b",
+						},
+					},
+				},
+				Spec: dockyardsv1.ClusterSpec{
+					PodSubnets: []string{
+						"192.168.0.0/16",
+						"fc00:192:168::/56",
+					},
+				},
+			},
+		},
+		{
+			name: "test invalid pod subnets",
+			dockyardsCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "invalid-pod-subnets",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: dockyardsv1.GroupVersion.String(),
+							Kind:       dockyardsv1.OrganizationKind,
+							Name:       "testing",
+							UID:        "cbfab09e-d289-4ad9-b05f-ec465374ca2b",
+						},
+					},
+				},
+				Spec: dockyardsv1.ClusterSpec{
+					PodSubnets: []string{
+						"192.168.0.0",
+						"fc00:192:168::1",
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(),
+				"invalid-pod-subnets",
+				field.ErrorList{
+					field.Invalid(
+						field.NewPath("spec", "podSubnets").Index(0),
+						"192.168.0.0",
+						"unable to parse pod subnet as prefix",
+					),
+					field.Invalid(
+						field.NewPath("spec", "podSubnets").Index(1),
+						"fc00:192:168::1",
+						"unable to parse pod subnet as prefix",
+					),
+				},
+			),
+		},
+		{
+			name: "test custom service subnets",
+			dockyardsCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "custom-service-subnets",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: dockyardsv1.GroupVersion.String(),
+							Kind:       dockyardsv1.OrganizationKind,
+							Name:       "testing",
+							UID:        "f8bf51bb-6e67-404d-acb7-350563df68f1",
+						},
+					},
+				},
+				Spec: dockyardsv1.ClusterSpec{
+					ServiceSubnets: []string{
+						"10.96.0.0/12",
+						"fc00:10:96::/112",
+					},
+				},
+			},
+		},
+		{
+			name: "test invalid service subnets",
+			dockyardsCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "invalid-service-subnets",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: dockyardsv1.GroupVersion.String(),
+							Kind:       dockyardsv1.OrganizationKind,
+							Name:       "testing",
+							UID:        "8358eee3-7b2e-4d48-9bba-a5d6fb3ac719",
+						},
+					},
+				},
+				Spec: dockyardsv1.ClusterSpec{
+					ServiceSubnets: []string{
+						"10.96.0.0",
+						"fc00:10:96::1",
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(),
+				"invalid-service-subnets",
+				field.ErrorList{
+					field.Invalid(
+						field.NewPath("spec", "serviceSubnets").Index(0),
+						"10.96.0.0",
+						"unable to parse service subnet as prefix",
+					),
+					field.Invalid(
+						field.NewPath("spec", "serviceSubnets").Index(1),
+						"fc00:10:96::1",
+						"unable to parse service subnet as prefix",
+					),
+				},
+			),
+		},
 	}
 
 	for _, tc := range tt {
