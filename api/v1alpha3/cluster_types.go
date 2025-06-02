@@ -55,6 +55,8 @@ type ClusterSpec struct {
 	IPPoolRef                *corev1.TypedLocalObjectReference `json:"ipPoolRef,omitempty"`
 	Duration                 *metav1.Duration                  `json:"duration,omitempty"`
 	NoDefaultNetworkPlugin   bool                              `json:"noDefaultNetworkPlugin,omitempty"`
+	PodSubnets               []string                          `json:"podSubnets,omitempty"`
+	ServiceSubnets           []string                          `json:"serviceSubnets,omitempty"`
 }
 
 type ClusterStatus struct {

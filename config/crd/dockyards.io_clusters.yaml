@@ -270,6 +270,14 @@ spec:
                 type: boolean
               noDefaultNetworkPlugin:
                 type: boolean
+              podSubnets:
+                items:
+                  type: string
+                type: array
+              serviceSubnets:
+                items:
+                  type: string
+                type: array
               upgrades:
                 items:
                   properties:
