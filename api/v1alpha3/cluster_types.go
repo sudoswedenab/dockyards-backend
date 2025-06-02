@@ -54,6 +54,7 @@ type ClusterSpec struct {
 	AllocateInternalIP       bool                              `json:"allocateInternalIP,omitempty"`
 	IPPoolRef                *corev1.TypedLocalObjectReference `json:"ipPoolRef,omitempty"`
 	Duration                 *metav1.Duration                  `json:"duration,omitempty"`
+	NoDefaultNetworkPlugin   bool                              `json:"noDefaultNetworkPlugin,omitempty"`
 }
 
 type ClusterStatus struct {
