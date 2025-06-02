@@ -444,6 +444,12 @@ func CreateGlobalResource[T1, T2 any](resource string, f CreateGlobalResourceFun
 			return
 		}
 
+		if apierrors.IsForbidden(err) {
+			w.WriteHeader(http.StatusForbidden)
+
+			return
+		}
+
 		if err != nil {
 			logger.Error("error creating global resource", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
