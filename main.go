@@ -331,6 +331,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = (&controller.InvitationReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManger(mgr)
+	if err != nil {
+		logger.Error("error creating new invitation reconciler", "err", err)
+
+		os.Exit(1)
+	}
+
 	if enableWebhooks {
 		logger.Info("enabling webhooks", "domains", allowedDomains)
 
