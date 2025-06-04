@@ -148,20 +148,40 @@ func (webhook *DockyardsCluster) validate(dockyardsCluster *dockyardsv1.Cluster)
 
 	errorList := field.ErrorList{}
 
+	prefixes := []netip.Prefix{}
+
 	for i, subnet := range dockyardsCluster.Spec.PodSubnets {
-		_, err := netip.ParsePrefix(subnet)
+		newPrefix, err := netip.ParsePrefix(subnet)
 		if err != nil {
 			invalid := field.Invalid(field.NewPath("spec", "podSubnets").Index(i), subnet, "unable to parse pod subnet as prefix")
 			errorList = append(errorList, invalid)
 		}
+
+		for _, prefix := range prefixes {
+			if newPrefix.Overlaps(prefix) {
+				invalid := field.Invalid(field.NewPath("spec", "podSubnets").Index(i), subnet, "subnet overlaps with prefix " + prefix.String())
+				errorList = append(errorList, invalid)
+			}
+		}
+
+		prefixes = append(prefixes, newPrefix)
 	}
 
 	for i, subnet := range dockyardsCluster.Spec.ServiceSubnets {
-		_, err := netip.ParsePrefix(subnet)
+		newPrefix, err := netip.ParsePrefix(subnet)
 		if err != nil {
 			invalid := field.Invalid(field.NewPath("spec", "serviceSubnets").Index(i), subnet, "unable to parse service subnet as prefix")
 			errorList = append(errorList, invalid)
 		}
+
+		for _, prefix := range prefixes {
+			if newPrefix.Overlaps(prefix) {
+				invalid := field.Invalid(field.NewPath("spec", "serviceSubnets").Index(i), subnet, "subnet overlaps with prefix " + prefix.String())
+				errorList = append(errorList, invalid)
+			}
+		}
+
+		prefixes = append(prefixes, newPrefix)
 	}
 
 	if len(errorList) == 0 {

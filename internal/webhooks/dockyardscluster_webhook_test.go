@@ -208,6 +208,41 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 				},
 			),
 		},
+		{
+			name: "test overlapping subnets",
+			dockyardsCluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "overlapping-subnets",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: dockyardsv1.GroupVersion.String(),
+							Kind:       dockyardsv1.OrganizationKind,
+							Name:       "testing",
+							UID:        "8358eee3-7b2e-4d48-9bba-a5d6fb3ac719",
+						},
+					},
+				},
+				Spec: dockyardsv1.ClusterSpec{
+					PodSubnets:  []string{
+						"10.100.0.0/16",
+					},
+					ServiceSubnets:  []string{
+						"10.96.0.0/12",
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(),
+				"overlapping-subnets",
+				field.ErrorList{
+					field.Invalid(
+						field.NewPath("spec", "serviceSubnets").Index(0),
+						"10.96.0.0/12",
+						"subnet overlaps with prefix 10.100.0.0/16",
+					),
+				},
+			),
+		},
 	}
 
 	for _, tc := range tt {
