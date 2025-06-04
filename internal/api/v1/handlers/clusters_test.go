@@ -740,6 +740,82 @@ func TestOrganizationClusters_Create(t *testing.T) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual))
 		}
 	})
+
+	t.Run("test subnets", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-subnets",
+			PodSubnets: &[]string{
+				"10.244.0.0/16",
+			},
+			ServiceSubnets: &[]string{
+				"10.96.0.0/12",
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		b, err = io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatalf("error reading result body: %s", err)
+		}
+
+		var actual types.Cluster
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatalf("error unmarshalling result body: %s", err)
+		}
+
+		var actualCluster dockyardsv1.Cluster
+		err = c.Get(ctx, client.ObjectKey{Name: actual.Name, Namespace: organization.Spec.NamespaceRef.Name}, &actualCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedCluster := dockyardsv1.Cluster{
+			ObjectMeta: actualCluster.ObjectMeta,
+			Spec: dockyardsv1.ClusterSpec{
+				PodSubnets:     *clusterOptions.PodSubnets,
+				ServiceSubnets: *clusterOptions.ServiceSubnets,
+				Version:        release.Status.LatestVersion,
+			},
+		}
+
+		if !cmp.Equal(actualCluster, expectedCluster) {
+			t.Errorf("diff: %s", cmp.Diff(expectedCluster, actualCluster))
+		}
+
+		expected := types.Cluster{
+			CreatedAt:      actualCluster.CreationTimestamp.Time,
+			ID:             string(actualCluster.UID),
+			Name:           actualCluster.Name,
+			PodSubnets:     &actualCluster.Spec.PodSubnets,
+			ServiceSubnets: &actualCluster.Spec.ServiceSubnets,
+			Version:        &actualCluster.Status.Version,
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
 }
 
 func TestOrganizationClusters_Delete(t *testing.T) {

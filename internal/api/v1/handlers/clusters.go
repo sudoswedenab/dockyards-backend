@@ -79,6 +79,14 @@ func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockya
 		v1Cluster.NoDefaultNetworkPlugin = &cluster.Spec.NoDefaultNetworkPlugin
 	}
 
+	if len(cluster.Spec.PodSubnets) > 0 {
+		v1Cluster.PodSubnets = &cluster.Spec.PodSubnets
+	}
+
+	if len(cluster.Spec.ServiceSubnets) > 0 {
+		v1Cluster.ServiceSubnets = &cluster.Spec.ServiceSubnets
+	}
+
 	return &v1Cluster
 }
 
@@ -265,6 +273,14 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 
 	if request.NoDefaultNetworkPlugin != nil && *request.NoDefaultNetworkPlugin {
 		cluster.Spec.NoDefaultNetworkPlugin = true
+	}
+
+	if request.PodSubnets != nil {
+		cluster.Spec.PodSubnets = *request.PodSubnets
+	}
+
+	if request.ServiceSubnets != nil {
+		cluster.Spec.ServiceSubnets = *request.ServiceSubnets
 	}
 
 	err := h.Create(ctx, &cluster)
