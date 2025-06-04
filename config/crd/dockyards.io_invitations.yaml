@@ -98,7 +98,14 @@ spec:
             - email
             - role
             type: object
+          status:
+            properties:
+              expirationTimestamp:
+                format: date-time
+                type: string
+            type: object
         type: object
     served: true
     storage: true
-    subresources: {}
+    subresources:
+      status: {}

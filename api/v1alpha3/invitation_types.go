@@ -30,16 +30,22 @@ type InvitationSpec struct {
 	SenderRef *corev1.TypedObjectReference `json:"senderRef,omitempty"`
 }
 
+type InvitationStatus struct {
+	ExpirationTimestamp *metav1.Time `json:"expirationTimestamp,omitempty"`
+}
+
 // +kubebuilder:printcolumn:name="Email",type=string,JSONPath=".spec.email"
 // +kubebuilder:printcolumn:name="Role",type=string,JSONPath=".spec.role"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Duration",type=string,JSONPath=".spec.duration"
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type Invitation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec InvitationSpec `json:"spec,omitempty"`
+	Spec   InvitationSpec   `json:"spec,omitempty"`
+	Status InvitationStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
