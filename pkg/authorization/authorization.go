@@ -475,6 +475,7 @@ func ReconcileSuperUserRoleAndBindings(ctx context.Context, c client.Client, org
 				},
 				Resources: []string{
 					"invitations",
+					"members",
 				},
 			},
 		}

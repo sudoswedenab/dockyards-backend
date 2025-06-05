@@ -677,4 +677,73 @@ func TestOrganizationController(t *testing.T) {
 			t.Errorf("expected not allowed, got %t", subjectAccessReview.Status.Allowed)
 		}
 	})
+
+	t.Run("test super user deleting members", func(t *testing.T) {
+		subjectAccessReview := authorizationv1.SubjectAccessReview{
+			Spec: authorizationv1.SubjectAccessReviewSpec{
+				User: string(superUser.UID),
+				ResourceAttributes: &authorizationv1.ResourceAttributes{
+					Group:     dockyardsv1.GroupVersion.Group,
+					Namespace: organization.Spec.NamespaceRef.Name,
+					Resource:  "members",
+					Verb:      "delete",
+				},
+			},
+		}
+
+		err = c.Create(ctx, &subjectAccessReview)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !subjectAccessReview.Status.Allowed {
+			t.Errorf("expected allowed, got %t", subjectAccessReview.Status.Allowed)
+		}
+	})
+
+	t.Run("test user deleting members", func(t *testing.T) {
+		subjectAccessReview := authorizationv1.SubjectAccessReview{
+			Spec: authorizationv1.SubjectAccessReviewSpec{
+				User: string(user.UID),
+				ResourceAttributes: &authorizationv1.ResourceAttributes{
+					Group:     dockyardsv1.GroupVersion.Group,
+					Namespace: organization.Spec.NamespaceRef.Name,
+					Resource:  "members",
+					Verb:      "delete",
+				},
+			},
+		}
+
+		err = c.Create(ctx, &subjectAccessReview)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if subjectAccessReview.Status.Allowed {
+			t.Errorf("expected not allowed, got %t", subjectAccessReview.Status.Allowed)
+		}
+	})
+
+	t.Run("test reader deleting members", func(t *testing.T) {
+		subjectAccessReview := authorizationv1.SubjectAccessReview{
+			Spec: authorizationv1.SubjectAccessReviewSpec{
+				User: string(reader.UID),
+				ResourceAttributes: &authorizationv1.ResourceAttributes{
+					Group:     dockyardsv1.GroupVersion.Group,
+					Namespace: organization.Spec.NamespaceRef.Name,
+					Resource:  "members",
+					Verb:      "delete",
+				},
+			},
+		}
+
+		err = c.Create(ctx, &subjectAccessReview)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if subjectAccessReview.Status.Allowed {
+			t.Errorf("expected not allowed, got %t", subjectAccessReview.Status.Allowed)
+		}
+	})
 }
