@@ -26,7 +26,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestOrganizationMembers_List(t *testing.T) {
@@ -179,6 +181,112 @@ func TestOrganizationMembers_List(t *testing.T) {
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnauthorized {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+}
+
+func TestOrganizationMembers_Delete(t *testing.T) {
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+
+	superUserToken := MustSignToken(t, string(superUser.UID))
+	userToken := MustSignToken(t, string(user.UID))
+	readerToken := MustSignToken(t, string(reader.UID))
+
+	t.Run("test as reader", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "members", user.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+readerToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test as user", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "members", user.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test as super user", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "members", user.Name),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.Organization
+		err := c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Organization{
+			ObjectMeta: actual.ObjectMeta,
+			Spec: dockyardsv1.OrganizationSpec{
+				MemberRefs: []dockyardsv1.OrganizationMemberReference{
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     superUser.Name,
+						},
+						UID:  superUser.UID,
+						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+					},
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     reader.Name,
+						},
+						UID:  reader.UID,
+						Role: dockyardsv1.OrganizationMemberRoleReader,
+					},
+				},
+				NamespaceRef: organization.Spec.NamespaceRef,
+				ProviderID:   organization.Spec.ProviderID,
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
 		}
 	})
 }
