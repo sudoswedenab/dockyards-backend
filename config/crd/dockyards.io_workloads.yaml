@@ -166,7 +166,8 @@ spec:
                   type: object
                 type: array
               dependencyRefs:
-                description: 'Deprecated: Use references instead.'
+                description: 'Deprecated: Superseded by workload inventories type.
+                  Will be removed in the next version.'
                 items:
                   description: |-
                     TypedLocalObjectReference contains enough information to let you locate the
@@ -191,7 +192,11 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
               references:
+                description: 'Deprecated: Superseded by workload inventories type.
+                  Will be removed in the next version.'
                 items:
+                  description: 'Deprecated: Superseded by workload inventories type.
+                    Will be removed in the next version.'
                   properties:
                     apiGroup:
                       description: |-

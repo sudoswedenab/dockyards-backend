@@ -38,6 +38,7 @@ type WorkloadSpec struct {
 	Provenience string `json:"provenience"`
 }
 
+// Deprecated: Superseded by workload inventories type. Will be removed in the next version.
 type WorkloadReference struct {
 	corev1.TypedObjectReference `json:",inline"`
 	Parent                      *corev1.TypedLocalObjectReference `json:"parent,omitempty"`
@@ -47,10 +48,12 @@ type WorkloadReference struct {
 type WorkloadStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// Deprecated: Use references instead.
+	// Deprecated: Superseded by workload inventories type. Will be removed in the next version.
 	DependencyRefs []corev1.TypedLocalObjectReference `json:"dependencyRefs,omitempty"`
 	URLs           []string                           `json:"urls,omitempty"`
-	References     []WorkloadReference                `json:"references,omitempty"`
+
+	// Deprecated: Superseded by workload inventories type. Will be removed in the next version.
+	References []WorkloadReference `json:"references,omitempty"`
 }
 
 // +kubebuilder:object:root=true
