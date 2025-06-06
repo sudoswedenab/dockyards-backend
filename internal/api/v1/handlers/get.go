@@ -343,3 +343,50 @@ func GetGlobalResource[T any](h *handler, resource string, f GetGlobalResourceFu
 		}
 	}
 }
+
+type GetNamelessResourceFunc[T any] func(context.Context) (*T, error)
+
+func GetNamelessResource[T any](f GetNamelessResourceFunc[T]) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		logger := middleware.LoggerFrom(ctx)
+
+		response, err := f(ctx)
+		if apierrors.IsNotFound(err) {
+			w.WriteHeader(http.StatusNotFound)
+
+			return
+		}
+
+		if apierrors.IsUnauthorized(err) {
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
+		if err != nil {
+			logger.Error("error getting resource", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		b, err := json.Marshal(response)
+		if err != nil {
+			logger.Error("error marshalling response", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write(b)
+		if err != nil {
+			logger.Error("error writing response", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+	}
+}
