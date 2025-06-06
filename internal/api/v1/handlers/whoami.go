@@ -15,66 +15,46 @@
 package handlers
 
 import (
-	"encoding/json"
-	"net/http"
+	"context"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
-	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (h *handler) GetWhoami(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	sub, err := middleware.SubjectFrom(ctx)
+func (h *handler) GetWhoami(ctx context.Context) (*types.User, error) {
+	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: sub,
-	}
-
-	var userList dockyardsv1.UserList
-	err = h.List(ctx, &userList, matchingFields)
+	var user dockyardsv1.User
+	err = h.Get(ctx, client.ObjectKey{Name: subject}, &user)
 	if err != nil {
-		logger.Error("error getting user from kubernetes", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
-	if len(userList.Items) != 1 {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+	response := types.User{
+		CreatedAt: &user.CreationTimestamp.Time,
+		Email:     user.Spec.Email,
+		ID:        string(user.UID),
+		Name:      user.Name,
 	}
 
-	user := userList.Items[0]
-
-	v1User := types.User{
-		ID:    string(user.UID),
-		Name:  user.Name,
-		Email: user.Spec.Email,
+	readyCondition := meta.FindStatusCondition(user.Status.Conditions, dockyardsv1.ReadyCondition)
+	if readyCondition != nil {
+		response.UpdatedAt = &readyCondition.LastTransitionTime.Time
 	}
 
-	b, err := json.Marshal(&v1User)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+	if user.Spec.ProviderID != nil {
+		response.ProviderID = user.Spec.ProviderID
 	}
 
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
+	if len(user.Spec.DisplayName) > 0 {
+		response.DisplayName = &user.Spec.DisplayName
 	}
+
+	return &response, nil
 }

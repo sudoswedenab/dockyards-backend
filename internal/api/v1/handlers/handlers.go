@@ -129,7 +129,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		),
 	)
 
-	mux.Handle("GET /v1/whoami", logger(requireAuth(contentJSON(http.HandlerFunc(h.GetWhoami)))))
+	mux.Handle("GET /v1/whoami", logger(requireAuth(contentJSON(GetNamelessResource(h.GetWhoami)))))
 
 	mux.Handle("POST /v1/orgs/{organizationName}/credentials",
 		logger(
