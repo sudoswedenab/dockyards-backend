@@ -99,7 +99,7 @@ func (h *handler) PostRefresh(w http.ResponseWriter, r *http.Request) {
 
 	user := userList.Items[0]
 
-	tokens, err := h.generateTokens(user)
+	tokens, err := h.generateTokens(&user)
 	if err != nil {
 		logger.Error("error generating tokens", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -121,9 +121,9 @@ func (h *handler) PostRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *handler) generateTokens(user dockyardsv1.User) (*types.Tokens, error) {
+func (h *handler) generateTokens(user *dockyardsv1.User) (*types.Tokens, error) {
 	claims := jwt.RegisteredClaims{
-		Subject:   string(user.UID),
+		Subject:   user.Name,
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
 	}
 
@@ -134,7 +134,7 @@ func (h *handler) generateTokens(user dockyardsv1.User) (*types.Tokens, error) {
 	}
 
 	refreshTokenClaims := jwt.RegisteredClaims{
-		Subject:   string(user.UID),
+		Subject:   user.Name,
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 2)),
 	}
 

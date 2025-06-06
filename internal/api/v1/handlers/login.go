@@ -54,7 +54,7 @@ func (h *handler) CreateGlobalTokens(ctx context.Context, request *types.LoginOp
 		return nil, apierrors.NewUnauthorized("error comparing password to hash")
 	}
 
-	tokens, err := h.generateTokens(user)
+	tokens, err := h.generateTokens(&user)
 	if err != nil {
 		return nil, apierrors.NewInternalError(err)
 	}

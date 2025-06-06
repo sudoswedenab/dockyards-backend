@@ -109,7 +109,7 @@ func ReconcileUserRoleAndBindings(ctx context.Context, c client.Client, organiza
 			subjects = append(subjects, rbacv1.Subject{
 				APIGroup: rbacv1.GroupName,
 				Kind:     rbacv1.UserKind,
-				Name:     string(memberRef.UID),
+				Name:     memberRef.Name,
 			})
 		}
 
@@ -217,7 +217,7 @@ func ReconcileSuperUserClusterRoleAndBinding(ctx context.Context, c client.Clien
 			subjects = append(subjects, rbacv1.Subject{
 				APIGroup: rbacv1.GroupName,
 				Kind:     rbacv1.UserKind,
-				Name:     string(memberRef.UID),
+				Name:     memberRef.Name,
 			})
 		}
 
@@ -323,7 +323,7 @@ func ReconcileReaderClusterRoleAndBinding(ctx context.Context, c client.Client, 
 			subjects[i] = rbacv1.Subject{
 				APIGroup: rbacv1.GroupName,
 				Kind:     rbacv1.UserKind,
-				Name:     string(memberRef.UID),
+				Name:     memberRef.Name,
 			}
 		}
 
@@ -419,7 +419,7 @@ func ReconcileReaderRoleAndBinding(ctx context.Context, c client.Client, organiz
 			subjects[i] = rbacv1.Subject{
 				APIGroup: rbacv1.GroupName,
 				Kind:     rbacv1.UserKind,
-				Name:     string(memberRef.UID),
+				Name:     memberRef.Name,
 			}
 		}
 
@@ -515,7 +515,7 @@ func ReconcileSuperUserRoleAndBindings(ctx context.Context, c client.Client, org
 			subjects = append(subjects, rbacv1.Subject{
 				APIGroup: rbacv1.GroupName,
 				Kind:     rbacv1.UserKind,
-				Name:     string(memberRef.UID),
+				Name:     memberRef.Name,
 			})
 		}
 
