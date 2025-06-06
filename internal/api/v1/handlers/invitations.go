@@ -128,25 +128,13 @@ func (h *handler) ListGlobalInvitations(ctx context.Context) (*[]types.Invitatio
 		return nil, err
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: subject,
-	}
-
-	var userList dockyardsv1.UserList
-	err = h.List(ctx, &userList, matchingFields)
+	var user dockyardsv1.User
+	err = h.Get(ctx, client.ObjectKey{Name: subject}, &user)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(userList.Items) != 1 {
-		statusError := apierrors.NewUnauthorized("unexpected users count")
-
-		return nil, statusError
-	}
-
-	user := userList.Items[0]
-
-	matchingFields = client.MatchingFields{
+	matchingFields := client.MatchingFields{
 		index.EmailField: user.Spec.Email,
 	}
 
@@ -202,25 +190,13 @@ func (h *handler) DeleteGlobalInvitation(ctx context.Context, invitationName str
 		return err
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: subject,
-	}
-
-	var userList dockyardsv1.UserList
-	err = h.List(ctx, &userList, matchingFields)
+	var user dockyardsv1.User
+	err = h.Get(ctx, client.ObjectKey{Name: subject}, &user)
 	if err != nil {
 		return err
 	}
 
-	if len(userList.Items) != 1 {
-		statusError := apierrors.NewUnauthorized("unexpected users count")
-
-		return statusError
-	}
-
-	user := userList.Items[0]
-
-	matchingFields = client.MatchingFields{
+	matchingFields := client.MatchingFields{
 		index.EmailField: user.Spec.Email,
 	}
 
@@ -264,25 +240,13 @@ func (h *handler) UpdateGlobalInvitation(ctx context.Context, organizationName s
 		return err
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: subject,
-	}
-
-	var userList dockyardsv1.UserList
-	err = h.List(ctx, &userList, matchingFields)
+	var user dockyardsv1.User
+	err = h.Get(ctx, client.ObjectKey{Name: subject}, &user)
 	if err != nil {
 		return err
 	}
 
-	if len(userList.Items) != 1 {
-		statusError := apierrors.NewUnauthorized("unexpected users count")
-
-		return statusError
-	}
-
-	user := userList.Items[0]
-
-	matchingFields = client.MatchingFields{
+	matchingFields := client.MatchingFields{
 		index.EmailField: user.Spec.Email,
 	}
 
