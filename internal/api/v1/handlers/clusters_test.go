@@ -41,7 +41,6 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		t.Skip("no kubebuilder assets configured")
 	}
 
-	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
@@ -101,38 +100,6 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	release := dockyardsv1.Release{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "test-",
-			Namespace:    testEnvironment.GetDockyardsNamespace(),
-			Annotations: map[string]string{
-				dockyardsv1.AnnotationDefaultRelease: "true",
-			},
-		},
-		Spec: dockyardsv1.ReleaseSpec{
-			Type: dockyardsv1.ReleaseTypeKubernetes,
-		},
-	}
-
-	err = c.Create(ctx, &release)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	patch := client.MergeFrom(release.DeepCopy())
-
-	release.Status.LatestVersion = "v1.2.3"
-
-	err = c.Status().Patch(ctx, &release, patch)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &release)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	t.Run("test default as super user", func(t *testing.T) {
 		clusterOptions := types.ClusterOptions{
 			Name: "test-super-user",
@@ -174,7 +141,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 				},
 			},
 			Spec: dockyardsv1.ClusterSpec{
-				Version: release.Status.LatestVersion,
+				Version: defaultRelease.Status.LatestVersion,
 			},
 		}
 
@@ -795,7 +762,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 			Spec: dockyardsv1.ClusterSpec{
 				PodSubnets:     *clusterOptions.PodSubnets,
 				ServiceSubnets: *clusterOptions.ServiceSubnets,
-				Version:        release.Status.LatestVersion,
+				Version:        defaultRelease.Status.LatestVersion,
 			},
 		}
 

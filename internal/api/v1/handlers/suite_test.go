@@ -25,10 +25,13 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/handlers"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
 	utiljwt "github.com/sudoswedenab/dockyards-backend/pkg/util/jwt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -39,6 +42,7 @@ var (
 	mux             *http.ServeMux
 	accessKey       *ecdsa.PrivateKey
 	refreshKey      *ecdsa.PrivateKey
+	defaultRelease  *dockyardsv1.Release
 )
 
 func TestMain(m *testing.M) {
@@ -56,6 +60,43 @@ func TestMain(m *testing.M) {
 	c := testEnvironment.GetClient()
 
 	err = index.AddDefaultIndexes(ctx, mgr)
+	if err != nil {
+		panic(err)
+	}
+
+	defaultRelease = &dockyardsv1.Release{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				dockyardsv1.AnnotationDefaultRelease: "true",
+			},
+			GenerateName: "test-",
+			Namespace:    testEnvironment.GetDockyardsNamespace(),
+		},
+		Spec: dockyardsv1.ReleaseSpec{
+			Ranges: []string{
+				"v1.0.x",
+				"v1.1.x",
+				"v1.2.x",
+			},
+			Type: dockyardsv1.ReleaseTypeKubernetes,
+		},
+	}
+
+	err = c.Create(ctx, defaultRelease)
+	if err != nil {
+		panic(err)
+	}
+
+	patch := client.MergeFrom(defaultRelease.DeepCopy())
+
+	defaultRelease.Status.LatestVersion = "v1.2.3"
+	defaultRelease.Status.Versions = []string{
+		"v1.0.10",
+		"v1.1.7",
+		"v1.2.3",
+	}
+
+	err = c.Status().Patch(ctx, defaultRelease, patch)
 	if err != nil {
 		panic(err)
 	}
