@@ -40,21 +40,13 @@ import (
 
 type TestEnvironment struct {
 	mgr           manager.Manager
-	organization  *dockyardsv1.Organization
 	environment   *envtest.Environment
 	c             client.Client
-	superUser     *dockyardsv1.User
-	user          *dockyardsv1.User
-	reader        *dockyardsv1.User
 	namespaceName string
 }
 
 func (e *TestEnvironment) GetManager() manager.Manager {
 	return e.mgr
-}
-
-func (e *TestEnvironment) GetOrganization() *dockyardsv1.Organization {
-	return e.organization
 }
 
 func (e *TestEnvironment) GetEnvironment() *envtest.Environment {
@@ -63,18 +55,6 @@ func (e *TestEnvironment) GetEnvironment() *envtest.Environment {
 
 func (e *TestEnvironment) GetClient() client.Client {
 	return e.c
-}
-
-func (e *TestEnvironment) GetSuperUser() *dockyardsv1.User {
-	return e.superUser
-}
-
-func (e *TestEnvironment) GetUser() *dockyardsv1.User {
-	return e.user
-}
-
-func (e *TestEnvironment) GetReader() *dockyardsv1.User {
-	return e.reader
 }
 
 func (e *TestEnvironment) GetDockyardsNamespace() string {
@@ -264,95 +244,7 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 		return nil, err
 	}
 
-	superUser := dockyardsv1.User{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "superuser-",
-		},
-		Spec: dockyardsv1.UserSpec{
-			Email: "superuser@dockyards.dev",
-		},
-	}
-
-	user := dockyardsv1.User{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "user-",
-		},
-		Spec: dockyardsv1.UserSpec{
-			Email: "user@dockyards.dev",
-		},
-	}
-
-	reader := dockyardsv1.User{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "reader-",
-		},
-		Spec: dockyardsv1.UserSpec{
-			Email: "reader@dockyards.dev",
-		},
-	}
-
-	err = c.Create(ctx, &superUser)
-	if err != nil {
-		return nil, err
-	}
-
-	err = c.Create(ctx, &user)
-	if err != nil {
-		return nil, err
-	}
-
-	err = c.Create(ctx, &reader)
-	if err != nil {
-		return nil, err
-	}
-
 	namespace := corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "test-",
-		},
-	}
-
-	err = c.Create(ctx, &namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	organization := dockyardsv1.Organization{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "test-",
-		},
-		Spec: dockyardsv1.OrganizationSpec{
-			MemberRefs: []dockyardsv1.OrganizationMemberReference{
-				{
-					Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-					UID:  superUser.UID,
-				},
-				{
-					Role: dockyardsv1.OrganizationMemberRoleUser,
-					UID:  user.UID,
-				},
-				{
-					Role: dockyardsv1.OrganizationMemberRoleReader,
-					UID:  reader.UID,
-				},
-			},
-			NamespaceRef: &corev1.LocalObjectReference{
-				Name: namespace.Name,
-			},
-		},
-	}
-
-	err = c.Create(ctx, &organization)
-	if err != nil {
-		return nil, err
-	}
-
-	err = authorization.ReconcileOrganizationAuthorization(ctx, c, &organization)
-	if err != nil {
-		return nil, err
-	}
-
-	namespace = corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "dockyards-",
 		},
@@ -366,11 +258,7 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 	t := TestEnvironment{
 		mgr:           mgr,
 		environment:   &environment,
-		organization:  &organization,
 		c:             c,
-		superUser:     &superUser,
-		user:          &user,
-		reader:        &reader,
 		namespaceName: namespace.Name,
 	}
 
