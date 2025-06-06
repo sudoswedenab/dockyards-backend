@@ -51,9 +51,9 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	t.Run("test as super user", func(t *testing.T) {
 		options := apitypes.InvitationOptions{
@@ -320,9 +320,9 @@ func TestOrganizationInvitations_Delete(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	t.Run("test as super user", func(t *testing.T) {
 		invitation := dockyardsv1.Invitation{
@@ -452,9 +452,9 @@ func TestOrganizationInvitations_List(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	invitations := []dockyardsv1.Invitation{
 		{
@@ -634,7 +634,7 @@ func TestGlobalInvitations_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	otherUserToken := MustSignToken(t, string(otherUser.UID))
+	otherUserToken := MustSignToken(t, otherUser.Name)
 
 	t.Run("test as other user", func(t *testing.T) {
 		invitation := dockyardsv1.Invitation{
@@ -759,7 +759,7 @@ func TestGlobalInvitations_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	otherUserToken := MustSignToken(t, string(otherUser.UID))
+	otherUserToken := MustSignToken(t, otherUser.Name)
 
 	t.Run("test as other user", func(t *testing.T) {
 		invitation := dockyardsv1.Invitation{
@@ -825,7 +825,7 @@ func TestGlobalInvitations_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	otherUserToken := MustSignToken(t, string(otherUser.UID))
+	otherUserToken := MustSignToken(t, otherUser.Name)
 
 	byUID := cmpopts.SortSlices(func(a, b dockyardsv1.OrganizationMemberReference) bool {
 		return a.UID < b.UID

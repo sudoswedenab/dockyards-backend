@@ -38,9 +38,9 @@ func TestOrganizationMembers_List(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	expected := []types.Member{
 		{
@@ -165,7 +165,7 @@ func TestOrganizationMembers_List(t *testing.T) {
 	t.Run("test other user", func(t *testing.T) {
 		otherOrganization := testEnvironment.MustCreateOrganization(t)
 		otherUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleUser)
-		otherUserToken := MustSignToken(t, string(otherUser.UID))
+		otherUserToken := MustSignToken(t, otherUser.Name)
 
 		u := url.URL{
 			Path: path.Join("/v1/orgs", organization.Name, "members"),
@@ -194,9 +194,9 @@ func TestOrganizationMembers_Delete(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	t.Run("test as reader", func(t *testing.T) {
 		u := url.URL{

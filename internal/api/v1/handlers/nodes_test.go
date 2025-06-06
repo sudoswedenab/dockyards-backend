@@ -44,7 +44,7 @@ func TestClusterNodes_List(t *testing.T) {
 
 	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -200,7 +200,7 @@ func TestClusterNodes_List(t *testing.T) {
 
 		otherUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleSuperUser)
 
-		otherUserToken := MustSignToken(t, string(otherUser.UID))
+		otherUserToken := MustSignToken(t, otherUser.Name)
 
 		u := url.URL{
 			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "nodes"),
@@ -225,7 +225,7 @@ func TestClusterNodes_Get(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	userToken := MustSignToken(t, string(user.UID))
+	userToken := MustSignToken(t, user.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{

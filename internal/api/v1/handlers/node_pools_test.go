@@ -50,9 +50,9 @@ func TestClusterNodePools_Get(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -382,9 +382,9 @@ func TestClusterNodePools_Delete(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -660,9 +660,9 @@ func TestClusterNodePools_Update(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1556,9 +1556,9 @@ func TestClusterNodePools_Create(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{

@@ -58,8 +58,8 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{

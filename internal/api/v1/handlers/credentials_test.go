@@ -46,7 +46,7 @@ func TestOrganizationCredentials_List(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	superUserToken := MustSignToken(t, string(superUser.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
 
 	u := url.URL{
 		Path: path.Join("/v1/orgs", organization.Name, "credentials"),
@@ -288,8 +288,8 @@ func TestOrganizationCredentials_Update(t *testing.T) {
 	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	t.Run("test update as reader", func(t *testing.T) {
 		credentialName := "test-update-reader"
@@ -663,8 +663,8 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	u := url.URL{
 		Path: path.Join("/v1/orgs", organization.Name, "credentials"),
@@ -897,7 +897,7 @@ func TestOrganizationCredentials_Get(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	superUserToken := MustSignToken(t, string(superUser.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
 
 	t.Run("test empty", func(t *testing.T) {
 		credentialName := "test-empty"
@@ -1133,9 +1133,9 @@ func TestOrganizationCredentials_Delete(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	t.Run("test as super user", func(t *testing.T) {
 		credentialName := "test-super-user"

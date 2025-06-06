@@ -53,9 +53,9 @@ func TestGlobalOrganizations_List(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	mgr.GetCache().WaitForCacheSync(ctx)
 
@@ -199,7 +199,7 @@ func TestGlobalOrganizations_List(t *testing.T) {
 						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
 							APIGroup: &dockyardsv1.GroupVersion.Group,
 							Kind:     dockyardsv1.UserKind,
-							Name:     user.Name,
+							Name:     reader.Name,
 						},
 						UID:  reader.UID,
 						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
@@ -275,10 +275,7 @@ func TestGlobalOrganizations_List(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		otherUserToken, err := SignToken(string(otherUser.UID))
-		if err != nil {
-			t.Fatal(err)
-		}
+		otherUserToken := MustSignToken(t, otherUser.Name)
 
 		u := url.URL{
 			Path: path.Join("/v1/orgs"),
@@ -334,10 +331,7 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	otherUserToken, err := SignToken(string(otherUser.UID))
-	if err != nil {
-		t.Fatal(err)
-	}
+	otherUserToken := MustSignToken(t, otherUser.Name)
 
 	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherUser)
 	if err != nil {
@@ -731,9 +725,9 @@ func TestGlobalOrganizations_Delete(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	mgr.GetCache().WaitForCacheSync(ctx)
 
@@ -858,7 +852,7 @@ func TestGlobalOrganizations_Get(t *testing.T) {
 
 	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
 
 	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), organization)
 	if err != nil {
@@ -950,7 +944,7 @@ func TestGlobalOrganizations_Get(t *testing.T) {
 
 		otherUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleUser)
 
-		otherUserToken := MustSignToken(t, string(otherUser.UID))
+		otherUserToken := MustSignToken(t, otherUser.Name)
 
 		err = c.Delete(ctx, otherOrganization, client.PropagationPolicy(metav1.DeletePropagationForeground))
 		if err != nil {
@@ -1012,7 +1006,7 @@ func TestGlobalOrganizations_Get(t *testing.T) {
 
 		otherUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleUser)
 
-		otherUserToken := MustSignToken(t, string(otherUser.UID))
+		otherUserToken := MustSignToken(t, otherUser.Name)
 
 		patch := client.MergeFrom(otherOrganization.DeepCopy())
 
@@ -1086,9 +1080,9 @@ func TestGlobalOrganizations_Update(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	err := testingutil.RetryUntilFound(ctx, mgr.GetClient(), organization)
 	if err != nil {
@@ -1232,7 +1226,7 @@ func TestGlobalOrganizations_Update(t *testing.T) {
 	t.Run("test credential reference", func(t *testing.T) {
 		otherOrganization := testEnvironment.MustCreateOrganization(t)
 		otherSuperUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleSuperUser)
-		otherSuperUserToken := MustSignToken(t, string(otherSuperUser.UID))
+		otherSuperUserToken := MustSignToken(t, otherSuperUser.Name)
 
 		options := apitypes.OrganizationOptions{
 			CredentialReferenceName: ptr.To("testing"),
@@ -1288,7 +1282,7 @@ func TestGlobalOrganizations_Update(t *testing.T) {
 	t.Run("test duration", func(t *testing.T) {
 		otherOrganization := testEnvironment.MustCreateOrganization(t)
 		otherSuperUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleSuperUser)
-		otherSuperUserToken := MustSignToken(t, string(otherSuperUser.UID))
+		otherSuperUserToken := MustSignToken(t, otherSuperUser.Name)
 
 		options := apitypes.OrganizationOptions{
 			Duration: ptr.To("15m"),

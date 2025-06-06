@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	var err error
 
 	ctx, cancel = context.WithCancel(context.TODO())
-	logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	testEnvironment, err = testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
 	if err != nil {

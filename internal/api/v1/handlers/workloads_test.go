@@ -54,9 +54,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	dockyardsNamespace := testEnvironment.GetDockyardsNamespace()
 
@@ -530,9 +530,9 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -704,9 +704,9 @@ func TestClusterWorkloads_Update(t *testing.T) {
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	superUserToken := MustSignToken(t, string(superUser.UID))
-	userToken := MustSignToken(t, string(user.UID))
-	readerToken := MustSignToken(t, string(reader.UID))
+	superUserToken := MustSignToken(t, superUser.Name)
+	userToken := MustSignToken(t, user.Name)
+	readerToken := MustSignToken(t, reader.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1259,7 +1259,7 @@ func TestClusterWorkloads_Get(t *testing.T) {
 
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
 
-	readerToken := MustSignToken(t, string(reader.UID))
+	readerToken := MustSignToken(t, reader.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1321,8 +1321,6 @@ func TestClusterWorkloads_Get(t *testing.T) {
 			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "workloads", workloadName),
 		}
 
-		t.Logf("u: %s", u.Path)
-
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
 
@@ -1343,7 +1341,6 @@ func TestClusterWorkloads_Get(t *testing.T) {
 		var actual types.Workload
 		err = json.Unmarshal(b, &actual)
 		if err != nil {
-			t.Logf("b: %s", string(b))
 			t.Fatal(err)
 		}
 
