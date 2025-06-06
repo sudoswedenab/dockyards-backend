@@ -76,7 +76,7 @@ rules:
 - apiGroups:
   - dockyards.io
   resources:
-  - clustertemplates
+  - features
   - nodes
   - releases
   - users

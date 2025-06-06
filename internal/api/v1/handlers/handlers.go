@@ -102,7 +102,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("POST /v1/refresh", logger(http.HandlerFunc(h.PostRefresh)))
 
-	mux.Handle("GET /v1/cluster-options", logger(requireAuth(http.HandlerFunc(h.GetClusterOptions))))
+	mux.Handle("GET /v1/cluster-options", logger(requireAuth(GetNamelessResource(h.GetClusterOptions))))
 
 	mux.Handle("GET /v1/orgs", logger(requireAuth(contentJSON(ListGlobalResource("organizations", h.ListGlobalOrganizations)))))
 	mux.Handle("POST /v1/orgs", logger(requireAuth(contentJSON(CreateGlobalResource("organizations", h.CreateGlobalOrganization)))))

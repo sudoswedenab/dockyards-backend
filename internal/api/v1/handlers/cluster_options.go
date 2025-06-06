@@ -15,46 +15,34 @@
 package handlers
 
 import (
-	"encoding/json"
-	"net/http"
+	"context"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
-	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 )
 
-// +kubebuilder:rbac:groups=dockyards.io,resources=clustertemplates,verbs=get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=features,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
 
-func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
+func (h *handler) GetClusterOptions(ctx context.Context) (*types.Options, error) {
 	release, err := apiutil.GetDefaultRelease(ctx, h.Client, dockyardsv1.ReleaseTypeKubernetes)
 	if err != nil {
-		logger.Error("error getting default release", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
-	options := types.Options{
+	response := types.Options{
 		Version: []string{},
 	}
 
 	if release != nil {
-		options.Version = release.Status.Versions
+		response.Version = release.Status.Versions
 	}
 
 	storageRoleFeatureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageRole, h.namespace)
 	if err != nil {
-		logger.Error("error verifying feature", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return nil, err
 	}
 
 	if storageRoleFeatureEnabled {
@@ -62,29 +50,15 @@ func (h *handler) GetClusterOptions(w http.ResponseWriter, r *http.Request) {
 
 		hostPathFeatureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageResourceTypeHostPath, h.namespace)
 		if err != nil {
-			logger.Error("error verifying feature", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
+			return nil, err
 		}
 
 		if hostPathFeatureEnabled {
 			storageResourceTypes = append(storageResourceTypes, dockyardsv1.StorageResourceTypeHostPath)
 		}
 
-		options.StorageResourceTypes = &storageResourceTypes
+		response.StorageResourceTypes = &storageResourceTypes
 	}
 
-	b, err := json.Marshal(&options)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return &response, nil
 }
