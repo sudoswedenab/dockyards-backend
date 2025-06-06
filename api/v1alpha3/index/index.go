@@ -25,7 +25,7 @@ import (
 
 const (
 	EmailField                     = ".spec.email"
-	MemberReferencesField          = ".spec.memberRefs.uid"
+	MemberReferencesField          = ".spec.memberRefs.name"
 	OwnerReferencesField           = ".metadata.ownerReferences"
 	SecretTypeField                = ".type"
 	UIDField                       = ".metadata.uid"
@@ -35,18 +35,30 @@ const (
 	SelectorField                  = ".spec.selector"
 )
 
-func ByMemberReferences(obj client.Object) []string {
+func ByMemberReferences(ctx context.Context, mgr ctrl.Manager) error {
+	err := mgr.GetFieldIndexer().IndexField(ctx, &v1alpha3.Organization{},
+		MemberReferencesField,
+		byMemberReferences,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func byMemberReferences(obj client.Object) []string {
 	organization, ok := obj.(*v1alpha3.Organization)
 	if !ok {
 		return nil
 	}
 
-	memberUIDs := make([]string, len(organization.Spec.MemberRefs))
+	memberNames := make([]string, len(organization.Spec.MemberRefs))
 	for i, memberRef := range organization.Spec.MemberRefs {
-		memberUIDs[i] = string(memberRef.UID)
+		memberNames[i] = memberRef.Name
 	}
 
-	return memberUIDs
+	return memberNames
 }
 
 func ByOwnerReferences(obj client.Object) []string {

@@ -36,7 +36,7 @@ func AddDefaultIndexes(ctx context.Context, mgr ctrl.Manager) error {
 		}
 	}
 
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.Organization{}, MemberReferencesField, ByMemberReferences)
+	err = ByMemberReferences(ctx, mgr)
 	if err != nil {
 		return err
 	}
