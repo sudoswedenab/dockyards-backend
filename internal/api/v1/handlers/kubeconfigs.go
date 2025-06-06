@@ -27,7 +27,6 @@ import (
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
-	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -110,21 +109,11 @@ func (h *handler) CreateClusterKubeconfig(ctx context.Context, cluster *dockyard
 		return nil, err
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: subject,
-	}
-
-	var userList dockyardsv1.UserList
-	err = h.List(ctx, &userList, matchingFields)
+	var user dockyardsv1.User
+	err = h.Get(ctx, client.ObjectKey{Name: subject}, &user)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(userList.Items) != 1 {
-		return nil, errors.New("unexpected users count")
-	}
-
-	user := userList.Items[0]
 
 	ownerOrganization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
 	if err != nil {
