@@ -94,23 +94,11 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 		return nil, err
 	}
 
-	matchingFields := client.MatchingFields{
-		index.UIDField: subject,
-	}
-
-	var userList dockyardsv1.UserList
-	err = h.List(ctx, &userList, matchingFields)
+	var user dockyardsv1.User
+	err = h.Get(ctx, client.ObjectKey{Name: subject}, &user)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(userList.Items) != 1 {
-		statusError := apierrors.NewInternalError(nil)
-
-		return nil, statusError
-	}
-
-	user := userList.Items[0]
 
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
