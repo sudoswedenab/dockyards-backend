@@ -73,9 +73,11 @@ func TestOrganizationController(t *testing.T) {
 		}
 	}()
 
-	superUser := testEnvironment.GetSuperUser()
-	user := testEnvironment.GetUser()
-	reader := testEnvironment.GetReader()
+	testOrganization := testEnvironment.MustCreateOrganization(t)
+
+	superUser := testEnvironment.MustGetOrganizationUser(t, testOrganization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, testOrganization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, testOrganization, dockyardsv1.OrganizationMemberRoleReader)
 
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -95,14 +97,29 @@ func TestOrganizationController(t *testing.T) {
 		Spec: dockyardsv1.OrganizationSpec{
 			MemberRefs: []dockyardsv1.OrganizationMemberReference{
 				{
+					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     superUser.Name,
+					},
 					UID:  superUser.UID,
 					Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 				},
 				{
+					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     user.Name,
+					},
 					UID:  user.UID,
 					Role: dockyardsv1.OrganizationMemberRoleUser,
 				},
 				{
+					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     reader.Name,
+					},
 					UID:  reader.UID,
 					Role: dockyardsv1.OrganizationMemberRoleReader,
 				},
@@ -136,14 +153,29 @@ func TestOrganizationController(t *testing.T) {
 		Spec: dockyardsv1.OrganizationSpec{
 			MemberRefs: []dockyardsv1.OrganizationMemberReference{
 				{
+					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     "other-super-user",
+					},
 					UID:  "dd82971a-c83e-4db4-85c4-00d7c6165d06",
 					Role: dockyardsv1.OrganizationMemberRoleSuperUser,
 				},
 				{
+					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     superUser.Name,
+					},
 					UID:  superUser.UID,
 					Role: dockyardsv1.OrganizationMemberRoleUser,
 				},
 				{
+					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     user.Name,
+					},
 					UID:  user.UID,
 					Role: dockyardsv1.OrganizationMemberRoleReader,
 				},
