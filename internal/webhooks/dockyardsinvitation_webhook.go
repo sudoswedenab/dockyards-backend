@@ -93,7 +93,7 @@ func (webhook *DockyardsInvitation) ValidateCreate(ctx context.Context, obj runt
 	existingUser := userList.Items[0]
 
 	matchingFields = client.MatchingFields{
-		index.MemberReferencesField: string(existingUser.UID),
+		index.MemberReferencesField: existingUser.Name,
 	}
 
 	var organizationList dockyardsv1.OrganizationList
@@ -112,7 +112,7 @@ func (webhook *DockyardsInvitation) ValidateCreate(ctx context.Context, obj runt
 		}
 
 		for _, memberRef := range organization.Spec.MemberRefs {
-			if memberRef.UID != existingUser.UID {
+			if memberRef.Name != existingUser.Name {
 				continue
 			}
 
