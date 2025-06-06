@@ -230,7 +230,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test super user getting organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(superUser.UID),
+				User: superUser.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:    dockyardsv1.GroupVersion.Group,
 					Name:     organization.Name,
@@ -253,7 +253,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test super user deleting organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(superUser.UID),
+				User: superUser.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:    dockyardsv1.GroupVersion.Group,
 					Name:     organization.Name,
@@ -276,7 +276,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test super user patching organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(superUser.UID),
+				User: superUser.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:    dockyardsv1.GroupVersion.Group,
 					Name:     organization.Name,
@@ -299,7 +299,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test super user deleting other organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(superUser.UID),
+				User: superUser.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:    dockyardsv1.GroupVersion.Group,
 					Name:     otherOrganization.Name,
@@ -322,7 +322,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test super user getting clusters", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(superUser.UID),
+				User: superUser.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
@@ -345,7 +345,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test super user deleting other organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(superUser.UID),
+				User: superUser.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:    dockyardsv1.GroupVersion.Group,
 					Name:     otherOrganization.Name,
@@ -368,7 +368,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test user deleting clusters", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(user.UID),
+				User: user.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
@@ -391,7 +391,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test user getting organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(user.UID),
+				User: user.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:    dockyardsv1.GroupVersion.Group,
 					Name:     organization.Name,
@@ -414,7 +414,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test user deleting organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(user.UID),
+				User: user.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:    dockyardsv1.GroupVersion.Group,
 					Name:     organization.Name,
@@ -437,7 +437,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test user patching organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(user.UID),
+				User: user.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:    dockyardsv1.GroupVersion.Group,
 					Name:     organization.Name,
@@ -460,7 +460,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test user deleting clusters other organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(user.UID),
+				User: user.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: otherOrganization.Spec.NamespaceRef.Name,
@@ -483,7 +483,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test reader deleting organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(reader.UID),
+				User: reader.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:    dockyardsv1.GroupVersion.Group,
 					Name:     organization.Name,
@@ -506,7 +506,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test reader getting organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(reader.UID),
+				User: reader.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:    dockyardsv1.GroupVersion.Group,
 					Name:     organization.Name,
@@ -529,7 +529,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test reader getting clusters", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(reader.UID),
+				User: reader.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
@@ -552,7 +552,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test reader getting clusters other organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(reader.UID),
+				User: reader.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: otherOrganization.Spec.NamespaceRef.Name,
@@ -575,7 +575,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test reader deleting clusters", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(reader.UID),
+				User: reader.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
@@ -598,7 +598,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test reader getting deployments", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(reader.UID),
+				User: reader.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
@@ -621,7 +621,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test super user creating clusters", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(superUser.UID),
+				User: superUser.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
@@ -644,7 +644,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test user creating clusters", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(user.UID),
+				User: user.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
@@ -667,7 +667,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test reader creating clusters", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(reader.UID),
+				User: reader.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
@@ -690,7 +690,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test reader getting clusters other organization", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(reader.UID),
+				User: reader.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: otherOrganization.Spec.NamespaceRef.Name,
@@ -713,7 +713,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test super user deleting members", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(superUser.UID),
+				User: superUser.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
@@ -736,7 +736,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test user deleting members", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(user.UID),
+				User: user.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
@@ -759,7 +759,7 @@ func TestOrganizationController(t *testing.T) {
 	t.Run("test reader deleting members", func(t *testing.T) {
 		subjectAccessReview := authorizationv1.SubjectAccessReview{
 			Spec: authorizationv1.SubjectAccessReviewSpec{
-				User: string(reader.UID),
+				User: reader.Name,
 				ResourceAttributes: &authorizationv1.ResourceAttributes{
 					Group:     dockyardsv1.GroupVersion.Group,
 					Namespace: organization.Spec.NamespaceRef.Name,
