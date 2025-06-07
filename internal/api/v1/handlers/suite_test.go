@@ -138,14 +138,14 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func SignToken(subject string) (string, error) {
+func SignToken(subject string, key any) (string, error) {
 	claims := jwt.RegisteredClaims{
 		Subject:   subject,
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	signedToken, err := token.SignedString(accessKey)
+	signedToken, err := token.SignedString(key)
 	if err != nil {
 		return "", err
 	}
@@ -154,7 +154,16 @@ func SignToken(subject string) (string, error) {
 }
 
 func MustSignToken(t *testing.T, subject string) string {
-	signedToken, err := SignToken(subject)
+	signedToken, err := SignToken(subject, accessKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return signedToken
+}
+
+func MustSignRefreshToken(t *testing.T, subject string) string {
+	signedToken, err := SignToken(subject, refreshKey)
 	if err != nil {
 		t.Fatal(err)
 	}
