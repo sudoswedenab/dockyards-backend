@@ -12,46 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package handlers_test
 
 import (
-	"context"
 	"encoding/json"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
-	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
+	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestListIdentityProviders(t *testing.T) {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+func TestGlobalIdentityProviders_List(t *testing.T) {
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
 	reqTarget := "/v1/identity-providers"
 
 	t.Run("test no providers", func(t *testing.T) {
 		scheme := scheme.Scheme
 		dockyardsv1.AddToScheme(scheme)
 
-		idps := dockyardsv1.IdentityProviderList{}
-
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(&idps).Build()
-		h := handler{Client: fakeClient}
-
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, reqTarget, nil)
-		ctx := middleware.ContextWithLogger(context.Background(), logger)
 
-		h.ListIdentityProviders(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -77,72 +69,80 @@ func TestListIdentityProviders(t *testing.T) {
 	})
 
 	t.Run("test filtered providers", func(t *testing.T) {
-		scheme := scheme.Scheme
-		dockyardsv1.AddToScheme(scheme)
-
 		disc := dockyardsv1.OIDCConfig{OIDCProviderDiscoveryURL: new(string)}
-		conf := dockyardsv1.OIDCConfig{OIDCProviderConfig: new(dockyardsv1.OIDCProviderConfig)}
-		both := dockyardsv1.OIDCConfig{
-			OIDCProviderConfig:       new(dockyardsv1.OIDCProviderConfig),
-			OIDCProviderDiscoveryURL: new(string),
-		}
-
-		idps := dockyardsv1.IdentityProviderList{
-			Items: []dockyardsv1.IdentityProvider{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "oidc-with-discovery",
-						UID:  "1",
-					},
-					Spec: dockyardsv1.IdentityProviderSpec{
-						OIDCConfig: &disc,
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "oidc-with-provider-conf",
-						UID:  "2",
-					},
-					Spec: dockyardsv1.IdentityProviderSpec{
-						OIDCConfig: &conf,
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "oidc-with-neither",
-						UID:  "3",
-					},
-					Spec: dockyardsv1.IdentityProviderSpec{
-						OIDCConfig: new(dockyardsv1.OIDCConfig),
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "oidc-with-both",
-						UID:  "4",
-					},
-					Spec: dockyardsv1.IdentityProviderSpec{
-						OIDCConfig: &both,
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "idp-with-no-config",
-						UID:  "5",
-					},
-					Spec: dockyardsv1.IdentityProviderSpec{},
+		conf := dockyardsv1.OIDCConfig{
+			OIDCProviderConfig: &dockyardsv1.OIDCProviderConfig{
+				IDTokenSigningAlgs: []string{
+					"RS256",
 				},
 			},
 		}
+		both := dockyardsv1.OIDCConfig{
+			OIDCProviderConfig: &dockyardsv1.OIDCProviderConfig{
+				IDTokenSigningAlgs: []string{
+					"RS256",
+				},
+			},
+			OIDCProviderDiscoveryURL: new(string),
+		}
 
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithLists(&idps).Build()
-		h := handler{Client: fakeClient}
+		idps := []dockyardsv1.IdentityProvider{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "oidc-with-discovery",
+				},
+				Spec: dockyardsv1.IdentityProviderSpec{
+					OIDCConfig: &disc,
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "oidc-with-provider-conf",
+				},
+				Spec: dockyardsv1.IdentityProviderSpec{
+					OIDCConfig: &conf,
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "oidc-with-neither",
+				},
+				Spec: dockyardsv1.IdentityProviderSpec{
+					OIDCConfig: new(dockyardsv1.OIDCConfig),
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "oidc-with-both",
+				},
+				Spec: dockyardsv1.IdentityProviderSpec{
+					OIDCConfig: &both,
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "idp-with-no-config",
+				},
+				Spec: dockyardsv1.IdentityProviderSpec{},
+			},
+		}
+
+		for i := range idps {
+			err := c.Create(ctx, &idps[i])
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &idps[i])
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, reqTarget, nil)
-		ctx := middleware.ContextWithLogger(context.Background(), logger)
 
-		h.ListIdentityProviders(w, r.Clone(ctx))
+		mux.ServeHTTP(w, r)
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusOK {
@@ -162,15 +162,15 @@ func TestListIdentityProviders(t *testing.T) {
 
 		expected := []types.IdentityProvider{
 			{
-				ID:   "1",
+				ID:   string(idps[0].UID),
 				Name: "oidc-with-discovery",
 			},
 			{
-				ID:   "2",
+				ID:   string(idps[1].UID),
 				Name: "oidc-with-provider-conf",
 			},
 			{
-				ID:   "4",
+				ID:   string(idps[3].UID),
 				Name: "oidc-with-both",
 			},
 		}

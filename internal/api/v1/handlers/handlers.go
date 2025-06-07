@@ -98,7 +98,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		),
 	)
 
-	mux.Handle("GET /v1/identity-providers", logger(http.HandlerFunc(h.ListIdentityProviders)))
+	mux.Handle("GET /v1/identity-providers", logger(ListGlobalResource("identityproviders", h.ListGlobalIdentityProviders)))
 
 	mux.Handle("POST /v1/refresh", logger(http.HandlerFunc(h.PostRefresh)))
 
