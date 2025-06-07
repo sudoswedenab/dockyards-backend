@@ -15,110 +15,41 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strings"
+	"context"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
-	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=users,verbs=get;list;watch
 
-func (h *handler) PostRefresh(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx)
-
-	authorizationHeader := r.Header.Get("Authorization")
-	if authorizationHeader == "" {
-		logger.Debug("empty or missing authorization header during refresh")
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
+func (h *handler) GetGlobalTokens(ctx context.Context) (*types.Tokens, error) {
+	subject, err := middleware.SubjectFrom(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	refreshToken := strings.TrimPrefix(authorizationHeader, "Bearer ")
-
-	// Parse the token string and a function for looking for the key.
-	token, err := jwt.ParseWithClaims(refreshToken, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	var user dockyardsv1.User
+	err = h.Get(ctx, client.ObjectKey{Name: subject}, &user)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, apierrors.NewUnauthorized("user not found")
 		}
 
-		return h.jwtRefreshPublicKey, nil
-	})
+		return nil, err
+	}
+
+	response, err := h.generateTokens(&user)
 	if err != nil {
-		logger.Error("error parsing token with claims", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
+		return nil, err
 	}
 
-	claims, ok := token.Claims.(*jwt.RegisteredClaims)
-	if !ok || !token.Valid {
-		logger.Error("invalid token claims")
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	subject, err := claims.GetSubject()
-	if err != nil {
-		logger.Error("error getting subject from claims", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	matchingFields := client.MatchingFields{
-		index.UIDField: subject,
-	}
-
-	var userList dockyardsv1.UserList
-	err = h.List(ctx, &userList, matchingFields)
-	if err != nil {
-		logger.Error("error listing users", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if len(userList.Items) != 1 {
-		logger.Error("expected exactly one user from kubernetes", "users", len(userList.Items))
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	user := userList.Items[0]
-
-	tokens, err := h.generateTokens(&user)
-	if err != nil {
-		logger.Error("error generating tokens", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	b, err := json.Marshal(&tokens)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return response, nil
 }
 
 func (h *handler) generateTokens(user *dockyardsv1.User) (*types.Tokens, error) {

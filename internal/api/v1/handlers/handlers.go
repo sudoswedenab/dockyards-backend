@@ -82,6 +82,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	logger := middleware.NewLogger(h.logger).Handler
 	requireAuth := middleware.NewRequireAuth(h.jwtAccessPublicKey).Handler
+	requireRefresh := middleware.NewRequireAuth(h.jwtRefreshPublicKey).Handler
 	contentJSON := middleware.NewContentType("application/json").Handler
 	contentYAML := middleware.NewContentType("application/yaml").Handler
 
@@ -100,7 +101,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("GET /v1/identity-providers", logger(ListGlobalResource("identityproviders", h.ListGlobalIdentityProviders)))
 
-	mux.Handle("POST /v1/refresh", logger(http.HandlerFunc(h.PostRefresh)))
+	mux.Handle("POST /v1/refresh", logger(requireRefresh(GetNamelessResource(h.GetGlobalTokens))))
 
 	mux.Handle("GET /v1/cluster-options", logger(requireAuth(GetNamelessResource(h.GetClusterOptions))))
 
