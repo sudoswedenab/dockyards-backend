@@ -82,7 +82,7 @@ func ReconcileUserRoleAndBindings(ctx context.Context, c client.Client, organiza
 
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dockyards-user",
+			Name:      "dockyards-users",
 			Namespace: organization.Spec.NamespaceRef.Name,
 		},
 	}
@@ -396,7 +396,7 @@ func ReconcileReaderRoleAndBinding(ctx context.Context, c client.Client, organiz
 
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dockyards-reader",
+			Name:      "dockyards-readers",
 			Namespace: organization.Spec.NamespaceRef.Name,
 		},
 	}
@@ -441,7 +441,7 @@ func ReconcileReaderRoleAndBinding(ctx context.Context, c client.Client, organiz
 func ReconcileSuperUserRoleAndBindings(ctx context.Context, c client.Client, organization *dockyardsv1.Organization) error {
 	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dockyards-super-user",
+			Name:      "dockyards-superuser",
 			Namespace: organization.Spec.NamespaceRef.Name,
 		},
 	}
@@ -488,7 +488,7 @@ func ReconcileSuperUserRoleAndBindings(ctx context.Context, c client.Client, org
 
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dockyards-super-users",
+			Name:      "dockyards-superusers",
 			Namespace: organization.Spec.NamespaceRef.Name,
 		},
 	}
