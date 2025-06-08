@@ -133,7 +133,7 @@ func ReconcileSuperUserClusterRoleAndBinding(ctx context.Context, c client.Clien
 
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "dockyards-" + organization.Name + "-superuser",
+			Name: "dockyards:" + organization.Name + "-superuser",
 		},
 	}
 
@@ -182,7 +182,7 @@ func ReconcileSuperUserClusterRoleAndBinding(ctx context.Context, c client.Clien
 
 	clusterRoleBinding := rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "dockyards-" + organization.Name + "-superuser",
+			Name: "dockyards:" + organization.Name + "-superusers",
 		},
 	}
 
@@ -241,7 +241,7 @@ func ReconcileReaderClusterRoleAndBinding(ctx context.Context, c client.Client, 
 
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "dockyards-" + organization.Name + "-reader",
+			Name: "dockyards:" + organization.Name + "-reader",
 		},
 	}
 
@@ -292,7 +292,7 @@ func ReconcileReaderClusterRoleAndBinding(ctx context.Context, c client.Client, 
 
 	clusterRoleBinding := rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "dockyards-" + organization.Name + "-reader",
+			Name: "dockyards:" + organization.Name + "-readers",
 		},
 	}
 
@@ -533,7 +533,7 @@ func ReconcileSuperUserRoleAndBindings(ctx context.Context, c client.Client, org
 func ReconcileOtherUserClusterRoleAndBindings(ctx context.Context, c client.Client, organization *dockyardsv1.Organization) error {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "dockyards-" + organization.Name + "-other",
+			Name: "dockyards:" + organization.Name + "-other",
 		},
 	}
 
@@ -579,7 +579,7 @@ func ReconcileOtherUserClusterRoleAndBindings(ctx context.Context, c client.Clie
 
 	clusterRoleBinding := rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "dockyards-" + organization.Name + "-others",
+			Name: "dockyards:" + organization.Name + "-others",
 		},
 	}
 
