@@ -29,11 +29,9 @@ func AddDefaultIndexes(ctx context.Context, mgr ctrl.Manager) error {
 		return err
 	}
 
-	for _, object := range []client.Object{&dockyardsv1.User{}, &dockyardsv1.Cluster{}, &dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &dockyardsv1.Organization{}} {
-		err := mgr.GetFieldIndexer().IndexField(ctx, object, UIDField, ByUID)
-		if err != nil {
-			return err
-		}
+	err = ByUID(ctx, mgr)
+	if err != nil {
+		return err
 	}
 
 	err = ByMemberReferences(ctx, mgr)

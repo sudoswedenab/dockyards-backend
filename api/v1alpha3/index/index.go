@@ -72,7 +72,26 @@ func ByOwnerReferences(obj client.Object) []string {
 	return ownerUIDs
 }
 
-func ByUID(obj client.Object) []string {
+func ByUID(ctx context.Context, mgr ctrl.Manager) error {
+	objects := []client.Object{
+		&v1alpha3.Cluster{},
+		&v1alpha3.Node{},
+		&v1alpha3.NodePool{},
+		&v1alpha3.Organization{},
+		&v1alpha3.User{},
+	}
+
+	for _, object := range objects {
+		err := mgr.GetFieldIndexer().IndexField(ctx, object, UIDField, byUID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func byUID(obj client.Object) []string {
 	return []string{string(obj.GetUID())}
 }
 
