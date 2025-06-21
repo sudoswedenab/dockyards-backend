@@ -79,6 +79,7 @@ func ByUID(ctx context.Context, mgr ctrl.Manager) error {
 		&v1alpha3.NodePool{},
 		&v1alpha3.Organization{},
 		&v1alpha3.User{},
+		&v1alpha3.Workload{},
 	}
 
 	for _, object := range objects {
