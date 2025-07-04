@@ -101,7 +101,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("GET /v1/identity-providers", logger(ListGlobalResource("identityproviders", h.ListGlobalIdentityProviders)))
 
-	mux.Handle("POST /v1/refresh", logger(requireRefresh(GetNamelessResource(h.GetGlobalTokens))))
+	mux.Handle("POST /v1/refresh", logger(requireRefresh(contentJSON(GetNamelessResource(h.GetGlobalTokens)))))
 
 	mux.Handle("GET /v1/cluster-options", logger(requireAuth(GetNamelessResource(h.GetClusterOptions))))
 
