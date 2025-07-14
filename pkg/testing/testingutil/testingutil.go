@@ -15,11 +15,11 @@
 package testingutil
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
 
-	"context"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	authorizationv1 "k8s.io/api/authorization/v1"
@@ -122,6 +122,7 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 			GenerateName: "test-",
 		},
 		Spec: dockyardsv1.OrganizationSpec{
+			DisplayName: "test",
 			MemberRefs: []dockyardsv1.OrganizationMemberReference{
 				{
 					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
@@ -282,7 +283,6 @@ func RetryUntilFound(ctx context.Context, reader client.Reader, obj client.Objec
 
 		return err
 	})
-
 	if err != nil {
 		return err
 	}
