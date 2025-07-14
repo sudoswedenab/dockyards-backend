@@ -95,9 +95,10 @@ func TestGlobalOrganizations_List(t *testing.T) {
 
 		expected := []apitypes.Organization{
 			{
-				ID:        string(organization.UID),
-				Name:      organization.Name,
-				CreatedAt: organization.CreationTimestamp.Time,
+				ID:          string(organization.UID),
+				Name:        organization.Name,
+				DisplayName: &organization.Spec.DisplayName,
+				CreatedAt:   organization.CreationTimestamp.Time,
 			},
 		}
 
@@ -136,9 +137,10 @@ func TestGlobalOrganizations_List(t *testing.T) {
 
 		expected := []apitypes.Organization{
 			{
-				ID:        string(organization.UID),
-				Name:      organization.Name,
-				CreatedAt: organization.CreationTimestamp.Time,
+				ID:          string(organization.UID),
+				Name:        organization.Name,
+				DisplayName: &organization.Spec.DisplayName,
+				CreatedAt:   organization.CreationTimestamp.Time,
 			},
 		}
 
@@ -177,9 +179,10 @@ func TestGlobalOrganizations_List(t *testing.T) {
 
 		expected := []apitypes.Organization{
 			{
-				ID:        string(organization.UID),
-				Name:      organization.Name,
-				CreatedAt: organization.CreationTimestamp.Time,
+				ID:          string(organization.UID),
+				Name:        organization.Name,
+				DisplayName: &organization.Spec.DisplayName,
+				CreatedAt:   organization.CreationTimestamp.Time,
 			},
 		}
 
@@ -247,14 +250,16 @@ func TestGlobalOrganizations_List(t *testing.T) {
 
 		expected := []apitypes.Organization{
 			{
-				ID:        string(organization.UID),
-				Name:      organization.Name,
-				CreatedAt: organization.CreationTimestamp.Time,
+				ID:          string(organization.UID),
+				Name:        organization.Name,
+				DisplayName: &organization.Spec.DisplayName,
+				CreatedAt:   organization.CreationTimestamp.Time,
 			},
 			{
-				ID:        string(otherOrganization.UID),
-				Name:      otherOrganization.Name,
-				CreatedAt: otherOrganization.CreationTimestamp.Time,
+				ID:          string(otherOrganization.UID),
+				Name:        otherOrganization.Name,
+				DisplayName: &organization.Spec.DisplayName,
+				CreatedAt:   otherOrganization.CreationTimestamp.Time,
 			},
 		}
 
@@ -925,7 +930,6 @@ func TestGlobalOrganizations_Get(t *testing.T) {
 		if statusCode != http.StatusUnauthorized {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
 		}
-
 	})
 
 	t.Run("test deleted organization", func(t *testing.T) {
@@ -989,11 +993,12 @@ func TestGlobalOrganizations_Get(t *testing.T) {
 		}
 
 		expected := apitypes.Organization{
-			ID:         string(otherOrganization.UID),
-			Name:       otherOrganization.Name,
-			ProviderID: otherOrganization.Spec.ProviderID,
-			CreatedAt:  otherOrganization.CreationTimestamp.Time,
-			DeletedAt:  &otherOrganization.DeletionTimestamp.Time,
+			ID:          string(otherOrganization.UID),
+			Name:        otherOrganization.Name,
+			DisplayName: &organization.Spec.DisplayName,
+			ProviderID:  otherOrganization.Spec.ProviderID,
+			CreatedAt:   otherOrganization.CreationTimestamp.Time,
+			DeletedAt:   &otherOrganization.DeletionTimestamp.Time,
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1055,6 +1060,7 @@ func TestGlobalOrganizations_Get(t *testing.T) {
 		expected := apitypes.Organization{
 			ID:                      string(otherOrganization.UID),
 			Name:                    otherOrganization.Name,
+			DisplayName:             &organization.Spec.DisplayName,
 			ProviderID:              otherOrganization.Spec.ProviderID,
 			CreatedAt:               otherOrganization.CreationTimestamp.Time,
 			CredentialReferenceName: ptr.To("testing"),

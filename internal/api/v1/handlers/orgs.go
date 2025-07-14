@@ -66,6 +66,10 @@ func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organiz
 			Name:      organization.Name,
 		}
 
+		if organization.Spec.DisplayName != "" {
+			v1Organization.DisplayName = &organization.Spec.DisplayName
+		}
+
 		if !organization.DeletionTimestamp.IsZero() {
 			v1Organization.DeletedAt = &organization.CreationTimestamp.Time
 		}
