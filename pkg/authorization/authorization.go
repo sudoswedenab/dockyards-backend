@@ -654,3 +654,61 @@ func ReconcileOrganizationAuthorization(ctx context.Context, c client.Client, or
 
 	return nil
 }
+
+func ReconcileGlobalAuthorization(ctx context.Context, c client.Client) error {
+	clusterRole := rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "dockyards:user",
+		},
+	}
+
+	_, err := controllerutil.CreateOrPatch(ctx, c, &clusterRole, func() error {
+		clusterRole.Rules = []rbacv1.PolicyRule{
+			{
+				Verbs: []string{
+					"create",
+					"patch",
+				},
+				APIGroups: []string{
+					dockyardsv1.GroupVersion.Group,
+				},
+				Resources: []string{
+					"users",
+				},
+			},
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	clusterRoleBinding := rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "dockyards:users",
+		},
+	}
+
+	_, err = controllerutil.CreateOrPatch(ctx, c, &clusterRoleBinding, func() error {
+		clusterRoleBinding.RoleRef = rbacv1.RoleRef{
+			Kind: "ClusterRole",
+			Name: clusterRole.Name,
+		}
+
+		clusterRoleBinding.Subjects = []rbacv1.Subject{
+			{
+				APIGroup: rbacv1.GroupName,
+				Kind:     rbacv1.GroupKind,
+				Name:     "system:authenticated",
+			},
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

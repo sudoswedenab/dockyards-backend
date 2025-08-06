@@ -34,6 +34,7 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/internal/controller"
 	"github.com/sudoswedenab/dockyards-backend/internal/metrics"
 	"github.com/sudoswedenab/dockyards-backend/internal/webhooks"
+	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/jwt"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -349,6 +350,13 @@ func main() {
 
 			os.Exit(1)
 		}
+	}
+
+	err = authorization.ReconcileGlobalAuthorization(ctx, controllerClient)
+	if err != nil {
+		logger.Error("error reconciling global authorization", "err", err)
+
+		os.Exit(1)
 	}
 
 	err = mgr.Start(context.Background())

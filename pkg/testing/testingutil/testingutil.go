@@ -255,6 +255,11 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 		return nil, err
 	}
 
+	err = authorization.ReconcileGlobalAuthorization(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+
 	t := TestEnvironment{
 		mgr:           mgr,
 		environment:   &environment,
