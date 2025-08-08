@@ -228,5 +228,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("GET /v1/orgs/{organizationName}/members", logger(requireAuth(contentJSON(ListOrganizationResource(&h, "members", h.ListOrganizationMembers)))))
 	mux.Handle("DELETE /v1/orgs/{organizationName}/members/{resourceName}", logger(requireAuth(contentJSON(DeleteOrganizationResource(&h, "members", h.DeleteOrganizationMember)))))
 
+	mux.Handle("POST /v1/users/{resourceName}/password", logger(requireAuth(UpdateGlobalResource(&h, "users", h.UpdateUserPassword))))
+
 	return nil
 }
