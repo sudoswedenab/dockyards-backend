@@ -122,7 +122,6 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 			GenerateName: "test-",
 		},
 		Spec: dockyardsv1.OrganizationSpec{
-			DisplayName: "test",
 			MemberRefs: []dockyardsv1.OrganizationMemberReference{
 				{
 					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
