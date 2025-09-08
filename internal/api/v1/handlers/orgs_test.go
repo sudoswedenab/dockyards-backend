@@ -312,6 +312,96 @@ func TestGlobalOrganizations_List(t *testing.T) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual, sortSlices))
 		}
 	})
+
+	t.Run("test deleted organization", func(t *testing.T) {
+		deletedOrganization := dockyardsv1.Organization{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "deleted-",
+				Finalizers: []string{
+					"backend.dockyards.io/testing",
+				},
+			},
+			Spec: dockyardsv1.OrganizationSpec{
+				MemberRefs: []dockyardsv1.OrganizationMemberReference{
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							Kind: dockyardsv1.UserKind,
+							Name: superUser.Name,
+						},
+						UID:  superUser.UID,
+						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+					},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &deletedOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(time.Second)
+
+		err = c.Delete(ctx, &deletedOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = c.Get(ctx, client.ObjectKeyFromObject(&deletedOrganization), &deletedOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &deletedOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, statusCode)
+		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual []apitypes.Organization
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := []apitypes.Organization{
+			{
+				ID:        string(organization.UID),
+				Name:      organization.Name,
+				CreatedAt: organization.CreationTimestamp.Time,
+			},
+			{
+				ID:        string(deletedOrganization.UID),
+				Name:      deletedOrganization.Name,
+				CreatedAt: deletedOrganization.CreationTimestamp.Time,
+				DeletedAt: &deletedOrganization.DeletionTimestamp.Time,
+			},
+		}
+
+		if !cmp.Equal(actual, expected, sortSlices) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, sortSlices))
+		}
+	})
 }
 
 func TestGlobalOrganizations_Create(t *testing.T) {

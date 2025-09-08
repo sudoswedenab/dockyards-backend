@@ -71,7 +71,7 @@ func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organiz
 		}
 
 		if !organization.DeletionTimestamp.IsZero() {
-			v1Organization.DeletedAt = &organization.CreationTimestamp.Time
+			v1Organization.DeletedAt = &organization.DeletionTimestamp.Time
 		}
 
 		if organization.Spec.Duration != nil {
