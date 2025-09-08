@@ -146,12 +146,14 @@ func TestClusterNodePools_Get(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ID:   string(nodePool.UID),
-			Name: nodePool.Name,
+			CreatedAt: nodePool.CreationTimestamp.Time,
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
 			Nodes: &[]types.Node{
 				{
-					ID:   string(node.UID),
-					Name: node.Name,
+					CreatedAt: node.CreationTimestamp.Time,
+					ID:        string(node.UID),
+					Name:      node.Name,
 				},
 			},
 		}
@@ -190,12 +192,14 @@ func TestClusterNodePools_Get(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ID:   string(nodePool.UID),
-			Name: nodePool.Name,
+			CreatedAt: nodePool.CreationTimestamp.Time,
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
 			Nodes: &[]types.Node{
 				{
-					ID:   string(node.UID),
-					Name: node.Name,
+					CreatedAt: node.CreationTimestamp.Time,
+					ID:        string(node.UID),
+					Name:      node.Name,
 				},
 			},
 		}
@@ -234,12 +238,14 @@ func TestClusterNodePools_Get(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ID:   string(nodePool.UID),
-			Name: nodePool.Name,
+			CreatedAt: nodePool.CreationTimestamp.Time,
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
 			Nodes: &[]types.Node{
 				{
-					ID:   string(node.UID),
-					Name: node.Name,
+					CreatedAt: node.CreationTimestamp.Time,
+					ID:        string(node.UID),
+					Name:      node.Name,
 				},
 			},
 		}
@@ -1627,9 +1633,10 @@ func TestClusterNodePools_Create(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ID:       string(nodePool.UID),
-			Name:     nodePool.Name,
-			Quantity: ptr.To(0),
+			CreatedAt: nodePool.CreationTimestamp.Time,
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
+			Quantity:  ptr.To(0),
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1692,9 +1699,10 @@ func TestClusterNodePools_Create(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ID:       string(nodePool.UID),
-			Name:     nodePool.Name,
-			Quantity: ptr.To(0),
+			CreatedAt: nodePool.CreationTimestamp.Time,
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
+			Quantity:  ptr.To(0),
 		}
 
 		if !cmp.Equal(actual, expected) {
@@ -1790,6 +1798,7 @@ func TestClusterNodePools_Create(t *testing.T) {
 		}
 
 		expected := types.NodePool{
+			CreatedAt:                  nodePool.CreationTimestamp.Time,
 			ControlPlaneComponentsOnly: ptr.To(true),
 			CPUCount:                   ptr.To(12),
 			DiskSize:                   ptr.To("123Gi"),
@@ -1866,9 +1875,10 @@ func TestClusterNodePools_Create(t *testing.T) {
 		}
 
 		expected := types.NodePool{
-			ID:       string(nodePool.UID),
-			Name:     nodePool.Name,
-			Quantity: ptr.To(3),
+			CreatedAt: nodePool.CreationTimestamp.Time,
+			ID:        string(nodePool.UID),
+			Name:      nodePool.Name,
+			Quantity:  ptr.To(3),
 			StorageResources: &[]types.StorageResource{
 				{
 					Name:     "test",

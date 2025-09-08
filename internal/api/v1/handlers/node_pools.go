@@ -39,8 +39,9 @@ const maxReplicas = 9
 
 func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, nodeList *dockyardsv1.NodeList) *types.NodePool {
 	v1NodePool := types.NodePool{
-		ID:   string(nodePool.UID),
-		Name: nodePool.Name,
+		CreatedAt: nodePool.CreationTimestamp.Time,
+		ID:        string(nodePool.UID),
+		Name:      nodePool.Name,
 	}
 
 	resourceCPU := nodePool.Spec.Resources.Cpu()
@@ -68,8 +69,9 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, nodeList *dockyar
 		nodes := make([]types.Node, len(nodeList.Items))
 		for i, node := range nodeList.Items {
 			nodes[i] = types.Node{
-				ID:   string(node.UID),
-				Name: node.Name,
+				CreatedAt: node.CreationTimestamp.Time,
+				ID:        string(node.UID),
+				Name:      node.Name,
 			}
 		}
 
@@ -421,7 +423,7 @@ func (h *handler) ListClusterNodePools(ctx context.Context, cluster *dockyardsv1
 
 	for _, item := range nodePoolList.Items {
 		nodePool := types.NodePool{
-			CreatedAt: &item.CreationTimestamp.Time,
+			CreatedAt: item.CreationTimestamp.Time,
 			ID:        string(item.UID),
 			Name:      item.Name,
 		}
