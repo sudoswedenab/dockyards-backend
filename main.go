@@ -334,6 +334,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = (&controller.UserReconciler{
+		Client:               mgr.GetClient(),
+		DockyardsExternalURL: dockyardsExternalURL,
+	}).SetupWithManager(mgr)
+	if err != nil {
+		logger.Error("error creating new verificationrequest reconciler", "err", err)
+
+		os.Exit(1)
+	}
+
 	err = (&controller.InvitationReconciler{
 		Client: mgr.GetClient(),
 	}).SetupWithManger(mgr)
