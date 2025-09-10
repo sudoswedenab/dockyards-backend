@@ -47,7 +47,7 @@ func TestValidateJSON(t *testing.T) {
 		{
 			name:     "test valid cluster options",
 			schema:   "#clusterOptions",
-			body:     `{"name":"hello","cluster_template":"test"}`,
+			body:     `{"name":"hello","cluster_template_name":"test"}`,
 			expected: http.StatusOK,
 		},
 		{

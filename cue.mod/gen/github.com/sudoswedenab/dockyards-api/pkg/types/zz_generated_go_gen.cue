@@ -35,7 +35,7 @@ import "time"
 // ClusterOptions defines model for cluster_options.
 #ClusterOptions: {
 	allocate_internal_ip?:      null | bool   @go(AllocateInternalIP,*bool)
-	cluster_template?:          null | string @go(ClusterTemplate,*string)
+	cluster_template_name?:     null | string @go(ClusterTemplateName,*string)
 	duration?:                  null | string @go(Duration,*string)
 	ingress_provider?:          null | string @go(IngressProvider,*string)
 	name:                       string        @go(Name)
@@ -113,6 +113,17 @@ import "time"
 	password: string @go(Password)
 }
 
+// Member defines model for member.
+#Member: {
+	created_at:  time.Time        @go(CreatedAt)
+	deleted_at?: null | time.Time @go(DeletedAt,*time.Time)
+	email?:      null | string    @go(Email,*string)
+	id:          string           @go(ID)
+	name:        string           @go(Name)
+	role?:       null | string    @go(Role,*string)
+	updated_at?: null | time.Time @go(UpdatedAt,*time.Time)
+}
+
 // Node defines model for node.
 #Node: {
 	condition?:   null | string      @go(Condition,*string)
@@ -131,7 +142,7 @@ import "time"
 	control_plane?:                 null | bool      @go(ControlPlane,*bool)
 	control_plane_components_only?: null | bool      @go(ControlPlaneComponentsOnly,*bool)
 	cpu_count?:                     null | int       @go(CPUCount,*int)
-	created_at?:                    null | time.Time @go(CreatedAt,*time.Time)
+	created_at:                     time.Time        @go(CreatedAt)
 	deleted_at?:                    null | time.Time @go(DeletedAt,*time.Time)
 	disk_size?:                     null | string    @go(DiskSize,*string)
 	id:                             string           @go(ID)
@@ -185,6 +196,12 @@ import "time"
 	display_name?:              null | string @go(DisplayName,*string)
 	duration?:                  null | string @go(Duration,*string)
 	voucher_code?:              null | string @go(VoucherCode,*string)
+}
+
+// PasswordOptions defines model for password_options.
+#PasswordOptions: {
+	new_password: string @go(NewPassword)
+	old_password: string @go(OldPassword)
 }
 
 // StorageResource defines model for storage_resource.

@@ -190,7 +190,7 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 		return nil, statusError
 	}
 
-	if request.NodePoolOptions != nil && request.ClusterTemplate != nil {
+	if request.NodePoolOptions != nil && request.ClusterTemplateName != nil {
 		statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", nil)
 
 		return nil, statusError
@@ -290,9 +290,9 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 
 	var clusterTemplate *dockyardsv1.ClusterTemplate
 
-	if request.ClusterTemplate != nil {
+	if request.ClusterTemplateName != nil {
 		objectKey := client.ObjectKey{
-			Name:      *request.ClusterTemplate,
+			Name:      *request.ClusterTemplateName,
 			Namespace: h.namespace,
 		}
 

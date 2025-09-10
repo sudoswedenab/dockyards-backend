@@ -291,8 +291,8 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		}
 
 		clusterOptions := types.ClusterOptions{
-			Name:            "test-cluster-template",
-			ClusterTemplate: ptr.To(clusterTemplate.Name),
+			Name:                "test-cluster-template",
+			ClusterTemplateName: ptr.To(clusterTemplate.Name),
 		}
 
 		b, err := json.Marshal(clusterOptions)
@@ -534,9 +534,9 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		}
 
 		clusterOptions := types.ClusterOptions{
-			Name:            "test-custom-release",
-			ClusterTemplate: ptr.To(clusterTemplate.Name),
-			Version:         ptr.To("v2.3.4"),
+			Name:                "test-custom-release",
+			ClusterTemplateName: ptr.To(clusterTemplate.Name),
+			Version:             ptr.To("v2.3.4"),
 		}
 
 		b, err := json.Marshal(clusterOptions)
