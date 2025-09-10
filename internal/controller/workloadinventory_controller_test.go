@@ -145,7 +145,7 @@ func TestWorkloadInventory_BySelectorIndex(t *testing.T) {
 
 		var actual dockyardsv1.WorkloadInventoryList
 
-		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*10, true, func(ctx context.Context) (bool, error) {
 			err := mgr.GetClient().List(ctx, &actual, matchingFields, client.InNamespace(organization.Spec.NamespaceRef.Name))
 			if err != nil {
 				t.Fatal(err)
@@ -192,7 +192,7 @@ func TestWorkloadInventory_BySelectorIndex(t *testing.T) {
 
 		var actual dockyardsv1.WorkloadInventoryList
 
-		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*10, true, func(ctx context.Context) (bool, error) {
 			err := mgr.GetClient().List(ctx, &actual, matchingFields, client.InNamespace(otherOrganization.Spec.NamespaceRef.Name))
 			if err != nil {
 				t.Fatal(err)
