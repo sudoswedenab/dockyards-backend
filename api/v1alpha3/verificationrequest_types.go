@@ -19,6 +19,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	VerificationRequestKind = "VerificationRequest"
+	VerifiedCondition       = "Verified"
+)
+
 type VerificationRequestSpec struct {
 	Code     string                           `json:"code"`
 	Subject  string                           `json:"subject"`
