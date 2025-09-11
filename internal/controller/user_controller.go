@@ -22,6 +22,7 @@ import (
 	"github.com/google/uuid"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 
+	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/sudoswedenab/dockyards-backend/templates"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +39,7 @@ type UserReconciler struct {
 }
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=users,verbs=get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=users/status,verbs=patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=verificationrequests,verbs=get;list;watch;create;delete;patch
 func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, reterr error) {
 	logger := ctrl.LoggerFrom(ctx)
@@ -54,9 +56,9 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 			Name: "sign-up-" + user.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					Kind:       user.Kind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
+					Kind:       dockyardsv1.UserKind,
 					Name:       user.Name,
-					APIVersion: user.APIVersion,
 					UID:        user.UID,
 				},
 			},
@@ -66,11 +68,12 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 	operationResult, err := controllerutil.CreateOrPatch(ctx, r.Client, &verificationRequest, func() error {
 		verificationRequest.Spec.Subject = "Email Verification"
 		verificationRequest.Spec.UserRef = corev1.TypedLocalObjectReference{
-			Kind:     user.Kind,
+			Kind:     dockyardsv1.UserKind,
 			Name:     user.Name,
 			APIGroup: &dockyardsv1.GroupVersion.Group,
 		}
 
+		// Ensure that the VerificationRequest has been created
 		code := verificationRequest.Spec.Code
 		if code == "" {
 			randomUUID, err := uuid.NewRandom()
@@ -105,16 +108,74 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 		logger.Info("reconciled verificationrequest", "verificationRequestName", verificationRequest.Name, "result", operationResult)
 	}
 
+	//  Reqeue to ensure that the VerificationRequest has a Verified condtion set
+
+	if operationResult == controllerutil.OperationResultCreated {
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	verifiedCondition := conditions.Get(&verificationRequest, dockyardsv1.VerifiedCondition)
+
+	// Set Verified condition to False on VerificationRequest if it has no existing Verified condition
+
+	if verifiedCondition == nil {
+		st := metav1.Condition{
+			Type:               dockyardsv1.VerifiedCondition,
+			Status:             metav1.ConditionFalse,
+			Reason:             "NotVerified",
+			Message:            "",
+			LastTransitionTime: metav1.Now(),
+		}
+
+		conditions.Set(&verificationRequest, &st)
+		if err := r.Client.Status().Update(ctx, &verificationRequest); err != nil {
+			return ctrl.Result{}, err
+		}
+		logger.Info("reconciled verification request condition", "condition", dockyardsv1.VerifiedCondition, "name", verificationRequest.Name)
+
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Set Ready condition on User to match the Verified condition on VerificationRequest
+
+	userReadyCondition := conditions.Get(&user, dockyardsv1.ReadyCondition)
+	if userReadyCondition == nil || userReadyCondition.Status != verifiedCondition.Status {
+		st := metav1.Condition{
+			Type:               dockyardsv1.ReadyCondition,
+			Status:             verifiedCondition.Status,
+			Reason:             verifiedCondition.Reason,
+			Message:            verifiedCondition.Message,
+			LastTransitionTime: verifiedCondition.LastTransitionTime,
+		}
+
+		conditions.Set(&user, &st)
+		if err := r.Client.Status().Update(ctx, &user); err != nil {
+			return ctrl.Result{}, err
+		}
+		logger.Info("reconciled user condition", dockyardsv1.ReadyCondition, "name", user.Name)
+
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Delete VerificationRequest once User is Ready
+	if userReadyCondition.Status == metav1.ConditionTrue {
+		err = r.Delete(ctx, &verificationRequest)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		logger.Info("reconciled verificationrequest", "verificationRequestName", verificationRequest.Name, "result", "deleted")
+	}
+
 	return ctrl.Result{}, nil
 }
 
 func (r *UserReconciler) getNonReadyUsers(_ context.Context, obj client.Object) []ctrl.Request {
 	user := obj.(*dockyardsv1.User)
 
-	for _, c := range user.Status.Conditions {
-		if c.Type == "Ready" && c.Status == "True" {
-			return nil
-		}
+	readyCondition := conditions.Get(user, dockyardsv1.ReadyCondition)
+
+	if readyCondition != nil && readyCondition.Status == metav1.ConditionTrue {
+		return nil
 	}
 
 	return []ctrl.Request{

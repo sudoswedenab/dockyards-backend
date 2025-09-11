@@ -61,6 +61,14 @@ type UserList struct {
 	Items []User `json:"items"`
 }
 
+func (u *User) GetConditions() []metav1.Condition {
+	return u.Status.Conditions
+}
+
+func (u *User) SetConditions(conditions []metav1.Condition) {
+	u.Status.Conditions = conditions
+}
+
 func (u *User) GetExpiration() *metav1.Time {
 	if u.Spec.Duration == nil {
 		return nil
