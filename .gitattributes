@@ -1,0 +1,2 @@
+go.mod merge=binary
+go.sum merge=binary
