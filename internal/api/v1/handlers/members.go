@@ -16,10 +16,12 @@ package handlers
 
 import (
 	"context"
+	"net/http"
 	"slices"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,4 +63,72 @@ func (h *handler) DeleteOrganizationMember(ctx context.Context, organization *do
 	}
 
 	return nil
+}
+
+func (h *handler) LeaveOrganization(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logger := middleware.LoggerFrom(ctx).With("resource", "organization")
+
+	organizationName := r.PathValue("organizationName")
+	if organizationName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	var organization dockyardsv1.Organization
+	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
+	if err != nil {
+		logger.Error("error getting organization", "err", err)
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	if organization.Spec.NamespaceRef == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	subject, err := middleware.SubjectFrom(ctx)
+	if err != nil {
+		logger.Error("error getting subject from context", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	var allowed bool
+	for _, memberRef := range organization.Spec.MemberRefs {
+		if memberRef.Name == subject {
+			allowed = true
+
+			break
+		}
+	}
+
+	if !allowed {
+		logger.Debug("subject is not allowed to delete resource", "subject", subject, "organization", organization.Name)
+		w.WriteHeader(http.StatusUnauthorized)
+
+		return
+	}
+
+	patch := client.MergeFrom(organization.DeepCopy())
+
+	organization.Spec.MemberRefs = slices.DeleteFunc(organization.Spec.MemberRefs, func(memberRef dockyardsv1.OrganizationMemberReference) bool {
+		return memberRef.Name == subject
+	})
+
+	err = h.Patch(ctx, &organization, patch)
+	if err != nil {
+		logger.Error("error deleting resource", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
 }

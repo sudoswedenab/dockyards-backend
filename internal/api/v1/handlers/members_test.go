@@ -290,3 +290,90 @@ func TestOrganizationMembers_Delete(t *testing.T) {
 		}
 	})
 }
+
+
+func TestOrganizationMembers_DeleteSelf(t *testing.T) {
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+
+	readerToken := MustSignToken(t, reader.Name)
+
+	t.Run("reader user can delete themselves", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "members", "@me"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+readerToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.Organization
+		err := c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Organization{
+			ObjectMeta: actual.ObjectMeta,
+			Spec: dockyardsv1.OrganizationSpec{
+				MemberRefs: []dockyardsv1.OrganizationMemberReference{
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     superUser.Name,
+						},
+						UID:  superUser.UID,
+						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
+					},
+					{
+						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+							APIGroup: &dockyardsv1.GroupVersion.Group,
+							Kind:     dockyardsv1.UserKind,
+							Name:     user.Name,
+						},
+						UID:  user.UID,
+						Role: dockyardsv1.OrganizationMemberRoleUser,
+					},
+				},
+				NamespaceRef: organization.Spec.NamespaceRef,
+				ProviderID:   organization.Spec.ProviderID,
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("cannot delete user twice", func(t *testing.T) {
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "members", "@me"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
+
+		r.Header.Add("Authorization", "Bearer "+readerToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+}
