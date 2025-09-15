@@ -169,7 +169,7 @@ func DeleteOrganizationResource(h *handler, resource string, f DeleteOrganizatio
 		var organization dockyardsv1.Organization
 		err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
 		if client.IgnoreNotFound(err) != nil {
-			logger.Error("eror getting organization", "err", err)
+			logger.Error("error getting organization", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 
 			return
