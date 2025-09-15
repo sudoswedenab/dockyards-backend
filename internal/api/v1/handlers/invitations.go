@@ -70,6 +70,7 @@ func (h *handler) CreateOrganizationInvitation(ctx context.Context, organization
 		ID:        string(invitation.UID),
 		Name:      invitation.Name,
 		CreatedAt: invitation.CreationTimestamp.Time,
+		Role: 	   string(invitation.Spec.Role),
 	}
 
 	return &response, nil
