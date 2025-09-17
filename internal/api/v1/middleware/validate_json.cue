@@ -41,3 +41,5 @@ import (
 
 #createInvitation: types.#InvitationOptions
 #createInvitation: role!: "SuperUser" | "User" | "Reader"
+
+#verifyOptions: types.#VerifyOptions

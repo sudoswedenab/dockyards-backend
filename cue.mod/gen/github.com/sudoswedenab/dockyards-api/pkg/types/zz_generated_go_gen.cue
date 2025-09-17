@@ -59,11 +59,26 @@ import "time"
 	updated_at?: null | time.Time @go(UpdatedAt,*time.Time)
 }
 
+// CredentialOption defines model for credential_option.
+#CredentialOption: {
+	default?:      null | string @go(Default,*string)
+	display_name?: null | string @go(DisplayName,*string)
+	key:           string        @go(Key)
+	plaintext?:    null | bool   @go(Plaintext,*bool)
+	type?:         null | string @go(Type,*string)
+}
+
 // CredentialOptions defines model for credential_options.
 #CredentialOptions: {
 	credential_template_name?: null | string @go(CredentialTemplateName,*string)
 	data?: null | {[string]: bytes} @go(Data,*map[string][]byte)
 	name?: null | string @go(Name,*string)
+}
+
+// CredentialTemplate defines model for credential_template.
+#CredentialTemplate: {
+	name: string @go(Name)
+	options?: null | [...#CredentialOption] @go(Options,*[]CredentialOption)
 }
 
 // IdentityProvider defines model for identity_provider.
@@ -252,6 +267,12 @@ import "time"
 	display_name?: null | string @go(DisplayName,*string)
 	email:         string        @go(Email)
 	password:      string        @go(Password)
+}
+
+// VerifyOptions defines model for verify_options.
+#VerifyOptions: {
+	code: string @go(Code)
+	type: string @go(Type)
 }
 
 // Workload defines model for workload.
