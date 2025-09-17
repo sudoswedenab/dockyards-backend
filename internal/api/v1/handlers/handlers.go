@@ -232,6 +232,13 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	mux.Handle("DELETE /v1/orgs/{organizationName}/members/{resourceName}", logger(requireAuth(contentJSON(DeleteOrganizationResource(&h, "members", h.DeleteOrganizationMember)))))
 
 	mux.Handle("POST /v1/users/{resourceName}/password", logger(requireAuth(UpdateGlobalResource(&h, "users", h.UpdateUserPassword))))
+	mux.Handle("POST /v1/verify",
+		logger(
+			contentJSON(
+				validateJSON.WithSchema("#verifyOptions")(UpdateNamelessResource(&h, "verificationrequests", h.UpdateGlobalVerificationRequest)),
+			),
+		),
+	)
 
 	return nil
 }

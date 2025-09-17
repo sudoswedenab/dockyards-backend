@@ -366,6 +366,8 @@ func UpdateOrganizationResource[T any](h *handler, resource string, f UpdateOrga
 
 type UpdateGlobalResourceFunc[T any] func(context.Context, string, *T) error
 
+type UpdateNamelessResourceFunc[T any] func(context.Context, *T) error
+
 func UpdateGlobalResource[T any](h *handler, resource string, f UpdateGlobalResourceFunc[T]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -433,6 +435,86 @@ func UpdateGlobalResource[T any](h *handler, resource string, f UpdateGlobalReso
 			return
 		}
 
+		if apierrors.IsUnauthorized(err) {
+			w.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
+		if apierrors.IsInvalid(err) {
+			statusError, ok := err.(*apierrors.StatusError)
+			if !ok {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+
+				return
+			}
+
+			if statusError.ErrStatus.Details == nil {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+
+				return
+			}
+
+			var response types.UnprocessableEntityErrors
+
+			for _, cause := range statusError.ErrStatus.Details.Causes {
+				response.Errors = append(response.Errors, cause.Message)
+			}
+
+			b, err := json.Marshal(response)
+			if err != nil {
+				logger.Error("error marhalling response", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
+
+				return
+			}
+
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			_, err = w.Write(b)
+			if err != nil {
+				logger.Error("error writing response", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
+
+				return
+			}
+
+			return
+		}
+
+		if err != nil {
+			logger.Error("error updating resource", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
+func UpdateNamelessResource[T any](_ *handler, resource string, f UpdateNamelessResourceFunc[T]) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		logger := middleware.LoggerFrom(ctx).With("resource", resource)
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			logger.Error("error reading request body", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		var request T
+		err = json.Unmarshal(b, &request)
+		if err != nil {
+			logger.Error("error unmarshalling request", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		err = f(ctx, &request)
 		if apierrors.IsUnauthorized(err) {
 			w.WriteHeader(http.StatusUnauthorized)
 

@@ -50,3 +50,9 @@ const (
 const (
 	ProviderPrefixDockyards string = "dockyards://"
 )
+
+const (
+	RequestTypeAccount            = "Account"
+	VerificationReasonVerified    = "Verified"
+	VerificationReasonNotVerified = "NotVerified"
+)
