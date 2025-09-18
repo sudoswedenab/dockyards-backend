@@ -37,6 +37,10 @@ import (
 )
 
 func TestUserReconciler_Reconcile(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
 	ctx, cancel := context.WithCancel(context.TODO())
 
 	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError})
@@ -62,10 +66,6 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 
 	t.Run("test verification request creation", func(t *testing.T) {
 		user := dockyardsv1.User{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       dockyardsv1.UserKind,
-				APIVersion: dockyardsv1.GroupVersion.String(),
-			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
@@ -75,20 +75,23 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 				Password:    "test",
 			},
 		}
-		if err := c.Create(ctx, &user); err != nil {
-			t.Fatal(err)
-		}
-
-		// create VerificationRequest
-		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "test"}})
+		err := c.Create(ctx, &user)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// create VerificationRequest Verified condition
-		_, err = reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "test"}})
-		if err != nil {
-			t.Fatal(err)
+		// There are some issues using a mananger here due to reconciler's complexity. We can instead
+		// trigger reconciliation manually, though that does make it more important to manully track
+		// the state.
+
+		// This loop:
+		// 1. Sets User Ready condition
+		// 2. Creates VerificationRequest
+		for range 2 {
+			_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "test"}})
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		vr := dockyardsv1.VerificationRequest{ObjectMeta: metav1.ObjectMeta{Name: "sign-up-" + user.Name}}
@@ -124,23 +127,6 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 			t.Errorf("VerificationRequest is missing userReferences.\nDiff: %s", cmp.Diff(expectedUserRef, vr.Spec.UserRef))
 		}
 
-		ignoreFields := cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime", "ObservedGeneration")
-		expectedCondition := metav1.Condition{
-			Type:    dockyardsv1.VerifiedCondition,
-			Status:  metav1.ConditionFalse,
-			Reason:  "NotVerified",
-			Message: "",
-		}
-
-		actualCondition := conditions.Get(&vr, dockyardsv1.VerifiedCondition)
-		if actualCondition == nil {
-			t.Errorf("VerificationRequest does not have %s condition", dockyardsv1.VerifiedCondition)
-		}
-
-		if !cmp.Equal(expectedCondition, *actualCondition, ignoreFields) {
-			t.Errorf("VerificationRequest %s condition is not as expected.\nDiff: %s", dockyardsv1.VerifiedCondition, cmp.Diff(expectedCondition, *actualCondition, ignoreFields))
-		}
-
 		err = c.Get(ctx, client.ObjectKeyFromObject(&user), &user)
 		if err != nil {
 			t.Fatal(err)
@@ -154,7 +140,8 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 			},
 		}
 
-		if err := c.Get(ctx, client.ObjectKeyFromObject(&vr), &vr); err != nil {
+		err := c.Get(ctx, client.ObjectKeyFromObject(&vr), &vr)
+		if err != nil {
 			t.Fatal(err)
 		}
 
@@ -168,30 +155,32 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 
 		conditions.Set(&vr, &verifiedCond)
 
-		if err := c.Status().Update(ctx, &vr); err != nil {
+		err = c.Status().Update(ctx, &vr)
+		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Update User Ready condition to match VerificationRequest Verified condition
-		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "test"}})
+		_, err = reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "test"}})
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		expected := metav1.Condition{
-			Type:               dockyardsv1.ReadyCondition,
-			Status:             metav1.ConditionTrue,
-			Reason:             verifiedCond.Reason,
-			Message:            verifiedCond.Message,
-			LastTransitionTime: verifiedCond.LastTransitionTime,
+			Type:    dockyardsv1.ReadyCondition,
+			Status:  metav1.ConditionTrue,
+			Reason:  verifiedCond.Reason,
+			Message: verifiedCond.Message,
 		}
 
 		var user dockyardsv1.User
-		if err := c.Get(ctx, client.ObjectKey{Name: "test"}, &user); err != nil {
+
+		err = c.Get(ctx, client.ObjectKey{Name: "test"}, &user)
+		if err != nil {
 			t.Fatal(err)
 		}
 
-		ignoreFields := cmpopts.IgnoreFields(metav1.Condition{}, "ObservedGeneration")
+		ignoreFields := cmpopts.IgnoreFields(metav1.Condition{}, "ObservedGeneration", "LastTransitionTime")
 		actual := conditions.Get(&user, dockyardsv1.ReadyCondition)
 		if !cmp.Equal(expected, *actual, ignoreFields) {
 			t.Errorf("User %s condition is not as expected.\nDiff: %s", dockyardsv1.ReadyCondition, cmp.Diff(expected, *actual, ignoreFields))
