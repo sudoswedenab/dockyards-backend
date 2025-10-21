@@ -419,3 +419,181 @@ func TestClusterController_Upgrades(t *testing.T) {
 		}
 	})
 }
+
+func TestClusterController_DNSZones(t *testing.T) {
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		t.Skip("no kubebuilder assets configured")
+	}
+
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError})
+	slogr := logr.FromSlogHandler(handler)
+	ctrl.SetLogger(slogr)
+
+	ctx, cancel := context.WithCancel(context.TODO())
+
+	testEnvironment, err := testingutil.NewTestEnvironment(ctx, []string{path.Join("../../config/crd")})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		cancel()
+		testEnvironment.GetEnvironment().Stop()
+	})
+
+	mgr := testEnvironment.GetManager()
+	c := testEnvironment.GetClient()
+
+	organization := testEnvironment.MustCreateOrganization(t)
+
+	err = (&controller.ClusterReconciler{
+		Client:             mgr.GetClient(),
+		DockyardsNamespace: testEnvironment.GetDockyardsNamespace(),
+	}).SetupWithManager(mgr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	go func() {
+		err := mgr.Start(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	if !mgr.GetCache().WaitForCacheSync(ctx) {
+		t.Fatal("unable to wait for cache sync")
+	}
+
+	t.Run("test empty dns zones", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+			},
+		}
+
+		err := c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		dnsZone := dockyardsv1.DNSZone{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    cluster.Namespace,
+				Labels: map[string]string{
+					dockyardsv1.LabelClusterName: cluster.Name,
+				},
+			},
+			Spec: dockyardsv1.DNSZoneSpec{
+				Name:       "testing.dockyards.dev.",
+				ProviderID: "test://testing-dockyards-dev",
+			},
+		}
+
+		err = c.Create(ctx, &dnsZone)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual dockyardsv1.Cluster
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
+			if err != nil {
+				return true, err
+			}
+
+			return len(actual.Status.DNSZones) == 1, nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Cluster{
+			ObjectMeta: actual.ObjectMeta,
+			Spec:       actual.Spec,
+			Status: dockyardsv1.ClusterStatus{
+				DNSZones: []string{
+					"testing.dockyards.dev.",
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
+	t.Run("test updated dns zones", func(t *testing.T) {
+		cluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    organization.Spec.NamespaceRef.Name,
+			},
+		}
+
+		err := c.Create(ctx, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		patch := client.MergeFrom(cluster.DeepCopy())
+
+		cluster.Status.DNSZones = []string{
+			"removed.dockyards.dev.",
+			"existing.dockyards.dev.",
+		}
+
+		err = c.Status().Patch(ctx, &cluster, patch)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		dnsZone := dockyardsv1.DNSZone{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-",
+				Namespace:    cluster.Namespace,
+				Labels: map[string]string{
+					dockyardsv1.LabelClusterName: cluster.Name,
+				},
+			},
+			Spec: dockyardsv1.DNSZoneSpec{
+				Name:       "existing.dockyards.dev.",
+				ProviderID: "test://existing-dockyards-dev",
+			},
+		}
+
+		err = c.Create(ctx, &dnsZone)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var actual dockyardsv1.Cluster
+		err = wait.PollUntilContextTimeout(ctx, time.Millisecond*200, time.Second*5, true, func(ctx context.Context) (bool, error) {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&cluster), &actual)
+			if err != nil {
+				return true, err
+			}
+
+			return len(actual.Status.DNSZones) == 1, nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := dockyardsv1.Cluster{
+			ObjectMeta: actual.ObjectMeta,
+			Spec:       actual.Spec,
+			Status: dockyardsv1.ClusterStatus{
+				DNSZones: []string{
+					"existing.dockyards.dev.",
+				},
+			},
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+}

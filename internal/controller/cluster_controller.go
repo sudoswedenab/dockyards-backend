@@ -26,9 +26,11 @@ import (
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 )
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=clusters,verbs=get;delete;list;patch;watch
@@ -73,6 +75,11 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	}()
 
 	result, err = r.reconcileClusterUpgrades(ctx, &cluster)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	result, err = r.reconcileDNSZones(ctx, &cluster)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -142,7 +149,7 @@ func (r *ClusterReconciler) reconcileClusterUpgrades(ctx context.Context, dockya
 	err = maxVersionSkew.IncrementMinor()
 	if err != nil {
 		logger.Error(err, "error incrementing next minor version")
-		
+
 		return ctrl.Result{}, nil
 	}
 
@@ -178,12 +185,57 @@ func (r *ClusterReconciler) reconcileClusterUpgrades(ctx context.Context, dockya
 	return ctrl.Result{}, nil
 }
 
+func (r *ClusterReconciler) reconcileDNSZones(ctx context.Context, cluster *dockyardsv1.Cluster) (ctrl.Result, error) {
+	matchingLabels := client.MatchingLabels{
+		dockyardsv1.LabelClusterName: cluster.Name,
+	}
+
+	var dnsZoneList dockyardsv1.DNSZoneList
+	err := r.List(ctx, &dnsZoneList, matchingLabels, client.InNamespace(cluster.Namespace))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	dnsZones := []string{}
+	for _, item := range dnsZoneList.Items {
+		dnsZones = append(dnsZones, item.Spec.Name)
+	}
+
+	cluster.Status.DNSZones = dnsZones
+
+	return ctrl.Result{}, nil
+}
+
+func (r *ClusterReconciler) dnsZoneToClusters(_ context.Context, obj client.Object) []ctrl.Request {
+	labels := obj.GetLabels()
+
+	clusterName, hasLabel := labels[dockyardsv1.LabelClusterName]
+	if !hasLabel {
+		return nil
+	}
+
+	return []ctrl.Request{
+		{
+			NamespacedName: types.NamespacedName{
+				Name:      clusterName,
+				Namespace: obj.GetNamespace(),
+			},
+		},
+	}
+}
+
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	scheme := mgr.GetScheme()
 
 	_ = dockyardsv1.AddToScheme(scheme)
 
-	err := ctrl.NewControllerManagedBy(mgr).For(&dockyardsv1.Cluster{}).Complete(r)
+	err := ctrl.NewControllerManagedBy(mgr).
+		For(&dockyardsv1.Cluster{}).
+		Watches(
+			&dockyardsv1.DNSZone{},
+			handler.EnqueueRequestsFromMapFunc(r.dnsZoneToClusters),
+		).
+		Complete(r)
 	if err != nil {
 		return err
 	}
