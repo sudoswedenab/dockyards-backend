@@ -37,3 +37,5 @@ resources:
 - dockyards.io_worktrees.yaml
 - dockyards.io_invitations.yaml
 - dockyards.io_workloadinventories.yaml
+- dockyards.io_dnszones.yaml
+- dockyards.io_dnszoneclaims.yaml
