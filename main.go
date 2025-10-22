@@ -27,6 +27,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/spf13/pflag"
+	dyconfig "github.com/sudoswedenab/dockyards-backend/api/config"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha2"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
@@ -117,20 +118,20 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 
 func main() {
 	var logLevel string
+	var configMap string
 	var collectMetricsInterval int
 	var enableWebhooks bool
 	var metricsBindAddress string
 	var allowedOrigins []string
 	var dockyardsNamespace string
 	var allowedDomains []string
-	var dockyardsExternalURL string
 	pflag.StringVar(&logLevel, "log-level", "info", "log level")
+	pflag.StringVar(&configMap, "config-map", "dockyards-config", "ConfigMap name")
 	pflag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
 	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
 	pflag.StringSliceVar(&allowedOrigins, "allow-origin", []string{"http://localhost", "http://localhost:8000"}, "allow origin")
 	pflag.StringVar(&dockyardsNamespace, "dockyards-namespace", "dockyards-system", "dockyards namespace")
-	pflag.StringVar(&dockyardsExternalURL, "dockyards-external-url", "http://localhost", "dockyards external url")
 	pflag.StringSliceVar(&allowedDomains, "allow-domain", nil, "allow domain")
 	pflag.Parse()
 
@@ -334,9 +335,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	cm, err := dyconfig.GetConfig(ctx, controllerClient, configMap, dockyardsNamespace)
+	if err != nil {
+		logger.Error("error loading config map", "err", err)
+
+		os.Exit(1)
+	}
+
+	externalURL := cm.GetConfigKey("externalUrl", "http://localhost:9000")
+
 	err = (&controller.UserReconciler{
 		Client:               mgr.GetClient(),
-		DockyardsExternalURL: dockyardsExternalURL,
+		DockyardsExternalURL: externalURL,
 	}).SetupWithManager(mgr)
 	if err != nil {
 		logger.Error("error creating new verificationrequest reconciler", "err", err)
