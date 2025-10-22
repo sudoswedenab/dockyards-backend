@@ -31,26 +31,10 @@ jobs:
           ts=$(date +%s)
           echo "buildid=${branch}-${sha}-${ts}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4.2.2
-      - uses: actions/setup-go@v5.5.0
-        with:
-          go-version-file: go.mod
-      - uses: aws-actions/configure-aws-credentials@v4.2.1
+      - uses: sudoswedenab/sudo-actions/build-push@main
         with:
           aws-region: us-east-1
-          role-to-assume: arn:aws:iam::075899289117:role/GithubActionsDockyardsBackendPublic
-      - uses: aws-actions/amazon-ecr-login@v2.0.1
-        id: amazon-ecr-login
-        with:
+          image: sudosweden/dockyards-backend
           registry-type: public
-      - uses: docker/build-push-action@v6.17.0
-        id: build-push-action
-        with:
-          file: Containerfile
-          push: true
-          tags: ${{steps.amazon-ecr-login.outputs.registry}}/sudosweden/dockyards-backend:${{ steps.prep.outputs.buildid}}
-      - uses: fluxcd/flux2/action@v2.5.1
-        with:
-          version: v2.4.0
-      - run: |
-          go tool cue export hack/kustomization.cue --inject "name=${{steps.amazon-ecr-login.outputs.registry}}/sudosweden/dockyards-backend" --inject "tag=${{steps.prep.outputs.buildid}}@${{steps.build-push-action.outputs.digest}}" --out yaml --outfile config/kustomization.yaml
-          flux push artifact "oci://${{steps.amazon-ecr-login.outputs.registry}}/sudosweden/dockyards-backend:${{steps.prep.outputs.buildid}}-manifests" --path config --source "${{github.repositoryUrl}}" --revision "${{github.ref_name}}@sha1:${{github.sha}}"
+          role-to-assume: arn:aws:iam::075899289117:role/GithubActionsDockyardsBackendPublic
+          tag: ${{ steps.prep.outputs.buildid }}
