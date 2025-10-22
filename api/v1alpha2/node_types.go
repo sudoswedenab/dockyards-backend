@@ -43,6 +43,7 @@ type NodeStatus struct {
 // +kubebuilder:printcolumn:name="Memory",type=string,priority=1,JSONPath=".status.resources.memory"
 // +kubebuilder:printcolumn:name="Storage",type=string,priority=1,JSONPath=".status.resources.storage"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:unservedversion
 type Node struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

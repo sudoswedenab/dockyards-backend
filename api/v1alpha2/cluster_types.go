@@ -72,6 +72,7 @@ type ClusterStatus struct {
 // +kubebuilder:printcolumn:name="Version",type=string,JSONPath=".status.version"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Duration",type=string,JSONPath=".spec.duration"
+// +kubebuilder:unservedversion
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

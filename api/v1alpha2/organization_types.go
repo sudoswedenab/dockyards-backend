@@ -56,6 +56,7 @@ type OrganizationStatus struct {
 // +kubebuilder:printcolumn:name="NamespaceReference",type=string,JSONPath=".status.namespaceRef"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Duration",type=string,JSONPath=".spec.duration"
+// +kubebuilder:unservedversion
 type Organization struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

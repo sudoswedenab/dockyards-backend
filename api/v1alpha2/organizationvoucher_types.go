@@ -38,6 +38,7 @@ type OrganizationVoucherStatus struct {
 // +kubebuilder:printcolumn:name="PoolReference",type=string,JSONPath=".spec.poolRef.name"
 // +kubebuilder:printcolumn:name="Code",type=string,JSONPath=".spec.code"
 // +kubebuilder:printcolumn:name="Redeemed",type=boolean,JSONPath=".status.redeemed"
+// +kubebuilder:unservedversion
 type OrganizationVoucher struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -43,6 +43,7 @@ type ReleaseStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Latest",type=string,JSONPath=".status.latestVersion"
 // +kubebuilder:deprecatedversion
+// +kubebuilder:unservedversion
 type Release struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

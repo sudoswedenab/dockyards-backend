@@ -49,6 +49,7 @@ type DeploymentStatus struct {
 // +kubebuilder:printcolumn:name="ClusterComponent",type=boolean,priority=1,JSONPath=".spec.clusterComponent"
 // +kubebuilder:printcolumn:name="URL",type=string,priority=1,JSONPath=".status.urls[0]"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:unservedversion
 type Deployment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

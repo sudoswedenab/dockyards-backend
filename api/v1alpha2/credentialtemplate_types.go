@@ -36,6 +36,7 @@ type CredentialTemplateSpec struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:deprecatedversion
+// +kubebuilder:unservedversion
 type CredentialTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
