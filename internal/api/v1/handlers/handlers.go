@@ -240,7 +240,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		),
 	)
 
-	mux.Handle("GET /v1/cluster-templates", logger(requireAuth(GetNamelessResource(h.ListGlobalClusterTemplates))))
+	mux.Handle("GET /v1/cluster-templates", logger(requireAuth(contentJSON(GetNamelessResource(h.ListGlobalClusterTemplates)))))
 
 	return nil
 }
