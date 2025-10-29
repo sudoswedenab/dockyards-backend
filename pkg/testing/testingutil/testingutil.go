@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 type TestEnvironment struct {
@@ -227,6 +228,7 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 	_ = dockyardsv1.AddToScheme(scheme)
 	_ = authorizationv1.AddToScheme(scheme)
 	_ = rbacv1.AddToScheme(scheme)
+	_ = apiextensionsv1.AddToScheme(scheme)
 
 	c, err := client.New(cfg, client.Options{Scheme: scheme})
 	if err != nil {

@@ -31,6 +31,7 @@ import (
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/handlers"
+	"github.com/sudoswedenab/dockyards-backend/internal/api/v2"
 	"github.com/sudoswedenab/dockyards-backend/internal/controller"
 	"github.com/sudoswedenab/dockyards-backend/internal/metrics"
 	"github.com/sudoswedenab/dockyards-backend/internal/webhooks"
@@ -38,6 +39,7 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/jwt"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -159,6 +161,7 @@ func main() {
 	_ = authorizationv1.AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)
 	_ = dockyardsv1.AddToScheme(scheme)
+	_ = apiextensionsv1.AddToScheme(scheme)
 
 	controllerClient, err := client.New(kubeconfig, client.Options{Scheme: scheme})
 	if err != nil {
@@ -261,6 +264,9 @@ func main() {
 	corsHandler := cors.New(corsOptions)
 
 	publicHandler := corsHandler.Handler(publicMux)
+
+	v2API := v2.NewAPI(mgr, &accessKey.PublicKey)
+	v2API.RegisterRoutes(publicMux)
 
 	publicServer := &http.Server{
 		Handler: publicHandler,
