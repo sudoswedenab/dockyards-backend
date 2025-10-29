@@ -126,7 +126,7 @@ func main() {
 	var dockyardsNamespace string
 	var allowedDomains []string
 	pflag.StringVar(&logLevel, "log-level", "info", "log level")
-	pflag.StringVar(&configMap, "config-map", "dockyards-config", "ConfigMap name")
+	pflag.StringVar(&configMap, "config-map", "dockyards-system", "ConfigMap name")
 	pflag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
 	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
