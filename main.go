@@ -342,7 +342,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	externalURL := cm.GetConfigKey("externalUrl", "http://localhost:9000")
+	externalURL := cm.GetConfigKey(dyconfig.KeyExternalURL, "http://localhost:9000")
 
 	err = (&controller.UserReconciler{
 		Client:               mgr.GetClient(),
