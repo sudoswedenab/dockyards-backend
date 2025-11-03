@@ -335,18 +335,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	cm, err := dyconfig.GetConfig(ctx, controllerClient, configMap, dockyardsNamespace)
+	dockyardsConfig, err := dyconfig.GetConfig(ctx, controllerClient, configMap, dockyardsNamespace)
 	if err != nil {
 		logger.Error("error loading config map", "err", err)
 
 		os.Exit(1)
 	}
 
-	externalURL := cm.GetConfigKey(dyconfig.KeyExternalURL, "http://localhost:9000")
-
 	err = (&controller.UserReconciler{
-		Client:               mgr.GetClient(),
-		DockyardsExternalURL: externalURL,
+		Client:          mgr.GetClient(),
+		DockyardsConfig: dockyardsConfig,
 	}).SetupWithManager(mgr)
 	if err != nil {
 		logger.Error("error creating new verificationrequest reconciler", "err", err)
