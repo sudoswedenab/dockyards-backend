@@ -24,6 +24,7 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
+	dyconfig "github.com/sudoswedenab/dockyards-backend/api/config"
 	"github.com/sudoswedenab/dockyards-backend/templates"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +38,7 @@ import (
 
 type UserReconciler struct {
 	client.Client
-	DockyardsExternalURL string
+	DockyardsConfig *dyconfig.DockyardsConfig
 }
 
 type VerificationEmail struct {
@@ -186,7 +187,8 @@ func (r *UserReconciler) reconcileVerificationRequest(ctx context.Context, user 
 			name = user.Spec.DisplayName
 		}
 
-		verificationEmail, err := renderVerificationEmail(VerificationEmailSpec{VerificationURL: r.DockyardsExternalURL + "/verify/" + code, Name: name})
+		externalURL := r.DockyardsConfig.GetConfigKey(dyconfig.KeyExternalURL, "http://localhost:9000")
+		verificationEmail, err := renderVerificationEmail(VerificationEmailSpec{VerificationURL: externalURL + "/verify/" + code, Name: name})
 		if err != nil {
 			return err
 		}
