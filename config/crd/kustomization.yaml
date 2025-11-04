@@ -30,7 +30,6 @@ resources:
 - dockyards.io_features.yaml
 - dockyards.io_verificationrequests.yaml
 - dockyards.io_credentialtemplates.yaml
-- dockyards.io_deploymenttemplates.yaml
 - dockyards.io_organizationvouchers.yaml
 - dockyards.io_workloadtemplates.yaml
 - dockyards.io_workloads.yaml

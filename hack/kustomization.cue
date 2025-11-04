@@ -17,15 +17,6 @@ images: [
 	},
 ]
 kind: "Kustomization"
-patches: [
-	{
-		path: "patches/conversion.yaml"
-		target: {
-			kind: "CustomResourceDefinition"
-			name: "organizations.dockyards.io"
-		}
-	},
-]
 resources: [
 	"base",
 	"crd",

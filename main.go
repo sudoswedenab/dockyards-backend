@@ -28,7 +28,6 @@ import (
 	"github.com/rs/cors"
 	"github.com/spf13/pflag"
 	dyconfig "github.com/sudoswedenab/dockyards-backend/api/config"
-	"github.com/sudoswedenab/dockyards-backend/api/v1alpha2"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/handlers"
@@ -103,11 +102,6 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 		return err
 	}
 
-	err = (&v1alpha2.Organization{}).SetupWebhookWithManager(mgr)
-	if err != nil {
-		return err
-	}
-
 	err = (&dockyardsv1.Organization{}).SetupWebhookWithManager(mgr)
 	if err != nil {
 		return err
@@ -165,7 +159,6 @@ func main() {
 	_ = authorizationv1.AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)
 	_ = dockyardsv1.AddToScheme(scheme)
-	_ = v1alpha2.AddToScheme(scheme)
 
 	controllerClient, err := client.New(kubeconfig, client.Options{Scheme: scheme})
 	if err != nil {
