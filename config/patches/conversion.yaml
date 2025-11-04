@@ -19,7 +19,7 @@
     webhook:
       clientConfig:
         service:
-          name: dockyards-backend-webhook-service
+          name: dockyards-backend
           namespace: system
           path: /convert
           port: 443
