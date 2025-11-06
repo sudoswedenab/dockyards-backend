@@ -28,6 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
+
 func (a *API) ListNamespacedResource(w http.ResponseWriter, r *http.Request) {
 	subject, err := a.subjectFrom(r)
 	if err != nil {
