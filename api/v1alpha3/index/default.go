@@ -39,6 +39,11 @@ func AddDefaultIndexes(ctx context.Context, mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = ByCode(ctx, mgr)
+	if err != nil {
+		return err
+	}
+
 	for _, object := range []client.Object{&dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &dockyardsv1.Cluster{}} {
 		err := mgr.GetFieldIndexer().IndexField(ctx, object, OwnerReferencesField, ByOwnerReferences)
 		if err != nil {
@@ -47,11 +52,6 @@ func AddDefaultIndexes(ctx context.Context, mgr ctrl.Manager) error {
 	}
 
 	err = mgr.GetFieldIndexer().IndexField(ctx, &corev1.Secret{}, SecretTypeField, BySecretType)
-	if err != nil {
-		return err
-	}
-
-	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.OrganizationVoucher{}, CodeField, ByCode)
 	if err != nil {
 		return err
 	}

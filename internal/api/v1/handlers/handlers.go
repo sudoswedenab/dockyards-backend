@@ -240,6 +240,18 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		),
 	)
 
+	mux.Handle("POST /v1/password-reset-request",
+		logger(
+			validateJSON.WithSchema("#passwordResetRequestOptions")(UpdateNamelessResource(&h, "verificationrequests", h.CreateGlobalPasswordResetRequest)),
+		),
+	)
+
+	mux.Handle("POST /v1/reset-password",
+		logger(
+			validateJSON.WithSchema("#resetPasswordOptions")(UpdateNamelessResource(&h, "verificationrequests", h.ResetPassword)),
+		),
+	)
+
 	mux.Handle("GET /v1/cluster-templates", logger(requireAuth(contentJSON(GetNamelessResource(h.ListGlobalClusterTemplates)))))
 
 	return nil

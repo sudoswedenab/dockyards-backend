@@ -61,6 +61,8 @@ spec:
                 type: string
               code:
                 type: string
+              duration:
+                type: string
               subject:
                 type: string
               userRef:
@@ -149,6 +151,9 @@ spec:
                   - type
                   type: object
                 type: array
+              expirationTimestamp:
+                format: date-time
+                type: string
               providerID:
                 type: string
             type: object

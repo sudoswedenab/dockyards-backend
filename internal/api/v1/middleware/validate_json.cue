@@ -43,3 +43,6 @@ import (
 #createInvitation: role!: "SuperUser" | "User" | "Reader"
 
 #verifyOptions: types.#VerifyOptions
+
+#passwordResetRequestOptions: types.#PasswordResetRequestOptions
+#resetPasswordOptions:        types.#ResetPasswordOptions
