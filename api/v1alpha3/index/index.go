@@ -156,17 +156,35 @@ func ByCredentialRef(obj client.Object) []string {
 	return []string{TypedObjectRef(organization.Spec.CredentialRef)}
 }
 
-func ByCode(obj client.Object) []string {
-	organizationVoucher, ok := obj.(*v1alpha3.OrganizationVoucher)
-	if !ok {
-		return nil
+func byCode(obj client.Object) []string {
+	switch t := obj.(type) {
+	case *v1alpha3.OrganizationVoucher:
+		return []string{t.Spec.Code}
+	case *v1alpha3.VerificationRequest:
+		return []string{t.Spec.Code}
 	}
 
-	if organizationVoucher.Spec.Code == "" {
-		return nil
+	return nil
+}
+
+func ByCode(ctx context.Context, mgr ctrl.Manager) error {
+	err := mgr.GetFieldIndexer().IndexField(ctx, &v1alpha3.OrganizationVoucher{},
+		CodeField,
+		byCode,
+	)
+	if err != nil {
+		return err
 	}
 
-	return []string{organizationVoucher.Spec.Code}
+	err = mgr.GetFieldIndexer().IndexField(ctx, &v1alpha3.VerificationRequest{},
+		CodeField,
+		byCode,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func ByWorkloadTemplateReference(obj client.Object) []string {

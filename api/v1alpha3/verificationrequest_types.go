@@ -30,11 +30,13 @@ type VerificationRequestSpec struct {
 	BodyHTML string                           `json:"bodyHTML,omitempty"`
 	BodyText string                           `json:"bodyText"`
 	UserRef  corev1.TypedLocalObjectReference `json:"userRef"`
+	Duration *metav1.Duration                 `json:"duration,omitempty"`
 }
 
 type VerificationRequestStatus struct {
-	ProviderID string             `json:"providerID,omitempty"`
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	ProviderID string                `json:"providerID,omitempty"`
+	ExpirationTimestamp *metav1.Time `json:"expirationTimestamp,omitempty"`
+	Conditions []metav1.Condition    `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -64,6 +66,16 @@ func (r *VerificationRequest) GetConditions() []metav1.Condition {
 
 func (r *VerificationRequest) SetConditions(conditions []metav1.Condition) {
 	r.Status.Conditions = conditions
+}
+
+func (i *VerificationRequest) GetExpiration() *metav1.Time {
+	if i.Spec.Duration == nil {
+		return nil
+	}
+
+	expiration := i.CreationTimestamp.Add(i.Spec.Duration.Duration)
+
+	return &metav1.Time{Time: expiration}
 }
 
 func init() {

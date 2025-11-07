@@ -48,6 +48,13 @@ import "time"
 	version?: null | string @go(Version,*string)
 }
 
+// ClusterTemplate defines model for cluster_template.
+#ClusterTemplate: {
+	cluster_options: #ClusterOptions @go(ClusterOptions)
+	is_default:      bool            @go(IsDefault)
+	name:            string          @go(Name)
+}
+
 // Credential defines model for credential.
 #Credential: {
 	created_at?:               null | time.Time @go(CreatedAt,*time.Time)
@@ -217,6 +224,17 @@ import "time"
 #PasswordOptions: {
 	new_password: string @go(NewPassword)
 	old_password: string @go(OldPassword)
+}
+
+// PasswordResetRequestOptions defines model for password_reset_request_options.
+#PasswordResetRequestOptions: {
+	email: string @go(Email)
+}
+
+// ResetPasswordOptions defines model for reset_password_options.
+#ResetPasswordOptions: {
+	new_password: string @go(NewPassword)
+	reset_code:   string @go(ResetCode)
 }
 
 // StorageResource defines model for storage_resource.
