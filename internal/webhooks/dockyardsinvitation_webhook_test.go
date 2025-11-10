@@ -15,9 +15,12 @@
 package webhooks_test
 
 import (
+	"log/slog"
+	"os"
 	"path"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
@@ -37,6 +40,11 @@ import (
 
 func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 	ctx := t.Context()
+
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError})
+	slogr := logr.FromSlogHandler(handler)
+
+	ctrl.SetLogger(slogr)
 
 	env := envtest.Environment{
 		CRDDirectoryPaths: []string{

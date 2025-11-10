@@ -15,9 +15,12 @@
 package webhooks_test
 
 import (
+	"log/slog"
+	"os"
 	"path"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
@@ -27,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -34,6 +38,11 @@ import (
 
 func TestDockyardsUserValidateCreate(t *testing.T) {
 	ctx := t.Context()
+
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError})
+	slogr := logr.FromSlogHandler(handler)
+
+	ctrl.SetLogger(slogr)
 
 	env := envtest.Environment{
 		CRDDirectoryPaths: []string{
