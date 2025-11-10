@@ -17,27 +17,35 @@ package v2_test
 import (
 	"context"
 	"crypto/ecdsa"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/golang-jwt/jwt/v5"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	v2 "github.com/sudoswedenab/dockyards-backend/internal/api/v2"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
 	utiljwt "github.com/sudoswedenab/dockyards-backend/pkg/util/jwt"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
 	environment *testingutil.TestEnvironment
-	mux *http.ServeMux
-	accessKey *ecdsa.PrivateKey
+	mux         *http.ServeMux
+	accessKey   *ecdsa.PrivateKey
 )
 
 func TestMain(m *testing.M) {
 	ctx, cancel := context.WithCancel(context.Background())
+
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError})
+	slogr := logr.FromSlogHandler(handler)
+
+	ctrl.SetLogger(slogr)
 
 	var err error
 
@@ -80,7 +88,7 @@ func TestMain(m *testing.M) {
 func MustSignToken(user *dockyardsv1.User) string {
 	claims := jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
-		Subject: user.Name,
+		Subject:   user.Name,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)

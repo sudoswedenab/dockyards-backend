@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/golang-jwt/jwt/v5"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
@@ -31,6 +32,7 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
 	utiljwt "github.com/sudoswedenab/dockyards-backend/pkg/util/jwt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -49,7 +51,12 @@ func TestMain(m *testing.M) {
 	var err error
 
 	ctx, cancel = context.WithCancel(context.TODO())
-	logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError})
+
+	logger = slog.New(handler)
+	slogr := logr.FromSlogHandler(handler)
+
+	ctrl.SetLogger(slogr)
 
 	testEnvironment, err = testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
 	if err != nil {
