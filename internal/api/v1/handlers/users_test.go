@@ -41,6 +41,7 @@ func TestGlobalUser_Create(t *testing.T) {
 	}
 
 	c := testEnvironment.GetClient()
+	mgr := testEnvironment.GetManager()
 
 	feature := dockyardsv1.Feature{
 		ObjectMeta: metav1.ObjectMeta{
@@ -50,6 +51,11 @@ func TestGlobalUser_Create(t *testing.T) {
 	}
 
 	err := c.Create(ctx, &feature)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &feature)
 	if err != nil {
 		t.Fatal(err)
 	}
