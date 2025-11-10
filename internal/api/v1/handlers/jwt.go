@@ -44,6 +44,10 @@ func (h *handler) GetGlobalTokens(ctx context.Context) (*types.Tokens, error) {
 		return nil, err
 	}
 
+	if !user.DeletionTimestamp.IsZero() {
+		return nil, apierrors.NewUnauthorized("user deleted")
+	}
+
 	response, err := h.generateTokens(&user)
 	if err != nil {
 		return nil, err

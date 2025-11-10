@@ -21,14 +21,17 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestGlobalTokens_Get(t *testing.T) {
-	c := testEnvironment.GetClient()
+	mgr := testEnvironment.GetManager()
+	c := mgr.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
 	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
@@ -61,8 +64,6 @@ func TestGlobalTokens_Get(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		t.Logf("access: %s", actual.AccessToken)
 
 		token, err := jwt.ParseWithClaims(actual.AccessToken, &jwt.RegisteredClaims{}, func(t *jwt.Token) (any, error) {
 			return &accessKey.PublicKey, nil
@@ -119,11 +120,39 @@ func TestGlobalTokens_Get(t *testing.T) {
 
 	t.Run("test deleted user", func(t *testing.T) {
 		user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-		userToken := MustSignRefreshToken(t, user.Name)
 
-		err := c.Delete(ctx, user)
+		patch := client.MergeFrom(user.DeepCopy())
+
+		user.Finalizers = []string{
+			"backend.dockyards.io/testing",
+		}
+
+		err := c.Patch(ctx, user, patch)
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		userToken := MustSignRefreshToken(t, user.Name)
+
+		err = c.Delete(ctx, user)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for range 10 {
+			var deletedUser dockyardsv1.User
+			err := c.Get(ctx, client.ObjectKeyFromObject(user), &deletedUser)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			t.Logf("deleted: %v", deletedUser.DeletionTimestamp)
+
+			if !deletedUser.DeletionTimestamp.IsZero() {
+				break
+			}
+
+			time.Sleep(time.Second)
 		}
 
 		u := url.URL{
@@ -141,5 +170,12 @@ func TestGlobalTokens_Get(t *testing.T) {
 		if statusCode != http.StatusUnauthorized {
 			t.Errorf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
 		}
+
+		b, err := io.ReadAll(w.Result().Body)
+		if err != nil {
+			panic(err)
+		}
+
+		t.Logf("b: %s", string(b))
 	})
 }
