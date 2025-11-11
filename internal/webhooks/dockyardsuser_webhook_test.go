@@ -58,7 +58,7 @@ func TestDockyardsUserValidateCreate(t *testing.T) {
 	t.Cleanup(func() {
 		err := env.Stop()
 		if err != nil {
-			panic(err)
+			t.Error(err)
 		}
 	})
 
@@ -99,7 +99,7 @@ func TestDockyardsUserValidateCreate(t *testing.T) {
 	go func() {
 		err := mgr.Start(ctx)
 		if err != nil {
-			panic(err)
+			t.Error(err)
 		}
 	}()
 
