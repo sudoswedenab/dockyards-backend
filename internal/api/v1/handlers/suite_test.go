@@ -60,7 +60,9 @@ func TestMain(m *testing.M) {
 
 	testEnvironment, err = testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../../config/crd")})
 	if err != nil {
-		panic(err)
+		slogr.Error(err, "error creating new test environment")
+
+		os.Exit(1)
 	}
 
 	mgr := testEnvironment.GetManager()
@@ -68,7 +70,9 @@ func TestMain(m *testing.M) {
 
 	err = index.AddDefaultIndexes(ctx, mgr)
 	if err != nil {
-		panic(err)
+		slogr.Error(err, "error adding default indexers")
+
+		os.Exit(1)
 	}
 
 	defaultRelease = &dockyardsv1.Release{
@@ -91,7 +95,9 @@ func TestMain(m *testing.M) {
 
 	err = c.Create(ctx, defaultRelease)
 	if err != nil {
-		panic(err)
+		slogr.Error(err, "error creating test release")
+
+		os.Exit(1)
 	}
 
 	patch := client.MergeFrom(defaultRelease.DeepCopy())
@@ -105,19 +111,25 @@ func TestMain(m *testing.M) {
 
 	err = c.Status().Patch(ctx, defaultRelease, patch)
 	if err != nil {
-		panic(err)
+		slogr.Error(err, "error preparing test release")
+
+		os.Exit(1)
 	}
 
 	go func() {
 		err := mgr.Start(ctx)
 		if err != nil {
-			panic(err)
+			slogr.Error(err, "error starting test manager")
+
+			os.Exit(1)
 		}
 	}()
 
 	accessKey, refreshKey, err = utiljwt.GetOrGenerateKeys(ctx, c, testEnvironment.GetDockyardsNamespace())
 	if err != nil {
-		panic(err)
+		slogr.Error(err, "error preparing test keys")
+
+		os.Exit(1)
 	}
 
 	handlerOptions := []handlers.HandlerOption{
@@ -131,7 +143,9 @@ func TestMain(m *testing.M) {
 
 	err = handlers.RegisterRoutes(mux, handlerOptions...)
 	if err != nil {
-		panic(err)
+		slogr.Error(err, "error registring routes for test mux")
+
+		os.Exit(1)
 	}
 
 	code := m.Run()
@@ -139,7 +153,9 @@ func TestMain(m *testing.M) {
 	cancel()
 	err = testEnvironment.GetEnvironment().Stop()
 	if err != nil {
-		panic(err)
+		slogr.Error(err, "error stopping test environment")
+
+		os.Exit(1)
 	}
 
 	os.Exit(code)

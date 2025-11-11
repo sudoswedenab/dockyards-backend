@@ -51,7 +51,9 @@ func TestMain(m *testing.M) {
 
 	environment, err = testingutil.NewTestEnvironment(ctx, []string{path.Join("../../../config/crd")})
 	if err != nil {
-		panic(err)
+		slogr.Error(err, "error creating new test environment")
+
+		os.Exit(1)
 	}
 
 	mgr := environment.GetManager()
@@ -60,13 +62,17 @@ func TestMain(m *testing.M) {
 	go func() {
 		err := mgr.Start(ctx)
 		if err != nil {
-			panic(err)
+			slogr.Error(err, "error starting test manager")
+
+			os.Exit(1)
 		}
 	}()
 
 	accessKey, _, err = utiljwt.GetOrGenerateKeys(ctx, c, environment.GetDockyardsNamespace())
 	if err != nil {
-		panic(err)
+		slogr.Error(err, "error preparing test keys")
+
+		os.Exit(1)
 	}
 
 	mux = http.NewServeMux()
@@ -79,7 +85,9 @@ func TestMain(m *testing.M) {
 	cancel()
 	err = environment.GetEnvironment().Stop()
 	if err != nil {
-		panic(err)
+		slogr.Error(err, "error stopping test environment")
+
+		os.Exit(1)
 	}
 
 	os.Exit(code)
