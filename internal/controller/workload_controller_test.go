@@ -65,7 +65,7 @@ func TestWorkloadReconciler_Inventory(t *testing.T) {
 	go func() {
 		err := mgr.Start(ctx)
 		if err != nil {
-			panic(err)
+			t.Error(err)
 		}
 	}()
 

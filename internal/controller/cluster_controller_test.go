@@ -116,7 +116,7 @@ func TestClusterController_Upgrades(t *testing.T) {
 	go func() {
 		err := mgr.Start(ctx)
 		if err != nil {
-			panic(err)
+			t.Error(err)
 		}
 	}()
 
@@ -457,7 +457,7 @@ func TestClusterController_DNSZones(t *testing.T) {
 	go func() {
 		err := mgr.Start(ctx)
 		if err != nil {
-			panic(err)
+			t.Error(err)
 		}
 	}()
 
