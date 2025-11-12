@@ -45,7 +45,7 @@ func TestGlobalOrganizations_List(t *testing.T) {
 	}
 
 	mgr := testEnvironment.GetManager()
-	c := testEnvironment.GetClient()
+	c := mgr.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
@@ -347,14 +347,19 @@ func TestGlobalOrganizations_List(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = c.Get(ctx, client.ObjectKeyFromObject(&deletedOrganization), &deletedOrganization)
-		if err != nil {
-			t.Fatal(err)
-		}
+		for range 10 {
+			err := c.Get(ctx, client.ObjectKeyFromObject(&deletedOrganization), &deletedOrganization)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &deletedOrganization)
-		if err != nil {
-			t.Fatal(err)
+			t.Logf("deleted: %v", deletedOrganization.DeletionTimestamp)
+
+			if !deletedOrganization.DeletionTimestamp.IsZero() {
+				break
+			}
+
+			time.Sleep(time.Second)
 		}
 
 		u := url.URL{
