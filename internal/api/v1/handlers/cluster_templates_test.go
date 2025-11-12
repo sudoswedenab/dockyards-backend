@@ -25,6 +25,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +33,8 @@ import (
 )
 
 func TestGlobalClusterTemplates_List(t *testing.T) {
-	c := testEnvironment.GetClient()
+	mgr := testEnvironment.GetManager()
+	c := mgr.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
 	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
@@ -100,6 +102,11 @@ func TestGlobalClusterTemplates_List(t *testing.T) {
 		}
 
 		err := c.Create(ctx, &clusterTemplate)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, c, &clusterTemplate)
 		if err != nil {
 			t.Fatal(err)
 		}
