@@ -221,7 +221,8 @@ func TestClusterNodes_List(t *testing.T) {
 }
 
 func TestClusterNodes_Get(t *testing.T) {
-	c := testEnvironment.GetClient()
+	mgr := testEnvironment.GetManager()
+	c := mgr.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
 	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
@@ -251,6 +252,11 @@ func TestClusterNodes_Get(t *testing.T) {
 		}
 
 		err := c.Create(ctx, &node)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, c, &node)
 		if err != nil {
 			t.Fatal(err)
 		}
