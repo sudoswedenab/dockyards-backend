@@ -35,7 +35,7 @@ import (
 
 func TestWhoami_Get(t *testing.T) {
 	mgr := testEnvironment.GetManager()
-	c := testEnvironment.GetClient()
+	c := mgr.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
 	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
