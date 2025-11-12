@@ -21,24 +21,39 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
+	"log/slog"
+	"os"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/jwt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
 func TestGetOrGenerateKeys(t *testing.T) {
+	slogr := logr.FromSlogHandler(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	ctrl.SetLogger(slogr)
+
 	environment := envtest.Environment{}
 
 	cfg, err := environment.Start()
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	defer func() {
+		err := environment.Stop()
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
 
 	scheme := runtime.NewScheme()
 	_ = corev1.AddToScheme(scheme)
