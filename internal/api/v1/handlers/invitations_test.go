@@ -47,9 +47,9 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	superUserToken := MustSignToken(t, superUser.Name)
 	userToken := MustSignToken(t, user.Name)
@@ -129,7 +129,7 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "other@dockyards.dev",
-				Role:  dockyardsv1.OrganizationMemberRoleUser,
+				Role:  dockyardsv1.RoleUser,
 			},
 		}
 
@@ -297,7 +297,7 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "other@dockyards.dev",
-				Role:  dockyardsv1.OrganizationMemberRoleReader,
+				Role:  dockyardsv1.RoleReader,
 				Duration: &metav1.Duration{
 					Duration: time.Hour * 8,
 				},
@@ -316,9 +316,9 @@ func TestOrganizationInvitations_Delete(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	superUserToken := MustSignToken(t, superUser.Name)
 	userToken := MustSignToken(t, user.Name)
@@ -332,6 +332,9 @@ func TestOrganizationInvitations_Delete(t *testing.T) {
 				Finalizers: []string{
 					"backend.dockyards.io/testing",
 				},
+			},
+			Spec: dockyardsv1.InvitationSpec{
+				Role: dockyardsv1.RoleUser,
 			},
 		}
 
@@ -381,6 +384,9 @@ func TestOrganizationInvitations_Delete(t *testing.T) {
 					"backend.dockyards.io/testing",
 				},
 			},
+			Spec: dockyardsv1.InvitationSpec{
+				Role: dockyardsv1.RoleUser,
+			},
 		}
 
 		err := c.Create(ctx, &invitation)
@@ -413,6 +419,9 @@ func TestOrganizationInvitations_Delete(t *testing.T) {
 				Finalizers: []string{
 					"backend.dockyards.io/testing",
 				},
+			},
+			Spec: dockyardsv1.InvitationSpec{
+				Role: dockyardsv1.RoleUser,
 			},
 		}
 
@@ -448,9 +457,9 @@ func TestOrganizationInvitations_List(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	superUserToken := MustSignToken(t, superUser.Name)
 	userToken := MustSignToken(t, user.Name)
@@ -464,7 +473,7 @@ func TestOrganizationInvitations_List(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "test@dockyards.dev",
-				Role:  dockyardsv1.OrganizationMemberRoleUser,
+				Role:  dockyardsv1.RoleUser,
 			},
 		},
 		{
@@ -474,7 +483,7 @@ func TestOrganizationInvitations_List(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "duration@dockyards.dev",
-				Role:  dockyardsv1.OrganizationMemberRoleSuperUser,
+				Role:  dockyardsv1.RoleSuperUser,
 				Duration: &metav1.Duration{
 					Duration: time.Minute * 15,
 				},
@@ -652,7 +661,7 @@ func TestGlobalInvitations_List(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: otherUser.Spec.Email,
-				Role:  dockyardsv1.OrganizationMemberRoleUser,
+				Role:  dockyardsv1.RoleUser,
 			},
 		}
 
@@ -676,7 +685,7 @@ func TestGlobalInvitations_List(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "other@dockyards.dev",
-				Role:  dockyardsv1.OrganizationMemberRoleUser,
+				Role:  dockyardsv1.RoleUser,
 			},
 		}
 
@@ -769,7 +778,7 @@ func TestGlobalInvitations_Delete(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: otherUser.Spec.Email,
-				Role:  dockyardsv1.OrganizationMemberRoleReader,
+				Role:  dockyardsv1.RoleReader,
 			},
 		}
 
@@ -807,9 +816,9 @@ func TestGlobalInvitations_Update(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	otherUser := dockyardsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
@@ -867,7 +876,7 @@ func TestGlobalInvitations_Update(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: otherUser.Spec.Email,
-				Role:  dockyardsv1.OrganizationMemberRoleUser,
+				Role:  dockyardsv1.RoleUser,
 			},
 		}
 

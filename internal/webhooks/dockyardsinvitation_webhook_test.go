@@ -166,7 +166,7 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "test@dockyards.dev",
-				Role:  dockyardsv1.OrganizationMemberRoleUser,
+				Role:  dockyardsv1.RoleUser,
 			},
 		}
 
@@ -184,7 +184,7 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "existing@dockyards.dev",
-				Role:  dockyardsv1.OrganizationMemberRoleReader,
+				Role:  dockyardsv1.RoleReader,
 			},
 		}
 
@@ -205,7 +205,7 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "existing@dockyards.dev",
-				Role:  dockyardsv1.OrganizationMemberRoleUser,
+				Role:  dockyardsv1.RoleUser,
 			},
 		}
 
@@ -236,7 +236,7 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: existingUser.Spec.Email,
-				Role:  dockyardsv1.OrganizationMemberRoleReader,
+				Role:  dockyardsv1.RoleReader,
 			},
 		}
 
@@ -267,7 +267,7 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "test@",
-				Role:  dockyardsv1.OrganizationMemberRoleReader,
+				Role:  dockyardsv1.RoleReader,
 			},
 		}
 

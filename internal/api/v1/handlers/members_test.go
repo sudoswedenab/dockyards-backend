@@ -34,9 +34,9 @@ import (
 func TestOrganizationMembers_List(t *testing.T) {
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	superUserToken := MustSignToken(t, superUser.Name)
 	userToken := MustSignToken(t, user.Name)
@@ -164,7 +164,7 @@ func TestOrganizationMembers_List(t *testing.T) {
 
 	t.Run("test other user", func(t *testing.T) {
 		otherOrganization := testEnvironment.MustCreateOrganization(t)
-		otherUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleUser)
+		otherUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.RoleUser)
 		otherUserToken := MustSignToken(t, otherUser.Name)
 
 		u := url.URL{
@@ -190,9 +190,9 @@ func TestOrganizationMembers_Delete(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	superUserToken := MustSignToken(t, superUser.Name)
 	userToken := MustSignToken(t, user.Name)
@@ -251,55 +251,75 @@ func TestOrganizationMembers_Delete(t *testing.T) {
 			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 
-		var actual dockyardsv1.Organization
-		err := c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		var actual dockyardsv1.MemberList
+		err := c.List(ctx, &actual, client.InNamespace(organization.Spec.NamespaceRef.Name))
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expected := dockyardsv1.Organization{
-			ObjectMeta: actual.ObjectMeta,
-			Spec: dockyardsv1.OrganizationSpec{
-				MemberRefs: []dockyardsv1.OrganizationMemberReference{
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     superUser.Name,
-						},
-						UID:  superUser.UID,
-						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-					},
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     reader.Name,
-						},
-						UID:  reader.UID,
-						Role: dockyardsv1.OrganizationMemberRoleReader,
-					},
+		expected := []dockyardsv1.Member{
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       dockyardsv1.MemberKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
 				},
-				NamespaceRef: organization.Spec.NamespaceRef,
-				ProviderID:   organization.Spec.ProviderID,
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: organization.Name,
+						dockyardsv1.LabelRoleName:         string(dockyardsv1.RoleSuperUser),
+						dockyardsv1.LabelUserName:         superUser.Name,
+					},
+					Name:      superUser.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
+				},
+				Spec: dockyardsv1.MemberSpec{
+					UserRef: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     superUser.Name,
+					},
+					Role: dockyardsv1.RoleSuperUser,
+				},
+			},
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       dockyardsv1.MemberKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: organization.Name,
+						dockyardsv1.LabelRoleName:         string(dockyardsv1.RoleReader),
+						dockyardsv1.LabelUserName:         reader.Name,
+					},
+					Name:      reader.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
+				},
+				Spec: dockyardsv1.MemberSpec{
+					UserRef: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     reader.Name,
+					},
+					Role: dockyardsv1.RoleReader,
+				},
 			},
 		}
 
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !cmp.Equal(actual.Items, expected, byName, ignoreObjectMeta) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual.Items, byName, ignoreObjectMeta))
 		}
 	})
 }
-
 
 func TestOrganizationMembers_DeleteSelf(t *testing.T) {
 	c := testEnvironment.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	readerToken := MustSignToken(t, reader.Name)
 

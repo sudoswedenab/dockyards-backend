@@ -75,9 +75,9 @@ func TestOrganizationController(t *testing.T) {
 
 	testOrganization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, testOrganization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, testOrganization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, testOrganization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, testOrganization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, testOrganization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, testOrganization, dockyardsv1.RoleReader)
 
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
