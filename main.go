@@ -371,7 +371,7 @@ func main() {
 		}
 	}
 
-	err = authorization.ReconcileGlobalAuthorization(ctx, controllerClient)
+	err = authorization.ReconcileClusterAuthorization(ctx, controllerClient)
 	if err != nil {
 		logger.Error("error reconciling global authorization", "err", err)
 
