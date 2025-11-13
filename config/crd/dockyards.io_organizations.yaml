@@ -98,6 +98,8 @@ spec:
               duration:
                 type: string
               memberRefs:
+                description: 'Deprecated: Superseded by the member type. Will be removed
+                  in the next version.'
                 items:
                   properties:
                     apiGroup:
@@ -113,6 +115,8 @@ spec:
                       description: Name is the name of resource being referenced
                       type: string
                     role:
+                      description: 'Deprecated: Superseded by role type. Will be removed
+                        in the next version.'
                       enum:
                       - SuperUser
                       - User
@@ -172,8 +176,6 @@ spec:
                 type: string
               skipAutoAssign:
                 type: boolean
-            required:
-            - memberRefs
             type: object
           status:
             properties:

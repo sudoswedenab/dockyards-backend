@@ -21,13 +21,17 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+// Deprecated: Superseded by role type. Will be removed in the next version.
 type OrganizationMemberRole string
 
 const (
 	OrganizationKind = "Organization"
 
+	// Deprecated: Superseded by RoleSuperUser constant. Will be removed in the next version.
 	OrganizationMemberRoleSuperUser OrganizationMemberRole = "SuperUser"
+	// Deprecated: Superseded by RoleUser constant. Will be removed in the next version.
 	OrganizationMemberRoleUser      OrganizationMemberRole = "User"
+	// Deprecated: Superseded by RoleReader constant. Will be removed in the next version.
 	OrganizationMemberRoleReader    OrganizationMemberRole = "Reader"
 )
 
@@ -42,7 +46,8 @@ type OrganizationMemberReference struct {
 type OrganizationSpec struct {
 	DisplayName string `json:"displayName,omitempty"`
 
-	MemberRefs []OrganizationMemberReference `json:"memberRefs"`
+	// Deprecated: Superseded by the member type. Will be removed in the next version.
+	MemberRefs []OrganizationMemberReference `json:"memberRefs,omitempty"`
 
 	ProjectRef    *corev1.TypedObjectReference `json:"projectRef,omitempty"`
 	CredentialRef *corev1.TypedObjectReference `json:"credentialRef,omitempty"`
