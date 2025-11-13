@@ -26,6 +26,8 @@ const (
 	LabelWorkloadTemplateName   = "dockyards.io/workload-template-name"
 	LabelNamespaceName          = "dockyards.io/namespace-name"
 	LabelUserName               = "dockyards.io/user-name"
+	LabelMemberName             = "dockyards.io/member-name"
+	LabelRoleName               = "dockyards.io/role-name"
 )
 
 const (

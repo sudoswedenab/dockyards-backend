@@ -38,3 +38,4 @@ resources:
 - dockyards.io_workloadinventories.yaml
 - dockyards.io_dnszones.yaml
 - dockyards.io_dnszoneclaims.yaml
+- dockyards.io_members.yaml
