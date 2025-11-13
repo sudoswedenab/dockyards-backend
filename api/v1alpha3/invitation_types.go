@@ -26,7 +26,7 @@ const (
 type InvitationSpec struct {
 	Duration  *metav1.Duration             `json:"duration,omitempty"`
 	Email     string                       `json:"email"`
-	Role      OrganizationMemberRole       `json:"role"`
+	Role      Role                         `json:"role"`
 	SenderRef *corev1.TypedObjectReference `json:"senderRef,omitempty"`
 }
 

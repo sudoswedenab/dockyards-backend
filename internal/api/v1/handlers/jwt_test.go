@@ -34,7 +34,7 @@ func TestGlobalTokens_Get(t *testing.T) {
 	c := mgr.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
 	superUserToken := MustSignRefreshToken(t, superUser.Name)
 
 	t.Run("test as super user", func(t *testing.T) {
@@ -119,7 +119,8 @@ func TestGlobalTokens_Get(t *testing.T) {
 	})
 
 	t.Run("test deleted user", func(t *testing.T) {
-		user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+		user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+		userToken := MustSignRefreshToken(t, user.Name)
 
 		patch := client.MergeFrom(user.DeepCopy())
 
@@ -131,8 +132,6 @@ func TestGlobalTokens_Get(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		userToken := MustSignRefreshToken(t, user.Name)
 
 		err = c.Delete(ctx, user)
 		if err != nil {

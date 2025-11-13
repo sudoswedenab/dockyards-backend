@@ -37,7 +37,7 @@ func TestGlobalClusterTemplates_List(t *testing.T) {
 	c := mgr.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 	readerToken := MustSignToken(t, reader.Name)
 
 	t.Run("test empty", func(t *testing.T) {

@@ -42,7 +42,7 @@ func TestClusterNodes_List(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
 
 	superUserToken := MustSignToken(t, superUser.Name)
 
@@ -198,7 +198,7 @@ func TestClusterNodes_List(t *testing.T) {
 	t.Run("test as other user", func(t *testing.T) {
 		otherOrganization := testEnvironment.MustCreateOrganization(t)
 
-		otherUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleSuperUser)
+		otherUser := testEnvironment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.RoleSuperUser)
 
 		otherUserToken := MustSignToken(t, otherUser.Name)
 
@@ -225,7 +225,7 @@ func TestClusterNodes_Get(t *testing.T) {
 	c := mgr.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
 	userToken := MustSignToken(t, user.Name)
 
 	cluster := dockyardsv1.Cluster{

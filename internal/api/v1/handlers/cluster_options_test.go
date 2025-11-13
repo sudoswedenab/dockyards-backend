@@ -35,7 +35,7 @@ func TestClusterOptions_Get(t *testing.T) {
 	c := testEnvironment.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
 	superUserToken := MustSignToken(t, superUser.Name)
 
 	t.Run("test versions", func(t *testing.T) {

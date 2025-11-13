@@ -38,7 +38,7 @@ func TestWhoami_Get(t *testing.T) {
 	c := mgr.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
 	superUserToken := MustSignToken(t, superUser.Name)
 
 	t.Run("test as super user", func(t *testing.T) {

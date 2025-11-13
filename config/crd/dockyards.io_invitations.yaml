@@ -69,6 +69,10 @@ spec:
               email:
                 type: string
               role:
+                enum:
+                - SuperUser
+                - User
+                - Reader
                 type: string
               senderRef:
                 properties:
