@@ -197,6 +197,7 @@ func DeleteOrganizationResource(h *handler, resource string, f DeleteOrganizatio
 
 		resourceAttributes := authorizationv1.ResourceAttributes{
 			Group:     dockyardsv1.GroupVersion.Group,
+			Name:      resourceName,
 			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
 			Verb:      "delete",
