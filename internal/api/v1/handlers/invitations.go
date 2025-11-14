@@ -30,6 +30,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=dockyards.io,resources=invitations,verbs=create;delete;get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=members,verbs=create;get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=users,verbs=get;list;watch
+
 func (h *handler) CreateOrganizationInvitation(ctx context.Context, organization *dockyardsv1.Organization, request *types.InvitationOptions) (*types.Invitation, error) {
 	invitation := dockyardsv1.Invitation{
 		ObjectMeta: metav1.ObjectMeta{
@@ -46,7 +51,7 @@ func (h *handler) CreateOrganizationInvitation(ctx context.Context, organization
 		},
 		Spec: dockyardsv1.InvitationSpec{
 			Email: request.Email,
-			Role:  dockyardsv1.OrganizationMemberRole(request.Role),
+			Role:  dockyardsv1.Role(request.Role),
 		},
 	}
 
@@ -70,7 +75,7 @@ func (h *handler) CreateOrganizationInvitation(ctx context.Context, organization
 		ID:        string(invitation.UID),
 		Name:      invitation.Name,
 		CreatedAt: invitation.CreationTimestamp.Time,
-		Role: 	   string(invitation.Spec.Role),
+		Role:      string(invitation.Spec.Role),
 	}
 
 	return &response, nil
@@ -265,23 +270,29 @@ func (h *handler) UpdateGlobalInvitation(ctx context.Context, organizationName s
 
 	invitation := invitationList.Items[0]
 
-	patch := client.MergeFrom(organization.DeepCopy())
-
-	memberRef := dockyardsv1.OrganizationMemberReference{
-		TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-			APIGroup: &dockyardsv1.GroupVersion.Group,
-			Kind:     dockyardsv1.UserKind,
-			Name:     user.Name,
+	member := dockyardsv1.Member{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				dockyardsv1.LabelOrganizationName: organizationName,
+				dockyardsv1.LabelRoleName:         string(invitation.Spec.Role),
+				dockyardsv1.LabelUserName:         user.Name,
+			},
+			Name:      user.Name,
+			Namespace: organization.Spec.NamespaceRef.Name,
 		},
-		UID:  user.UID,
-		Role: invitation.Spec.Role,
+		Spec: dockyardsv1.MemberSpec{
+			Role: dockyardsv1.Role(invitation.Spec.Role),
+			UserRef: corev1.TypedLocalObjectReference{
+				APIGroup: &dockyardsv1.GroupVersion.Group,
+				Kind:     dockyardsv1.UserKind,
+				Name:     user.Name,
+			},
+		},
 	}
 
-	organization.Spec.MemberRefs = append(organization.Spec.MemberRefs, memberRef)
-
-	err = h.Patch(ctx, &organization, patch)
+	err = h.Create(ctx, &member)
 	if err != nil {
-		logger.Error("error patching organization", "err", err)
+		logger.Error("error creating member", "err", err)
 
 		return err
 	}

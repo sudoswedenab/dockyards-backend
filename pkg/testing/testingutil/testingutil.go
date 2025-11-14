@@ -17,6 +17,7 @@ package testingutil
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,7 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 type TestEnvironment struct {
@@ -77,7 +78,7 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 
 	err := c.Create(ctx, &superUser)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating super user: %w", err)
 	}
 
 	user := dockyardsv1.User{
@@ -91,7 +92,7 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 
 	err = c.Create(ctx, &user)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating user: %w", err)
 	}
 
 	reader := dockyardsv1.User{
@@ -105,7 +106,18 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 
 	err = c.Create(ctx, &reader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating reader: %w", err)
+	}
+
+	for _, u := range []dockyardsv1.User{
+		superUser,
+		user,
+		reader,
+	} {
+		err := authorization.ReconcileUserAuthorization(ctx, c, &u)
+		if err != nil {
+			return nil, fmt.Errorf("error reconciling user authorization: %w", err)
+		}
 	}
 
 	namespace := corev1.Namespace{
@@ -116,7 +128,7 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 
 	err = c.Create(ctx, &namespace)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating namespace: %w", err)
 	}
 
 	organization := dockyardsv1.Organization{
@@ -124,35 +136,6 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 			GenerateName: "test-",
 		},
 		Spec: dockyardsv1.OrganizationSpec{
-			MemberRefs: []dockyardsv1.OrganizationMemberReference{
-				{
-					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-						APIGroup: &dockyardsv1.GroupVersion.Group,
-						Kind:     dockyardsv1.UserKind,
-						Name:     superUser.Name,
-					},
-					Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-					UID:  superUser.UID,
-				},
-				{
-					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-						APIGroup: &dockyardsv1.GroupVersion.Group,
-						Kind:     dockyardsv1.UserKind,
-						Name:     user.Name,
-					},
-					Role: dockyardsv1.OrganizationMemberRoleUser,
-					UID:  user.UID,
-				},
-				{
-					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-						APIGroup: &dockyardsv1.GroupVersion.Group,
-						Kind:     dockyardsv1.UserKind,
-						Name:     reader.Name,
-					},
-					Role: dockyardsv1.OrganizationMemberRoleReader,
-					UID:  reader.UID,
-				},
-			},
 			NamespaceRef: &corev1.LocalObjectReference{
 				Name: namespace.Name,
 			},
@@ -162,12 +145,56 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 
 	err = c.Create(ctx, &organization)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating organization: %w", err)
+	}
+
+	for userName, role := range map[string]dockyardsv1.Role{
+		superUser.Name: dockyardsv1.RoleSuperUser,
+		user.Name:      dockyardsv1.RoleUser,
+		reader.Name:    dockyardsv1.RoleReader,
+	} {
+		member := dockyardsv1.Member{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{
+					dockyardsv1.LabelRoleName:         string(role),
+					dockyardsv1.LabelUserName:         userName,
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
+				Name:      userName,
+				Namespace: namespace.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
+					},
+				},
+			},
+			Spec: dockyardsv1.MemberSpec{
+				Role: role,
+				UserRef: corev1.TypedLocalObjectReference{
+					APIGroup: &dockyardsv1.GroupVersion.Group,
+					Kind:     dockyardsv1.UserKind,
+					Name:     userName,
+				},
+			},
+		}
+
+		err = c.Create(ctx, &member)
+		if err != nil {
+			return nil, fmt.Errorf("error creating member: %w", err)
+		}
+
+		err = authorization.ReconcileMemberAuthorization(ctx, c, &member)
+		if err != nil {
+			return nil, fmt.Errorf("error reconciling member: %w", err)
+		}
 	}
 
 	err = authorization.ReconcileOrganizationAuthorization(ctx, c, &organization)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reconciling organization authorization: %w", err)
 	}
 
 	return &organization, nil
@@ -184,14 +211,20 @@ func (e *TestEnvironment) MustCreateOrganization(t *testing.T) *dockyardsv1.Orga
 	return organization
 }
 
-func (e *TestEnvironment) GetOrganizationUser(ctx context.Context, organization *dockyardsv1.Organization, role dockyardsv1.OrganizationMemberRole) (*dockyardsv1.User, error) {
-	for _, memberRef := range organization.Spec.MemberRefs {
-		if memberRef.Role != role {
+func (e *TestEnvironment) GetOrganizationUser(ctx context.Context, organization *dockyardsv1.Organization, role dockyardsv1.Role) (*dockyardsv1.User, error) {
+	var memberList dockyardsv1.MemberList
+	err := e.c.List(ctx, &memberList, client.InNamespace(organization.Spec.NamespaceRef.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, member := range memberList.Items {
+		if member.Spec.Role != role {
 			continue
 		}
 
 		var user dockyardsv1.User
-		err := e.c.Get(ctx, client.ObjectKey{Name: memberRef.Name}, &user)
+		err := e.c.Get(ctx, client.ObjectKey{Name: member.Spec.UserRef.Name}, &user)
 		if err != nil {
 			return nil, err
 		}
@@ -202,7 +235,7 @@ func (e *TestEnvironment) GetOrganizationUser(ctx context.Context, organization 
 	return nil, errors.New("no such user")
 }
 
-func (e *TestEnvironment) MustGetOrganizationUser(t *testing.T, organization *dockyardsv1.Organization, role dockyardsv1.OrganizationMemberRole) *dockyardsv1.User {
+func (e *TestEnvironment) MustGetOrganizationUser(t *testing.T, organization *dockyardsv1.Organization, role dockyardsv1.Role) *dockyardsv1.User {
 	ctx := t.Context()
 
 	user, err := e.GetOrganizationUser(ctx, organization, role)
@@ -261,7 +294,7 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 		return nil, err
 	}
 
-	err = authorization.ReconcileGlobalAuthorization(ctx, c)
+	err = authorization.ReconcileClusterAuthorization(ctx, c)
 	if err != nil {
 		return nil, err
 	}

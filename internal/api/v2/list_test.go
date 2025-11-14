@@ -32,7 +32,7 @@ func TestNamespacedResource_List(t *testing.T) {
 	ctx := t.Context()
 
 	organization := environment.MustCreateOrganization(t)
-	superUser := environment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
+	superUser := environment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
 
 	c := environment.GetClient()
 
@@ -139,7 +139,7 @@ func TestNamespacedResource_List(t *testing.T) {
 
 	t.Run("test clusters as other user", func(t *testing.T) {
 		otherOrganization := environment.MustCreateOrganization(t)
-		otherUser := environment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.OrganizationMemberRoleSuperUser)
+		otherUser := environment.MustGetOrganizationUser(t, otherOrganization, dockyardsv1.RoleSuperUser)
 
 		target, err := url.JoinPath("/v2",
 			"group", dockyardsv1.GroupVersion.Group,

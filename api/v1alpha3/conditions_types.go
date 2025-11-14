@@ -53,3 +53,9 @@ const (
 const (
 	WorkloadInventoryReadyCondition = "WorkloadInventoryReady"
 )
+
+const (
+	MemberAuthorizationReadyCondition = "MemberAuthorizationReady"
+
+	MemberAuthorizationInternalErrorReason = "MemberAuthorizationInternalError"
+)

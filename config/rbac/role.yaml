@@ -61,7 +61,6 @@ rules:
   verbs:
   - get
   - list
-  - patch
   - watch
 - apiGroups:
   - dockyards.io
@@ -73,6 +72,8 @@ rules:
   - dockyards.io
   resources:
   - clusters
+  - invitations
+  - members
   - workloads
   verbs:
   - create
@@ -92,16 +93,6 @@ rules:
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - invitations
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
   - watch
 - apiGroups:
   - dockyards.io

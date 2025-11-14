@@ -29,6 +29,7 @@ import (
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -136,6 +137,11 @@ func TestGlobalUser_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		err = authorization.ReconcileUserAuthorization(ctx, c, &user)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &user)
 		if err != nil {
 			t.Fatal(err)
@@ -197,6 +203,11 @@ func TestGlobalUser_Update(t *testing.T) {
 		}
 
 		err := c.Create(ctx, &user)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = authorization.ReconcileUserAuthorization(ctx, c, &user)
 		if err != nil {
 			t.Fatal(err)
 		}

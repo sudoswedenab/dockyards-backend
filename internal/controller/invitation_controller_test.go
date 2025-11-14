@@ -82,6 +82,9 @@ func TestInvitationController_ReconcileExpiration(t *testing.T) {
 				GenerateName: "test-",
 				Namespace:    organization.Spec.NamespaceRef.Name,
 			},
+			Spec: dockyardsv1.InvitationSpec{
+				Role: dockyardsv1.RoleReader,
+			},
 		}
 
 		err := c.Create(ctx, &invitation)
@@ -124,6 +127,7 @@ func TestInvitationController_ReconcileExpiration(t *testing.T) {
 				Duration: &metav1.Duration{
 					Duration: time.Minute * 5,
 				},
+				Role: dockyardsv1.RoleReader,
 			},
 		}
 
@@ -174,6 +178,7 @@ func TestInvitationController_ReconcileExpiration(t *testing.T) {
 				Duration: &metav1.Duration{
 					Duration: time.Second,
 				},
+				Role: dockyardsv1.RoleReader,
 			},
 		}
 

@@ -18,34 +18,26 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-  name: organizations.dockyards.io
+  name: members.dockyards.io
 spec:
   group: dockyards.io
   names:
-    kind: Organization
-    listKind: OrganizationList
-    plural: organizations
-    singular: organization
-  scope: Cluster
+    kind: Member
+    listKind: MemberList
+    plural: members
+    singular: member
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.conditions[?(@.type=="Ready")].status
-      name: Ready
+    - jsonPath: .spec.role
+      name: Role
       type: string
-    - jsonPath: .status.conditions[?(@.type=="Ready")].reason
-      name: Reason
-      type: string
-    - jsonPath: .spec.namespaceRef.name
-      name: NamespaceReference
-      priority: 1
+    - jsonPath: .spec.userRef.name
+      name: UserName
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    - jsonPath: .spec.duration
-      name: Duration
-      priority: 1
-      type: string
     name: v1alpha3
     schema:
       openAPIV3Schema:
@@ -69,7 +61,16 @@ spec:
             type: object
           spec:
             properties:
-              credentialRef:
+              role:
+                enum:
+                - SuperUser
+                - User
+                - Reader
+                type: string
+              userRef:
+                description: |-
+                  TypedLocalObjectReference contains enough information to let you locate the
+                  typed referenced object inside the same namespace.
                 properties:
                   apiGroup:
                     description: |-
@@ -83,99 +84,14 @@ spec:
                   name:
                     description: Name is the name of resource being referenced
                     type: string
-                  namespace:
-                    description: |-
-                      Namespace is the namespace of resource being referenced
-                      Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
-                      (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
-                    type: string
                 required:
                 - kind
                 - name
-                type: object
-              displayName:
-                type: string
-              duration:
-                type: string
-              memberRefs:
-                description: 'Deprecated: Superseded by the member type. Will be removed
-                  in the next version.'
-                items:
-                  properties:
-                    apiGroup:
-                      description: |-
-                        APIGroup is the group for the resource being referenced.
-                        If APIGroup is not specified, the specified Kind must be in the core API group.
-                        For any other third-party types, APIGroup is required.
-                      type: string
-                    kind:
-                      description: Kind is the type of resource being referenced
-                      type: string
-                    name:
-                      description: Name is the name of resource being referenced
-                      type: string
-                    role:
-                      description: 'Deprecated: Superseded by role type. Will be removed
-                        in the next version.'
-                      enum:
-                      - SuperUser
-                      - User
-                      - Reader
-                      type: string
-                    uid:
-                      description: |-
-                        UID is a type that holds unique ID values, including UUIDs.  Because we
-                        don't ONLY use UUIDs, this is an alias to string.  Being a type captures
-                        intent and helps make sure that UIDs and names do not get conflated.
-                      type: string
-                  required:
-                  - kind
-                  - name
-                  - role
-                  - uid
-                  type: object
-                  x-kubernetes-map-type: atomic
-                type: array
-              namespaceRef:
-                description: |-
-                  LocalObjectReference contains enough information to let you locate the
-                  referenced object inside the same namespace.
-                properties:
-                  name:
-                    description: |-
-                      Name of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              projectRef:
-                properties:
-                  apiGroup:
-                    description: |-
-                      APIGroup is the group for the resource being referenced.
-                      If APIGroup is not specified, the specified Kind must be in the core API group.
-                      For any other third-party types, APIGroup is required.
-                    type: string
-                  kind:
-                    description: Kind is the type of resource being referenced
-                    type: string
-                  name:
-                    description: Name is the name of resource being referenced
-                    type: string
-                  namespace:
-                    description: |-
-                      Namespace is the namespace of resource being referenced
-                      Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
-                      (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
-                    type: string
-                required:
-                - kind
-                - name
-                type: object
-              providerID:
-                type: string
-              skipAutoAssign:
-                type: boolean
+            required:
+            - role
+            - userRef
             type: object
           status:
             properties:
@@ -235,31 +151,11 @@ spec:
                   - type
                   type: object
                 type: array
-              expirationTimestamp:
-                format: date-time
+              displayName:
                 type: string
-              namespaceRef:
-                description: 'Deprecated: use spec.namespaceRef'
-                properties:
-                  name:
-                    description: |-
-                      Name of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    type: string
-                type: object
-                x-kubernetes-map-type: atomic
-              resourceQuotas:
-                additionalProperties:
-                  anyOf:
-                  - type: integer
-                  - type: string
-                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                  x-kubernetes-int-or-string: true
-                description: ResourceList is a set of (resource name, quantity) pairs.
-                type: object
+              email:
+                type: string
             type: object
-        required:
-        - spec
         type: object
     served: true
     storage: true

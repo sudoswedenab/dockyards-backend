@@ -16,28 +16,42 @@ package handlers
 
 import (
 	"context"
-	"net/http"
-	"slices"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=dockyards,resources=organizations,verbs=get;list;patch;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=members,verbs=delete;get;list;watch
+// +kubebuilder:rbac:groups=dockyards.io,resources=users,verbs=get;list;watch
 
-func (h *handler) ListOrganizationMembers(_ context.Context, organization *dockyardsv1.Organization) (*[]types.Member, error) {
-	response := make([]types.Member, len(organization.Spec.MemberRefs))
+func (h *handler) ListOrganizationMembers(ctx context.Context, organization *dockyardsv1.Organization) (*[]types.Member, error) {
+	var memberList dockyardsv1.MemberList
+	err := h.List(ctx, &memberList, client.InNamespace(organization.Spec.NamespaceRef.Name))
+	if err != nil {
+		return nil, err
+	}
 
-	for i, memberRef := range organization.Spec.MemberRefs {
+	response := make([]types.Member, len(memberList.Items))
+
+	var user dockyardsv1.User
+	for i, member := range memberList.Items {
+		key := client.ObjectKey{
+			Name: member.Spec.UserRef.Name,
+		}
+
+		err := h.Get(ctx, key, &user)
+		if err != nil {
+			return nil, err
+		}
+
 		response[i] = types.Member{
 			CreatedAt: organization.CreationTimestamp.Time,
-			ID:        string(memberRef.UID),
-			Name:      memberRef.Name,
-			Role:      ptr.To(string(memberRef.Role)),
+			ID:        string(user.UID),
+			Name:      member.Name,
+			Role:      ptr.To(string(member.Spec.Role)),
 		}
 	}
 
@@ -45,90 +59,30 @@ func (h *handler) ListOrganizationMembers(_ context.Context, organization *docky
 }
 
 func (h *handler) DeleteOrganizationMember(ctx context.Context, organization *dockyardsv1.Organization, memberName string) error {
-	patch := client.MergeFrom(organization.DeepCopy())
-
-	memberRefs := slices.DeleteFunc(organization.Spec.MemberRefs, func(memberRef dockyardsv1.OrganizationMemberReference) bool {
-		return memberRef.Name == memberName
-	})
-
-	if slices.Equal(organization.Spec.MemberRefs, memberRefs) {
-		return apierrors.NewNotFound(dockyardsv1.GroupVersion.WithResource("Member").GroupResource(), memberName)
+	key := client.ObjectKey{
+		Name:      memberName,
+		Namespace: organization.Spec.NamespaceRef.Name,
 	}
 
-	organization.Spec.MemberRefs = memberRefs
+	if memberName == "@me" {
+		subject, err := middleware.SubjectFrom(ctx)
+		if err != nil {
+			return err
+		}
 
-	err := h.Patch(ctx, organization, patch)
+		key.Name = subject
+	}
+
+	var member dockyardsv1.Member
+	err := h.Get(ctx, key, &member)
+	if err != nil {
+		return err
+	}
+
+	err = h.Delete(ctx, &member)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (h *handler) LeaveOrganization(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	logger := middleware.LoggerFrom(ctx).With("resource", "organization")
-
-	organizationName := r.PathValue("organizationName")
-	if organizationName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	var organization dockyardsv1.Organization
-	err := h.Get(ctx, client.ObjectKey{Name: organizationName}, &organization)
-	if err != nil {
-		logger.Error("error getting organization", "err", err)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	if organization.Spec.NamespaceRef == nil {
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	subject, err := middleware.SubjectFrom(ctx)
-	if err != nil {
-		logger.Error("error getting subject from context", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	var allowed bool
-	for _, memberRef := range organization.Spec.MemberRefs {
-		if memberRef.Name == subject {
-			allowed = true
-
-			break
-		}
-	}
-
-	if !allowed {
-		logger.Debug("subject is not allowed to delete resource", "subject", subject, "organization", organization.Name)
-		w.WriteHeader(http.StatusUnauthorized)
-
-		return
-	}
-
-	patch := client.MergeFrom(organization.DeepCopy())
-
-	organization.Spec.MemberRefs = slices.DeleteFunc(organization.Spec.MemberRefs, func(memberRef dockyardsv1.OrganizationMemberReference) bool {
-		return memberRef.Name == subject
-	})
-
-	err = h.Patch(ctx, &organization, patch)
-	if err != nil {
-		logger.Error("error deleting resource", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusAccepted)
 }

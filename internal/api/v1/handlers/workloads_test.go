@@ -50,9 +50,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	superUserToken := MustSignToken(t, superUser.Name)
 	userToken := MustSignToken(t, user.Name)
@@ -526,9 +526,9 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	superUserToken := MustSignToken(t, superUser.Name)
 	userToken := MustSignToken(t, user.Name)
@@ -700,9 +700,9 @@ func TestClusterWorkloads_Update(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleSuperUser)
-	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
+	user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleUser)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	superUserToken := MustSignToken(t, superUser.Name)
 	userToken := MustSignToken(t, user.Name)
@@ -1257,7 +1257,7 @@ func TestClusterWorkloads_Get(t *testing.T) {
 
 	organization := testEnvironment.MustCreateOrganization(t)
 
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.OrganizationMemberRoleReader)
+	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
 
 	readerToken := MustSignToken(t, reader.Name)
 
