@@ -189,32 +189,54 @@ func TestGlobalOrganizations_List(t *testing.T) {
 	})
 
 	t.Run("test multiple membership", func(t *testing.T) {
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "other-",
+			},
+		}
+
+		err := c.Create(ctx, &namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		otherOrganization := dockyardsv1.Organization{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "other-",
 			},
 			Spec: dockyardsv1.OrganizationSpec{
 				DisplayName: "testing",
-				MemberRefs: []dockyardsv1.OrganizationMemberReference{
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     reader.Name,
-						},
-						UID:  reader.UID,
-						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-					},
+				NamespaceRef: &corev1.LocalObjectReference{
+					Name: namespace.Name,
 				},
 			},
 		}
 
-		err := c.Create(ctx, &otherOrganization)
+		err = c.Create(ctx, &otherOrganization)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherOrganization)
+		member := dockyardsv1.Member{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: otherOrganization.Name,
+					dockyardsv1.LabelUserName:         reader.Name,
+				},
+				Name:      reader.Name,
+				Namespace: namespace.Name,
+			},
+			Spec: dockyardsv1.MemberSpec{
+				Role: dockyardsv1.RoleSuperUser,
+			},
+		}
+
+		err = c.Create(ctx, &member)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &member)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -314,6 +336,20 @@ func TestGlobalOrganizations_List(t *testing.T) {
 	})
 
 	t.Run("test deleted organization", func(t *testing.T) {
+		deletedNamespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "deleted-",
+				Finalizers: []string{
+					"backend.dockyards.io/testing",
+				},
+			},
+		}
+
+		err := c.Create(ctx, &deletedNamespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		deletedOrganization := dockyardsv1.Organization{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "deleted-",
@@ -322,20 +358,39 @@ func TestGlobalOrganizations_List(t *testing.T) {
 				},
 			},
 			Spec: dockyardsv1.OrganizationSpec{
-				MemberRefs: []dockyardsv1.OrganizationMemberReference{
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							Kind: dockyardsv1.UserKind,
-							Name: superUser.Name,
-						},
-						UID:  superUser.UID,
-						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-					},
+				NamespaceRef: &corev1.LocalObjectReference{
+					Name: deletedNamespace.Name,
 				},
 			},
 		}
 
-		err := c.Create(ctx, &deletedOrganization)
+		err = c.Create(ctx, &deletedOrganization)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		member := dockyardsv1.Member{
+			ObjectMeta: metav1.ObjectMeta{
+				Finalizers: []string{
+					"backend.dockyards.io/testing",
+				},
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: deletedOrganization.Name,
+					dockyardsv1.LabelUserName:         superUser.Name,
+				},
+				Name:      superUser.Name,
+				Namespace: deletedNamespace.Name,
+			},
+			Spec: dockyardsv1.MemberSpec{
+				UserRef: corev1.TypedLocalObjectReference{
+					Kind: dockyardsv1.UserKind,
+					Name: superUser.Name,
+				},
+				Role: dockyardsv1.RoleSuperUser,
+			},
+		}
+
+		err = c.Create(ctx, &member)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -352,8 +407,6 @@ func TestGlobalOrganizations_List(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			t.Logf("deleted: %v", deletedOrganization.DeletionTimestamp)
 
 			if !deletedOrganization.DeletionTimestamp.IsZero() {
 				break
@@ -481,17 +534,6 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				UID: types.UID(organization.ID),
 			},
 			Spec: dockyardsv1.OrganizationSpec{
-				MemberRefs: []dockyardsv1.OrganizationMemberReference{
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     otherUser.Name,
-						},
-						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-						UID:  otherUser.UID,
-					},
-				},
 				NamespaceRef: &corev1.LocalObjectReference{
 					Name: organization.Name,
 				},
@@ -539,6 +581,34 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 
 		if !cmp.Equal(actualNamespace, expectedNamespace, ignoreFields, ignoreObjectMetaFields, ignoreNamespaceFields) {
 			t.Errorf("diff: %s", cmp.Diff(expectedNamespace, actualNamespace, ignoreFields, ignoreObjectMetaFields, ignoreNamespaceFields))
+		}
+
+		expectedMember := dockyardsv1.Member{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{
+					dockyardsv1.LabelRoleName: dockyardsv1.RoleSuperUser,
+				},
+				Name:      otherUser.Name,
+				Namespace: actual.Spec.NamespaceRef.Name,
+			},
+			Spec: dockyardsv1.MemberSpec{
+				Role: dockyardsv1.RoleSuperUser,
+				UserRef: corev1.TypedLocalObjectReference{
+					APIGroup: &dockyardsv1.GroupVersion.Group,
+					Kind:     dockyardsv1.UserKind,
+					Name:     otherUser.Name,
+				},
+			},
+		}
+
+		var actualMember dockyardsv1.Member
+		err = c.Get(ctx, client.ObjectKeyFromObject(&expectedMember), &actualMember)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actualMember, expectedMember, ignoreFields, ignoreObjectMetaFields) {
+			t.Errorf("diff: %s", cmp.Diff(expectedMember, actualMember, ignoreFields, ignoreObjectMetaFields))
 		}
 	})
 
@@ -589,17 +659,6 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 			},
 			Spec: dockyardsv1.OrganizationSpec{
 				DisplayName: "testing",
-				MemberRefs: []dockyardsv1.OrganizationMemberReference{
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     otherUser.Name,
-						},
-						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-						UID:  otherUser.UID,
-					},
-				},
 				NamespaceRef: &corev1.LocalObjectReference{
 					Name: organization.Name,
 				},
@@ -691,17 +750,6 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				UID: types.UID(organization.ID),
 			},
 			Spec: dockyardsv1.OrganizationSpec{
-				MemberRefs: []dockyardsv1.OrganizationMemberReference{
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     otherUser.Name,
-						},
-						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-						UID:  otherUser.UID,
-					},
-				},
 				NamespaceRef: &corev1.LocalObjectReference{
 					Name: organization.Name,
 				},
@@ -1227,7 +1275,6 @@ func TestGlobalOrganizations_Update(t *testing.T) {
 			Spec: dockyardsv1.OrganizationSpec{
 				DisplayName: "testing",
 				//
-				MemberRefs:   organization.Spec.MemberRefs,
 				NamespaceRef: organization.Spec.NamespaceRef,
 				ProviderID:   organization.Spec.ProviderID,
 			},
@@ -1364,7 +1411,6 @@ func TestGlobalOrganizations_Update(t *testing.T) {
 					Namespace: &otherOrganization.Spec.NamespaceRef.Name,
 				},
 				//
-				MemberRefs:   otherOrganization.Spec.MemberRefs,
 				NamespaceRef: otherOrganization.Spec.NamespaceRef,
 				ProviderID:   otherOrganization.Spec.ProviderID,
 			},
@@ -1418,7 +1464,6 @@ func TestGlobalOrganizations_Update(t *testing.T) {
 					Duration: time.Minute * 15,
 				},
 				//
-				MemberRefs:   otherOrganization.Spec.MemberRefs,
 				NamespaceRef: otherOrganization.Spec.NamespaceRef,
 				ProviderID:   otherOrganization.Spec.ProviderID,
 			},

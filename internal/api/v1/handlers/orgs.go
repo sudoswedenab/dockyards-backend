@@ -33,6 +33,7 @@ import (
 )
 
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=create;get;list;watch;patch
+// +kubebuilder:rbac:groups=dockyards.io,resources=members,verbs=create;get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=organizations,verbs=create;delete;get;list;watch
 
 func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organization, error) {
@@ -45,21 +46,34 @@ func (h *handler) ListGlobalOrganizations(ctx context.Context) (*[]types.Organiz
 		return nil, err
 	}
 
-	matchingFields := client.MatchingFields{
-		index.MemberReferencesField: subject,
+	matchingLabels := client.MatchingLabels{
+		dockyardsv1.LabelUserName: subject,
 	}
 
-	var organizationList dockyardsv1.OrganizationList
-	err = h.List(ctx, &organizationList, matchingFields)
+	var memberList dockyardsv1.MemberList
+	err = h.List(ctx, &memberList, matchingLabels)
 	if err != nil {
-		logger.Error("error listing organizations in kubernetes", "err", err)
-
 		return nil, err
 	}
 
 	organizations := []types.Organization{}
 
-	for _, organization := range organizationList.Items {
+	for _, member := range memberList.Items {
+		organizationName, hasLabel := member.Labels[dockyardsv1.LabelOrganizationName]
+		if !hasLabel {
+			continue
+		}
+
+		key := client.ObjectKey{
+			Name: organizationName,
+		}
+
+		var organization dockyardsv1.Organization
+		err := h.Get(ctx, key, &organization)
+		if err != nil {
+			return nil, err
+		}
+
 		v1Organization := types.Organization{
 			CreatedAt: organization.CreationTimestamp.Time,
 			ID:        string(organization.UID),
@@ -115,22 +129,34 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 		return nil, err
 	}
 
+	member := dockyardsv1.Member{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				dockyardsv1.LabelRoleName: dockyardsv1.RoleSuperUser,
+			},
+			Name:      user.Name,
+			Namespace: namespace.Name,
+		},
+		Spec: dockyardsv1.MemberSpec{
+			Role: dockyardsv1.RoleSuperUser,
+			UserRef: corev1.TypedLocalObjectReference{
+				APIGroup: &dockyardsv1.GroupVersion.Group,
+				Kind:     dockyardsv1.UserKind,
+				Name:     user.Name,
+			},
+		},
+	}
+
+	err = h.Create(ctx, &member)
+	if err != nil {
+		return nil, err
+	}
+
 	organization := dockyardsv1.Organization{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace.Name,
 		},
 		Spec: dockyardsv1.OrganizationSpec{
-			MemberRefs: []dockyardsv1.OrganizationMemberReference{
-				{
-					TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-						APIGroup: &dockyardsv1.GroupVersion.Group,
-						Kind:     dockyardsv1.UserKind,
-						Name:     user.Name,
-					},
-					Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-					UID:  user.UID,
-				},
-			},
 			NamespaceRef: &corev1.LocalObjectReference{
 				Name: namespace.Name,
 			},
