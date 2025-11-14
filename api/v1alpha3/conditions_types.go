@@ -59,3 +59,9 @@ const (
 
 	MemberAuthorizationInternalErrorReason = "MemberAuthorizationInternalError"
 )
+
+const (
+	UserAuthorizationReadyCondition = "UserAuthorizationReady"
+
+	UserAuthorizationInternalErrorReason = "UserAuthorizationInternalError"
+)

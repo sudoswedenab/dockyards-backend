@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/uuid"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
@@ -145,6 +146,11 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 		logger.Info("reconciled verificationrequest", "verificationRequestName", "sign-up-"+user.Name, "result", "deleted")
 	}
 
+	result, err = r.reconcileAuthorization(ctx, &user)
+	if err != nil {
+		return result, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -203,6 +209,19 @@ func (r *UserReconciler) reconcileVerificationRequest(ctx context.Context, user 
 	}
 
 	return &verificationRequest, operationResult, nil
+}
+
+func (r *UserReconciler) reconcileAuthorization(ctx context.Context, user *dockyardsv1.User) (ctrl.Result, error) {
+	err := authorization.ReconcileUserAuthorization(ctx, r, user)
+	if err != nil {
+		conditions.MarkFalse(user, dockyardsv1.UserAuthorizationReadyCondition, dockyardsv1.UserAuthorizationInternalErrorReason, "%s", err)
+
+		return ctrl.Result{}, nil
+	}
+
+	conditions.MarkTrue(user, dockyardsv1.UserAuthorizationReadyCondition, dockyardsv1.ReadyReason, "")
+
+	return ctrl.Result{}, nil
 }
 
 func (r *UserReconciler) verificationReqeuestsToUsers(_ context.Context, obj client.Object) []ctrl.Request {
