@@ -24,9 +24,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -63,6 +65,10 @@ func TestOrganizationMembers_List(t *testing.T) {
 		},
 	}
 
+	byName := cmpopts.SortSlices(func(a, b types.Member) bool {
+		return a.Name < b.Name
+	})
+
 	t.Run("test as super user", func(t *testing.T) {
 		u := url.URL{
 			Path: path.Join("/v1/orgs", organization.Name, "members"),
@@ -91,8 +97,8 @@ func TestOrganizationMembers_List(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !cmp.Equal(actual, expected, byName) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, byName))
 		}
 	})
 
@@ -124,8 +130,8 @@ func TestOrganizationMembers_List(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !cmp.Equal(actual, expected, byName) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, byName))
 		}
 	})
 
@@ -157,8 +163,8 @@ func TestOrganizationMembers_List(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !cmp.Equal(actual, expected, byName) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, byName))
 		}
 	})
 
@@ -198,6 +204,12 @@ func TestOrganizationMembers_Delete(t *testing.T) {
 	userToken := MustSignToken(t, user.Name)
 	readerToken := MustSignToken(t, reader.Name)
 
+	byName := cmpopts.SortSlices(func(a, b dockyardsv1.Member) bool {
+		return a.Name < b.Name
+	})
+
+	ignoreObjectMeta := cmpopts.IgnoreFields(metav1.ObjectMeta{}, "UID", "CreationTimestamp", "ManagedFields", "ResourceVersion", "OwnerReferences", "Generation")
+
 	t.Run("test as reader", func(t *testing.T) {
 		u := url.URL{
 			Path: path.Join("/v1/orgs", organization.Name, "members", user.Name),
@@ -218,7 +230,7 @@ func TestOrganizationMembers_Delete(t *testing.T) {
 
 	t.Run("test as user", func(t *testing.T) {
 		u := url.URL{
-			Path: path.Join("/v1/orgs", organization.Name, "members", user.Name),
+			Path: path.Join("/v1/orgs", organization.Name, "members", reader.Name),
 		}
 
 		w := httptest.NewRecorder()
@@ -340,60 +352,65 @@ func TestOrganizationMembers_DeleteSelf(t *testing.T) {
 			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
 		}
 
-		var actual dockyardsv1.Organization
-		err := c.Get(ctx, client.ObjectKeyFromObject(organization), &actual)
+		var actual dockyardsv1.MemberList
+		err := c.List(ctx, &actual, client.InNamespace(organization.Spec.NamespaceRef.Name))
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expected := dockyardsv1.Organization{
-			ObjectMeta: actual.ObjectMeta,
-			Spec: dockyardsv1.OrganizationSpec{
-				MemberRefs: []dockyardsv1.OrganizationMemberReference{
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     superUser.Name,
-						},
-						UID:  superUser.UID,
-						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-					},
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     user.Name,
-						},
-						UID:  user.UID,
-						Role: dockyardsv1.OrganizationMemberRoleUser,
-					},
+		ignoreObjectMeta := cmpopts.IgnoreFields(metav1.ObjectMeta{}, "UID", "CreationTimestamp", "ManagedFields", "ResourceVersion", "OwnerReferences", "Generation")
+
+		expected := []dockyardsv1.Member{
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       dockyardsv1.MemberKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
 				},
-				NamespaceRef: organization.Spec.NamespaceRef,
-				ProviderID:   organization.Spec.ProviderID,
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: organization.Name,
+						dockyardsv1.LabelRoleName:         string(dockyardsv1.RoleSuperUser),
+						dockyardsv1.LabelUserName:         superUser.Name,
+					},
+					Name:      superUser.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
+				},
+				Spec: dockyardsv1.MemberSpec{
+					UserRef: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     superUser.Name,
+					},
+					Role: dockyardsv1.RoleSuperUser,
+				},
+			},
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       dockyardsv1.MemberKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: organization.Name,
+						dockyardsv1.LabelRoleName:         string(dockyardsv1.RoleUser),
+						dockyardsv1.LabelUserName:         user.Name,
+					},
+					Name:      user.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
+				},
+				Spec: dockyardsv1.MemberSpec{
+					UserRef: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     user.Name,
+					},
+					Role: dockyardsv1.RoleUser,
+				},
 			},
 		}
 
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
-		}
-	})
-
-	t.Run("cannot delete user twice", func(t *testing.T) {
-		u := url.URL{
-			Path: path.Join("/v1/orgs", organization.Name, "members", "@me"),
-		}
-
-		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodDelete, u.Path, nil)
-
-		r.Header.Add("Authorization", "Bearer "+readerToken)
-
-		mux.ServeHTTP(w, r)
-
-		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusUnauthorized {
-			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		if !cmp.Equal(actual.Items, expected, ignoreObjectMeta) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual.Items, ignoreObjectMeta))
 		}
 	})
 }

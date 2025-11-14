@@ -61,7 +61,6 @@ rules:
   verbs:
   - get
   - list
-  - patch
   - watch
 - apiGroups:
   - dockyards.io
@@ -102,6 +101,15 @@ rules:
   - get
   - list
   - patch
+  - watch
+- apiGroups:
+  - dockyards.io
+  resources:
+  - members
+  verbs:
+  - delete
+  - get
+  - list
   - watch
 - apiGroups:
   - dockyards.io
