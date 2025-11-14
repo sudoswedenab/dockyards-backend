@@ -27,6 +27,7 @@ import (
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -57,6 +58,11 @@ func TestUserPassword_Update(t *testing.T) {
 		}
 
 		err = c.Create(ctx, &user)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = authorization.ReconcileUserAuthorization(ctx, c, &user)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,6 +123,11 @@ func TestUserPassword_Update(t *testing.T) {
 		}
 
 		err = c.Create(ctx, &user)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = authorization.ReconcileUserAuthorization(ctx, c, &user)
 		if err != nil {
 			t.Fatal(err)
 		}
