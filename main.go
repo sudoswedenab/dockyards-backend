@@ -360,6 +360,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = (&controller.MemberReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr)
+	if err != nil {
+		logger.Error("error creating new member reconciler", "err", err)
+
+		os.Exit(1)
+	}
+
 	if enableWebhooks {
 		logger.Info("enabling webhooks", "domains", allowedDomains)
 
