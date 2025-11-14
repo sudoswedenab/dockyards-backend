@@ -72,6 +72,7 @@ rules:
   - dockyards.io
   resources:
   - clusters
+  - invitations
   - workloads
   verbs:
   - create
@@ -95,18 +96,10 @@ rules:
 - apiGroups:
   - dockyards.io
   resources:
-  - invitations
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - watch
-- apiGroups:
-  - dockyards.io
-  resources:
   - members
+  - organizations
   verbs:
+  - create
   - delete
   - get
   - list
@@ -117,16 +110,6 @@ rules:
   - nodepools
   verbs:
   - create
-  - get
-  - list
-  - watch
-- apiGroups:
-  - dockyards.io
-  resources:
-  - organizations
-  verbs:
-  - create
-  - delete
   - get
   - list
   - watch

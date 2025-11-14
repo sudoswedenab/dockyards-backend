@@ -836,9 +836,11 @@ func TestGlobalInvitations_Update(t *testing.T) {
 
 	otherUserToken := MustSignToken(t, otherUser.Name)
 
-	byUID := cmpopts.SortSlices(func(a, b dockyardsv1.OrganizationMemberReference) bool {
-		return a.UID < b.UID
+	byName := cmpopts.SortSlices(func(a, b dockyardsv1.Member) bool {
+		return a.Name < b.Name
 	})
+
+	ignoreObjectMeta := cmpopts.IgnoreFields(metav1.ObjectMeta{}, "UID", "CreationTimestamp", "ManagedFields", "ResourceVersion", "OwnerReferences", "Generation")
 
 	t.Run("test without invitation", func(t *testing.T) {
 		options := apitypes.InvitationOptions{}
@@ -923,60 +925,112 @@ func TestGlobalInvitations_Update(t *testing.T) {
 			t.Error("expected actual invitation deletion timestamp, got zero")
 		}
 
-		var actualOrganization dockyardsv1.Organization
-		err = c.Get(ctx, client.ObjectKeyFromObject(organization), &actualOrganization)
+		var actualMembers dockyardsv1.MemberList
+		err = c.List(ctx, &actualMembers, client.InNamespace(organization.Spec.NamespaceRef.Name))
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expectedOrganization := dockyardsv1.Organization{
-			ObjectMeta: actualOrganization.ObjectMeta,
-			Spec: dockyardsv1.OrganizationSpec{
-				MemberRefs: []dockyardsv1.OrganizationMemberReference{
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     otherUser.Name,
-						},
-						Role: invitation.Spec.Role,
-						UID:  otherUser.UID,
+		expectedMembers := []dockyardsv1.Member{
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       dockyardsv1.MemberKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: organization.Name,
+						dockyardsv1.LabelRoleName:         string(dockyardsv1.RoleUser),
+						dockyardsv1.LabelUserName:         otherUser.Name,
 					},
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     superUser.Name,
-						},
-						Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-						UID:  superUser.UID,
-					},
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     user.Name,
-						},
-						Role: dockyardsv1.OrganizationMemberRoleUser,
-						UID:  user.UID,
-					},
-					{
-						TypedLocalObjectReference: corev1.TypedLocalObjectReference{
-							APIGroup: &dockyardsv1.GroupVersion.Group,
-							Kind:     dockyardsv1.UserKind,
-							Name:     reader.Name,
-						},
-						Role: dockyardsv1.OrganizationMemberRoleReader,
-						UID:  reader.UID,
+					Name:      otherUser.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
+				},
+				Spec: dockyardsv1.MemberSpec{
+					Role: invitation.Spec.Role,
+					UserRef: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     otherUser.Name,
 					},
 				},
-				NamespaceRef: actualOrganization.Spec.NamespaceRef,
-				ProviderID:   actualOrganization.Spec.ProviderID,
+			},
+
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       dockyardsv1.MemberKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: organization.Name,
+						dockyardsv1.LabelRoleName:         string(dockyardsv1.RoleSuperUser),
+						dockyardsv1.LabelUserName:         superUser.Name,
+					},
+					Name:      superUser.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
+				},
+				Spec: dockyardsv1.MemberSpec{
+					Role: dockyardsv1.RoleSuperUser,
+					UserRef: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     superUser.Name,
+					},
+				},
+			},
+
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       dockyardsv1.MemberKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: organization.Name,
+						dockyardsv1.LabelRoleName:         string(dockyardsv1.RoleUser),
+						dockyardsv1.LabelUserName:         user.Name,
+					},
+					Name:      user.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
+				},
+				Spec: dockyardsv1.MemberSpec{
+					Role: dockyardsv1.RoleUser,
+					UserRef: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     user.Name,
+					},
+				},
+			},
+
+			{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       dockyardsv1.MemberKind,
+					APIVersion: dockyardsv1.GroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: organization.Name,
+						dockyardsv1.LabelRoleName:         string(dockyardsv1.RoleReader),
+						dockyardsv1.LabelUserName:         reader.Name,
+					},
+					Name:      reader.Name,
+					Namespace: organization.Spec.NamespaceRef.Name,
+				},
+				Spec: dockyardsv1.MemberSpec{
+					Role: dockyardsv1.RoleReader,
+					UserRef: corev1.TypedLocalObjectReference{
+						APIGroup: &dockyardsv1.GroupVersion.Group,
+						Kind:     dockyardsv1.UserKind,
+						Name:     reader.Name,
+					},
+				},
 			},
 		}
 
-		if !cmp.Equal(actualOrganization, expectedOrganization, byUID) {
-			t.Errorf("diff: %s", cmp.Diff(expectedOrganization, actualOrganization, byUID))
+		if !cmp.Equal(actualMembers.Items, expectedMembers, byName, ignoreObjectMeta) {
+			t.Errorf("diff: %s", cmp.Diff(expectedMembers, actualMembers.Items, byName, ignoreObjectMeta))
 		}
 	})
 }
