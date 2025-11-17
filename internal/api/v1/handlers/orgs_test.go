@@ -531,6 +531,9 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				CreationTimestamp: metav1.Time{
 					Time: organization.CreatedAt,
 				},
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
 				UID: types.UID(organization.ID),
 			},
 			Spec: dockyardsv1.OrganizationSpec{
@@ -656,6 +659,9 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 					Time: organization.CreatedAt,
 				},
 				UID: types.UID(organization.ID),
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
 			},
 			Spec: dockyardsv1.OrganizationSpec{
 				DisplayName: "testing",
@@ -748,6 +754,9 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 					Time: organization.CreatedAt,
 				},
 				UID: types.UID(organization.ID),
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
 			},
 			Spec: dockyardsv1.OrganizationSpec{
 				NamespaceRef: &corev1.LocalObjectReference{
