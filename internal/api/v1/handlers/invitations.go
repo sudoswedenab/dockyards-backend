@@ -163,11 +163,11 @@ func (h *handler) ListGlobalInvitations(ctx context.Context) (*[]types.Invitatio
 
 		organization, err := apiutil.GetOwnerOrganization(ctx, h, &item)
 		if err != nil {
-			return nil, err
-		}
+			if apierrors.IsNotFound(err) {
+				continue
+			}
 
-		if organization == nil {
-			continue
+			return nil, err
 		}
 
 		invitation := types.Invitation{

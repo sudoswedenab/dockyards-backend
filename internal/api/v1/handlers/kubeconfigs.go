@@ -120,10 +120,6 @@ func (h *handler) CreateClusterKubeconfig(ctx context.Context, cluster *dockyard
 		return nil, err
 	}
 
-	if ownerOrganization == nil {
-		return nil, errors.New("the cluster has no owner organization")
-	}
-
 	userAlias := user.Name + "/" + cluster.Name
 	clusterAlias := cluster.Name + "/" + ownerOrganization.Name
 

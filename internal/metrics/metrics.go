@@ -205,13 +205,7 @@ func (m *PrometheusMetrics) CollectMetrics() error {
 	for _, secret := range secretList.Items {
 		ownerOrganization, err := apiutil.GetOwnerOrganization(ctx, m.controllerClient, &secret)
 		if err != nil {
-			m.logger.Warn("error getting owner organization", "err", err)
-
-			continue
-		}
-
-		if ownerOrganization == nil {
-			m.logger.Warn("secret has no owner organization", "name", secret.Name, "namespace", secret.Namespace)
+			m.logger.Warn("error getting owner organization", "err", err, "name", secret.Name, "namespace", secret.Namespace)
 
 			continue
 		}
@@ -235,13 +229,7 @@ func (m *PrometheusMetrics) CollectMetrics() error {
 	for _, cluster := range clusterList.Items {
 		ownerOrganization, err := apiutil.GetOwnerOrganization(ctx, m.controllerClient, &cluster)
 		if err != nil {
-			m.logger.Warn("error getting owner organization", "err", err)
-
-			continue
-		}
-
-		if ownerOrganization == nil {
-			m.logger.Warn("cluster has no owner organization", "name", cluster.Name)
+			m.logger.Warn("error getting owner organization", "err", err, "name", cluster.Name)
 
 			continue
 		}

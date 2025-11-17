@@ -16,11 +16,14 @@ package apiutil
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"slices"
 
 	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	authorizationv1 "k8s.io/api/authorization/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,7 +60,16 @@ func GetOwnerOrganization(ctx context.Context, c client.Client, o client.Object)
 		}
 	}
 
-	return nil, nil
+	return nil, &errors.StatusError{ErrStatus:metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind: dockyardsv1.OrganizationKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
 }
 
 func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Cluster, error) {
@@ -90,7 +102,16 @@ func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*do
 		}
 	}
 
-	return nil, nil
+	return nil, &errors.StatusError{ErrStatus:metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind: dockyardsv1.ClusterKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
 }
 
 func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.NodePool, error) {
@@ -122,7 +143,16 @@ func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*d
 		return &nodePool, nil
 	}
 
-	return nil, nil
+	return nil, &errors.StatusError{ErrStatus:metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind: dockyardsv1.NodePoolKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
 }
 
 func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Deployment, error) {
@@ -149,7 +179,16 @@ func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (
 		return &deployment, nil
 	}
 
-	return nil, nil
+	return nil, &errors.StatusError{ErrStatus:metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind: dockyardsv1.DeploymentKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
 }
 
 func IsFeatureEnabled(ctx context.Context, c client.Reader, featureName featurenames.FeatureName, inNamespace string) (bool, error) {
@@ -212,7 +251,16 @@ func GetOwnerHelmDeployment(ctx context.Context, c client.Client, o client.Objec
 		return &deployment, nil
 	}
 
-	return nil, nil
+	return nil, &errors.StatusError{ErrStatus:metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind: dockyardsv1.HelmDeploymentKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
 }
 
 func GetOwnerKustomizeDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.KustomizeDeployment, error) {
@@ -239,7 +287,16 @@ func GetOwnerKustomizeDeployment(ctx context.Context, c client.Client, o client.
 		return &deployment, nil
 	}
 
-	return nil, nil
+	return nil, &errors.StatusError{ErrStatus:metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind: dockyardsv1.KustomizeDeploymentKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
 }
 
 func GetOwnerContainerImageDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.ContainerImageDeployment, error) {
@@ -266,7 +323,16 @@ func GetOwnerContainerImageDeployment(ctx context.Context, c client.Client, o cl
 		return &deployment, nil
 	}
 
-	return nil, nil
+	return nil, &errors.StatusError{ErrStatus:metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind: dockyardsv1.ContainerImageDeploymentKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
 }
 
 func IsSubjectAllowed(ctx context.Context, c client.Client, subject string, resourceAttributes *authorizationv1.ResourceAttributes) (bool, error) {
@@ -456,5 +522,14 @@ func GetOwnerWorkload(ctx context.Context, c client.Client, obj client.Object) (
 		return &workload, nil
 	}
 
-	return nil, nil
+	return nil, &errors.StatusError{ErrStatus:metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind: dockyardsv1.OrganizationKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", obj.GetName()),
+	}}
 }
