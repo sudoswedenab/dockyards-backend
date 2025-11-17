@@ -16,6 +16,7 @@ package webhooks_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -33,6 +34,12 @@ import (
 )
 
 func TestDockyardsNodePoolValidateCreate(t *testing.T) {
+	namespace := "testing"
+	labels := map[string]string{
+		dockyardsv1.LabelOrganizationName: "o",
+		dockyardsv1.LabelClusterName:      "c",
+	}
+
 	tt := []struct {
 		name              string
 		dockyardsNodePool dockyardsv1.NodePool
@@ -40,11 +47,30 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 		expected          error
 	}{
 		{
+			name: "test missing labels",
+			dockyardsNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "label-validation",
+					Namespace: namespace,
+					Labels:    nil,
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"label-validation",
+				field.ErrorList{
+					field.Invalid(field.NewPath("metadata", "labels"), map[string]string(nil), fmt.Sprintf("missing value for label '%s'", dockyardsv1.LabelOrganizationName)),
+					field.Invalid(field.NewPath("metadata", "labels"), map[string]string(nil), fmt.Sprintf("missing value for label '%s'", dockyardsv1.LabelClusterName)),
+				},
+			),
+		},
+		{
 			name: "test storage role disabled",
 			dockyardsNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "storage-role",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					Storage: true,
@@ -63,7 +89,8 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 			dockyardsNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "storage-role",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					Storage: true,
@@ -74,7 +101,7 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      string(featurenames.FeatureStorageRole),
-							Namespace: "testing",
+							Namespace: namespace,
 						},
 					},
 				},
@@ -85,7 +112,8 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 			dockyardsNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "storage-resources",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					StorageResources: []dockyardsv1.NodePoolStorageResource{
@@ -118,7 +146,8 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 			dockyardsNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "storage-resources",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					StorageResources: []dockyardsv1.NodePoolStorageResource{
@@ -134,7 +163,7 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      string(featurenames.FeatureStorageRole),
-							Namespace: "testing",
+							Namespace: namespace,
 						},
 					},
 				},
@@ -145,7 +174,8 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 			dockyardsNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "load-balancer-role",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					LoadBalancer: true,
@@ -164,7 +194,8 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 			dockyardsNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "load-balancer-role",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					LoadBalancer: true,
@@ -175,7 +206,7 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      string(featurenames.FeatureLoadBalancerRole),
-							Namespace: "testing",
+							Namespace: namespace,
 						},
 					},
 				},
@@ -186,7 +217,8 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 			dockyardsNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "invalid-storage-resource-name",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					StorageResources: []dockyardsv1.NodePoolStorageResource{
@@ -202,7 +234,7 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      string(featurenames.FeatureStorageRole),
-							Namespace: "testing",
+							Namespace: namespace,
 						},
 					},
 				},
@@ -220,7 +252,8 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 			dockyardsNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "duplicated-storage-resource-name",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					StorageResources: []dockyardsv1.NodePoolStorageResource{
@@ -244,7 +277,7 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      string(featurenames.FeatureStorageRole),
-							Namespace: "testing",
+							Namespace: namespace,
 						},
 					},
 				},
@@ -262,7 +295,8 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 			dockyardsNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-storage-resource-type-host-path",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					StorageResources: []dockyardsv1.NodePoolStorageResource{
@@ -279,7 +313,7 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      string(featurenames.FeatureStorageRole),
-							Namespace: "testing",
+							Namespace: namespace,
 						},
 					},
 				},
@@ -319,6 +353,12 @@ func TestDockyardsNodePoolValidateCreate(t *testing.T) {
 }
 
 func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
+	namespace := "testing"
+	labels := map[string]string{
+		dockyardsv1.LabelOrganizationName: "o",
+		dockyardsv1.LabelClusterName:      "c",
+	}
+
 	tt := []struct {
 		name        string
 		oldNodePool dockyardsv1.NodePool
@@ -331,7 +371,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			oldNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-resources-update",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					Resources: corev1.ResourceList{
@@ -344,7 +385,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			newNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-resources-update",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					Resources: corev1.ResourceList{
@@ -356,11 +398,36 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			},
 		},
 		{
+			name: "test remove required label",
+			oldNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-label-removal",
+					Namespace: namespace,
+					Labels:    labels,
+				},
+			},
+			newNodePool: dockyardsv1.NodePool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-label-removal",
+					Namespace: namespace,
+					Labels:    map[string]string{dockyardsv1.LabelClusterName: "c"},
+				},
+			},
+			expected: apierrors.NewInvalid(
+				dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(),
+				"test-label-removal",
+				field.ErrorList{
+					field.Invalid(field.NewPath("metadata", "labels"), map[string]string{dockyardsv1.LabelClusterName: "c"}, fmt.Sprintf("missing value for label '%s'", dockyardsv1.LabelOrganizationName)),
+				},
+			),
+		},
+		{
 			name: "test immutable-resources feature",
 			oldNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-immutable-resources-feature",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					Resources: corev1.ResourceList{
@@ -373,7 +440,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			newNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-immutable-resources-feature",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					Resources: corev1.ResourceList{
@@ -388,7 +456,7 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      string(featurenames.FeatureImmutableResources),
-							Namespace: "testing",
+							Namespace: namespace,
 						},
 					},
 				},
@@ -406,7 +474,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			oldNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-control-plane-zero-replicas",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					ControlPlane: true,
@@ -416,7 +485,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			newNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-control-plane-zero-replicas",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					ControlPlane: true,
@@ -436,7 +506,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			oldNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-worker-zero-replicas",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					Replicas: ptr.To(int32(2)),
@@ -445,7 +516,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			newNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-worker-zero-replicas",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					Replicas: ptr.To(int32(0)),
@@ -457,7 +529,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			oldNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-storage-resource-update",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					StorageResources: []dockyardsv1.NodePoolStorageResource{
@@ -471,7 +544,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			newNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-storage-resource-update",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					StorageResources: []dockyardsv1.NodePoolStorageResource{
@@ -498,7 +572,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			oldNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-immutable-resources-enabled",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					StorageResources: []dockyardsv1.NodePoolStorageResource{
@@ -512,7 +587,8 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 			newNodePool: dockyardsv1.NodePool{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-immutable-resources-enabled",
-					Namespace: "testing",
+					Namespace: namespace,
+					Labels:    labels,
 				},
 				Spec: dockyardsv1.NodePoolSpec{
 					StorageResources: []dockyardsv1.NodePoolStorageResource{
@@ -528,13 +604,13 @@ func TestDockyardsNodePoolValidateUpdate(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      string(featurenames.FeatureImmutableStorageResources),
-							Namespace: "testing",
+							Namespace: namespace,
 						},
 					},
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      string(featurenames.FeatureStorageRole),
-							Namespace: "testing",
+							Namespace: namespace,
 						},
 					},
 				},
