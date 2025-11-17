@@ -64,6 +64,15 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
 			Namespace:    organization.Spec.NamespaceRef.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         dockyardsv1.GroupVersion.String(),
+					Kind:               dockyardsv1.OrganizationKind,
+					Name:               organization.Name,
+					UID:                organization.UID,
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
 		},
 	}
 
@@ -115,12 +124,16 @@ func TestClusterWorkloads_Create(t *testing.T) {
 			return
 		}
 
+		workloadName := cluster.Name + "-test-super-user"
 		expected := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      cluster.Name + "-test-super-user",
+				Name:      workloadName,
 				Namespace: cluster.Namespace,
 				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
 					dockyardsv1.LabelClusterName: cluster.Name,
+					dockyardsv1.LabelWorkloadName: workloadName,
+					dockyardsv1.LabelWorkloadTemplateName: "test",
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
@@ -195,12 +208,16 @@ func TestClusterWorkloads_Create(t *testing.T) {
 			return
 		}
 
+		workloadName := cluster.Name + "-test-user"
 		expected := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      cluster.Name + "-test-user",
+				Name:      workloadName,
 				Namespace: cluster.Namespace,
 				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
 					dockyardsv1.LabelClusterName: cluster.Name,
+					dockyardsv1.LabelWorkloadName: workloadName,
+					dockyardsv1.LabelWorkloadTemplateName: "test",
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
@@ -343,13 +360,16 @@ func TestClusterWorkloads_Create(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
+		workloadName := cluster.Name + "-test-input"
 		expected := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      cluster.Name + "-test-input",
+				Name:      workloadName,
 				Namespace: cluster.Namespace,
 				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
 					dockyardsv1.LabelClusterName: cluster.Name,
+					dockyardsv1.LabelWorkloadName: workloadName,
+					dockyardsv1.LabelWorkloadTemplateName: "test",
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
@@ -426,12 +446,16 @@ func TestClusterWorkloads_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		workloadName := cluster.Name + "-" + name
 		expected := dockyardsv1.Workload{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      cluster.Name + "-" + name,
+				Name:      workloadName,
 				Namespace: cluster.Namespace,
 				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
 					dockyardsv1.LabelClusterName: cluster.Name,
+					dockyardsv1.LabelWorkloadName: workloadName,
+					dockyardsv1.LabelWorkloadTemplateName: "test",
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
@@ -538,6 +562,15 @@ func TestClusterWorkloads_Delete(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
 			Namespace:    organization.Spec.NamespaceRef.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         dockyardsv1.GroupVersion.String(),
+					Kind:               dockyardsv1.OrganizationKind,
+					Name:               organization.Name,
+					UID:                organization.UID,
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
 		},
 	}
 
@@ -712,6 +745,15 @@ func TestClusterWorkloads_Update(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
 			Namespace:    organization.Spec.NamespaceRef.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         dockyardsv1.GroupVersion.String(),
+					Kind:               dockyardsv1.OrganizationKind,
+					Name:               organization.Name,
+					UID:                organization.UID,
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
 		},
 	}
 
@@ -1265,6 +1307,15 @@ func TestClusterWorkloads_Get(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
 			Namespace:    organization.Spec.NamespaceRef.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         dockyardsv1.GroupVersion.String(),
+					Kind:               dockyardsv1.OrganizationKind,
+					Name:               organization.Name,
+					UID:                organization.UID,
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
 		},
 	}
 

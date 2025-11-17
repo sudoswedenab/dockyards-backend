@@ -1570,6 +1570,15 @@ func TestClusterNodePools_Create(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
 			Namespace:    organization.Spec.NamespaceRef.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         dockyardsv1.GroupVersion.String(),
+					Kind:               dockyardsv1.OrganizationKind,
+					Name:               organization.Name,
+					UID:                organization.UID,
+					BlockOwnerDeletion: ptr.To(true),
+				},
+			},
 		},
 	}
 

@@ -478,6 +478,14 @@ func TestOrganizationInvitations_List(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "pending-",
 				Namespace:    organization.Spec.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
+					},
+				},
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "test@dockyards.dev",
@@ -488,6 +496,14 @@ func TestOrganizationInvitations_List(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "pending-",
 				Namespace:    organization.Spec.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
+					},
+				},
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "duration@dockyards.dev",
@@ -642,7 +658,7 @@ func TestGlobalInvitations_List(t *testing.T) {
 			GenerateName: "test-",
 		},
 		Spec: dockyardsv1.UserSpec{
-			Email: "test@dockyards.dev",
+			Email: "test-global-invitations@dockyards.dev",
 		},
 	}
 
@@ -701,6 +717,11 @@ func TestGlobalInvitations_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &invitation)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &otherInvitation)
 		if err != nil {
@@ -740,7 +761,7 @@ func TestGlobalInvitations_List(t *testing.T) {
 				ID:               string(invitation.UID),
 				Name:             invitation.Name,
 				OrganizationName: &organization.Name,
-				Role:             string(dockyardsv1.OrganizationMemberRoleUser),
+				Role:             string(dockyardsv1.RoleUser),
 			},
 		}
 
@@ -883,6 +904,14 @@ func TestGlobalInvitations_Update(t *testing.T) {
 				},
 				GenerateName: "pending-",
 				Namespace:    organization.Spec.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
+					},
+				},
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: otherUser.Spec.Email,
