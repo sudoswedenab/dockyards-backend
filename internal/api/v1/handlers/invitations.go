@@ -48,6 +48,10 @@ func (h *handler) CreateOrganizationInvitation(ctx context.Context, organization
 					UID:        organization.UID,
 				},
 			},
+			Labels: map[string]string{
+				dockyardsv1.LabelOrganizationName: organization.Name,
+				dockyardsv1.LabelRoleName:         request.Role,
+			},
 		},
 		Spec: dockyardsv1.InvitationSpec{
 			Email: request.Email,
@@ -272,12 +276,12 @@ func (h *handler) UpdateGlobalInvitation(ctx context.Context, organizationName s
 
 	member := dockyardsv1.Member{
 		ObjectMeta: metav1.ObjectMeta{
+			Name:      user.Name,
 			Labels: map[string]string{
 				dockyardsv1.LabelOrganizationName: organizationName,
 				dockyardsv1.LabelRoleName:         string(invitation.Spec.Role),
 				dockyardsv1.LabelUserName:         user.Name,
 			},
-			Name:      user.Name,
 			Namespace: organization.Spec.NamespaceRef.Name,
 		},
 		Spec: dockyardsv1.MemberSpec{
