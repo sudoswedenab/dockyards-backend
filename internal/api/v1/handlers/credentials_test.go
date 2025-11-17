@@ -216,6 +216,7 @@ func TestOrganizationCredentials_List(t *testing.T) {
 				Name:      "credential-test",
 				Namespace: organization.Spec.NamespaceRef.Name,
 				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: "testing",
 					dockyardsv1.LabelCredentialTemplateName: "test",
 				},
 			},
@@ -867,6 +868,7 @@ func TestOrganizationCredentials_Create(t *testing.T) {
 		expected := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
 					dockyardsv1.LabelCredentialTemplateName: *options.CredentialTemplateName,
 				},
 				//

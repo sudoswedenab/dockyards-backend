@@ -19,6 +19,7 @@ import (
 	"errors"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/name"
@@ -344,9 +345,15 @@ func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv
 		resources[corev1.ResourceStorage] = storage
 	}
 
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	name := cluster.Name + "-" + *request.Name
 	nodePool := dockyardsv1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cluster.Name + "-" + *request.Name,
+			Name:      name,
 			Namespace: cluster.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -357,7 +364,9 @@ func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv
 				},
 			},
 			Labels: map[string]string{
-				dockyardsv1.LabelClusterName: cluster.Name,
+				dockyardsv1.LabelOrganizationName: organization.Name,
+				dockyardsv1.LabelClusterName:      cluster.Name,
+				dockyardsv1.LabelNodePoolName:     name,
 			},
 		},
 		Spec: dockyardsv1.NodePoolSpec{
@@ -398,7 +407,7 @@ func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv
 		}
 	}
 
-	err := h.Create(ctx, &nodePool)
+	err = h.Create(ctx, &nodePool)
 	if err != nil {
 		return nil, err
 	}

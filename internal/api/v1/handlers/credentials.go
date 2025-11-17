@@ -69,6 +69,9 @@ func (h *handler) CreateOrganizationCredential(ctx context.Context, organization
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "credential-" + *request.Name,
 			Namespace: organization.Spec.NamespaceRef.Name,
+			Labels: map[string]string{
+				dockyardsv1.LabelOrganizationName: organization.Name,
+			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: dockyardsv1.GroupVersion.String(),
@@ -80,18 +83,15 @@ func (h *handler) CreateOrganizationCredential(ctx context.Context, organization
 		},
 		Type: dockyardsv1.SecretTypeCredential,
 	}
+	if request.CredentialTemplateName != nil {
+		secret.Labels[dockyardsv1.LabelCredentialTemplateName] = *request.CredentialTemplateName
+	}
 
 	if request.Data != nil {
 		secret.Data = make(map[string][]byte)
 
 		for key, value := range *request.Data {
 			secret.Data[key] = value
-		}
-	}
-
-	if request.CredentialTemplateName != nil {
-		secret.Labels = map[string]string{
-			dockyardsv1.LabelCredentialTemplateName: *request.CredentialTemplateName,
 		}
 	}
 

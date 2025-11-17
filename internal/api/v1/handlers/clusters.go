@@ -90,7 +90,7 @@ func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockya
 	return &v1Cluster
 }
 
-func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *types.NodePoolOptions, cluster *dockyardsv1.Cluster) (*dockyardsv1.NodePool, error) {
+func (h *handler) nodePoolOptionsToNodePool(ctx context.Context, nodePoolOptions *types.NodePoolOptions, cluster *dockyardsv1.Cluster) (*dockyardsv1.NodePool, error) {
 	if nodePoolOptions.Name == nil {
 		return nil, errors.New("name must not be nil")
 	}
@@ -99,9 +99,15 @@ func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *types.NodePoolOptio
 		return nil, errors.New("quantity must not be nil")
 	}
 
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	name := cluster.Name + "-" + *nodePoolOptions.Name
 	nodePool := dockyardsv1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cluster.Name + "-" + *nodePoolOptions.Name,
+			Name:      name,
 			Namespace: cluster.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -113,7 +119,9 @@ func (h *handler) nodePoolOptionsToNodePool(nodePoolOptions *types.NodePoolOptio
 				},
 			},
 			Labels: map[string]string{
-				dockyardsv1.LabelClusterName: cluster.Name,
+				dockyardsv1.LabelOrganizationName: organization.Name,
+				dockyardsv1.LabelClusterName:      cluster.Name,
+				dockyardsv1.LabelNodePoolName:     name,
 			},
 		},
 		Spec: dockyardsv1.NodePoolSpec{
@@ -224,10 +232,16 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 		}
 	}
 
+	organizationName := organization.Name
+
+	clusterName := request.Name
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      request.Name,
+			Name:      clusterName,
 			Namespace: organization.Spec.NamespaceRef.Name,
+			Labels: map[string]string{
+				dockyardsv1.LabelOrganizationName: organizationName,
+			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion:         dockyardsv1.GroupVersion.String(),
@@ -316,12 +330,18 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 
 	if request.NodePoolOptions == nil {
 		for _, nodePoolTemplate := range clusterTemplate.Spec.NodePoolTemplates {
-			var nodePool dockyardsv1.NodePool
+			meta := nodePoolTemplate.ObjectMeta
+			meta.Name = cluster.Name + "-" + meta.Name
+			meta.Namespace = cluster.Namespace
 
-			nodePool.ObjectMeta = nodePoolTemplate.ObjectMeta
-			nodePoolTemplate.Spec.DeepCopyInto(&nodePool.Spec)
+			if meta.Labels == nil {
+				meta.Labels = make(map[string]string)
+			}
+			meta.Labels[dockyardsv1.LabelOrganizationName] = organizationName
+			meta.Labels[dockyardsv1.LabelClusterName] = clusterName
+			meta.Labels[dockyardsv1.LabelNodePoolName] = meta.Name
 
-			nodePool.OwnerReferences = []metav1.OwnerReference{
+			meta.OwnerReferences = []metav1.OwnerReference{
 				{
 					APIVersion:         dockyardsv1.GroupVersion.String(),
 					Kind:               dockyardsv1.ClusterKind,
@@ -331,14 +351,10 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 				},
 			}
 
-			if nodePool.Labels == nil {
-				nodePool.Labels = make(map[string]string)
+			nodePool := dockyardsv1.NodePool{
+				ObjectMeta: meta,
 			}
-
-			nodePool.Labels[dockyardsv1.LabelClusterName] = cluster.Name
-
-			nodePool.Name = cluster.Name + "-" + nodePool.Name
-			nodePool.Namespace = cluster.Namespace
+			nodePoolTemplate.Spec.DeepCopyInto(&nodePool.Spec)
 
 			err = h.Create(ctx, &nodePool)
 			if err != nil {
@@ -349,7 +365,7 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 
 	if request.NodePoolOptions != nil {
 		for _, nodePoolOptions := range *request.NodePoolOptions {
-			nodePool, err := h.nodePoolOptionsToNodePool(&nodePoolOptions, &cluster)
+			nodePool, err := h.nodePoolOptionsToNodePool(ctx, &nodePoolOptions, &cluster)
 			if err != nil {
 				return nil, err
 			}

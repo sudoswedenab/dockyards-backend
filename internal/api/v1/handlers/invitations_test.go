@@ -58,7 +58,7 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 	t.Run("test as super user", func(t *testing.T) {
 		options := apitypes.InvitationOptions{
 			Email: "other@dockyards.dev",
-			Role:  string(dockyardsv1.OrganizationMemberRoleUser),
+			Role:  string(dockyardsv1.RoleUser),
 		}
 
 		b, err := json.Marshal(&options)
@@ -120,6 +120,10 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 						UID:        organization.UID,
 					},
 				},
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
+					dockyardsv1.LabelRoleName: "User",
+				},
 				UID: types.UID(response.ID),
 				//
 				Finalizers:      actual.Finalizers,
@@ -141,7 +145,7 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 	t.Run("test as user", func(t *testing.T) {
 		options := apitypes.InvitationOptions{
 			Email: "other@dockyards.dev",
-			Role:  string(dockyardsv1.OrganizationMemberRoleUser),
+			Role:  string(dockyardsv1.RoleUser),
 		}
 
 		b, err := json.Marshal(&options)
@@ -169,7 +173,7 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 	t.Run("test as reader", func(t *testing.T) {
 		options := apitypes.InvitationOptions{
 			Email: "other@dockyards.dev",
-			Role:  string(dockyardsv1.OrganizationMemberRoleUser),
+			Role:  string(dockyardsv1.RoleUser),
 		}
 
 		b, err := json.Marshal(&options)
@@ -225,7 +229,7 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 	t.Run("test duration", func(t *testing.T) {
 		options := apitypes.InvitationOptions{
 			Email:    "other@dockyards.dev",
-			Role:     string(dockyardsv1.OrganizationMemberRoleReader),
+			Role:     string(dockyardsv1.RoleReader),
 			Duration: ptr.To("8h"),
 		}
 
@@ -287,6 +291,10 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 						Name:       organization.Name,
 						UID:        organization.UID,
 					},
+				},
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
+					dockyardsv1.LabelRoleName: dockyardsv1.RoleReader,
 				},
 				UID: types.UID(response.ID),
 				//

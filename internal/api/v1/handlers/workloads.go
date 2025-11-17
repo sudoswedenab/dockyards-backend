@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -45,12 +46,23 @@ func (h *handler) CreateClusterWorkload(ctx context.Context, cluster *dockyardsv
 		request.Namespace = request.Name
 	}
 
+	organization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	name := cluster.Name + "-" + *request.Name
+	workloadTemplateName := *request.WorkloadTemplateName
+
 	workload := dockyardsv1.Workload{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cluster.Name + "-" + *request.Name,
+			Name:      name,
 			Namespace: cluster.Namespace,
 			Labels: map[string]string{
-				dockyardsv1.LabelClusterName: cluster.Name,
+				dockyardsv1.LabelOrganizationName:     organization.Name,
+				dockyardsv1.LabelClusterName:          cluster.Name,
+				dockyardsv1.LabelWorkloadName:         name,
+				dockyardsv1.LabelWorkloadTemplateName: workloadTemplateName,
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -66,7 +78,7 @@ func (h *handler) CreateClusterWorkload(ctx context.Context, cluster *dockyardsv
 			TargetNamespace: *request.Namespace,
 			WorkloadTemplateRef: &corev1.TypedObjectReference{
 				Kind:      dockyardsv1.WorkloadTemplateKind,
-				Name:      *request.WorkloadTemplateName,
+				Name:      workloadTemplateName,
 				Namespace: &h.namespace,
 			},
 		},
@@ -83,7 +95,7 @@ func (h *handler) CreateClusterWorkload(ctx context.Context, cluster *dockyardsv
 		}
 	}
 
-	err := h.Create(ctx, &workload)
+	err = h.Create(ctx, &workload)
 	if err != nil {
 		return nil, err
 	}

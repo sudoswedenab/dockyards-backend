@@ -155,6 +155,9 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 	organization := dockyardsv1.Organization{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace.Name,
+			Labels: map[string]string{
+				dockyardsv1.LabelOrganizationName: namespace.Name,
+			},
 		},
 		Spec: dockyardsv1.OrganizationSpec{
 			NamespaceRef: &corev1.LocalObjectReference{
