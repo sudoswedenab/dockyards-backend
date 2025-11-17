@@ -82,8 +82,8 @@ func (webhook *DockyardsOrganization) validate(ctx context.Context, dockyardsOrg
 	}
 
 	superUsers := 0
-	for _, memberRef := range dockyardsOrganization.Spec.MemberRefs {
-		if memberRef.Role == dockyardsv1.OrganizationMemberRoleSuperUser {
+	for _, memberRef := range dockyardsOrganization.Spec.MemberRefs { //nolint:staticcheck
+		if memberRef.Role == dockyardsv1.OrganizationMemberRoleSuperUser { //nolint:staticcheck
 			superUsers = superUsers + 1
 		}
 	}

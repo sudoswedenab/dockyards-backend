@@ -111,7 +111,7 @@ func (webhook *DockyardsInvitation) ValidateCreate(ctx context.Context, obj runt
 			continue
 		}
 
-		for _, memberRef := range organization.Spec.MemberRefs {
+		for _, memberRef := range organization.Spec.MemberRefs { //nolint:staticcheck
 			if memberRef.Name != existingUser.Name {
 				continue
 			}
