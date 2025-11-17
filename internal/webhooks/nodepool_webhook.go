@@ -16,6 +16,7 @@ package webhooks
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
@@ -39,6 +40,11 @@ type DockyardsNodePool struct {
 }
 
 var _ webhook.CustomValidator = &DockyardsNodePool{}
+
+var nodePoolLabels = []string{
+	dockyardsv1.LabelOrganizationName,
+	dockyardsv1.LabelClusterName,
+}
 
 func (webhook *DockyardsNodePool) SetupWebhookWithManager(m ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(m).
@@ -166,6 +172,17 @@ func (webhook *DockyardsNodePool) validate(ctx context.Context, oldNodePool, new
 	if newNodePool.Spec.ControlPlane && newNodePool.Spec.Replicas != nil {
 		if *newNodePool.Spec.Replicas == 0 {
 			invalid := field.Invalid(field.NewPath("spec", "replicas"), *newNodePool.Spec.Replicas, "must be at least 1 for control plane")
+			errorList = append(errorList, invalid)
+		}
+	}
+
+	for _, label := range nodePoolLabels {
+		if newNodePool.Labels[label] == "" {
+			invalid := field.Invalid(
+				field.NewPath("metadata", "labels"),
+				newNodePool.Labels,
+				fmt.Sprintf("missing value for label '%s'", label),
+			)
 			errorList = append(errorList, invalid)
 		}
 	}
