@@ -289,4 +289,71 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual))
 		}
 	})
+
+	t.Run("test immutable spec fields on update", func(t *testing.T) {
+		inv := dockyardsv1.Invitation{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-update",
+				Namespace: namespace.Name,
+			},
+			Spec: dockyardsv1.InvitationSpec{
+				Email: "immutable@dockyards.dev",
+				Role:  dockyardsv1.RoleReader,
+			},
+		}
+
+		testCases := []struct {
+			name      string
+			fieldPath *field.Path
+			mutate    func(*dockyardsv1.Invitation)
+			value     func(*dockyardsv1.InvitationSpec) any
+		}{
+			{
+				name:      "email",
+				fieldPath: field.NewPath("spec", "email"),
+				mutate: func(inv *dockyardsv1.Invitation) {
+					inv.Spec.Email = "changed@dockyards.dev"
+				},
+				value: func(spec *dockyardsv1.InvitationSpec) any {
+					return spec.Email
+				},
+			},
+			{
+				name:      "role",
+				fieldPath: field.NewPath("spec", "role"),
+				mutate: func(inv *dockyardsv1.Invitation) {
+					inv.Spec.Role = dockyardsv1.RoleSuperUser
+				},
+				value: func(spec *dockyardsv1.InvitationSpec) any {
+					return spec.Role
+				},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				oldInv := inv.DeepCopy()
+				newInv := inv.DeepCopy()
+				tc.mutate(newInv)
+
+				_, actual := webhook.ValidateUpdate(ctx, oldInv, newInv)
+
+				expected := apierrors.NewInvalid(
+					dockyardsv1.GroupVersion.WithKind(dockyardsv1.InvitationKind).GroupKind(),
+					newInv.Name,
+					field.ErrorList{
+						field.Invalid(
+							tc.fieldPath,
+							tc.value(&newInv.Spec),
+							"field is immutable",
+						),
+					},
+				)
+
+				if !cmp.Equal(actual, expected) {
+					t.Errorf("diff: %s", cmp.Diff(expected, actual))
+				}
+			})
+		}
+	})
 }
