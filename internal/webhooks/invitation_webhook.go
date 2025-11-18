@@ -32,7 +32,7 @@ import (
 // +kubebuilder:webhook:groups=dockyards.io,resources=invitations,verbs=create;update,path=/validate-dockyards-io-v1alpha3-invitation,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.invitation.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 
 type DockyardsInvitation struct {
-Client client.Reader
+	Client client.Reader
 }
 
 var _ webhook.CustomValidator = &DockyardsInvitation{}
@@ -55,6 +55,19 @@ func (webhook *DockyardsInvitation) ValidateCreate(ctx context.Context, obj runt
 		return nil, apierrors.NewBadRequest("unexpected type")
 	}
 
+	return webhook.validate(ctx, invitation)
+}
+
+func (webhook *DockyardsInvitation) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
+	invitation, ok := newObj.(*dockyardsv1.Invitation)
+	if !ok {
+		return nil, apierrors.NewBadRequest("unexpected type")
+	}
+
+	return webhook.validate(ctx, invitation)
+}
+
+func (webhook *DockyardsInvitation) validate(ctx context.Context, invitation *dockyardsv1.Invitation) (admission.Warnings, error) {
 	_, err := mail.ParseAddress(invitation.Spec.Email)
 	if err != nil {
 		invalid := field.Invalid(field.NewPath("spec", "email"), invitation.Spec.Email, "unable to parse as address")
@@ -127,9 +140,5 @@ func (webhook *DockyardsInvitation) ValidateCreate(ctx context.Context, obj runt
 }
 
 func (webhook *DockyardsInvitation) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
-	return nil, nil
-}
-
-func (webhook *DockyardsInvitation) ValidateUpdate(_ context.Context, _, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
