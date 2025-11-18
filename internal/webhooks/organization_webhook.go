@@ -51,7 +51,7 @@ func (webhook *DockyardsOrganization) ValidateCreate(ctx context.Context, obj ru
 		return nil, nil
 	}
 
-	return nil, webhook.validate(ctx, dockyardsOrganization)
+	return webhook.validate(ctx, dockyardsOrganization)
 }
 
 func (webhook *DockyardsOrganization) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
@@ -60,19 +60,20 @@ func (webhook *DockyardsOrganization) ValidateUpdate(ctx context.Context, _, new
 		return nil, nil
 	}
 
-	return nil, webhook.validate(ctx, dockyardsOrganization)
+	return webhook.validate(ctx, dockyardsOrganization)
 }
 
 func (webhook *DockyardsOrganization) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func (webhook *DockyardsOrganization) validate(ctx context.Context, dockyardsOrganization *dockyardsv1.Organization) error {
+func (webhook *DockyardsOrganization) validate(ctx context.Context, dockyardsOrganization *dockyardsv1.Organization) (admission.Warnings, error) {
 	var errorList field.ErrorList
+	var warnings admission.Warnings
 
 	organizationAutoAssignEnabled, err := apiutil.IsFeatureEnabled(ctx, webhook.Client, featurenames.FeatureOrganizationAutoAssign, corev1.NamespaceAll)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !dockyardsOrganization.Spec.SkipAutoAssign && !organizationAutoAssignEnabled {
@@ -88,6 +89,10 @@ func (webhook *DockyardsOrganization) validate(ctx context.Context, dockyardsOrg
 		}
 	}
 
+	if len(dockyardsOrganization.Spec.MemberRefs) > 0 { //nolint:staticcheck
+		warnings = append(warnings, "spec.memberRefs is deprecated and will be removed in a future release; please migrate to using Member type instead.")
+	}
+
 	if superUsers < 1 {
 		required := field.Required(
 			field.NewPath("spec", "memberRefs"),
@@ -100,12 +105,12 @@ func (webhook *DockyardsOrganization) validate(ctx context.Context, dockyardsOrg
 	if len(errorList) > 0 {
 		qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.OrganizationKind).GroupKind()
 
-		return apierrors.NewInvalid(
+		return warnings, apierrors.NewInvalid(
 			qualifiedKind,
 			dockyardsOrganization.Name,
 			errorList,
 		)
 	}
 
-	return nil
+	return warnings, nil
 }
