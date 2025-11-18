@@ -16,6 +16,7 @@ package webhooks
 
 import (
 	"context"
+	"errors"
 	"net/mail"
 
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
@@ -33,6 +34,22 @@ import (
 
 type DockyardsInvitation struct {
 	Client client.Reader
+}
+
+type invitationImmutableField struct {
+	path *field.Path
+	get  func(*dockyardsv1.InvitationSpec) string
+}
+
+var invitationImmutableSpecFields = []invitationImmutableField{
+	{
+		path: field.NewPath("spec", "email"),
+		get:  func(s *dockyardsv1.InvitationSpec) string { return s.Email },
+	},
+	{
+		path: field.NewPath("spec", "role"),
+		get:  func(s *dockyardsv1.InvitationSpec) string { return string(s.Role) },
+	},
 }
 
 var _ webhook.CustomValidator = &DockyardsInvitation{}
@@ -58,13 +75,32 @@ func (webhook *DockyardsInvitation) ValidateCreate(ctx context.Context, obj runt
 	return webhook.validate(ctx, invitation)
 }
 
-func (webhook *DockyardsInvitation) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	invitation, ok := newObj.(*dockyardsv1.Invitation)
+func (webhook *DockyardsInvitation) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	newInv, ok := newObj.(*dockyardsv1.Invitation)
 	if !ok {
-		return nil, apierrors.NewBadRequest("unexpected type")
+		return nil, apierrors.NewBadRequest("new object has an unexpected type")
 	}
 
-	return webhook.validate(ctx, invitation)
+	oldInv, ok := oldObj.(*dockyardsv1.Invitation)
+	if !ok {
+		return nil, apierrors.NewInternalError(errors.New("existing object has an unexpected type"))
+	}
+
+	var errs field.ErrorList
+	for _, f := range invitationImmutableSpecFields {
+		if f.get(&oldInv.Spec) != f.get(&newInv.Spec) {
+			errs = append(errs, field.Invalid(f.path, f.get(&newInv.Spec), "field is immutable"))
+		}
+	}
+	if len(errs) > 0 {
+		return nil, apierrors.NewInvalid(
+			dockyardsv1.GroupVersion.WithKind(dockyardsv1.InvitationKind).GroupKind(),
+			newInv.Name,
+			errs,
+		)
+	}
+
+	return webhook.validate(ctx, newInv)
 }
 
 func (webhook *DockyardsInvitation) validate(ctx context.Context, invitation *dockyardsv1.Invitation) (admission.Warnings, error) {
