@@ -65,6 +65,26 @@ webhooks:
     service:
       name: dockyards-backend
       namespace: system
+      path: /validate-dockyards-io-v1alpha3-member
+  failurePolicy: Fail
+  name: validation.member.dockyards.io
+  rules:
+  - apiGroups:
+    - dockyards.io
+    apiVersions:
+    - v1alpha3
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - members
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: dockyards-backend
+      namespace: system
       path: /validate-dockyards-io-v1alpha3-nodepool
   failurePolicy: Fail
   name: validation.nodepool.dockyards.io
