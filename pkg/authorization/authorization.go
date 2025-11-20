@@ -20,8 +20,14 @@ import (
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+)
+
+const (
+	AggregateRoleName               = "dockyards:authenticated"
+	LabelAuthenticatedAggregateRole = "rbac.dockyards.io/aggregate-to-authenticated"
 )
 
 func ReconcileOrganizationSuperUserClusterRole(ctx context.Context, c client.Client, organization *dockyardsv1.Organization) error {
@@ -300,7 +306,7 @@ func ReconcileOtherUserClusterRoleAndBindings(ctx context.Context, c client.Clie
 			{
 				APIGroup: rbacv1.GroupName,
 				Kind:     rbacv1.GroupKind,
-				Name:     "system:authenticated",
+				Name:     "dockyards:authenticated",
 			},
 		}
 
@@ -335,11 +341,60 @@ func ReconcileOrganizationAuthorization(ctx context.Context, c client.Client, or
 func ReconcileClusterAuthorization(ctx context.Context, client client.Client) error {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "dockyards:reader",
+			Name: AggregateRoleName,
 		},
 	}
 
 	_, err := controllerutil.CreateOrPatch(ctx, client, &clusterRole, func() error {
+		clusterRole.AggregationRule = ptr.To(rbacv1.AggregationRule{
+			ClusterRoleSelectors: []metav1.LabelSelector{
+				{
+					MatchLabels: map[string]string{
+						LabelAuthenticatedAggregateRole: "true",
+					},
+				},
+			},
+		})
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	clusterRoleBinding := rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: AggregateRoleName,
+		},
+	}
+
+	_, err = controllerutil.CreateOrPatch(ctx, client, &clusterRoleBinding, func() error {
+		clusterRoleBinding.RoleRef = rbacv1.RoleRef{
+			Kind: "ClusterRole",
+			Name: clusterRole.Name,
+		}
+
+		clusterRoleBinding.Subjects = []rbacv1.Subject{
+			{
+				Kind:     rbacv1.GroupKind,
+				APIGroup: rbacv1.SchemeGroupVersion.Group,
+				Name:     AggregateRoleName,
+			},
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	clusterRole = rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "dockyards:reader",
+		},
+	}
+
+	_, err = controllerutil.CreateOrPatch(ctx, client, &clusterRole, func() error {
 		clusterRole.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
