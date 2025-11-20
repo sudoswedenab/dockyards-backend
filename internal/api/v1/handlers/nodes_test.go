@@ -17,6 +17,7 @@ package handlers_test
 import (
 	"encoding/json"
 	"io"
+	"os"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -37,6 +38,10 @@ import (
 )
 
 func TestClusterNodes_List(t *testing.T) {
+	if os.Getenv("USE_EXISTING_CLUSTER") != "true" {
+		t.Skip("cannot run test in epehemeral cluster")
+	}
+
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
@@ -221,6 +226,10 @@ func TestClusterNodes_List(t *testing.T) {
 }
 
 func TestClusterNodes_Get(t *testing.T) {
+	if os.Getenv("USE_EXISTING_CLUSTER") != "true" {
+		t.Skip("cannot run test in epehemeral cluster")
+	}
+
 	mgr := testEnvironment.GetManager()
 	c := mgr.GetClient()
 

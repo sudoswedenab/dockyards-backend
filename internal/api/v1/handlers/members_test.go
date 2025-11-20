@@ -16,6 +16,7 @@ package handlers_test
 
 import (
 	"encoding/json"
+	"os"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -34,6 +35,10 @@ import (
 )
 
 func TestOrganizationMembers_List(t *testing.T) {
+	if os.Getenv("USE_EXISTING_CLUSTER") != "true" {
+		t.Skip("cannot run test in epehemeral cluster")
+	}
+
 	organization := testEnvironment.MustCreateOrganization(t)
 
 	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)

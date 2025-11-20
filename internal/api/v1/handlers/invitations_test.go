@@ -457,6 +457,10 @@ func TestOrganizationInvitations_Delete(t *testing.T) {
 }
 
 func TestOrganizationInvitations_List(t *testing.T) {
+	if os.Getenv("USE_EXISTING_CLUSTER") != "true" {
+		t.Skip("cannot run test in epehemeral cluster")
+	}
+
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}

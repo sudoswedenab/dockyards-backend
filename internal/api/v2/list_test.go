@@ -16,6 +16,7 @@ package v2_test
 
 import (
 	"encoding/json"
+	"os"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -29,6 +30,10 @@ import (
 )
 
 func TestNamespacedResource_List(t *testing.T) {
+	if os.Getenv("USE_EXISTING_CLUSTER") != "true" {
+		t.Skip("cannot run test in epehemeral cluster")
+	}
+
 	ctx := t.Context()
 
 	organization := environment.MustCreateOrganization(t)

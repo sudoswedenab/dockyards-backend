@@ -29,9 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
-var (
-	c client.Client
-)
+var c client.Client
 
 func TestMain(m *testing.M) {
 	environment := envtest.Environment{
@@ -535,6 +533,10 @@ func TestOrganizationAuthorization(t *testing.T) {
 }
 
 func TestMemberAuthorization(t *testing.T) {
+	if os.Getenv("USE_EXISTING_CLUSTER") != "true" {
+		t.Skip("cannot run test in epehemeral cluster")
+	}
+
 	ctx := t.Context()
 
 	err := authorization.ReconcileClusterAuthorization(ctx, c)

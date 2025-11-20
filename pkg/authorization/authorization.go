@@ -20,9 +20,12 @@ import (
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
+
+const LabelReaderAggregateRole = "dockyards.io/aggregate-to-organization-reader"
 
 func ReconcileOrganizationSuperUserClusterRole(ctx context.Context, c client.Client, organization *dockyardsv1.Organization) error {
 	clusterRole := rbacv1.ClusterRole{
@@ -333,13 +336,40 @@ func ReconcileOrganizationAuthorization(ctx context.Context, c client.Client, or
 }
 
 func ReconcileClusterAuthorization(ctx context.Context, client client.Client) error {
-	clusterRole := rbacv1.ClusterRole{
+	clusterAggRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "dockyards:reader",
 		},
 	}
 
-	_, err := controllerutil.CreateOrPatch(ctx, client, &clusterRole, func() error {
+	_, err := controllerutil.CreateOrPatch(ctx, client, &clusterAggRole, func() error {
+		clusterAggRole.AggregationRule = ptr.To(rbacv1.AggregationRule{
+			ClusterRoleSelectors: []metav1.LabelSelector{
+				{
+					MatchLabels: map[string]string{
+						LabelReaderAggregateRole: "true",
+					},
+				},
+			},
+		})
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	clusterRole := rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "dockyards:in-org:reader",
+		},
+	}
+
+	_, err = controllerutil.CreateOrPatch(ctx, client, &clusterRole, func() error {
+		clusterRole.Labels = map[string]string{
+			LabelReaderAggregateRole: "true",
+		}
+
 		clusterRole.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
