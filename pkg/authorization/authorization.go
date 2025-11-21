@@ -338,6 +338,8 @@ func ReconcileOrganizationAuthorization(ctx context.Context, c client.Client, or
 	return nil
 }
 
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;escalate
+
 func ReconcileClusterAuthorization(ctx context.Context, client client.Client) error {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
