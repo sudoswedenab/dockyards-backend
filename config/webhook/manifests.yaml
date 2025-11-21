@@ -35,7 +35,7 @@ webhooks:
     operations:
     - CREATE
     resources:
-    - clsuters
+    - clusters
   sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1

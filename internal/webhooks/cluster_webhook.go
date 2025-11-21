@@ -32,7 +32,7 @@ import (
 // +kubebuilder:webhook:groups=dockyards.io,resources=clusters,verbs=create;delete;update,path=/validate-dockyards-io-v1alpha3-cluster,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.cluster.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 // +kubebuilder:webhookconfiguration:mutating=false,name=dockyards-backend
 
-// +kubebuilder:webhook:groups=dockyards.io,resources=clsuters,verbs=create,path=/mutate-dockyards-io-v1alpha3-cluster,mutating=true,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=default.cluster.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
+// +kubebuilder:webhook:groups=dockyards.io,resources=clusters,verbs=create,path=/mutate-dockyards-io-v1alpha3-cluster,mutating=true,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=default.cluster.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 // +kubebuilder:webhookconfiguration:mutating=true,name=dockyards-backend
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
