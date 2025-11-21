@@ -257,17 +257,6 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 
 	if request.Version != nil {
 		cluster.Spec.Version = *request.Version
-	} else {
-		release, err := apiutil.GetDefaultRelease(ctx, h.Client, dockyardsv1.ReleaseTypeKubernetes)
-		if err != nil {
-			return nil, err
-		}
-
-		if release == nil {
-			return nil, nil
-		}
-
-		cluster.Spec.Version = release.Status.LatestVersion
 	}
 
 	if request.AllocateInternalIP != nil {

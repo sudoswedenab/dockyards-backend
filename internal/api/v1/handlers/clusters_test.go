@@ -102,7 +102,8 @@ func TestOrganizationClusters_Create(t *testing.T) {
 
 	t.Run("test default as super user", func(t *testing.T) {
 		clusterOptions := types.ClusterOptions{
-			Name: "test-super-user",
+			Name:    "test-super-user",
+			Version: ptr.To("v1.2.3"),
 		}
 
 		b, err := json.Marshal(clusterOptions)
@@ -141,7 +142,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 				},
 			},
 			Spec: dockyardsv1.ClusterSpec{
-				Version: defaultRelease.Status.LatestVersion,
+				Version: "v1.2.3",
 			},
 		}
 
@@ -250,7 +251,6 @@ func TestOrganizationClusters_Create(t *testing.T) {
 
 		expected := dockyardsv1.ClusterSpec{
 			AllocateInternalIP: true,
-			Version:            "v1.2.3",
 		}
 
 		if !cmp.Equal(actual.Spec, expected) {
@@ -316,9 +316,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
 		}
 
-		expectedCluster := dockyardsv1.ClusterSpec{
-			Version: "v1.2.3",
-		}
+		expectedCluster := dockyardsv1.ClusterSpec{}
 
 		objectKey := client.ObjectKey{
 			Name:      clusterOptions.Name,
@@ -491,92 +489,6 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
-		}
-	})
-
-	t.Run("test custom release", func(t *testing.T) {
-		release := dockyardsv1.Release{}
-
-		clusterTemplate := dockyardsv1.ClusterTemplate{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "custom-release-",
-				Namespace:    testEnvironment.GetDockyardsNamespace(),
-			},
-			Spec: dockyardsv1.ClusterTemplateSpec{
-				NodePoolTemplates: []dockyardsv1.NodePoolTemplate{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "controlplane",
-						},
-						Spec: dockyardsv1.NodePoolSpec{
-							Replicas:      ptr.To(int32(1)),
-							ControlPlane:  true,
-							DedicatedRole: true,
-							Resources: corev1.ResourceList{
-								corev1.ResourceCPU:     resource.MustParse("2"),
-								corev1.ResourceMemory:  resource.MustParse("3Mi"),
-								corev1.ResourceStorage: resource.MustParse("4G"),
-							},
-							ReleaseRef: &corev1.TypedObjectReference{
-								Kind:      dockyardsv1.ReleaseKind,
-								Name:      release.Name,
-								Namespace: ptr.To(release.Namespace),
-							},
-						},
-					},
-				},
-			},
-		}
-
-		err := c.Create(ctx, &clusterTemplate)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		clusterOptions := types.ClusterOptions{
-			Name:                "test-custom-release",
-			ClusterTemplateName: ptr.To(clusterTemplate.Name),
-			Version:             ptr.To("v2.3.4"),
-		}
-
-		b, err := json.Marshal(clusterOptions)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		u := url.URL{
-			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
-		}
-
-		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
-
-		r.Header.Add("Authorization", "Bearer "+userToken)
-
-		mux.ServeHTTP(w, r)
-
-		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusCreated {
-			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
-		}
-
-		expectedCluster := dockyardsv1.ClusterSpec{
-			Version: "v2.3.4",
-		}
-
-		objectKey := client.ObjectKey{
-			Name:      clusterOptions.Name,
-			Namespace: organization.Spec.NamespaceRef.Name,
-		}
-
-		var actualCluster dockyardsv1.Cluster
-		err = c.Get(ctx, objectKey, &actualCluster)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if !cmp.Equal(actualCluster.Spec, expectedCluster) {
-			t.Errorf("diff: %s", cmp.Diff(expectedCluster, actualCluster.Spec))
 		}
 	})
 
@@ -762,7 +674,6 @@ func TestOrganizationClusters_Create(t *testing.T) {
 			Spec: dockyardsv1.ClusterSpec{
 				PodSubnets:     *clusterOptions.PodSubnets,
 				ServiceSubnets: *clusterOptions.ServiceSubnets,
-				Version:        defaultRelease.Status.LatestVersion,
 			},
 		}
 
