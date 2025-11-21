@@ -25,19 +25,65 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // +kubebuilder:webhook:groups=dockyards.io,resources=clusters,verbs=create;delete;update,path=/validate-dockyards-io-v1alpha3-cluster,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.cluster.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 // +kubebuilder:webhookconfiguration:mutating=false,name=dockyards-backend
 
-type DockyardsCluster struct{}
+// +kubebuilder:webhook:groups=dockyards.io,resources=clsuters,verbs=create,path=/mutate-dockyards-io-v1alpha3-cluster,mutating=true,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=default.cluster.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
+// +kubebuilder:webhookconfiguration:mutating=true,name=dockyards-backend
+
+// +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
+
+type DockyardsCluster struct {
+	Client client.Reader
+}
+
+var _ admission.CustomValidator = &DockyardsCluster{}
+var _ admission.CustomDefaulter = &DockyardsCluster{}
 
 func (webhook *DockyardsCluster) SetupWebhookWithManager(m ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(m).
 		For(&dockyardsv1.Cluster{}).
 		WithValidator(webhook).
+		WithDefaulter(webhook).
 		Complete()
+}
+
+func (webhook *DockyardsCluster) Default(ctx context.Context, obj runtime.Object) error {
+	var errorList field.ErrorList
+
+	cluster, ok := obj.(*dockyardsv1.Cluster)
+	if !ok {
+		return nil
+	}
+
+	if cluster.Spec.Version == "" {
+		release, err := apiutil.GetDefaultRelease(ctx, webhook.Client, dockyardsv1.ReleaseTypeKubernetes)
+		if err != nil {
+			return err
+		}
+
+		if release == nil {
+			errorList = append(errorList, field.Required(field.NewPath("spec", "version"), "must be set when no default release exists"))
+		}
+
+		if release != nil && release.Status.LatestVersion == "" {
+			errorList = append(errorList, field.Required(field.NewPath("spec", "version"), "must be set when default release has no latest version"))
+		}
+
+		if release != nil && release.Status.LatestVersion != "" {
+			cluster.Spec.Version = release.Status.LatestVersion
+		}
+	}
+
+	if len(errorList) > 0 {
+		return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), cluster.Name, errorList)
+	}
+
+	return nil
 }
 
 func (webhook *DockyardsCluster) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
@@ -159,7 +205,7 @@ func (webhook *DockyardsCluster) validate(dockyardsCluster *dockyardsv1.Cluster)
 
 		for _, prefix := range prefixes {
 			if newPrefix.Overlaps(prefix) {
-				invalid := field.Invalid(field.NewPath("spec", "podSubnets").Index(i), subnet, "subnet overlaps with prefix " + prefix.String())
+				invalid := field.Invalid(field.NewPath("spec", "podSubnets").Index(i), subnet, "subnet overlaps with prefix "+prefix.String())
 				errorList = append(errorList, invalid)
 			}
 		}
@@ -176,7 +222,7 @@ func (webhook *DockyardsCluster) validate(dockyardsCluster *dockyardsv1.Cluster)
 
 		for _, prefix := range prefixes {
 			if newPrefix.Overlaps(prefix) {
-				invalid := field.Invalid(field.NewPath("spec", "serviceSubnets").Index(i), subnet, "subnet overlaps with prefix " + prefix.String())
+				invalid := field.Invalid(field.NewPath("spec", "serviceSubnets").Index(i), subnet, "subnet overlaps with prefix "+prefix.String())
 				errorList = append(errorList, invalid)
 			}
 		}

@@ -24,7 +24,9 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/internal/webhooks"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestDockyardsClusterValidateCreate(t *testing.T) {
@@ -223,10 +225,10 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 					},
 				},
 				Spec: dockyardsv1.ClusterSpec{
-					PodSubnets:  []string{
+					PodSubnets: []string{
 						"10.100.0.0/16",
 					},
-					ServiceSubnets:  []string{
+					ServiceSubnets: []string{
 						"10.96.0.0/12",
 					},
 				},
@@ -385,6 +387,133 @@ func TestDockyardsClusterValidateUpdate(t *testing.T) {
 			webhook := webhooks.DockyardsCluster{}
 
 			_, actual := webhook.ValidateUpdate(context.Background(), &tc.oldCluster, &tc.newCluster)
+			if !cmp.Equal(actual, tc.expected) {
+				t.Fatalf("diff: %s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
+
+func TestDockyardsClusterDefault(t *testing.T) {
+	groupKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind()
+
+	tt := []struct {
+		name     string
+		cluster  dockyardsv1.Cluster
+		releases dockyardsv1.ReleaseList
+		expected error
+	}{
+		{
+			name: "test with version",
+			cluster: dockyardsv1.Cluster{
+				Spec: dockyardsv1.ClusterSpec{
+					Version: "v1.2.3",
+				},
+			},
+			releases: dockyardsv1.ReleaseList{
+				Items: []dockyardsv1.Release{},
+			},
+		},
+		{
+			name:    "test default release",
+			cluster: dockyardsv1.Cluster{},
+			releases: dockyardsv1.ReleaseList{
+				Items: []dockyardsv1.Release{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								dockyardsv1.AnnotationDefaultRelease: "true",
+							},
+							Name: "test",
+						},
+						Spec: dockyardsv1.ReleaseSpec{
+							Type: dockyardsv1.ReleaseTypeKubernetes,
+						},
+						Status: dockyardsv1.ReleaseStatus{
+							LatestVersion: "v2.3.4",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test empty releases",
+			cluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+			},
+			releases: dockyardsv1.ReleaseList{},
+			expected: apierrors.NewInvalid(groupKind, "test", field.ErrorList{field.Required(field.NewPath("spec", "version"), "must be set when no default release exists")}),
+		},
+		{
+			name: "test missing default release",
+			cluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+			},
+			releases: dockyardsv1.ReleaseList{
+				Items: []dockyardsv1.Release{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test",
+						},
+						Spec: dockyardsv1.ReleaseSpec{
+							Type: dockyardsv1.ReleaseTypeKubernetes,
+						},
+						Status: dockyardsv1.ReleaseStatus{
+							LatestVersion: "v2.3.4",
+						},
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(groupKind, "test", field.ErrorList{field.Required(field.NewPath("spec", "version"), "must be set when no default release exists")}),
+		},
+		{
+			name: "test empty latest version",
+			cluster: dockyardsv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+			},
+			releases: dockyardsv1.ReleaseList{
+				Items: []dockyardsv1.Release{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								dockyardsv1.AnnotationDefaultRelease: "true",
+							},
+							Name: "test",
+						},
+						Spec: dockyardsv1.ReleaseSpec{
+							Type: dockyardsv1.ReleaseTypeKubernetes,
+						},
+					},
+				},
+			},
+			expected: apierrors.NewInvalid(groupKind, "test", field.ErrorList{field.Required(field.NewPath("spec", "version"), "must be set when default release has no latest version")}),
+		},
+	}
+
+	ctx := t.Context()
+	scheme := runtime.NewScheme()
+
+	_ = dockyardsv1.AddToScheme(scheme)
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			c := fake.
+				NewClientBuilder().
+				WithScheme(scheme).
+				WithLists(&tc.releases).
+				Build()
+
+			w := webhooks.DockyardsCluster{
+				Client: c,
+			}
+
+			actual := w.Default(ctx, &tc.cluster)
 			if !cmp.Equal(actual, tc.expected) {
 				t.Fatalf("diff: %s", cmp.Diff(tc.expected, actual))
 			}

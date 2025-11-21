@@ -392,7 +392,7 @@ func IgnoreInternalError(err error) error {
 	return err
 }
 
-func GetDefaultRelease(ctx context.Context, c client.Client, releaseType dockyardsv1.ReleaseType) (*dockyardsv1.Release, error) {
+func GetDefaultRelease(ctx context.Context, c client.Reader, releaseType dockyardsv1.ReleaseType) (*dockyardsv1.Release, error) {
 	var releaseList dockyardsv1.ReleaseList
 	err := c.List(ctx, &releaseList)
 	if err != nil {
