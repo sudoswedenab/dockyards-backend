@@ -18,7 +18,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // Deprecated: Superseded by role type. Will be removed in the next version.
@@ -109,12 +108,6 @@ func (o *Organization) GetExpiration() *metav1.Time {
 	expiration := o.CreationTimestamp.Add(o.Spec.Duration.Duration)
 
 	return &metav1.Time{Time: expiration}
-}
-
-func (*Organization) Hub() {}
-
-func (o *Organization) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(o).Complete()
 }
 
 func init() {

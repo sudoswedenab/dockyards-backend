@@ -106,11 +106,6 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 		return err
 	}
 
-	err = (&dockyardsv1.Organization{}).SetupWebhookWithManager(mgr)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
