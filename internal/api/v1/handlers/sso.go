@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -24,66 +25,17 @@ import (
 	"net/http"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	"golang.org/x/oauth2"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func (h *handler) ListIdentityProviders(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	logger := middleware.LoggerFrom(ctx)
-
-	var idplist dockyardsv1.IdentityProviderList
-	if err := h.List(ctx, &idplist); err != nil {
-		logger.Error("missing resource", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-	idps := []dockyardsv1.IdentityProvider{}
-	for _, idp := range idplist.Items {
-		// Only return objects with some type of config (currently just OIDC)
-		if idp.Spec.OIDCConfig == nil {
-			logger.Warn("incomplete IdentityProvider", "name", idp.Name)
-
-			continue
-		}
-		// Only return OIDC objects which have at least one way of configuring an OIDC provider
-		if idp.Spec.OIDCConfig != nil && idp.Spec.OIDCConfig.OIDCProviderDiscoveryURL == nil && idp.Spec.OIDCConfig.OIDCProviderConfig == nil {
-			logger.Warn("incomplete or misconfigured OIDCConfig", "name", idp.Name)
-
-			continue
-		}
-		idps = append(idps, dockyardsv1.IdentityProvider{
-			ObjectMeta: metav1.ObjectMeta{
-				UID:  idp.GetUID(),
-				Name: idp.GetName(),
-			},
-			Spec: dockyardsv1.IdentityProviderSpec{
-				DisplayName: idp.Spec.DisplayName,
-			},
-		})
-	}
-
-	b, err := json.Marshal(&idps)
-	if err != nil {
-		logger.Error("error serializing identity providers", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
-}
 
 func makeNonce() []byte {
 	src := make([]byte, 18)
@@ -95,20 +47,25 @@ func makeNonce() []byte {
 }
 
 type stateStruct struct {
-	CSRF string `json:"state"`
-	IDP  string `json:"idp"`
+	CSRF        string `json:"state"`
+	IDP         string `json:"idp"`
+	CallbackURL string `json:"callbackURL"`
 }
 
-func makeState(idp *dockyardsv1.IdentityProvider) string {
+func makeState(idp *dockyardsv1.IdentityProvider, callbackURL string) (string, error) {
 	src := make([]byte, 18)
-	_, _ = rand.Read(src)
-	csrf := base64.URLEncoding.EncodeToString(src)
-	stateJSON, err := json.Marshal(stateStruct{CSRF: csrf, IDP: idp.Name})
+	_, err := rand.Read(src)
 	if err != nil {
-		panic("can this happen?")
+		return "", err
 	}
 
-	return base64.URLEncoding.EncodeToString(stateJSON)
+	csrf := base64.URLEncoding.EncodeToString(src)
+	stateJSON, err := json.Marshal(stateStruct{CSRF: csrf, IDP: idp.Name, CallbackURL: callbackURL})
+	if err != nil {
+		return "", err
+	}
+
+	return base64.URLEncoding.EncodeToString(stateJSON), nil
 }
 
 func setCallbackCookie(w http.ResponseWriter, r *http.Request, name, value string) {
@@ -123,20 +80,7 @@ func setCallbackCookie(w http.ResponseWriter, r *http.Request, name, value strin
 	http.SetCookie(w, c)
 }
 
-func setAuthCookie(w http.ResponseWriter, r *http.Request, name, value string, exhours int) {
-	c := &http.Cookie{
-		Name:     name,
-		Value:    value,
-		MaxAge:   exhours * 60 * 60,
-		Secure:   r.TLS != nil,
-		Path:     "/",
-		SameSite: 1,
-		// HttpOnly: true,
-	}
-	http.SetCookie(w, c)
-}
-
-func (h *handler) getOIDCProvider(ctx context.Context, oidcConf dockyardsv1.OIDCConfig) *oidc.Provider {
+func (h *handler) getOIDCProvider(ctx context.Context, oidcConf dockyardsv1.OIDCConfig) (*oidc.Provider, error) {
 	if oidcConf.OIDCProviderConfig != nil {
 		c := oidcConf.OIDCProviderConfig
 		pc := oidc.ProviderConfig{
@@ -147,35 +91,149 @@ func (h *handler) getOIDCProvider(ctx context.Context, oidcConf dockyardsv1.OIDC
 			Algorithms: c.IDTokenSigningAlgs,
 		}
 
-		return pc.NewProvider(ctx)
+		return pc.NewProvider(ctx), nil
 	} else if oidcConf.OIDCProviderDiscoveryURL != nil {
 		p, _ := oidc.NewProvider(ctx, *oidcConf.OIDCProviderDiscoveryURL)
 
-		return p
+		return p, nil
 	}
-	panic("Bad config")
+	return nil, fmt.Errorf("Bad config")
+}
+
+func (h *handler) enrichOIDCConfig(ctx context.Context, cfg *dockyardsv1.OIDCConfig) error {
+	if cfg.OIDCProviderConfig != nil || cfg.OIDCProviderDiscoveryURL == nil {
+		return nil
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, *cfg.OIDCProviderDiscoveryURL, nil)
+	if err != nil {
+		return fmt.Errorf("build discovery request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("fetch discovery document: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("discovery endpoint returned %s", resp.Status)
+	}
+
+	var discovered dockyardsv1.OIDCProviderConfig
+	if err := json.NewDecoder(resp.Body).Decode(&discovered); err != nil {
+		return fmt.Errorf("decode discovery document: %w", err)
+	}
+
+	cfg.OIDCProviderConfig = &discovered
+	return nil
+}
+
+func (h *handler) getOIDCConfig(ctx context.Context, idp dockyardsv1.IdentityProvider) (*dockyardsv1.OIDCConfig, error) {
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      idp.Spec.OIDCConfig.Name,
+			Namespace: idp.Spec.OIDCConfig.Namespace,
+		},
+	}
+
+	if err := h.Get(ctx, client.ObjectKeyFromObject(&secret), &secret); err != nil {
+		return nil, err
+	}
+
+	cfg, err := decodeSecretData[dockyardsv1.OIDCConfig](secret.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+func decodeSecretData[T any](data map[string][]byte) (*T, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("secret does not contain any data")
+	}
+
+	obj := make(map[string]any, len(data))
+	for key, value := range data {
+		trimmed := bytes.TrimSpace(value)
+		if len(trimmed) == 0 {
+			obj[key] = ""
+
+			continue
+		}
+
+		if json.Valid(trimmed) {
+			var v any
+			if err := json.Unmarshal(trimmed, &v); err != nil {
+				return nil, fmt.Errorf("secret field %q is not valid JSON: %w", key, err)
+			}
+			obj[key] = v
+
+			continue
+		}
+
+		obj[key] = string(value)
+	}
+
+	payload, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	var out T
+	if err := json.Unmarshal(payload, &out); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
 }
 
 func (h *handler) LoginOIDC(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	// logger := middleware.LoggerFrom(ctx)
+	logger := middleware.LoggerFrom(ctx)
 
+	r.Body.Close()
 	providerName := r.URL.Query().Get("idp")
+	callbackURL := r.URL.Query().Get("callbackURL")
 
 	var idp dockyardsv1.IdentityProvider
 	err := h.Get(ctx, client.ObjectKey{Name: providerName}, &idp)
 	if err != nil {
-		http.Error(w, "Invalid or missing IDP", http.StatusBadRequest)
+		msg := "Invalid or missing IDP"
+		logger.Warn(msg, "idp", idp.Name)
+		http.Error(w, msg, http.StatusBadRequest)
 
 		return
 	}
 
 	if idp.Spec.OIDCConfig == nil {
-		panic("not an OIDC config")
-	}
-	provider := h.getOIDCProvider(ctx, *idp.Spec.OIDCConfig)
+		msg := "IDP does not contain a reference to valid OIDC config"
+		logger.Error(msg, "idp", idp.Name)
+		http.Error(w, msg, http.StatusInternalServerError)
 
-	c := idp.Spec.OIDCConfig.OIDCClientConfig
+		return
+	}
+
+	configOIDC, err := h.getOIDCConfig(ctx, idp)
+	if err != nil {
+		msg := "Invalid or missing OIDC configuration"
+		logger.Error(msg, "idp", idp.Name, "err", err)
+		http.Error(w, msg, http.StatusInternalServerError)
+
+		return
+	}
+
+	provider, err := h.getOIDCProvider(ctx, *configOIDC)
+	if err != nil {
+		msg := "Unable to parse OIDC provider from configuration"
+		logger.Error(msg, "idp", idp.Name)
+		http.Error(w, msg, http.StatusInternalServerError)
+
+		return
+	}
+
+	c := configOIDC.OIDCClientConfig
 	config := oauth2.Config{
 		ClientID:     c.ClientID,
 		ClientSecret: c.ClientSecret,
@@ -184,7 +242,11 @@ func (h *handler) LoginOIDC(w http.ResponseWriter, r *http.Request) {
 		Scopes:       []string{"openid", "email"},
 	}
 
-	state := makeState(&idp)
+	state, err := makeState(&idp, callbackURL)
+	if err != nil {
+		panic(err)
+	}
+
 	nonce := makeNonce()
 
 	setCallbackCookie(w, r, "state", state)
@@ -256,12 +318,16 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 	// verify state
 	state, err := r.Cookie("state")
 	if err != nil {
-		http.Error(w, "state not found", http.StatusBadRequest)
+		msg := "state not found"
+		logger.Error(msg, "http status", http.StatusBadRequest)
+		http.Error(w, msg, http.StatusBadRequest)
 
 		return
 	}
 	if r.URL.Query().Get("state") != state.Value {
-		http.Error(w, "state mismatch", http.StatusUnauthorized) // 401? 403?
+		msg := "state mismatch"
+		logger.Error(msg, "http status", http.StatusUnauthorized)
+		http.Error(w, msg, http.StatusUnauthorized) // 401? 403?
 
 		return
 	}
@@ -284,11 +350,19 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if idp.Spec.OIDCConfig == nil {
+		panic("no reference to OIDC config")
+	}
+
+	configOIDC, err := h.getOIDCConfig(ctx, idp)
+	if err != nil {
 		panic("not an OIDC config")
 	}
-	provider := h.getOIDCProvider(ctx, *idp.Spec.OIDCConfig)
 
-	c := idp.Spec.OIDCConfig.OIDCClientConfig
+	provider, err := h.getOIDCProvider(ctx, *configOIDC)
+	if err != nil {
+	}
+
+	c := configOIDC.OIDCClientConfig
 	config := oauth2.Config{
 		ClientID:     c.ClientID,
 		ClientSecret: c.ClientSecret,
@@ -320,19 +394,25 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 	})
 	idToken, err := verifier.Verify(ctx, rawIDToken)
 	if err != nil {
-		http.Error(w, "Failed to verify ID Token: "+err.Error(), http.StatusInternalServerError)
+		msg := "Failed to verify ID token"
+		logger.Error(msg, "err", err)
+		http.Error(w, "Failed to verify ID Token", http.StatusInternalServerError)
 
 		return
 	}
 
 	nonce, err := r.Cookie("nonce")
 	if err != nil {
-		http.Error(w, "nonce not found", http.StatusBadRequest)
+		msg := "nonce not found"
+		logger.Warn(msg, "err", err)
+		http.Error(w, msg, http.StatusBadRequest)
 
 		return
 	}
 	if idToken.Nonce != fmt.Sprintf("%x", sha256.Sum256([]byte(nonce.Value))) {
-		http.Error(w, "nonce did not match", http.StatusBadRequest)
+		msg := "nonce did not match"
+		logger.Warn(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 
 		return
 	}
@@ -344,12 +424,13 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 	var claims struct {
 		Email string `json:"email"`
 	}
+
 	if err := idToken.Claims(&claims); err != nil {
 		logger.Error("problem reading extra claims", "err", err)
 		http.Error(w, "?", http.StatusInternalServerError)
 	}
 
-	logger.Info("", "email", claims.Email)
+	logger.Info("Processing SSO callback", "email", claims.Email)
 
 	// See if user exists
 	matchingFields := client.MatchingFields{
@@ -368,52 +449,40 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 	// email := dummy@sudosweden.com
 	email := claims.Email
 
-	switch len(userList.Items) {
-	case 1:
-		user := userList.Items[0]
-		logger.Info("Found user", "user", user.Spec.Email)
-
-		tokens, err := h.generateTokens(ptr.To(user))
-		if err != nil {
-			logger.Error("error generating tokens", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
-
-		// TODO double check the parameters againts cookies set by JS
-		setAuthCookie(w, r, "AccessToken", tokens.AccessToken, 3)
-		setAuthCookie(w, r, "RefreshToken", tokens.RefreshToken, 12)
-
-		// FIXME: read the resume redirect from the state?
-		http.Redirect(w, r, "http://localhost:8000", http.StatusFound)
-
-	case 0:
-		logger.Info("Gotta sign up!")
-		user, err := h.newUser(ctx, *idToken, email)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
-
-		// dumb extra redirect
-		tokens, err := h.generateTokens(user)
-		if err != nil {
-			logger.Error("error generating tokens", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
-
-		setAuthCookie(w, r, "AccessToken", tokens.AccessToken, 3)
-		setAuthCookie(w, r, "RefreshToken", tokens.RefreshToken, 12)
-
-		http.Redirect(w, r, "http://localhost:8000", http.StatusFound)
-	default:
+	if len(userList.Items) > 1 {
 		logger.Error("expected exactly one user from kubernetes", "users", len(userList.Items))
 		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
+
+	var tokens *types.Tokens
+	var user *dockyardsv1.User
+
+	switch len(userList.Items) {
+	case 1:
+		user = ptr.To(userList.Items[0])
+		logger.Info("Found user", "user", user.Spec.Email)
+
+	case 0:
+		logger.Info("Gotta sign up!")
+		user, err = h.newUser(ctx, *idToken, email)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+	}
+
+	// dumb extra redirect
+	tokens, err = h.generateTokens(user)
+	if err != nil {
+		logger.Error("error generating tokens", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	url := x.CallbackURL + "/" + tokens.RefreshToken
+	http.Redirect(w, r, url, http.StatusFound)
 }

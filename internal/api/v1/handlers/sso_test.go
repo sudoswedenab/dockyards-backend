@@ -26,6 +26,7 @@ import (
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -33,6 +34,7 @@ import (
 func TestGlobalIdentityProviders_List(t *testing.T) {
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
+	ns := testEnvironment.GetDockyardsNamespace()
 
 	reqTarget := "/v1/identity-providers"
 
@@ -69,21 +71,76 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 	})
 
 	t.Run("test filtered providers", func(t *testing.T) {
-		disc := dockyardsv1.OIDCConfig{OIDCProviderDiscoveryURL: new(string)}
+		mustJSON := func(t *testing.T, v any) []byte {
+			t.Helper()
+
+			b, err := json.Marshal(v)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			return b
+		}
+
+		toSecretData := func(t *testing.T, cfg dockyardsv1.OIDCConfig) map[string][]byte {
+			t.Helper()
+
+			data := map[string][]byte{
+				"clientConfig": mustJSON(t, cfg.OIDCClientConfig),
+			}
+
+			if cfg.OIDCProviderConfig != nil {
+				data["providerConfig"] = mustJSON(t, cfg.OIDCProviderConfig)
+			}
+
+			if cfg.OIDCProviderDiscoveryURL != nil {
+				data["providerDiscoveryURL"] = []byte(*cfg.OIDCProviderDiscoveryURL)
+			}
+
+			return data
+		}
+
+		strPtr := func(s string) *string {
+			return &s
+		}
+
+		baseClientConfig := dockyardsv1.OIDCClientConfig{
+			ClientID:     "client",
+			RedirectURL:  "https://redirect.example.com",
+			ClientSecret: "secret",
+		}
+
+		disc := dockyardsv1.OIDCConfig{
+			OIDCClientConfig:         baseClientConfig,
+			OIDCProviderDiscoveryURL: strPtr("https://issuer.example.com"),
+		}
 		conf := dockyardsv1.OIDCConfig{
+			OIDCClientConfig: baseClientConfig,
 			OIDCProviderConfig: &dockyardsv1.OIDCProviderConfig{
+				Issuer:                "https://issuer.example.com",
+				AuthorizationEndpoint: "https://issuer.example.com/auth",
+				TokenEndpoint:         "https://issuer.example.com/token",
+				JWKSURI:               "https://issuer.example.com/jwks",
 				IDTokenSigningAlgs: []string{
 					"RS256",
 				},
 			},
 		}
 		both := dockyardsv1.OIDCConfig{
+			OIDCClientConfig: baseClientConfig,
 			OIDCProviderConfig: &dockyardsv1.OIDCProviderConfig{
+				Issuer:                "https://issuer.example.com",
+				AuthorizationEndpoint: "https://issuer.example.com/auth",
+				TokenEndpoint:         "https://issuer.example.com/token",
+				JWKSURI:               "https://issuer.example.com/jwks",
 				IDTokenSigningAlgs: []string{
 					"RS256",
 				},
 			},
-			OIDCProviderDiscoveryURL: new(string),
+			OIDCProviderDiscoveryURL: strPtr("https://issuer.example.com"),
+		}
+		neither := dockyardsv1.OIDCConfig{
+			OIDCClientConfig: baseClientConfig,
 		}
 
 		idps := []dockyardsv1.IdentityProvider{
@@ -92,7 +149,10 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 					Name: "oidc-with-discovery",
 				},
 				Spec: dockyardsv1.IdentityProviderSpec{
-					OIDCConfig: &disc,
+					OIDCConfig: &corev1.SecretReference{
+						Name:      "oidc-with-discovery-secret",
+						Namespace: ns,
+					},
 				},
 			},
 			{
@@ -100,7 +160,10 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 					Name: "oidc-with-provider-conf",
 				},
 				Spec: dockyardsv1.IdentityProviderSpec{
-					OIDCConfig: &conf,
+					OIDCConfig: &corev1.SecretReference{
+						Name:      "oidc-with-provider-conf-secret",
+						Namespace: ns,
+					},
 				},
 			},
 			{
@@ -108,7 +171,10 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 					Name: "oidc-with-neither",
 				},
 				Spec: dockyardsv1.IdentityProviderSpec{
-					OIDCConfig: new(dockyardsv1.OIDCConfig),
+					OIDCConfig: &corev1.SecretReference{
+						Name:      "oidc-with-neither-secret",
+						Namespace: ns,
+					},
 				},
 			},
 			{
@@ -116,7 +182,10 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 					Name: "oidc-with-both",
 				},
 				Spec: dockyardsv1.IdentityProviderSpec{
-					OIDCConfig: &both,
+					OIDCConfig: &corev1.SecretReference{
+						Name:      "oidc-with-both-secret",
+						Namespace: ns,
+					},
 				},
 			},
 			{
@@ -125,6 +194,51 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 				},
 				Spec: dockyardsv1.IdentityProviderSpec{},
 			},
+		}
+
+		secrets := []corev1.Secret{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oidc-with-discovery-secret",
+					Namespace: ns,
+				},
+				Data: toSecretData(t, disc),
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oidc-with-provider-conf-secret",
+					Namespace: ns,
+				},
+				Data: toSecretData(t, conf),
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oidc-with-neither-secret",
+					Namespace: ns,
+				},
+				Data: toSecretData(t, neither),
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oidc-with-both-secret",
+					Namespace: ns,
+				},
+				Data: toSecretData(t, both),
+			},
+		}
+
+		for i := range secrets {
+			secret := secrets[i]
+
+			err := c.Create(ctx, &secret)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &secret)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		for i := range idps {

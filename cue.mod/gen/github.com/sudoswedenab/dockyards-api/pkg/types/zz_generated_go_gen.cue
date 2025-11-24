@@ -129,6 +129,12 @@ import "time"
 	duration?: null | string @go(Duration,*string)
 }
 
+// LoginSSOOptions defines model for loginSSO_options.
+#LoginSSOOptions: {
+	idp_name:    string @go(IdpName)
+	redirectURL: string @go(RedirectURL)
+}
+
 // LoginOptions defines model for login_options.
 #LoginOptions: {
 	email:    string @go(Email)
