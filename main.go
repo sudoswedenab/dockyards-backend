@@ -235,11 +235,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	dockyardsConfig, err := dyconfig.GetConfig(ctx, controllerClient, configMap, dockyardsNamespace)
+	if err != nil {
+		logger.Error("error loading config map", "err", err)
+
+		os.Exit(1)
+	}
+
 	handlerOptions := []handlers.HandlerOption{
 		handlers.WithManager(mgr),
 		handlers.WithNamespace(dockyardsNamespace),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
 		handlers.WithLogger(logger),
+		handlers.WithDockyardsConfig(dockyardsConfig),
 	}
 
 	publicMux := http.NewServeMux()
@@ -331,12 +339,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	dockyardsConfig, err := dyconfig.GetConfig(ctx, controllerClient, configMap, dockyardsNamespace)
-	if err != nil {
-		logger.Error("error loading config map", "err", err)
-
-		os.Exit(1)
-	}
 
 	err = (&controller.UserReconciler{
 		Client:          mgr.GetClient(),
