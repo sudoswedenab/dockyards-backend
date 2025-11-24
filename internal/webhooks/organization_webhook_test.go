@@ -42,13 +42,6 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "auto-assign",
 				},
-				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.OrganizationMemberReference{
-						{
-							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-						},
-					},
-				},
 			},
 			expected: apierrors.NewInvalid(
 				dockyardsv1.GroupVersion.WithKind(dockyardsv1.OrganizationKind).GroupKind(),
@@ -63,13 +56,6 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 			dockyardsOrganization: dockyardsv1.Organization{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "auto-assign",
-				},
-				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.OrganizationMemberReference{
-						{
-							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-						},
-					},
 				},
 			},
 			features: dockyardsv1.FeatureList{
@@ -90,11 +76,6 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 					Name: "skip-auto-assign",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.OrganizationMemberReference{
-						{
-							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-						},
-					},
 					SkipAutoAssign: true,
 				},
 			},
@@ -106,11 +87,6 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 					Name: "skip-auto-assign",
 				},
 				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.OrganizationMemberReference{
-						{
-							Role: dockyardsv1.OrganizationMemberRoleSuperUser,
-						},
-					},
 					SkipAutoAssign: true,
 				},
 			},
@@ -124,50 +100,6 @@ func TestDockyardsOrganizationValidateCreate(t *testing.T) {
 					},
 				},
 			},
-		},
-		{
-			name: "test empty member references",
-			dockyardsOrganization: dockyardsv1.Organization{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "empty-member-references",
-				},
-				Spec: dockyardsv1.OrganizationSpec{
-					SkipAutoAssign: true,
-				},
-			},
-			expected: apierrors.NewInvalid(
-				dockyardsv1.GroupVersion.WithKind(dockyardsv1.OrganizationKind).GroupKind(),
-				"empty-member-references",
-				field.ErrorList{
-					field.Required(field.NewPath("spec", "memberRefs"), "must have at least one super user"),
-				},
-			),
-		},
-		{
-			name: "test missing super user",
-			dockyardsOrganization: dockyardsv1.Organization{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "missing-super-user",
-				},
-				Spec: dockyardsv1.OrganizationSpec{
-					MemberRefs: []dockyardsv1.OrganizationMemberReference{
-						{
-							Role: dockyardsv1.OrganizationMemberRoleUser,
-						},
-						{
-							Role: dockyardsv1.OrganizationMemberRoleReader,
-						},
-					},
-					SkipAutoAssign: true,
-				},
-			},
-			expected: apierrors.NewInvalid(
-				dockyardsv1.GroupVersion.WithKind(dockyardsv1.OrganizationKind).GroupKind(),
-				"missing-super-user",
-				field.ErrorList{
-					field.Required(field.NewPath("spec", "memberRefs"), "must have at least one super user"),
-				},
-			),
 		},
 	}
 

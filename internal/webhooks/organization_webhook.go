@@ -101,24 +101,8 @@ func (webhook *DockyardsOrganization) validate(ctx context.Context, dockyardsOrg
 		errorList = append(errorList, invalid)
 	}
 
-	superUsers := 0
-	for _, memberRef := range dockyardsOrganization.Spec.MemberRefs { //nolint:staticcheck
-		if memberRef.Role == dockyardsv1.OrganizationMemberRoleSuperUser { //nolint:staticcheck
-			superUsers = superUsers + 1
-		}
-	}
-
 	if len(dockyardsOrganization.Spec.MemberRefs) > 0 { //nolint:staticcheck
 		warnings = append(warnings, "spec.memberRefs is deprecated and will be removed in a future release; please migrate to using Member type instead.")
-	}
-
-	if superUsers < 1 {
-		required := field.Required(
-			field.NewPath("spec", "memberRefs"),
-			"must have at least one super user",
-		)
-
-		errorList = append(errorList, required)
 	}
 
 	if len(errorList) > 0 {
