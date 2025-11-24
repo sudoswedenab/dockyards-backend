@@ -32,17 +32,35 @@ import (
 
 // +kubebuilder:webhook:groups=dockyards.io,resources=organizations,verbs=create;update,path=/validate-dockyards-io-v1alpha3-organization,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.organizations.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 
+// +kubebuilder:webhook:groups=dockyards.io,resources=organizations,verbs=create,path=/mutate-dockyards-io-v1alpha3-organization,mutating=true,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=default.organizations.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
+
 type DockyardsOrganization struct {
 	Client client.Reader
 }
 
-var _ webhook.CustomValidator = &DockyardsNodePool{}
+var _ webhook.CustomValidator = &DockyardsOrganization{}
+var _ webhook.CustomDefaulter = &DockyardsOrganization{}
 
 func (webhook *DockyardsOrganization) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&dockyardsv1.Organization{}).
 		WithValidator(webhook).
 		Complete()
+}
+
+func (webhook *DockyardsOrganization) Default(_ context.Context, obj runtime.Object) error {
+	organization, ok := obj.(*dockyardsv1.Organization)
+	if !ok {
+		return apierrors.NewBadRequest("new object has an unexpected type")
+	}
+
+	if organization.Labels == nil {
+		organization.Labels = make(map[string]string)
+	}
+
+	organization.Labels[dockyardsv1.LabelOrganizationName] = organization.Name
+
+	return nil
 }
 
 func (webhook *DockyardsOrganization) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {

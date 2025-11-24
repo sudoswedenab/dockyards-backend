@@ -56,6 +56,25 @@ webhooks:
     resources:
     - members
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: dockyards-backend
+      namespace: system
+      path: /mutate-dockyards-io-v1alpha3-organization
+  failurePolicy: Fail
+  name: default.organizations.dockyards.io
+  rules:
+  - apiGroups:
+    - dockyards.io
+    apiVersions:
+    - v1alpha3
+    operations:
+    - CREATE
+    resources:
+    - organizations
+  sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
