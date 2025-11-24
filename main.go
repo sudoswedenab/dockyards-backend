@@ -106,6 +106,13 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 		return err
 	}
 
+	err = (&webhooks.DockyardsMember{
+		Client: mgr.GetClient(),
+	}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -338,7 +345,6 @@ func main() {
 
 		os.Exit(1)
 	}
-
 
 	err = (&controller.UserReconciler{
 		Client:          mgr.GetClient(),

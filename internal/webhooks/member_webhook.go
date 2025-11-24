@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,16 +33,45 @@ import (
 
 // +kubebuilder:webhook:groups=dockyards.io,resources=members,verbs=create;update,path=/validate-dockyards-io-v1alpha3-member,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.member.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 
+// +kubebuilder:webhook:groups=dockyards.io,resources=members,verbs=create,path=/mutate-dockyards-io-v1alpha3-member,mutating=true,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=default.member.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
+
 type DockyardsMember struct {
 	Client client.Reader
 }
 
 var _ webhook.CustomValidator = &DockyardsMember{}
+var _ webhook.CustomDefaulter = &DockyardsMember{}
 
 var memberLabels = []string{
 	dockyardsv1.LabelOrganizationName,
 	dockyardsv1.LabelUserName,
 	dockyardsv1.LabelRoleName,
+}
+
+func (webhook *DockyardsMember) Default(ctx context.Context, obj runtime.Object) error {
+	member, ok := obj.(*dockyardsv1.Member)
+	if !ok {
+		return apierrors.NewBadRequest("new object has an unexpected type")
+	}
+
+	organization, err := apiutil.GetOrganizationByNamespaceRef(ctx, webhook.Client, member.Namespace)
+	if err != nil {
+		return err
+	}
+
+	organizationName := organization.Name
+	roleName := string(member.Spec.Role)
+	userName := member.Spec.UserRef.Name
+
+	if member.Labels == nil {
+		member.Labels = make(map[string]string)
+	}
+
+	member.Labels[dockyardsv1.LabelOrganizationName] = organizationName
+	member.Labels[dockyardsv1.LabelRoleName] = roleName
+	member.Labels[dockyardsv1.LabelUserName] = userName
+
+	return nil
 }
 
 func (webhook *DockyardsMember) SetupWebhookWithManager(m ctrl.Manager) error {

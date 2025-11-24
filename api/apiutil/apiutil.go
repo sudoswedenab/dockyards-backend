@@ -533,3 +533,36 @@ func GetOwnerWorkload(ctx context.Context, c client.Client, obj client.Object) (
 		Message: fmt.Sprintf("could not find owner for %s", obj.GetName()),
 	}}
 }
+
+func GetOrganizationByNamespaceRef(ctx context.Context, c client.Reader, namespaceName string) (*dockyardsv1.Organization, error) {
+	var organizationList dockyardsv1.OrganizationList
+	err := c.List(ctx, &organizationList)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, organization := range organizationList.Items {
+		if organization.Spec.NamespaceRef == nil {
+			continue
+		}
+
+		if organization.Spec.NamespaceRef.Name != namespaceName {
+			continue
+		}
+
+		return &organization, nil
+	}
+
+	return nil, &errors.StatusError{
+		ErrStatus: metav1.Status{
+			Status: metav1.StatusFailure,
+			Code:   http.StatusNotFound,
+			Reason: metav1.StatusReasonNotFound,
+			Details: &metav1.StatusDetails{
+				Group: dockyardsv1.GroupVersion.Group,
+				Kind:  dockyardsv1.OrganizationKind,
+			},
+			Message: fmt.Sprintf("could not find organization referencing namespace %s", namespaceName),
+		},
+	}
+}

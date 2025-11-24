@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestDockyardsMemberValidateCreate(t *testing.T) {
@@ -367,4 +368,65 @@ func newTestMember(objectName, userName string, labels map[string]string) dockya
 			},
 		},
 	}
+}
+
+func TestDockyardsMemberDefault(t *testing.T) {
+	ctx := t.Context()
+	scheme := runtime.NewScheme()
+
+	_ = dockyardsv1.AddToScheme(scheme)
+
+	t.Run("test labels", func(t *testing.T) {
+		organizationList := dockyardsv1.OrganizationList{
+			Items: []dockyardsv1.Organization{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: dockyardsv1.OrganizationSpec{
+						NamespaceRef: &corev1.LocalObjectReference{
+							Name: "testing",
+						},
+					},
+				},
+			},
+		}
+
+		c := fake.NewClientBuilder().
+			WithScheme(scheme).
+			WithLists(&organizationList).
+			Build()
+
+		member := dockyardsv1.Member{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "testing",
+			},
+			Spec: dockyardsv1.MemberSpec{
+				Role: dockyardsv1.RoleSuperUser,
+				UserRef: corev1.TypedLocalObjectReference{
+					Name: "super-user",
+				},
+			},
+		}
+
+		webhook := webhooks.DockyardsMember{
+			Client: c,
+		}
+
+		err := webhook.Default(ctx, &member)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := map[string]string{
+			dockyardsv1.LabelOrganizationName: "test",
+			dockyardsv1.LabelRoleName:         "SuperUser",
+			dockyardsv1.LabelUserName:         "super-user",
+		}
+
+		if !cmp.Equal(member.Labels, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, member.Labels))
+		}
+	})
 }
