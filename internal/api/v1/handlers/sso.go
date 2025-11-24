@@ -34,17 +34,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (h *handler) ListIdentityProviders(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+func (h *handler) ListGlobalIdentityProviders(ctx context.Context) (*[]dockyardsv1.IdentityProvider, error) {
 	logger := middleware.LoggerFrom(ctx)
 
 	var idplist dockyardsv1.IdentityProviderList
-	if err := h.List(ctx, &idplist); err != nil {
-		logger.Error("missing resource", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
 
-		return
+	err := h.List(ctx, &idplist)
+	if err != nil {
+		return nil, err
 	}
+
 	idps := []dockyardsv1.IdentityProvider{}
 	for _, idp := range idplist.Items {
 		// Only return objects with some type of config (currently just OIDC)
@@ -70,19 +69,7 @@ func (h *handler) ListIdentityProviders(w http.ResponseWriter, r *http.Request) 
 		})
 	}
 
-	b, err := json.Marshal(&idps)
-	if err != nil {
-		logger.Error("error serializing identity providers", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		logger.Error("error writing response data", "err", err)
-	}
+	return &idps, nil
 }
 
 func makeNonce() []byte {
