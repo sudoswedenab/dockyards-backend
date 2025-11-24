@@ -19,13 +19,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/uuid"
-	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
-	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
-
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
+	"github.com/google/uuid"
 	dyconfig "github.com/sudoswedenab/dockyards-backend/api/config"
+	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"github.com/sudoswedenab/dockyards-backend/templates"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +38,7 @@ import (
 
 type UserReconciler struct {
 	client.Client
-	DockyardsConfig *dyconfig.DockyardsConfig
+	DockyardsConfig dyconfig.DockyardsConfigReader
 }
 
 type VerificationEmail struct {

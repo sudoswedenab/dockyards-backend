@@ -23,9 +23,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type DockyardsConfigReader interface {
+	GetConfigKey(string, string) string
+}
+
+type DockyardsConfigWriter interface {
+	SetConfigKey(context.Context, client.Client, string) error
+}
+
 // DockyardsConfig holds the configuration data for a Dockyards installation,
 // including its name, namespace, and a map of configuration settings.
-type DockyardsConfig struct {
+type dockyardsConfig struct {
 	name      string
 	namespace string
 	config    map[string]string
@@ -34,8 +42,8 @@ type DockyardsConfig struct {
 
 // GetConfig retrieves the configuration from the specified ConfigMap in the given namespace
 // and returns it as a DockyardsConfig instance.
-func GetConfig(ctx context.Context, c client.Client, configMap, dockyardsNamespace string) (*DockyardsConfig, error) {
-	config := DockyardsConfig{
+func GetConfig(ctx context.Context, c client.Client, configMap, dockyardsNamespace string) (*dockyardsConfig, error) {
+	config := dockyardsConfig{
 		name:      configMap,
 		namespace: dockyardsNamespace,
 	}
@@ -43,7 +51,7 @@ func GetConfig(ctx context.Context, c client.Client, configMap, dockyardsNamespa
 	cm := corev1.ConfigMap{}
 	err := c.Get(ctx, client.ObjectKey{Name: configMap, Namespace: dockyardsNamespace}, &cm)
 	if err != nil {
-		return &DockyardsConfig{}, err
+		return &dockyardsConfig{}, err
 	}
 
 	config.config = cm.Data
@@ -53,7 +61,7 @@ func GetConfig(ctx context.Context, c client.Client, configMap, dockyardsNamespa
 
 // GetConfigKey retrieves the value for the specified key from the configuration,
 // returning the provided defaultValue if the key is not present or the config is nil.
-func (config *DockyardsConfig) GetConfigKey(key, defaultValue string) string {
+func (config *dockyardsConfig) GetConfigKey(key, defaultValue string) string {
 	c := (*config).config
 	if c == nil || c[key] == "" {
 		return defaultValue
@@ -64,7 +72,7 @@ func (config *DockyardsConfig) GetConfigKey(key, defaultValue string) string {
 
 // SetConfigKey sets the value for the specified key in the configuration and updates the ConfigMap
 // in the Kubernetes cluster.
-func (config *DockyardsConfig) SetConfigKey(ctx context.Context, c client.Client, key, value string) error {
+func (config *dockyardsConfig) SetConfigKey(ctx context.Context, c client.Client, key, value string) error {
 	config.mutex.Lock()
 	defer config.mutex.Unlock()
 
@@ -82,7 +90,7 @@ func (config *DockyardsConfig) SetConfigKey(ctx context.Context, c client.Client
 }
 
 // setConfig updates the ConfigMap in the Kubernetes cluster with the current configuration data.
-func (config *DockyardsConfig) setConfig(ctx context.Context, c client.Client) error {
+func (config *dockyardsConfig) setConfig(ctx context.Context, c client.Client) error {
 	cm := corev1.ConfigMap{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      config.name,
