@@ -33,6 +33,7 @@ const (
 	CodeField                      = ".spec.code"
 	WorkloadTemplateReferenceField = ".spec.workloadTemplateRef"
 	SelectorField                  = ".spec.selector"
+	ProviderIDField                = ".spec.providerID"
 )
 
 func ByMemberReferences(ctx context.Context, mgr ctrl.Manager) error {
@@ -45,6 +46,15 @@ func ByMemberReferences(ctx context.Context, mgr ctrl.Manager) error {
 	}
 
 	return nil
+}
+
+func ByProviderID(obj client.Object) []string {
+	user, ok := obj.(*v1alpha3.User)
+	if !ok {
+		return nil
+	}
+
+	return []string{*user.Spec.ProviderID}
 }
 
 func byMemberReferences(obj client.Object) []string {

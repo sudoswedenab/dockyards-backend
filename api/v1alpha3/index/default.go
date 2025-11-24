@@ -44,6 +44,11 @@ func AddDefaultIndexes(ctx context.Context, mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = mgr.GetFieldIndexer().IndexField(ctx, &dockyardsv1.User{}, ProviderIDField, ByProviderID)
+	if err != nil {
+		return err
+	}
+
 	for _, object := range []client.Object{&dockyardsv1.NodePool{}, &dockyardsv1.Node{}, &dockyardsv1.Cluster{}} {
 		err := mgr.GetFieldIndexer().IndexField(ctx, object, OwnerReferencesField, ByOwnerReferences)
 		if err != nil {

@@ -99,7 +99,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		),
 	)
 
-	mux.Handle("GET /v1/identity-providers", logger(ListGlobalResource("identityproviders", h.ListGlobalIdentityProviders)))
+	mux.Handle("GET /v1/identity-providers", logger(ListGlobalResource("identityproviders", h.ListIdentityProviders)))
 
 	mux.Handle("POST /v1/refresh", logger(requireRefresh(contentJSON(GetNamelessResource(h.GetGlobalTokens)))))
 
@@ -252,6 +252,9 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 	)
 
 	mux.Handle("GET /v1/cluster-templates", logger(requireAuth(contentJSON(GetNamelessResource(h.ListGlobalClusterTemplates)))))
+
+	mux.Handle("GET /v1/login-sso", logger(http.HandlerFunc(h.LoginOIDC)))
+	mux.Handle("GET /v1/callback", logger(http.HandlerFunc(h.Callback)))
 
 	return nil
 }
