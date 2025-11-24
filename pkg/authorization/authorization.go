@@ -364,32 +364,6 @@ func ReconcileClusterAuthorization(ctx context.Context, client client.Client) er
 		return err
 	}
 
-	clusterRoleBinding := rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: AggregateRoleName,
-		},
-	}
-
-	_, err = controllerutil.CreateOrPatch(ctx, client, &clusterRoleBinding, func() error {
-		clusterRoleBinding.RoleRef = rbacv1.RoleRef{
-			Kind: "ClusterRole",
-			Name: clusterRole.Name,
-		}
-
-		clusterRoleBinding.Subjects = []rbacv1.Subject{
-			{
-				Kind:     rbacv1.GroupKind,
-				APIGroup: rbacv1.SchemeGroupVersion.Group,
-				Name:     AggregateRoleName,
-			},
-		}
-
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
 	clusterRole = rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "dockyards:reader",
