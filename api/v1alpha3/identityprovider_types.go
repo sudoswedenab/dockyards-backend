@@ -15,6 +15,7 @@
 package v1alpha3
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,8 +24,9 @@ const (
 )
 
 type IdentityProviderSpec struct {
-	DisplayName *string     `json:"displayName,omitempty"`
-	OIDCConfig  *OIDCConfig `json:"oidc,omitempty"`
+	DisplayName *string                 `json:"displayName,omitempty"`
+	OIDCConfig  *corev1.SecretReference `json:"oidc,omitempty"`
+	// OIDCConfig  *OIDCConfig `json:"oidc,omitempty"`
 }
 
 type OIDCConfig struct {

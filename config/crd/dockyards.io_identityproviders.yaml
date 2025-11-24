@@ -54,50 +54,20 @@ spec:
               displayName:
                 type: string
               oidc:
+                description: |-
+                  SecretReference represents a Secret Reference. It has enough information to retrieve secret
+                  in any namespace
                 properties:
-                  clientConfig:
-                    properties:
-                      clientID:
-                        type: string
-                      clientSecret:
-                        type: string
-                      redirectURL:
-                        type: string
-                    required:
-                    - clientID
-                    - redirectURL
-                    type: object
-                  providerConfig:
-                    description: Fields renamed from github.com/coreos/go-oidc ProviderConfig
-                    properties:
-                      authorizationEndpoint:
-                        type: string
-                      deviceAuthorizationEndpoint:
-                        type: string
-                      idTokenSigningAlgs:
-                        items:
-                          type: string
-                        type: array
-                      issuer:
-                        type: string
-                      jwksURI:
-                        type: string
-                      tokenEndpoint:
-                        type: string
-                      userinfoEndpoint:
-                        type: string
-                    required:
-                    - authorizationEndpoint
-                    - idTokenSigningAlgs
-                    - issuer
-                    - jwksURI
-                    - tokenEndpoint
-                    type: object
-                  providerDiscoveryURL:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
                     type: string
-                required:
-                - clientConfig
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
                 type: object
+                x-kubernetes-map-type: atomic
             type: object
         type: object
     served: true

@@ -1003,8 +1003,8 @@ func (in *IdentityProviderSpec) DeepCopyInto(out *IdentityProviderSpec) {
 	}
 	if in.OIDCConfig != nil {
 		in, out := &in.OIDCConfig, &out.OIDCConfig
-		*out = new(OIDCConfig)
-		(*in).DeepCopyInto(*out)
+		*out = new(v1.SecretReference)
+		**out = **in
 	}
 }
 

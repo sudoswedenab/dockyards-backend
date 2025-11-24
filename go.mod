@@ -13,7 +13,6 @@ require (
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/cors v1.11.0
 	github.com/spf13/pflag v1.0.6
-	github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20251107120410-dc07df820ac9
 	github.com/sudoswedenab/dockyards-backend/api v1.2.3
 	golang.org/x/crypto v0.40.0
 	k8s.io/api v0.33.3
@@ -71,6 +70,7 @@ require (
 	github.com/protocolbuffers/txtpbfmt v0.0.0-20241112170944-20d2c9ebc01d // indirect
 	github.com/rogpeppe/go-internal v1.13.2-0.20241226121412-a5dc8ff20d0a // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
+	github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20251127092038-25437b1a8094 // indirect
 	github.com/tetratelabs/wazero v1.6.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
