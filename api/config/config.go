@@ -111,3 +111,9 @@ func (config *dockyardsConfig) setConfig(ctx context.Context, c client.Client) e
 
 	return nil
 }
+
+type DefaultingConfig struct {}
+
+func (c *DefaultingConfig) GetConfigKey(_, defaultValue string) string {
+	return defaultValue
+}
