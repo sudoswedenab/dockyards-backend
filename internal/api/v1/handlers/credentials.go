@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -133,6 +134,8 @@ func (h *handler) DeleteOrganizationCredential(ctx context.Context, organization
 }
 
 func (h *handler) GetOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, credentialName string) (*types.Credential, error) {
+	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+
 	objectKey := client.ObjectKey{
 		Name:      "credential-" + credentialName,
 		Namespace: organization.Spec.NamespaceRef.Name,
@@ -159,7 +162,7 @@ func (h *handler) GetOrganizationCredential(ctx context.Context, organization *d
 	credentialTemplateName, has := secret.Labels[dockyardsv1.LabelCredentialTemplateName]
 	if has {
 		var credentialTemplate dockyardsv1.CredentialTemplate
-		err := h.Get(ctx, client.ObjectKey{Name: credentialTemplateName, Namespace: h.namespace}, &credentialTemplate)
+		err := h.Get(ctx, client.ObjectKey{Name: credentialTemplateName, Namespace: publicNamespace}, &credentialTemplate)
 		if client.IgnoreNotFound(err) != nil {
 			return nil, err
 		}

@@ -79,7 +79,7 @@ func TestGlobalClusterTemplates_List(t *testing.T) {
 		clusterTemplate := dockyardsv1.ClusterTemplate{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
-				Namespace:    testEnvironment.GetDockyardsNamespace(),
+				Namespace:    testEnvironment.GetPublicNamespace(),
 			},
 			Spec: dockyardsv1.ClusterTemplateSpec{
 				NodePoolTemplates: []dockyardsv1.NodePoolTemplate{

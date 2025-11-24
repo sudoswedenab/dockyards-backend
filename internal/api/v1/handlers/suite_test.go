@@ -26,6 +26,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/handlers"
@@ -81,7 +82,7 @@ func TestMain(m *testing.M) {
 				dockyardsv1.AnnotationDefaultRelease: "true",
 			},
 			GenerateName: "test-",
-			Namespace:    testEnvironment.GetDockyardsNamespace(),
+			Namespace:    testEnvironment.GetPublicNamespace(),
 		},
 		Spec: dockyardsv1.ReleaseSpec{
 			Ranges: []string{
@@ -132,11 +133,16 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	fakeConfig := FakeConfig{
+		config.KeyPublicNamespace: testEnvironment.GetPublicNamespace(),
+	}
+
 	handlerOptions := []handlers.HandlerOption{
 		handlers.WithManager(mgr),
 		handlers.WithNamespace(testEnvironment.GetDockyardsNamespace()),
 		handlers.WithLogger(logger),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
+		handlers.WithDockyardsConfig(&fakeConfig),
 	}
 
 	mux = http.NewServeMux()
@@ -192,4 +198,15 @@ func MustSignRefreshToken(t *testing.T, subject string) string {
 	}
 
 	return signedToken
+}
+
+type FakeConfig map[string]string
+
+func (f *FakeConfig) GetConfigKey(key string, def string) string {
+	val, ok := (*f)[key]
+	if !ok {
+		return def
+	}
+
+	return val
 }

@@ -21,6 +21,7 @@ import (
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
@@ -32,7 +33,9 @@ import (
 )
 
 func (h *handler) CreateGlobalUser(ctx context.Context, request *types.UserOptions) (*types.User, error) {
-	enabled, err := apiutil.IsFeatureEnabled(ctx, h, featurenames.FeatureUserSignUp, h.namespace)
+	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+
+	enabled, err := apiutil.IsFeatureEnabled(ctx, h, featurenames.FeatureUserSignUp, publicNamespace)
 	if err != nil {
 		return nil, err
 	}

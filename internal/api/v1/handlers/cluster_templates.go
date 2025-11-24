@@ -18,14 +18,17 @@ import (
 	"context"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (h *handler) ListGlobalClusterTemplates(ctx context.Context) (*[]types.ClusterTemplate, error) {
+	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+
 	var clusterTemplateList dockyardsv1.ClusterTemplateList
-	err := h.List(ctx, &clusterTemplateList, client.InNamespace(h.namespace))
+	err := h.List(ctx, &clusterTemplateList, client.InNamespace(publicNamespace))
 	if err != nil {
 		return nil, err
 	}

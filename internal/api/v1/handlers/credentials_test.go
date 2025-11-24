@@ -1031,7 +1031,7 @@ func TestOrganizationCredentials_Get(t *testing.T) {
 		credentialTemplate := dockyardsv1.CredentialTemplate{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
-				Namespace: testEnvironment.GetDockyardsNamespace(),
+				Namespace: testEnvironment.GetPublicNamespace(),
 			},
 			Spec: dockyardsv1.CredentialTemplateSpec{
 				Options: []dockyardsv1.CredentialOption{

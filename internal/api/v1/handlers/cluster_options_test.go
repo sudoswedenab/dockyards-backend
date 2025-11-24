@@ -79,7 +79,7 @@ func TestClusterOptions_Get(t *testing.T) {
 		feature := dockyardsv1.Feature{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      string(featurenames.FeatureStorageRole),
-				Namespace: testEnvironment.GetDockyardsNamespace(),
+				Namespace: testEnvironment.GetPublicNamespace(),
 			},
 		}
 
@@ -134,7 +134,7 @@ func TestClusterOptions_Get(t *testing.T) {
 		feature := dockyardsv1.Feature{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      string(featurenames.FeatureStorageResourceTypeHostPath),
-				Namespace: testEnvironment.GetDockyardsNamespace(),
+				Namespace: testEnvironment.GetPublicNamespace(),
 			},
 		}
 
