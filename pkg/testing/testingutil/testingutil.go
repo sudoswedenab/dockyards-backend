@@ -46,6 +46,7 @@ type TestEnvironment struct {
 	environment   *envtest.Environment
 	c             client.Client
 	namespaceName string
+	publicNamespace string
 }
 
 func (e *TestEnvironment) GetManager() manager.Manager {
@@ -62,6 +63,10 @@ func (e *TestEnvironment) GetClient() client.Client {
 
 func (e *TestEnvironment) GetDockyardsNamespace() string {
 	return e.namespaceName
+}
+
+func (e *TestEnvironment) GetPublicNamespace() string {
+	return e.publicNamespace
 }
 
 func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.Organization, error) {
@@ -294,16 +299,28 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 		return nil, err
 	}
 
+	publicNamespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "public-",
+		},
+	}
+
+	err = c.Create(ctx, &publicNamespace)
+	if err != nil {
+		return nil, err
+	}
+
 	err = authorization.ReconcileClusterAuthorization(ctx, c)
 	if err != nil {
 		return nil, err
 	}
 
 	t := TestEnvironment{
-		mgr:           mgr,
-		environment:   &environment,
-		c:             c,
-		namespaceName: namespace.Name,
+		mgr:             mgr,
+		environment:     &environment,
+		c:               c,
+		namespaceName:   namespace.Name,
+		publicNamespace: publicNamespace.Name,
 	}
 
 	return &t, nil
