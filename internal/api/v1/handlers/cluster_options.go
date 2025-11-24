@@ -19,6 +19,7 @@ import (
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 )
@@ -27,6 +28,8 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
 
 func (h *handler) GetClusterOptions(ctx context.Context) (*types.Options, error) {
+	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+
 	release, err := apiutil.GetDefaultRelease(ctx, h.Client, dockyardsv1.ReleaseTypeKubernetes)
 	if err != nil {
 		return nil, err
@@ -40,7 +43,7 @@ func (h *handler) GetClusterOptions(ctx context.Context) (*types.Options, error)
 		response.Version = release.Status.Versions
 	}
 
-	storageRoleFeatureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageRole, h.namespace)
+	storageRoleFeatureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageRole, publicNamespace)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +51,7 @@ func (h *handler) GetClusterOptions(ctx context.Context) (*types.Options, error)
 	if storageRoleFeatureEnabled {
 		storageResourceTypes := []string{}
 
-		hostPathFeatureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageResourceTypeHostPath, h.namespace)
+		hostPathFeatureEnabled, err := apiutil.IsFeatureEnabled(ctx, h.Client, featurenames.FeatureStorageResourceTypeHostPath, publicNamespace)
 		if err != nil {
 			return nil, err
 		}

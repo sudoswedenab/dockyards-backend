@@ -18,13 +18,16 @@ import (
 	"context"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (h *handler) ListCredentialTemplates(ctx context.Context) (*[]types.CredentialTemplate, error) {
+	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+
 	var credentialTemplates dockyardsv1.CredentialTemplateList
-	err := h.List(ctx, &credentialTemplates, client.InNamespace(h.namespace))
+	err := h.List(ctx, &credentialTemplates, client.InNamespace(publicNamespace))
 	if err != nil {
 		return nil, err
 	}

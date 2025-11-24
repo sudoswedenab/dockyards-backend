@@ -58,7 +58,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 	userToken := MustSignToken(t, user.Name)
 	readerToken := MustSignToken(t, reader.Name)
 
-	dockyardsNamespace := testEnvironment.GetDockyardsNamespace()
+	publicNamespace := testEnvironment.GetPublicNamespace()
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -155,7 +155,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				WorkloadTemplateRef: &corev1.TypedObjectReference{
 					Kind:      dockyardsv1.WorkloadTemplateKind,
 					Name:      "test",
-					Namespace: &dockyardsNamespace,
+					Namespace: &publicNamespace,
 				},
 			},
 		}
@@ -239,7 +239,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				WorkloadTemplateRef: &corev1.TypedObjectReference{
 					Kind:      dockyardsv1.WorkloadTemplateKind,
 					Name:      "test",
-					Namespace: &dockyardsNamespace,
+					Namespace: &publicNamespace,
 				},
 			},
 		}
@@ -391,7 +391,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				WorkloadTemplateRef: &corev1.TypedObjectReference{
 					Kind:      dockyardsv1.WorkloadTemplateKind,
 					Name:      "test",
-					Namespace: &dockyardsNamespace,
+					Namespace: &publicNamespace,
 				},
 				Input: &apiextensionsv1.JSON{
 					Raw: raw,
@@ -477,7 +477,7 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				WorkloadTemplateRef: &corev1.TypedObjectReference{
 					Kind:      dockyardsv1.WorkloadTemplateKind,
 					Name:      "test",
-					Namespace: &dockyardsNamespace,
+					Namespace: &publicNamespace,
 				},
 			},
 		}

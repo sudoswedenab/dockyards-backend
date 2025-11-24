@@ -47,7 +47,7 @@ func TestGlobalUser_Create(t *testing.T) {
 	feature := dockyardsv1.Feature{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      featurenames.FeatureUserSignUp,
-			Namespace: testEnvironment.GetDockyardsNamespace(),
+			Namespace: testEnvironment.GetPublicNamespace(),
 		},
 	}
 

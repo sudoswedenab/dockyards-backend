@@ -21,6 +21,7 @@ import (
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -36,6 +37,8 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=workloads,verbs=create;delete;get;list;patch;watch
 
 func (h *handler) CreateClusterWorkload(ctx context.Context, cluster *dockyardsv1.Cluster, request *types.WorkloadOptions) (*types.Workload, error) {
+	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+
 	if request.WorkloadTemplateName == nil || request.Name == nil {
 		statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.WorkloadKind).GroupKind(), "", nil)
 
@@ -79,7 +82,7 @@ func (h *handler) CreateClusterWorkload(ctx context.Context, cluster *dockyardsv
 			WorkloadTemplateRef: &corev1.TypedObjectReference{
 				Kind:      dockyardsv1.WorkloadTemplateKind,
 				Name:      workloadTemplateName,
-				Namespace: &h.namespace,
+				Namespace: &publicNamespace,
 			},
 		},
 	}

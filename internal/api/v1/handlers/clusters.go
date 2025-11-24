@@ -21,6 +21,7 @@ import (
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/name"
 	corev1 "k8s.io/api/core/v1"
@@ -191,6 +192,8 @@ func (h *handler) nodePoolOptionsToNodePool(ctx context.Context, nodePoolOptions
 }
 
 func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *dockyardsv1.Organization, request *types.ClusterOptions) (*types.Cluster, error) {
+	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+
 	_, validName := name.IsValidName(request.Name)
 	if !validName {
 		statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", nil)
@@ -296,7 +299,7 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 	if request.ClusterTemplateName != nil {
 		objectKey := client.ObjectKey{
 			Name:      *request.ClusterTemplateName,
-			Namespace: h.namespace,
+			Namespace: publicNamespace,
 		}
 
 		var customTemplate dockyardsv1.ClusterTemplate

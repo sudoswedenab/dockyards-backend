@@ -19,6 +19,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,6 +34,7 @@ type handler struct {
 	jwtRefreshPrivateKey *ecdsa.PrivateKey
 	jwtAccessPublicKey   *ecdsa.PublicKey
 	jwtRefreshPublicKey  *ecdsa.PublicKey
+	DockyardsConfig      config.DockyardsConfigReader
 }
 
 type HandlerOption func(*handler)
@@ -66,6 +68,12 @@ func WithJWTPrivateKeys(accessKey, refreshKey *ecdsa.PrivateKey) HandlerOption {
 func WithLogger(logger *slog.Logger) HandlerOption {
 	return func(h *handler) {
 		h.logger = logger
+	}
+}
+
+func WithDockyardsConfig(cfg config.DockyardsConfigReader) HandlerOption {
+	return func(h *handler) {
+		h.DockyardsConfig = cfg
 	}
 }
 
