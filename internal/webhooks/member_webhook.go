@@ -78,6 +78,7 @@ func (webhook *DockyardsMember) SetupWebhookWithManager(m ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(m).
 		For(&dockyardsv1.Member{}).
 		WithValidator(webhook).
+		WithDefaulter(webhook).
 		Complete()
 }
 

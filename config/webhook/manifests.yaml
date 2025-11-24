@@ -64,7 +64,7 @@ webhooks:
       namespace: system
       path: /mutate-dockyards-io-v1alpha3-organization
   failurePolicy: Fail
-  name: default.organizations.dockyards.io
+  name: default.organization.dockyards.io
   rules:
   - apiGroups:
     - dockyards.io
@@ -170,7 +170,7 @@ webhooks:
       namespace: system
       path: /validate-dockyards-io-v1alpha3-organization
   failurePolicy: Fail
-  name: validation.organizations.dockyards.io
+  name: validation.organization.dockyards.io
   rules:
   - apiGroups:
     - dockyards.io

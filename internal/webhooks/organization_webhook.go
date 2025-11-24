@@ -30,9 +30,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:groups=dockyards.io,resources=organizations,verbs=create;update,path=/validate-dockyards-io-v1alpha3-organization,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.organizations.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
+// +kubebuilder:webhook:groups=dockyards.io,resources=organizations,verbs=create;update,path=/validate-dockyards-io-v1alpha3-organization,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.organization.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 
-// +kubebuilder:webhook:groups=dockyards.io,resources=organizations,verbs=create,path=/mutate-dockyards-io-v1alpha3-organization,mutating=true,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=default.organizations.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
+// +kubebuilder:webhook:groups=dockyards.io,resources=organizations,verbs=create,path=/mutate-dockyards-io-v1alpha3-organization,mutating=true,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=default.organization.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
 
 type DockyardsOrganization struct {
 	Client client.Reader
@@ -45,6 +45,7 @@ func (webhook *DockyardsOrganization) SetupWebhookWithManager(mgr ctrl.Manager) 
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&dockyardsv1.Organization{}).
 		WithValidator(webhook).
+		WithDefaulter(webhook).
 		Complete()
 }
 
