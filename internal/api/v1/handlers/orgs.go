@@ -129,9 +129,35 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 		return nil, err
 	}
 
+	member := dockyardsv1.Member{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				dockyardsv1.LabelRoleName: dockyardsv1.RoleSuperUser,
+			},
+			Name:      user.Name,
+			Namespace: namespace.Name,
+		},
+		Spec: dockyardsv1.MemberSpec{
+			Role: dockyardsv1.RoleSuperUser,
+			UserRef: corev1.TypedLocalObjectReference{
+				APIGroup: &dockyardsv1.GroupVersion.Group,
+				Kind:     dockyardsv1.UserKind,
+				Name:     user.Name,
+			},
+		},
+	}
+
+	err = h.Create(ctx, &member)
+	if err != nil {
+		return nil, err
+	}
+
 	organization := dockyardsv1.Organization{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "dockyards-",
+			Name: namespace.Name,
+			Labels: map[string]string{
+				dockyardsv1.LabelOrganizationName: namespace.Name,
+			},
 		},
 		Spec: dockyardsv1.OrganizationSpec{
 			NamespaceRef: &corev1.LocalObjectReference{
@@ -207,26 +233,6 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 	}
 
 	err = h.Patch(ctx, &namespace, patch)
-	if err != nil {
-		return nil, err
-	}
-
-	member := dockyardsv1.Member{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      user.Name,
-			Namespace: namespace.Name,
-		},
-		Spec: dockyardsv1.MemberSpec{
-			Role: dockyardsv1.RoleSuperUser,
-			UserRef: corev1.TypedLocalObjectReference{
-				APIGroup: &dockyardsv1.GroupVersion.Group,
-				Kind:     dockyardsv1.UserKind,
-				Name:     user.Name,
-			},
-		},
-	}
-
-	err = h.Create(ctx, &member)
 	if err != nil {
 		return nil, err
 	}

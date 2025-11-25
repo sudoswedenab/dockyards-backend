@@ -488,8 +488,7 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ignoreObjectMeta := cmpopts.IgnoreFields(metav1.ObjectMeta{}, "Generation", "ResourceVersion", "ManagedFields")
-	ignoreLocalObjectReference := cmpopts.IgnoreFields(corev1.LocalObjectReference{}, "Name")
+	ignoreFields := cmpopts.IgnoreFields(metav1.ObjectMeta{}, "Generation", "ResourceVersion", "ManagedFields")
 
 	t.Run("test empty request", func(t *testing.T) {
 		req := apitypes.Organization{}
@@ -528,10 +527,12 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 
 		expected := dockyardsv1.Organization{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "dockyards-",
-				Name:         organization.Name,
+				Name: organization.Name,
 				CreationTimestamp: metav1.Time{
 					Time: organization.CreatedAt,
+				},
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
 				},
 				UID: types.UID(organization.ID),
 			},
@@ -549,8 +550,8 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !cmp.Equal(actual, expected, ignoreObjectMeta, ignoreLocalObjectReference) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual, ignoreObjectMeta, ignoreLocalObjectReference))
+		if !cmp.Equal(actual, expected, ignoreFields) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, ignoreFields))
 		}
 
 		expectedNamespace := corev1.Namespace{
@@ -559,7 +560,7 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				Name:         actual.Spec.NamespaceRef.Name,
 				Labels: map[string]string{
 					dockyardsv1.LabelOrganizationName: organization.Name,
-					corev1.LabelMetadataName:          actual.Spec.NamespaceRef.Name,
+					corev1.LabelMetadataName:          organization.Name,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
@@ -581,12 +582,15 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 		ignoreObjectMetaFields := cmpopts.IgnoreFields(metav1.ObjectMeta{}, "CreationTimestamp", "UID")
 		ignoreNamespaceFields := cmpopts.IgnoreFields(corev1.Namespace{}, "Spec", "Status")
 
-		if !cmp.Equal(actualNamespace, expectedNamespace, ignoreObjectMeta, ignoreObjectMetaFields, ignoreNamespaceFields) {
-			t.Errorf("diff: %s", cmp.Diff(expectedNamespace, actualNamespace, ignoreObjectMeta, ignoreObjectMetaFields, ignoreNamespaceFields))
+		if !cmp.Equal(actualNamespace, expectedNamespace, ignoreFields, ignoreObjectMetaFields, ignoreNamespaceFields) {
+			t.Errorf("diff: %s", cmp.Diff(expectedNamespace, actualNamespace, ignoreFields, ignoreObjectMetaFields, ignoreNamespaceFields))
 		}
 
 		expectedMember := dockyardsv1.Member{
 			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{
+					dockyardsv1.LabelRoleName: dockyardsv1.RoleSuperUser,
+				},
 				Name:      otherUser.Name,
 				Namespace: actual.Spec.NamespaceRef.Name,
 			},
@@ -606,8 +610,8 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !cmp.Equal(actualMember, expectedMember, ignoreObjectMeta, ignoreObjectMetaFields) {
-			t.Errorf("diff: %s", cmp.Diff(expectedMember, actualMember, ignoreObjectMeta, ignoreObjectMetaFields))
+		if !cmp.Equal(actualMember, expectedMember, ignoreFields, ignoreObjectMetaFields) {
+			t.Errorf("diff: %s", cmp.Diff(expectedMember, actualMember, ignoreFields, ignoreObjectMetaFields))
 		}
 	})
 
@@ -650,12 +654,14 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 
 		expected := dockyardsv1.Organization{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "dockyards-",
-				Name:         organization.Name,
+				Name: organization.Name,
 				CreationTimestamp: metav1.Time{
 					Time: organization.CreatedAt,
 				},
 				UID: types.UID(organization.ID),
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
 			},
 			Spec: dockyardsv1.OrganizationSpec{
 				DisplayName: "testing",
@@ -672,8 +678,8 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !cmp.Equal(actual, expected, ignoreObjectMeta, ignoreLocalObjectReference) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual, ignoreObjectMeta, ignoreLocalObjectReference))
+		if !cmp.Equal(actual, expected, ignoreFields) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, ignoreFields))
 		}
 	})
 
@@ -743,12 +749,14 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 				Annotations: map[string]string{
 					dockyardsv1.AnnotationVoucherCode: organizationVoucher.Spec.Code,
 				},
-				GenerateName: "dockyards-",
-				Name:         organization.Name,
+				Name: organization.Name,
 				CreationTimestamp: metav1.Time{
 					Time: organization.CreatedAt,
 				},
 				UID: types.UID(organization.ID),
+				Labels: map[string]string{
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
 			},
 			Spec: dockyardsv1.OrganizationSpec{
 				NamespaceRef: &corev1.LocalObjectReference{
@@ -764,8 +772,8 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !cmp.Equal(actual, expected, ignoreObjectMeta, ignoreLocalObjectReference) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual, ignoreObjectMeta, ignoreLocalObjectReference))
+		if !cmp.Equal(actual, expected, ignoreFields) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual, ignoreFields))
 		}
 	})
 
