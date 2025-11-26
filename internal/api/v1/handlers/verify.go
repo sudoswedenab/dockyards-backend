@@ -16,9 +16,11 @@ package handlers
 
 import (
 	"context"
+	"time"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,38 +32,43 @@ func (h *handler) UpdateGlobalVerificationRequest(ctx context.Context, request *
 		return apierrors.NewUnauthorized("invalid verification type")
 	}
 
-	var vr dockyardsv1.VerificationRequest
-	var vrl dockyardsv1.VerificationRequestList
-
-	err := h.List(ctx, &vrl)
+	var verificationRequestList dockyardsv1.VerificationRequestList
+	err := h.List(ctx, &verificationRequestList, client.MatchingFields{
+		index.CodeField: request.Code,
+	})
 	if err != nil {
 		return err
 	}
+	if len(verificationRequestList.Items) == 0 {
+		return apierrors.NewUnauthorized("could not find verification request")
+	}
+	if len(verificationRequestList.Items) > 1 {
+		// Verification requests should be reasonably unique, but could still collide.
+		return apierrors.NewUnauthorized("unexpected multiple verification requests with the same code")
+	}
+	verificationRequest := verificationRequestList.Items[0]
 
-	for _, verification := range vrl.Items {
-		if verification.Spec.Code == request.Code {
-			vr = verification
-
-			break
-		}
+	// FIXME: The verification request should be cleaned up with the user account.
+	expiresAt := verificationRequest.GetExpiration()
+	if expiresAt == nil {
+		return apierrors.NewUnauthorized("account verification request needs an expiration")
+	}
+	if time.Now().After(expiresAt.Time) {
+		return apierrors.NewUnauthorized("verification request has expired")
 	}
 
-	if vr.Name == "" {
-		return apierrors.NewUnauthorized("invalid verification code")
-	}
-
-	patch := client.MergeFrom(vr.DeepCopy())
+	patch := client.MergeFrom(verificationRequest.DeepCopy())
 
 	condition := metav1.Condition{
 		Type:    dockyardsv1.VerifiedCondition,
 		Status:  metav1.ConditionTrue,
 		Reason:  dockyardsv1.VerificationReasonVerified,
-		Message: "Verified by link",
+		Message: "Verified by code",
 	}
 
-	meta.SetStatusCondition(&vr.Status.Conditions, condition)
+	meta.SetStatusCondition(&verificationRequest.Status.Conditions, condition)
 
-	err = h.Client.Status().Patch(ctx, &vr, patch)
+	err = h.Client.Status().Patch(ctx, &verificationRequest, patch)
 	if err != nil {
 		return err
 	}
