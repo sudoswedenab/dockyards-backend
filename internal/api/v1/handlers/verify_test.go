@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/fluxcd/pkg/runtime/conditions"
 	apitypes "github.com/sudoswedenab/dockyards-api/pkg/types"
@@ -50,6 +51,7 @@ func TestVerificationRequest_Approve(t *testing.T) {
 					Kind:     dockyardsv1.UserKind,
 					Name:     "test-user",
 				},
+				Duration: &metav1.Duration{Duration: 5 * time.Minute},
 			},
 		}
 
@@ -121,6 +123,51 @@ func TestVerificationRequest_Approve(t *testing.T) {
 		verifyOptions := apitypes.VerifyOptions{
 			Type: "wrong-type",
 			Code: "wrong-code",
+		}
+
+		b, err := json.Marshal(&verifyOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: "/v1/verify",
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusUnauthorized {
+			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
+		}
+	})
+
+	t.Run("test use after expiration fails", func(t *testing.T) {
+		vr := dockyardsv1.VerificationRequest{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "sign-up-test-user-after-expiration",
+			},
+			Spec: dockyardsv1.VerificationRequestSpec{
+				Code: "test-code-after-expiration",
+				UserRef: corev1.TypedLocalObjectReference{
+					APIGroup: &dockyardsv1.GroupVersion.Group,
+					Kind:     dockyardsv1.UserKind,
+					Name:     "test-user",
+				},
+				Duration: &metav1.Duration{Duration: -10 * time.Second}, // 10 seconds ago
+			},
+		}
+
+		err := c.Create(ctx, &vr)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		verifyOptions := apitypes.VerifyOptions{
+			Type: dockyardsv1.RequestTypeAccount,
+			Code: vr.Spec.Code,
 		}
 
 		b, err := json.Marshal(&verifyOptions)

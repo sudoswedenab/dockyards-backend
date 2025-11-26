@@ -17,15 +17,14 @@ package controller
 import (
 	"context"
 	"fmt"
-	"strings"
+	"time"
 
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
-	"github.com/google/uuid"
 	dyconfig "github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
-	"github.com/sudoswedenab/dockyards-backend/templates"
+	"github.com/sudoswedenab/dockyards-backend/pkg/util/bubblebabble"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -175,31 +174,17 @@ func (r *UserReconciler) reconcileVerificationRequest(ctx context.Context, user 
 			Name:     user.Name,
 			APIGroup: &dockyardsv1.GroupVersion.Group,
 		}
+		verificationRequest.Spec.Duration = &metav1.Duration{Duration: 30 * time.Minute}
 
-		code := verificationRequest.Spec.Code
-		if code == "" {
-			randomUUID, err := uuid.NewRandom()
+		if verificationRequest.Spec.Code == "" {
+			code, err := bubblebabble.RandomWithEntropyOfAtLeast(32)
 			if err != nil {
 				return err
 			}
-
-			code = randomUUID.String()
 			verificationRequest.Spec.Code = code
 		}
 
-		name := user.Name
-		if user.Spec.DisplayName != "" {
-			name = user.Spec.DisplayName
-		}
-
-		externalURL := r.DockyardsConfig.GetConfigKey(dyconfig.KeyExternalURL, "http://localhost:9000")
-		verificationEmail, err := renderVerificationEmail(VerificationEmailSpec{VerificationURL: externalURL + "/verify/" + code, Name: name})
-		if err != nil {
-			return err
-		}
-
-		verificationRequest.Spec.BodyHTML = verificationEmail.HTML
-		verificationRequest.Spec.BodyText = verificationEmail.Text
+		verificationRequest.Spec.BodyText = fmt.Sprintf("Here is your email verification code: %s.\nIf you have not created a dockyards account, you can ignore this email.", verificationRequest.Spec.Code)
 
 		return nil
 	})
@@ -237,38 +222,6 @@ func (r *UserReconciler) verificationReqeuestsToUsers(_ context.Context, obj cli
 			},
 		},
 	}
-}
-
-func renderVerificationEmail(spec VerificationEmailSpec) (VerificationEmail, error) {
-	html, err := renderFromTemplate(spec, "sign-up-confirmation.html.tmpl")
-	if err != nil {
-		return VerificationEmail{}, err
-	}
-
-	text, err := renderFromTemplate(spec, "sign-up-confirmation.txt.tmpl")
-	if err != nil {
-		return VerificationEmail{}, err
-	}
-
-	return VerificationEmail{
-		HTML: html,
-		Text: text,
-	}, nil
-}
-
-func renderFromTemplate(spec VerificationEmailSpec, template string) (string, error) {
-	body := templates.Get(template)
-	if body == nil {
-		return "", fmt.Errorf("unable to find template %s", template)
-	}
-
-	var builder strings.Builder
-	err := body.Execute(&builder, spec)
-	if err != nil {
-		return "", err
-	}
-
-	return builder.String(), nil
 }
 
 func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
