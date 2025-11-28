@@ -589,7 +589,9 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 		expectedMember := dockyardsv1.Member{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
-					dockyardsv1.LabelRoleName: dockyardsv1.RoleSuperUser,
+					dockyardsv1.LabelRoleName:         dockyardsv1.RoleSuperUser,
+					dockyardsv1.LabelOrganizationName: organization.Name,
+					dockyardsv1.LabelUserName:         otherUser.Name,
 				},
 				Name:      otherUser.Name,
 				Namespace: actual.Spec.NamespaceRef.Name,

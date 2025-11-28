@@ -132,7 +132,9 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 	member := dockyardsv1.Member{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				dockyardsv1.LabelRoleName: dockyardsv1.RoleSuperUser,
+				dockyardsv1.LabelRoleName:         dockyardsv1.RoleSuperUser,
+				dockyardsv1.LabelOrganizationName: namespace.Name,
+				dockyardsv1.LabelUserName:         user.Name,
 			},
 			Name:      user.Name,
 			Namespace: namespace.Name,
