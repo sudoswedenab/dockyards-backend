@@ -470,6 +470,20 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 	mgr := testEnvironment.GetManager()
 	c := testEnvironment.GetClient()
 
+	memberCount := func(t *testing.T, userName string) int {
+		t.Helper()
+
+		var memberList dockyardsv1.MemberList
+		err := c.List(ctx, &memberList, client.MatchingLabels{
+			dockyardsv1.LabelUserName: userName,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return len(memberList.Items)
+	}
+
 	otherUser := dockyardsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "other-",
@@ -780,6 +794,8 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 	})
 
 	t.Run("test redeemed voucher code", func(t *testing.T) {
+		beforeMembers := memberCount(t, otherUser.Name)
+
 		organizationVoucher := dockyardsv1.OrganizationVoucher{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
@@ -837,9 +853,16 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 		if statusCode != http.StatusUnprocessableEntity {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
 		}
+
+		afterMembers := memberCount(t, otherUser.Name)
+		if afterMembers != beforeMembers {
+			t.Fatalf("expected %d members for user %s, got %d", beforeMembers, otherUser.Name, afterMembers)
+		}
 	})
 
 	t.Run("test invalid voucher code", func(t *testing.T) {
+		beforeMembers := memberCount(t, otherUser.Name)
+
 		req := apitypes.Organization{
 			VoucherCode: ptr.To("TEST-INVALID"),
 		}
@@ -863,6 +886,11 @@ func TestGlobalOrganizations_Create(t *testing.T) {
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusUnprocessableEntity {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnprocessableEntity, statusCode)
+		}
+
+		afterMembers := memberCount(t, otherUser.Name)
+		if afterMembers != beforeMembers {
+			t.Fatalf("expected %d members for user %s, got %d", beforeMembers, otherUser.Name, afterMembers)
 		}
 	})
 }
