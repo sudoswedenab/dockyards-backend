@@ -18,6 +18,7 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -25,7 +26,7 @@ import (
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
-	"cuelang.org/go/cue/errors"
+	cueerrors "cuelang.org/go/cue/errors"
 	"cuelang.org/go/cue/load"
 	cuejson "cuelang.org/go/encoding/json"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
@@ -50,10 +51,10 @@ func (v validate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err = cuejson.Validate(body, v.schema)
 	if err != nil {
-		cueerrors := errors.Errors(err)
-		entityErrors := make([]string, len(cueerrors))
+		ce := cueerrors.Errors(err)
+		entityErrors := make([]string, len(ce))
 
-		for i, cueerr := range cueerrors {
+		for i, cueerr := range ce {
 			logger.Debug("cue error validating body", "cuerr", cueerr.Error())
 
 			entityErrors[i] = cueerr.Error()
@@ -123,8 +124,9 @@ func NewValidateJSON() (*ValidateJSON, error) {
 	})
 
 	for _, instance := range instances {
-		if instance.Err != nil {
-			return nil, instance.Err
+		e := instance.Err
+		if e != nil {
+			return nil, fmt.Errorf("error in cue instance: %s [%s]", e.Error(), e.Position().String())
 		}
 	}
 
@@ -132,7 +134,7 @@ func NewValidateJSON() (*ValidateJSON, error) {
 
 	instance := cuectx.BuildInstance(instances[0])
 	if instance.Err() != nil {
-		return nil, instance.Err()
+		return nil, nil
 	}
 
 	j := ValidateJSON{
