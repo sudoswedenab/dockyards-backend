@@ -10,7 +10,6 @@ import (
 
 #clusterOptions: types.#ClusterOptions
 #login:          types.#LoginOptions
-#loginSSO:       types.#LoginSSOOptions
 
 #workloadOptions: types.#WorkloadOptions
 #workloadOptions: name!:                   #_objectName
