@@ -16,11 +16,13 @@ package handlers
 
 import (
 	"crypto/ecdsa"
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/sudoswedenab/dockyards-backend/api/config"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -259,12 +261,38 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 
 	mux.Handle("GET /v1/cluster-templates", logger(requireAuth(contentJSON(GetNamelessResource(h.ListGlobalClusterTemplates)))))
 
-	mux.Handle("GET /v1/login-sso",
-		logger(
-			http.HandlerFunc(h.LoginOIDC),
-		))
-
-	mux.Handle("GET /v1/callback-sso", logger(http.HandlerFunc(h.Callback)))
+	mux.Handle("GET /v1/login-sso", logger(unprotectedRoute(h.LoginOIDC)))
+	mux.Handle("GET /v1/callback-sso", logger(unprotectedRoute(h.Callback)))
 
 	return nil
+}
+
+type UnprotectedRouteFunc = func(w http.ResponseWriter, r *http.Request) error
+func unprotectedRoute(callback UnprotectedRouteFunc) http.HandlerFunc {
+	return func (w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		logger := middleware.LoggerFrom(ctx)
+
+		err := callback(w, r)
+		if err != nil {
+			logger.Error("could not handle route", "err", err)
+		}
+
+		if status, ok := err.(apierrors.APIStatus); ok || errors.As(err, &status) {
+			code := int(status.Status().Code)
+			if code == 0 {
+				code = http.StatusInternalServerError
+			}
+			w.WriteHeader(code)
+
+			return
+		}
+
+		if err != nil {
+			logger.Error("could not handle route", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+	}
 }

@@ -86,15 +86,15 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 			t.Helper()
 
 			data := map[string][]byte{
-				"clientConfig": mustJSON(t, cfg.OIDCClientConfig),
+				"clientConfig": mustJSON(t, cfg.ClientConfig),
 			}
 
-			if cfg.OIDCProviderConfig != nil {
-				data["providerConfig"] = mustJSON(t, cfg.OIDCProviderConfig)
+			if cfg.ProviderConfig != nil {
+				data["providerConfig"] = mustJSON(t, cfg.ProviderConfig)
 			}
 
-			if cfg.OIDCProviderDiscoveryURL != nil {
-				data["providerDiscoveryURL"] = []byte(*cfg.OIDCProviderDiscoveryURL)
+			if cfg.ProviderDiscoveryURL != nil {
+				data["providerDiscoveryURL"] = []byte(*cfg.ProviderDiscoveryURL)
 			}
 
 			return data
@@ -111,12 +111,12 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 		}
 
 		disc := dockyardsv1.OIDCConfig{
-			OIDCClientConfig:         baseClientConfig,
-			OIDCProviderDiscoveryURL: strPtr("https://issuer.example.com"),
+			ClientConfig:         baseClientConfig,
+			ProviderDiscoveryURL: strPtr("https://issuer.example.com"),
 		}
 		conf := dockyardsv1.OIDCConfig{
-			OIDCClientConfig: baseClientConfig,
-			OIDCProviderConfig: &dockyardsv1.OIDCProviderConfig{
+			ClientConfig: baseClientConfig,
+			ProviderConfig: &dockyardsv1.OIDCProviderConfig{
 				Issuer:                "https://issuer.example.com",
 				AuthorizationEndpoint: "https://issuer.example.com/auth",
 				TokenEndpoint:         "https://issuer.example.com/token",
@@ -127,8 +127,8 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 			},
 		}
 		both := dockyardsv1.OIDCConfig{
-			OIDCClientConfig: baseClientConfig,
-			OIDCProviderConfig: &dockyardsv1.OIDCProviderConfig{
+			ClientConfig: baseClientConfig,
+			ProviderConfig: &dockyardsv1.OIDCProviderConfig{
 				Issuer:                "https://issuer.example.com",
 				AuthorizationEndpoint: "https://issuer.example.com/auth",
 				TokenEndpoint:         "https://issuer.example.com/token",
@@ -137,10 +137,10 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 					"RS256",
 				},
 			},
-			OIDCProviderDiscoveryURL: strPtr("https://issuer.example.com"),
+			ProviderDiscoveryURL: strPtr("https://issuer.example.com"),
 		}
 		neither := dockyardsv1.OIDCConfig{
-			OIDCClientConfig: baseClientConfig,
+			ClientConfig: baseClientConfig,
 		}
 
 		idps := []dockyardsv1.IdentityProvider{
@@ -149,7 +149,7 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 					Name: "oidc-with-discovery",
 				},
 				Spec: dockyardsv1.IdentityProviderSpec{
-					OIDCConfig: &corev1.SecretReference{
+					OIDCConfigRef: &corev1.SecretReference{
 						Name:      "oidc-with-discovery-secret",
 						Namespace: ns,
 					},
@@ -160,7 +160,7 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 					Name: "oidc-with-provider-conf",
 				},
 				Spec: dockyardsv1.IdentityProviderSpec{
-					OIDCConfig: &corev1.SecretReference{
+					OIDCConfigRef: &corev1.SecretReference{
 						Name:      "oidc-with-provider-conf-secret",
 						Namespace: ns,
 					},
@@ -171,7 +171,7 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 					Name: "oidc-with-neither",
 				},
 				Spec: dockyardsv1.IdentityProviderSpec{
-					OIDCConfig: &corev1.SecretReference{
+					OIDCConfigRef: &corev1.SecretReference{
 						Name:      "oidc-with-neither-secret",
 						Namespace: ns,
 					},
@@ -182,7 +182,7 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 					Name: "oidc-with-both",
 				},
 				Spec: dockyardsv1.IdentityProviderSpec{
-					OIDCConfig: &corev1.SecretReference{
+					OIDCConfigRef: &corev1.SecretReference{
 						Name:      "oidc-with-both-secret",
 						Namespace: ns,
 					},
