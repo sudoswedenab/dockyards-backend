@@ -25,14 +25,13 @@ const (
 
 type IdentityProviderSpec struct {
 	DisplayName *string                 `json:"displayName,omitempty"`
-	OIDCConfig  *corev1.SecretReference `json:"oidc,omitempty"`
-	// OIDCConfig  *OIDCConfig `json:"oidc,omitempty"`
+	OIDCConfigRef  *corev1.SecretReference `json:"oidc,omitempty"`
 }
 
 type OIDCConfig struct {
-	OIDCClientConfig         OIDCClientConfig    `json:"clientConfig"`
-	OIDCProviderDiscoveryURL *string             `json:"providerDiscoveryURL,omitempty"`
-	OIDCProviderConfig       *OIDCProviderConfig `json:"providerConfig,omitempty"`
+	ClientConfig         OIDCClientConfig    `json:"clientConfig"`
+	ProviderDiscoveryURL *string             `json:"providerDiscoveryURL,omitempty"`
+	ProviderConfig       *OIDCProviderConfig `json:"providerConfig,omitempty"`
 }
 
 type OIDCClientConfig struct {
@@ -41,7 +40,6 @@ type OIDCClientConfig struct {
 	ClientSecret string `json:"clientSecret,omitempty"`
 }
 
-// Fields renamed from github.com/coreos/go-oidc ProviderConfig
 type OIDCProviderConfig struct {
 	Issuer                      string   `json:"issuer"`
 	AuthorizationEndpoint       string   `json:"authorizationEndpoint"`
