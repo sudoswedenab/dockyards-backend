@@ -28,7 +28,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -61,7 +60,7 @@ func (h *handler) CreateGlobalUser(ctx context.Context, request *types.UserOptio
 			},
 			Email:      request.Email,
 			Password:   string(passwordHash),
-			ProviderID: ptr.To(dockyardsv1.ProviderPrefixDockyards),
+			ProviderID: dockyardsv1.ProviderPrefixDockyards,
 		},
 	}
 
@@ -79,7 +78,7 @@ func (h *handler) CreateGlobalUser(ctx context.Context, request *types.UserOptio
 		Email:      user.Spec.Email,
 		ID:         string(user.UID),
 		Name:       user.Name,
-		ProviderID: user.Spec.ProviderID,
+		ProviderID: &user.Spec.ProviderID,
 	}
 
 	if user.Spec.DisplayName != "" {

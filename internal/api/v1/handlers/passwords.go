@@ -158,11 +158,8 @@ func (h *handler) CreateGlobalPasswordResetRequest(ctx context.Context, options 
 	user := userList.Items[0]
 
 	userProvider := user.Spec.ProviderID
-	if userProvider == nil {
-		return errors.New("user has no provider")
-	}
 
-	if *userProvider != dockyardsv1.ProviderPrefixDockyards {
+	if userProvider != dockyardsv1.ProviderPrefixDockyards {
 		return errors.New("cannot reset password of externally managed users")
 	}
 

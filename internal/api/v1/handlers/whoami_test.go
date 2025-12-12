@@ -89,7 +89,7 @@ func TestWhoami_Get(t *testing.T) {
 			Spec: dockyardsv1.UserSpec{
 				DisplayName: "other",
 				Email:       "other@dockyards.dev",
-				ProviderID:  ptr.To("testing://"),
+				ProviderID:  "testing://",
 			},
 		}
 
@@ -154,7 +154,7 @@ func TestWhoami_Get(t *testing.T) {
 			Email:       otherUser.Spec.Email,
 			ID:          string(otherUser.UID),
 			Name:        otherUser.Name,
-			ProviderID:  otherUser.Spec.ProviderID,
+			ProviderID:  &otherUser.Spec.ProviderID,
 			UpdatedAt:   ptr.To(readyCondition.LastTransitionTime.Time.Truncate(time.Second)),
 		}
 

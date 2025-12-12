@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 )
 
 func TestGlobalIdentityProviders_List(t *testing.T) {
@@ -100,10 +101,6 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 			return data
 		}
 
-		strPtr := func(s string) *string {
-			return &s
-		}
-
 		baseClientConfig := dockyardsv1.OIDCClientConfig{
 			ClientID:     "client",
 			RedirectURL:  "https://redirect.example.com",
@@ -112,7 +109,7 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 
 		disc := dockyardsv1.OIDCConfig{
 			ClientConfig:         baseClientConfig,
-			ProviderDiscoveryURL: strPtr("https://issuer.example.com"),
+			ProviderDiscoveryURL: ptr.To("https://issuer.example.com"),
 		}
 		conf := dockyardsv1.OIDCConfig{
 			ClientConfig: baseClientConfig,
@@ -137,7 +134,7 @@ func TestGlobalIdentityProviders_List(t *testing.T) {
 					"RS256",
 				},
 			},
-			ProviderDiscoveryURL: strPtr("https://issuer.example.com"),
+			ProviderDiscoveryURL: ptr.To("https://issuer.example.com"),
 		}
 		neither := dockyardsv1.OIDCConfig{
 			ClientConfig: baseClientConfig,
