@@ -39,8 +39,12 @@ func (h *handler) CreateGlobalTokens(ctx context.Context, request *types.LoginOp
 		return nil, err
 	}
 
-	if len(userList.Items) != 1 {
-		return nil, apierrors.NewUnauthorized("unexpected users count")
+	if len(userList.Items) == 0 {
+		return nil, apierrors.NewUnauthorized("user not found")
+	}
+
+	if len(userList.Items) > 1 {
+		return nil, apierrors.NewUnauthorized("expected only one user, but found many")
 	}
 
 	user := userList.Items[0]
