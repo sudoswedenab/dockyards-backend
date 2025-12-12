@@ -1,20 +1,22 @@
 module github.com/sudoswedenab/dockyards-backend
 
-go 1.24.2
+go 1.25.0
 
 require (
 	cuelang.org/go v0.12.1
 	github.com/blang/semver/v4 v4.0.0
+	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/fluxcd/pkg/runtime v0.47.1
 	github.com/go-logr/logr v1.4.3
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/go-cmp v0.7.0
-	github.com/google/uuid v1.6.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/cors v1.11.0
 	github.com/spf13/pflag v1.0.6
+	github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20251127092038-25437b1a8094
 	github.com/sudoswedenab/dockyards-backend/api v1.2.3
 	golang.org/x/crypto v0.40.0
+	golang.org/x/oauth2 v0.30.0
 	k8s.io/api v0.33.3
 	k8s.io/apiextensions-apiserver v0.33.3
 	k8s.io/apimachinery v0.33.3
@@ -31,7 +33,6 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
-	github.com/coreos/go-oidc/v3 v3.17.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
 	github.com/emicklei/proto v1.13.4 // indirect
@@ -49,6 +50,7 @@ require (
 	github.com/google/addlicense v1.1.1 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -70,13 +72,11 @@ require (
 	github.com/protocolbuffers/txtpbfmt v0.0.0-20241112170944-20d2c9ebc01d // indirect
 	github.com/rogpeppe/go-internal v1.13.2-0.20241226121412-a5dc8ff20d0a // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
-	github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20251127092038-25437b1a8094 // indirect
 	github.com/tetratelabs/wazero v1.6.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/mod v0.25.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/term v0.33.0 // indirect
