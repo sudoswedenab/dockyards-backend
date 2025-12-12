@@ -30,7 +30,6 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -227,7 +226,7 @@ func TestUserPassword_Reset(t *testing.T) {
 			},
 			Spec: dockyardsv1.UserSpec{
 				Email: "user-with-provider@localhost.local",
-				ProviderID: ptr.To(dockyardsv1.ProviderPrefixDockyards),
+				ProviderID: dockyardsv1.ProviderPrefixDockyards,
 			},
 		}
 
@@ -278,7 +277,7 @@ func TestUserPassword_Reset(t *testing.T) {
 			},
 			Spec: dockyardsv1.UserSpec{
 				Email: "password-reset@localhost.local",
-				ProviderID: ptr.To(dockyardsv1.ProviderPrefixDockyards),
+				ProviderID: dockyardsv1.ProviderPrefixDockyards,
 			},
 		}
 

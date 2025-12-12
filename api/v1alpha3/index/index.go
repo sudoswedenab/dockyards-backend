@@ -54,7 +54,7 @@ func ByProviderID(obj client.Object) []string {
 		return nil
 	}
 
-	return []string{*user.Spec.ProviderID}
+	return []string{user.Spec.ProviderID}
 }
 
 func byMemberReferences(obj client.Object) []string {

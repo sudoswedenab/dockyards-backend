@@ -32,7 +32,6 @@ import (
 	"golang.org/x/oauth2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -225,7 +224,7 @@ func (h *handler) newUser(ctx context.Context, idToken oidc.IDToken, email strin
 			// DisplayName: displayname,
 			Email:      email,
 			Password:   "$2a$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqq", // should be impossible
-			ProviderID: ptr.To(idToken.Subject),                    // value should be <provider_name>://<subject>
+			ProviderID: idToken.Subject,                    		// value should be <provider_name>://<subject>
 		},
 	}
 

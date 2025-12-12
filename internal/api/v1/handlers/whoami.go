@@ -48,8 +48,8 @@ func (h *handler) GetWhoami(ctx context.Context) (*types.User, error) {
 		response.UpdatedAt = &readyCondition.LastTransitionTime.Time
 	}
 
-	if user.Spec.ProviderID != nil {
-		response.ProviderID = user.Spec.ProviderID
+	if user.Spec.ProviderID != "" {
+		response.ProviderID = &user.Spec.ProviderID
 	}
 
 	if len(user.Spec.DisplayName) > 0 {
