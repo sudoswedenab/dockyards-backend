@@ -49,6 +49,7 @@ func TestGlobalTokens_Create(t *testing.T) {
 		},
 		Spec: dockyardsv1.UserSpec{
 			Password: string(hash),
+			ProviderID: dockyardsv1.ProviderPrefixDockyards,
 		},
 		Status: dockyardsv1.UserStatus{
 			Conditions: []metav1.Condition{},
