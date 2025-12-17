@@ -37,7 +37,7 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=workloads,verbs=create;delete;get;list;patch;watch
 
 func (h *handler) CreateClusterWorkload(ctx context.Context, cluster *dockyardsv1.Cluster, request *types.WorkloadOptions) (*types.Workload, error) {
-	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+	publicNamespace := h.Config.GetValueOrDefault(config.KeyPublicNamespace, "dockyards-public")
 
 	if request.WorkloadTemplateName == nil || request.Name == nil {
 		statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.WorkloadKind).GroupKind(), "", nil)

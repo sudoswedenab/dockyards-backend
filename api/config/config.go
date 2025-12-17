@@ -16,109 +16,98 @@ package config
 
 import (
 	"context"
-	"sync"
+	"log/slog"
+	"sync/atomic"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-type DockyardsConfigReader interface {
-	GetConfigKey(key string, defaultValue string) string
+// ConfigManager holds the configuration data of a config map.
+// Updating the map externally is fine, ConfigManager will keep the
+// its internal state in sync. You should not store the config values in
+// data structures, but rather do lookups via GetValueForKey(), this lookup
+// is very cheap.
+type ConfigManager struct {
+	client    client.Client
+	backingConfigMapKey client.ObjectKey
+	data      atomic.Pointer[map[string]string]
+	logger    *slog.Logger
 }
 
-type DockyardsConfigWriter interface {
-	SetConfigKey(ctx context.Context, client client.Client, key string, value string) error
+var _ reconcile.Reconciler = &ConfigManager{}
+
+type ConfigManagerOption func(*ConfigManager)
+
+func WithLogger(logger *slog.Logger) ConfigManagerOption {
+	return func (m *ConfigManager) {
+		m.logger = logger
+	}
 }
 
-// DockyardsConfig holds the configuration data for a Dockyards installation,
-// including its name, namespace, and a map of configuration settings.
-type dockyardsConfig struct {
-	name      string
-	namespace string
-	config    map[string]string
-	mutex     sync.Mutex
-}
-
-var _ DockyardsConfigReader = &dockyardsConfig{}
-var _ DockyardsConfigWriter = &dockyardsConfig{}
-
-// GetConfig retrieves the configuration from the specified ConfigMap in the given namespace
-// and returns it as a DockyardsConfig instance.
-func GetConfig(ctx context.Context, c client.Client, configMap, dockyardsNamespace string) (*dockyardsConfig, error) {
-	config := dockyardsConfig{
-		name:      configMap,
-		namespace: dockyardsNamespace,
+func NewConfigManager(mgr ctrl.Manager, backingConfigMapKey client.ObjectKey, options ...ConfigManagerOption) (*ConfigManager, error) {
+	result := &ConfigManager{
+		client: mgr.GetClient(),
+		backingConfigMapKey: backingConfigMapKey,
 	}
 
-	cm := corev1.ConfigMap{}
-	err := c.Get(ctx, client.ObjectKey{Name: configMap, Namespace: dockyardsNamespace}, &cm)
+	for _, option := range options {
+		option(result)
+	}
+
+	err := ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.ConfigMap{}).
+		Complete(result)
 	if err != nil {
-		return &dockyardsConfig{}, err
+		return nil, err
 	}
 
-	config.config = cm.Data
-
-	return &config, nil
+	return result, nil
 }
 
-// GetConfigKey retrieves the value for the specified key from the configuration,
-// returning the provided defaultValue if the key is not present or the config is nil.
-func (config *dockyardsConfig) GetConfigKey(key, defaultValue string) string {
-	c := (*config).config
-	if c == nil || c[key] == "" {
+func NewFakeConfigManager(data map[string]string) *ConfigManager {
+	result := &ConfigManager{}
+	result.data.Store(&data)
+	return result
+}
+
+func (m *ConfigManager) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	if req.NamespacedName != m.backingConfigMapKey {
+		return reconcile.Result{}, nil
+	}
+
+	configMap := corev1.ConfigMap{}
+	err := m.client.Get(ctx, m.backingConfigMapKey, &configMap)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	m.data.Store(&configMap.Data)
+
+	m.logger.Debug("reloaded config map", "key", m.backingConfigMapKey, "data", configMap.Data)
+
+	return reconcile.Result{}, nil
+}
+
+func (m *ConfigManager) GetValueForKey(key string) (string, bool) {
+	configPtr := m.data.Load()
+	if configPtr == nil {
+		return "", false 
+	}
+	config := *configPtr
+	if config == nil {
+		return "", false 
+	}
+	value, ok := config[key]
+	return value, ok
+}
+
+func (m *ConfigManager) GetValueOrDefault(key string, defaultValue string) string {
+	value, ok := m.GetValueForKey(key)
+	if !ok {
 		return defaultValue
 	}
-
-	return c[key]
-}
-
-// SetConfigKey sets the value for the specified key in the configuration and updates the ConfigMap
-// in the Kubernetes cluster.
-func (config *dockyardsConfig) SetConfigKey(ctx context.Context, c client.Client, key, value string) error {
-	config.mutex.Lock()
-	defer config.mutex.Unlock()
-
-	if config.config == nil {
-		config.config = make(map[string]string)
-	}
-
-	config.config[key] = value
-	err := config.setConfig(ctx, c)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// setConfig updates the ConfigMap in the Kubernetes cluster with the current configuration data.
-func (config *dockyardsConfig) setConfig(ctx context.Context, c client.Client) error {
-	cm := corev1.ConfigMap{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      config.name,
-			Namespace: config.namespace,
-		},
-	}
-	err := c.Get(ctx, client.ObjectKeyFromObject(&cm), &cm)
-	if err != nil {
-		return err
-	}
-
-	cm.Data = config.config
-
-	err = c.Update(ctx, &cm)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-type DefaultingConfig struct {}
-
-var _ DockyardsConfigReader = &DefaultingConfig{}
-
-func (c *DefaultingConfig) GetConfigKey(_, defaultValue string) string {
-	return defaultValue
+	return value
 }

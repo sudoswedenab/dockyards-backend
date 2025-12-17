@@ -60,36 +60,16 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 
 	c := testEnvironment.GetClient()
 
-	dockyardsConfigName := "dockyards-system"
-	dockyardsNamespace := "dockyards-system"
-	cm := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dockyards-system",
-			Namespace: "dockyards-system",
-		},
-		Data: map[string]string{
-			"externalURL": "http://test.com",
-		},
-	}
-
-	err = c.Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: dockyardsNamespace}})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = c.Create(ctx, &cm)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	config, err := dyconfig.GetConfig(ctx, c, dockyardsConfigName, dockyardsNamespace)
+	config := dyconfig.NewFakeConfigManager(map[string]string{
+		string(dyconfig.KeyExternalURL): "http://test.com",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	reconciler := controller.UserReconciler{
-		Client:          c,
-		DockyardsConfig: config,
+		Client: c,
+		Config: config,
 	}
 
 	t.Run("test verification request creation", func(t *testing.T) {

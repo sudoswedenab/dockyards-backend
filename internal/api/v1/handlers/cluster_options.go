@@ -28,7 +28,7 @@ import (
 // +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
 
 func (h *handler) GetClusterOptions(ctx context.Context) (*types.Options, error) {
-	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+	publicNamespace := h.Config.GetValueOrDefault(config.KeyPublicNamespace, "dockyards-public")
 
 	release, err := apiutil.GetDefaultRelease(ctx, h.Client, dockyardsv1.ReleaseTypeKubernetes)
 	if err != nil {

@@ -192,7 +192,7 @@ func (h *handler) nodePoolOptionsToNodePool(ctx context.Context, nodePoolOptions
 }
 
 func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *dockyardsv1.Organization, request *types.ClusterOptions) (*types.Cluster, error) {
-	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+	publicNamespace := h.Config.GetValueOrDefault(config.KeyPublicNamespace, "dockyards-public")
 
 	_, validName := name.IsValidName(request.Name)
 	if !validName {

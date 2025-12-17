@@ -36,7 +36,7 @@ type handler struct {
 	jwtRefreshPrivateKey *ecdsa.PrivateKey
 	jwtAccessPublicKey   *ecdsa.PublicKey
 	jwtRefreshPublicKey  *ecdsa.PublicKey
-	DockyardsConfig      config.DockyardsConfigReader
+	Config 	             *config.ConfigManager
 }
 
 type HandlerOption func(*handler)
@@ -73,9 +73,9 @@ func WithLogger(logger *slog.Logger) HandlerOption {
 	}
 }
 
-func WithDockyardsConfig(cfg config.DockyardsConfigReader) HandlerOption {
+func WithConfigManager(config *config.ConfigManager) HandlerOption {
 	return func(h *handler) {
-		h.DockyardsConfig = cfg
+		h.Config = config
 	}
 }
 

@@ -134,7 +134,7 @@ func (h *handler) DeleteOrganizationCredential(ctx context.Context, organization
 }
 
 func (h *handler) GetOrganizationCredential(ctx context.Context, organization *dockyardsv1.Organization, credentialName string) (*types.Credential, error) {
-	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+	publicNamespace := h.Config.GetValueOrDefault(config.KeyPublicNamespace, "dockyards-public")
 
 	objectKey := client.ObjectKey{
 		Name:      "credential-" + credentialName,

@@ -242,9 +242,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	dockyardsConfig, err := dyconfig.GetConfig(ctx, controllerClient, configMap, dockyardsNamespace)
+	configManagerOptions := []dyconfig.ConfigManagerOption{
+		dyconfig.WithLogger(logger),
+	}
+	dockyardsConfig, err := dyconfig.NewConfigManager(mgr, client.ObjectKey{Namespace: dockyardsNamespace, Name: configMap}, configManagerOptions...)
 	if err != nil {
-		logger.Error("error loading config map", "err", err)
+		logger.Error("could not create config manager", "err", err)
 
 		os.Exit(1)
 	}
@@ -254,7 +257,7 @@ func main() {
 		handlers.WithNamespace(dockyardsNamespace),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
 		handlers.WithLogger(logger),
-		handlers.WithDockyardsConfig(dockyardsConfig),
+		handlers.WithConfigManager(dockyardsConfig),
 	}
 
 	publicMux := http.NewServeMux()
@@ -347,8 +350,8 @@ func main() {
 	}
 
 	err = (&controller.UserReconciler{
-		Client:          mgr.GetClient(),
-		DockyardsConfig: dockyardsConfig,
+		Client: mgr.GetClient(),
+		Config: dockyardsConfig,
 	}).SetupWithManager(mgr)
 	if err != nil {
 		logger.Error("error creating new verificationrequest reconciler", "err", err)

@@ -133,16 +133,16 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	fakeConfig := FakeConfig{
-		config.KeyPublicNamespace: testEnvironment.GetPublicNamespace(),
-	}
+	fakeConfig := config.NewFakeConfigManager(map[string]string{
+		string(config.KeyPublicNamespace): testEnvironment.GetPublicNamespace(),
+	})
 
 	handlerOptions := []handlers.HandlerOption{
 		handlers.WithManager(mgr),
 		handlers.WithNamespace(testEnvironment.GetDockyardsNamespace()),
 		handlers.WithLogger(logger),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
-		handlers.WithDockyardsConfig(&fakeConfig),
+		handlers.WithConfigManager(fakeConfig),
 	}
 
 	mux = http.NewServeMux()
@@ -198,15 +198,4 @@ func MustSignRefreshToken(t *testing.T, subject string) string {
 	}
 
 	return signedToken
-}
-
-type FakeConfig map[string]string
-
-func (f *FakeConfig) GetConfigKey(key string, def string) string {
-	val, ok := (*f)[key]
-	if !ok {
-		return def
-	}
-
-	return val
 }

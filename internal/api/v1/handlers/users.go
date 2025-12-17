@@ -32,7 +32,7 @@ import (
 )
 
 func (h *handler) CreateGlobalUser(ctx context.Context, request *types.UserOptions) (*types.User, error) {
-	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+	publicNamespace := h.Config.GetValueOrDefault(config.KeyPublicNamespace, "dockyards-public")
 
 	enabled, err := apiutil.IsFeatureEnabled(ctx, h, featurenames.FeatureUserSignUp, publicNamespace)
 	if err != nil {
