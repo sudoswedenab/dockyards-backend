@@ -24,11 +24,11 @@ import (
 )
 
 type DockyardsConfigReader interface {
-	GetConfigKey(string, string) string
+	GetConfigKey(key string, defaultValue string) string
 }
 
 type DockyardsConfigWriter interface {
-	SetConfigKey(context.Context, client.Client, string) error
+	SetConfigKey(ctx context.Context, client client.Client, key string, value string) error
 }
 
 // DockyardsConfig holds the configuration data for a Dockyards installation,
