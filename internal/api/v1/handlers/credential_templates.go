@@ -24,7 +24,7 @@ import (
 )
 
 func (h *handler) ListCredentialTemplates(ctx context.Context) (*[]types.CredentialTemplate, error) {
-	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+	publicNamespace := h.Config.GetValueOrDefault(config.KeyPublicNamespace, "dockyards-public")
 
 	var credentialTemplates dockyardsv1.CredentialTemplateList
 	err := h.List(ctx, &credentialTemplates, client.InNamespace(publicNamespace))

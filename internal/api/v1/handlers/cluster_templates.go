@@ -25,7 +25,7 @@ import (
 )
 
 func (h *handler) ListGlobalClusterTemplates(ctx context.Context) (*[]types.ClusterTemplate, error) {
-	publicNamespace := h.DockyardsConfig.GetConfigKey(config.KeyPublicNamespace, "dockyards-public")
+	publicNamespace := h.Config.GetValueOrDefault(config.KeyPublicNamespace, "dockyards-public")
 
 	var clusterTemplateList dockyardsv1.ClusterTemplateList
 	err := h.List(ctx, &clusterTemplateList, client.InNamespace(publicNamespace))

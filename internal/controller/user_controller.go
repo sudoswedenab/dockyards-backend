@@ -21,7 +21,7 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
-	dyconfig "github.com/sudoswedenab/dockyards-backend/api/config"
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/bubblebabble"
@@ -37,7 +37,7 @@ import (
 
 type UserReconciler struct {
 	client.Client
-	DockyardsConfig dyconfig.DockyardsConfigReader
+	Config *config.ConfigManager
 }
 
 type VerificationEmail struct {
