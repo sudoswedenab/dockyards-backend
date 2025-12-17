@@ -152,6 +152,32 @@ func (h *handler) getOIDCConfig(ctx context.Context, ref corev1.SecretReference)
 		return dockyardsv1.OIDCConfig{}, err
 	}
 
+	// nolint:nestif // extracting this to its own validating function would make this block more complex
+	if oidcConfig.ProviderConfig != nil {
+		config := *oidcConfig.ProviderConfig
+		if config.Issuer == "" {
+			return dockyardsv1.OIDCConfig{}, fmt.Errorf("invalid oidc provider config: issuer field is suspiciously empty")
+		}
+		if config.AuthorizationEndpoint == "" {
+			return dockyardsv1.OIDCConfig{}, fmt.Errorf("invalid oidc provider config: authorizationEndpoint field is suspiciously empty")
+		}
+		if config.TokenEndpoint == "" {
+			return dockyardsv1.OIDCConfig{}, fmt.Errorf("invalid oidc provider config: authorizationEndpoint field is suspiciously empty")
+		}
+		if config.DeviceAuthorizationEndpoint == "" {
+			return dockyardsv1.OIDCConfig{}, fmt.Errorf("invalid oidc provider config: deviceAuthorizationEndpoint field is suspiciously empty")
+		}
+		if config.UserinfoEndpoint == "" {
+			return dockyardsv1.OIDCConfig{}, fmt.Errorf("invalid oidc provider config: userinfoEndpoint field is suspiciously empty")
+		}
+		if config.JWKSURI == "" {
+			return dockyardsv1.OIDCConfig{}, fmt.Errorf("invalid oidc provider config: jwks field is suspiciously empty")
+		}
+		if len(config.IDTokenSigningAlgs) == 0 {
+			return dockyardsv1.OIDCConfig{}, fmt.Errorf("invalid oidc provider config: idTokenSigningAlgs field is suspiciously empty")
+		}
+	}
+
 	return oidcConfig, nil
 }
 
