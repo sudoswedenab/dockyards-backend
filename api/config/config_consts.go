@@ -14,8 +14,12 @@
 
 package config
 
+// NOTE: May be extended in other git repos.
+type Key string
+
+// These config keys are shared between dockyards applications.
 const (
-	KeyExternalURL     = "externalURL"
-	KeyEnvironmentName = "environmentName"
-	KeyPublicNamespace = "publicNamespace"
+	KeyExternalURL     Key = "externalURL"
+	KeyEnvironmentName Key = "environmentName"
+	KeyPublicNamespace Key = "publicNamespace"
 )
