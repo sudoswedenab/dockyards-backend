@@ -91,7 +91,7 @@ func (m *ConfigManager) Reconcile(ctx context.Context, req reconcile.Request) (r
 	return reconcile.Result{}, nil
 }
 
-func (m *ConfigManager) GetValueForKey(key string) (string, bool) {
+func (m *ConfigManager) GetValueForKey(key Key) (string, bool) {
 	configPtr := m.data.Load()
 	if configPtr == nil {
 		return "", false 
@@ -100,11 +100,11 @@ func (m *ConfigManager) GetValueForKey(key string) (string, bool) {
 	if config == nil {
 		return "", false 
 	}
-	value, ok := config[key]
+	value, ok := config[string(key)]
 	return value, ok
 }
 
-func (m *ConfigManager) GetValueOrDefault(key string, defaultValue string) string {
+func (m *ConfigManager) GetValueOrDefault(key Key, defaultValue string) string {
 	value, ok := m.GetValueForKey(key)
 	if !ok {
 		return defaultValue
