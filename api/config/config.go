@@ -40,6 +40,9 @@ type dockyardsConfig struct {
 	mutex     sync.Mutex
 }
 
+var _ DockyardsConfigReader = &dockyardsConfig{}
+var _ DockyardsConfigWriter = &dockyardsConfig{}
+
 // GetConfig retrieves the configuration from the specified ConfigMap in the given namespace
 // and returns it as a DockyardsConfig instance.
 func GetConfig(ctx context.Context, c client.Client, configMap, dockyardsNamespace string) (*dockyardsConfig, error) {
