@@ -26,14 +26,15 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
+	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	"golang.org/x/oauth2"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func makeNonce() ([]byte, error) {
@@ -187,8 +188,10 @@ func (h *handler) LoginOIDC(w http.ResponseWriter, r *http.Request) error {
 	providerName := r.URL.Query().Get("idp")
 	callbackURL := r.URL.Query().Get("callbackURL")
 
+	publicNamespace := h.Config.GetValueOrDefault(config.KeyPublicNamespace, "dockyards-public")
+
 	var identityProvider dockyardsv1.IdentityProvider
-	err := h.Get(ctx, client.ObjectKey{Name: providerName, Namespace: "dockyards-public"}, &identityProvider)
+	err := h.Get(ctx, client.ObjectKey{Name: providerName, Namespace: publicNamespace}, &identityProvider)
 	if err != nil {
 		return apierrors.NewInternalError(fmt.Errorf("could not get provider: %w", err))
 	}
@@ -288,7 +291,7 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) error {
 
 	stateJSON, err := base64.URLEncoding.DecodeString(state)
 	if err != nil {
-		return apierrors.NewInternalError(err)
+		return apierrors.NewInternalError(fmt.Errorf("could not decode state: %w", err))
 	}
 
 	var decodedState stateStruct
@@ -310,12 +313,12 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) error {
 
 	oidcConfig, err := h.getOIDCConfig(ctx, *configRef)
 	if err != nil {
-		return apierrors.NewInternalError(errors.New("could not get OIDC config"))
+		return apierrors.NewInternalError(fmt.Errorf("could not get OIDC config: %w", err))
 	}
 
 	provider, err := h.getOIDCProvider(ctx, oidcConfig)
 	if err != nil {
-		return apierrors.NewInternalError(errors.New("could not get OIDC provider"))
+		return apierrors.NewInternalError(fmt.Errorf("could not get OIDC provider: %w", err))
 	}
 
 	c := oidcConfig.ClientConfig
@@ -329,7 +332,7 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) error {
 
 	oauth2Token, err := config.Exchange(ctx, code)
 	if err != nil {
-		return apierrors.NewInternalError(err)
+		return apierrors.NewInternalError(fmt.Errorf("could not exchange tokens: %w", err))
 	}
 
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
@@ -366,7 +369,7 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) error {
 	var userList dockyardsv1.UserList
 	err = h.List(ctx, &userList, matchingFields)
 	if err != nil {
-		return apierrors.NewInternalError(err)
+		return apierrors.NewInternalError(fmt.Errorf("could not get users: %w", err))
 	}
 
 	email := claims.Email
