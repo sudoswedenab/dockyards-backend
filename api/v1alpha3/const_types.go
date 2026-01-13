@@ -28,6 +28,7 @@ const (
 	LabelUserName               = "dockyards.io/user-name"
 	LabelMemberName             = "dockyards.io/member-name"
 	LabelRoleName               = "dockyards.io/role-name"
+	LabelProviderName           = "dockyards.io/provider-name"
 )
 
 const (
