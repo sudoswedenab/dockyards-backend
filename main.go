@@ -123,7 +123,7 @@ func main() {
 	var enableWebhooks bool
 	var metricsBindAddress string
 	var allowedOrigins []string
-	var dockyardsNamespace string
+	var dockyardsSystemNamespace string
 	var allowedDomains []string
 	pflag.StringVar(&logLevel, "log-level", "info", "log level")
 	pflag.StringVar(&configMap, "config-map", "dockyards-system", "ConfigMap name")
@@ -131,7 +131,7 @@ func main() {
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
 	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
 	pflag.StringSliceVar(&allowedOrigins, "allow-origin", []string{"http://localhost", "http://localhost:8000"}, "allow origin")
-	pflag.StringVar(&dockyardsNamespace, "dockyards-namespace", "dockyards-system", "dockyards namespace")
+	pflag.StringVar(&dockyardsSystemNamespace, "dockyards-namespace", "dockyards-system", "dockyards namespace")
 	pflag.StringSliceVar(&allowedDomains, "allow-domain", nil, "allow domain")
 	pflag.Parse()
 
@@ -151,7 +151,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Debug("process info", "wd", wd, "uid", os.Getuid(), "pid", os.Getpid(), "namespace", dockyardsNamespace)
+	logger.Debug("process info", "wd", wd, "uid", os.Getuid(), "pid", os.Getpid(), "namespace", dockyardsSystemNamespace)
 
 	kubeconfig, err := config.GetConfig()
 	if err != nil {
@@ -235,7 +235,7 @@ func main() {
 		}
 	}()
 
-	accessKey, refreshKey, err := jwt.GetOrGenerateKeys(ctx, controllerClient, dockyardsNamespace)
+	accessKey, refreshKey, err := jwt.GetOrGenerateKeys(ctx, controllerClient, dockyardsSystemNamespace)
 	if err != nil {
 		logger.Error("error getting private keys for jwt", "err", err)
 
@@ -245,7 +245,7 @@ func main() {
 	configManagerOptions := []dyconfig.ConfigManagerOption{
 		dyconfig.WithLogger(logger),
 	}
-	dockyardsConfig, err := dyconfig.NewConfigManager(mgr, client.ObjectKey{Namespace: dockyardsNamespace, Name: configMap}, configManagerOptions...)
+	dockyardsConfig, err := dyconfig.NewConfigManager(mgr, client.ObjectKey{Namespace: dockyardsSystemNamespace, Name: configMap}, configManagerOptions...)
 	if err != nil {
 		logger.Error("could not create config manager", "err", err)
 
@@ -254,7 +254,7 @@ func main() {
 
 	handlerOptions := []handlers.HandlerOption{
 		handlers.WithManager(mgr),
-		handlers.WithNamespace(dockyardsNamespace),
+		handlers.WithSystemNamespace(dockyardsSystemNamespace),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
 		handlers.WithLogger(logger),
 		handlers.WithConfigManager(dockyardsConfig),
@@ -332,7 +332,7 @@ func main() {
 
 	err = (&controller.ClusterReconciler{
 		Client:             mgr.GetClient(),
-		DockyardsNamespace: dockyardsNamespace,
+		DockyardsNamespace: dockyardsSystemNamespace,
 	}).SetupWithManager(mgr)
 	if err != nil {
 		logger.Error("error creating new cluster reconciler", "err", err)
