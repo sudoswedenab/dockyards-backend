@@ -139,7 +139,7 @@ func TestMain(m *testing.M) {
 
 	handlerOptions := []handlers.HandlerOption{
 		handlers.WithManager(mgr),
-		handlers.WithNamespace(testEnvironment.GetDockyardsNamespace()),
+		handlers.WithSystemNamespace(testEnvironment.GetDockyardsNamespace()),
 		handlers.WithLogger(logger),
 		handlers.WithJWTPrivateKeys(accessKey, refreshKey),
 		handlers.WithConfigManager(fakeConfig),

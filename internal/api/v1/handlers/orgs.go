@@ -165,7 +165,7 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 		}
 
 		var organizationVoucherList dockyardsv1.OrganizationVoucherList
-		err := h.List(ctx, &organizationVoucherList, matchingFields, client.InNamespace(h.namespace))
+		err := h.List(ctx, &organizationVoucherList, matchingFields, client.InNamespace(h.systemNamespace))
 		if err != nil {
 			return nil, err
 		}

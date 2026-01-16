@@ -31,7 +31,7 @@ type handler struct {
 	client.Client
 
 	logger               *slog.Logger
-	namespace            string
+	systemNamespace      string
 	jwtAccessPrivateKey  *ecdsa.PrivateKey
 	jwtRefreshPrivateKey *ecdsa.PrivateKey
 	jwtAccessPublicKey   *ecdsa.PublicKey
@@ -49,9 +49,9 @@ func WithManager(mgr ctrl.Manager) HandlerOption {
 	}
 }
 
-func WithNamespace(namespace string) HandlerOption {
+func WithSystemNamespace(namespace string) HandlerOption {
 	return func(h *handler) {
-		h.namespace = namespace
+		h.systemNamespace = namespace
 	}
 }
 
@@ -86,7 +86,7 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 		handlerOption(&h)
 	}
 
-	if h.namespace == "" {
+	if h.systemNamespace == "" {
 		h.logger.Warn("using empty namespace")
 	}
 
