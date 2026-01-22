@@ -20,6 +20,7 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
+	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -86,12 +87,23 @@ func (r *MemberReconciler) reconcileAuthorization(ctx context.Context, member *d
 }
 
 func (r *MemberReconciler) reconcileInfo(ctx context.Context, member *dockyardsv1.Member) (ctrl.Result, error) {
+	organization, err := apiutil.GetOrganizationByNamespaceRef(ctx, r, member.Namespace)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if member.Labels == nil {
+		member.Labels = map[string]string{}
+	}
+	member.Labels[dockyardsv1.LabelRoleName] = string(member.Spec.Role)
+	member.Labels[dockyardsv1.LabelUserName] = member.Spec.UserRef.Name
+	member.Labels[dockyardsv1.LabelOrganizationName] = organization.Name
+
 	key := client.ObjectKey{
 		Name: member.Spec.UserRef.Name,
 	}
-
 	var user dockyardsv1.User
-	err := r.Get(ctx, key, &user)
+	err = r.Get(ctx, key, &user)
 	if errors.IsNotFound(err) {
 		// User has not been created yet
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
