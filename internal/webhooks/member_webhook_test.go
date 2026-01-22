@@ -17,7 +17,6 @@ package webhooks_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -51,126 +50,6 @@ func TestDockyardsMemberValidateCreate(t *testing.T) {
 			},
 			expected: func(dockyardsv1.Member) error {
 				return nil
-			},
-		},
-		{
-			name: "missing organization label",
-			makeMember: func() dockyardsv1.Member {
-				labels := validMemberLabels("missing-organization-user")
-				delete(labels, dockyardsv1.LabelOrganizationName)
-
-				return newTestMember("missing-organization", "missing-organization-user", labels)
-			},
-			expected: func(member dockyardsv1.Member) error {
-				return apierrors.NewInvalid(
-					dockyardsv1.GroupVersion.WithKind(dockyardsv1.MemberKind).GroupKind(),
-					member.Name,
-					field.ErrorList{
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							member.Labels,
-							fmt.Sprintf("missing value for label '%s'", dockyardsv1.LabelOrganizationName),
-						),
-					},
-				)
-			},
-		},
-		{
-			name: "missing user label",
-			makeMember: func() dockyardsv1.Member {
-				labels := validMemberLabels("missing-user")
-				delete(labels, dockyardsv1.LabelUserName)
-
-				return newTestMember("missing-user", "missing-user", labels)
-			},
-			expected: func(member dockyardsv1.Member) error {
-				return apierrors.NewInvalid(
-					dockyardsv1.GroupVersion.WithKind(dockyardsv1.MemberKind).GroupKind(),
-					member.Name,
-					field.ErrorList{
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							member.Labels,
-							fmt.Sprintf("missing value for label '%s'", dockyardsv1.LabelUserName),
-						),
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							member.Labels,
-							fmt.Sprintf("label '%s' must match the name defined in '%s'", dockyardsv1.LabelUserName, field.NewPath("spec", "userRef", "name")),
-						),
-					},
-				)
-			},
-		},
-		{
-			name: "missing role label",
-			makeMember: func() dockyardsv1.Member {
-				labels := validMemberLabels("missing-role")
-				delete(labels, dockyardsv1.LabelRoleName)
-
-				return newTestMember("missing-role", "missing-role", labels)
-			},
-			expected: func(member dockyardsv1.Member) error {
-				return apierrors.NewInvalid(
-					dockyardsv1.GroupVersion.WithKind(dockyardsv1.MemberKind).GroupKind(),
-					member.Name,
-					field.ErrorList{
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							member.Labels,
-							fmt.Sprintf("missing value for label '%s'", dockyardsv1.LabelRoleName),
-						),
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							member.Labels,
-							fmt.Sprintf("label '%s' must match the role defined in '%s'", dockyardsv1.LabelRoleName, field.NewPath("spec", "role")),
-						),
-					},
-				)
-			},
-		},
-		{
-			name: "role label differs from spec",
-			makeMember: func() dockyardsv1.Member {
-				labels := validMemberLabels("role-label")
-				labels[dockyardsv1.LabelRoleName] = string(dockyardsv1.RoleSuperUser)
-
-				return newTestMember("role-label", "role-label", labels)
-			},
-			expected: func(member dockyardsv1.Member) error {
-				return apierrors.NewInvalid(
-					dockyardsv1.GroupVersion.WithKind(dockyardsv1.MemberKind).GroupKind(),
-					member.Name,
-					field.ErrorList{
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							member.Labels,
-							fmt.Sprintf("label '%s' must match the role defined in '%s'", dockyardsv1.LabelRoleName, field.NewPath("spec", "role")),
-						),
-					},
-				)
-			},
-		},
-		{
-			name: "user label differs from spec",
-			makeMember: func() dockyardsv1.Member {
-				labels := validMemberLabels("actual-user")
-				labels[dockyardsv1.LabelUserName] = "incorrect-label-user"
-
-				return newTestMember("user-label-mismatch", "actual-user", labels)
-			},
-			expected: func(member dockyardsv1.Member) error {
-				return apierrors.NewInvalid(
-					dockyardsv1.GroupVersion.WithKind(dockyardsv1.MemberKind).GroupKind(),
-					member.Name,
-					field.ErrorList{
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							member.Labels,
-							fmt.Sprintf("label '%s' must match the name defined in '%s'", dockyardsv1.LabelUserName, field.NewPath("spec", "userRef", "name")),
-						),
-					},
-				)
 			},
 		},
 	}
@@ -235,36 +114,6 @@ func TestDockyardsMemberValidateUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "missing role label on update",
-			setup: func() (runtime.Object, runtime.Object, error) {
-				labels := validMemberLabels("missing-role")
-				oldMember := newTestMember("missing-role-update", "missing-role", labels)
-
-				newLabels := validMemberLabels("missing-role")
-				delete(newLabels, dockyardsv1.LabelRoleName)
-				newMember := newTestMember("missing-role-update", "missing-role", newLabels)
-
-				newMemberObj := newMember.DeepCopy()
-
-				return oldMember.DeepCopy(), newMemberObj, apierrors.NewInvalid(
-					dockyardsv1.GroupVersion.WithKind(dockyardsv1.MemberKind).GroupKind(),
-					newMemberObj.Name,
-					field.ErrorList{
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							newMemberObj.Labels,
-							fmt.Sprintf("missing value for label '%s'", dockyardsv1.LabelRoleName),
-						),
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							newMemberObj.Labels,
-							fmt.Sprintf("label '%s' must match the role defined in '%s'", dockyardsv1.LabelRoleName, field.NewPath("spec", "role")),
-						),
-					},
-				)
-			},
-		},
-		{
 			name: "unexpected new object type",
 			setup: func() (runtime.Object, runtime.Object, error) {
 				labels := validMemberLabels("type-check")
@@ -280,53 +129,6 @@ func TestDockyardsMemberValidateUpdate(t *testing.T) {
 				newMember := newTestMember("type-check", "type-check", labels)
 
 				return &dockyardsv1.Organization{}, newMember.DeepCopy(), apierrors.NewInternalError(errors.New("existing object has an unexpected type"))
-			},
-		},
-		{
-			name: "role label mismatch on update",
-			setup: func() (runtime.Object, runtime.Object, error) {
-				labels := validMemberLabels("role-update")
-				oldMember := newTestMember("role-update", "role-update", labels)
-
-				newLabels := validMemberLabels("role-update")
-				newLabels[dockyardsv1.LabelRoleName] = string(dockyardsv1.RoleSuperUser)
-				newMember := newTestMember("role-update", "role-update", newLabels)
-				newMemberObj := newMember.DeepCopy()
-
-				return oldMember.DeepCopy(), newMemberObj, apierrors.NewInvalid(
-					dockyardsv1.GroupVersion.WithKind(dockyardsv1.MemberKind).GroupKind(),
-					newMemberObj.Name,
-					field.ErrorList{
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							newMemberObj.Labels,
-							fmt.Sprintf("label '%s' must match the role defined in '%s'", dockyardsv1.LabelRoleName, field.NewPath("spec", "role")),
-						),
-					},
-				)
-			},
-		},
-		{
-			name: "user label mismatch on update",
-			setup: func() (runtime.Object, runtime.Object, error) {
-				labels := validMemberLabels("user-update")
-				oldMember := newTestMember("user-update", "user-update", labels)
-
-				newLabels := validMemberLabels("mismatched-label")
-				newMember := newTestMember("user-update", "user-update", newLabels)
-				newMemberObj := newMember.DeepCopy()
-
-				return oldMember.DeepCopy(), newMemberObj, apierrors.NewInvalid(
-					dockyardsv1.GroupVersion.WithKind(dockyardsv1.MemberKind).GroupKind(),
-					newMemberObj.Name,
-					field.ErrorList{
-						field.Invalid(
-							field.NewPath("metadata", "labels"),
-							newMemberObj.Labels,
-							fmt.Sprintf("label '%s' must match the name defined in '%s'", dockyardsv1.LabelUserName, field.NewPath("spec", "userRef", "name")),
-						),
-					},
-				)
 			},
 		},
 	}

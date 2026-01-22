@@ -42,12 +42,6 @@ type DockyardsMember struct {
 var _ webhook.CustomValidator = &DockyardsMember{}
 var _ webhook.CustomDefaulter = &DockyardsMember{}
 
-var memberLabels = []string{
-	dockyardsv1.LabelOrganizationName,
-	dockyardsv1.LabelUserName,
-	dockyardsv1.LabelRoleName,
-}
-
 func (webhook *DockyardsMember) Default(ctx context.Context, obj runtime.Object) error {
 	member, ok := obj.(*dockyardsv1.Member)
 	if !ok {
@@ -124,35 +118,35 @@ func (webhook *DockyardsMember) ValidateDelete(_ context.Context, _ runtime.Obje
 }
 
 func (webhook *DockyardsMember) validate(_ context.Context, newMember *dockyardsv1.Member) (admission.Warnings, error) {
+	var warnings admission.Warnings
 	var errorList field.ErrorList
 
-	for _, label := range memberLabels {
-		if newMember.Labels[label] == "" {
-			invalid := field.Invalid(
-				field.NewPath("metadata", "labels"),
-				newMember.Labels,
-				fmt.Sprintf("missing value for label '%s'", label),
-			)
-			errorList = append(errorList, invalid)
-		}
+	if newMember.Spec.UserRef.Name == "" {
+		invalid := field.Invalid(
+			field.NewPath("spec", "userRef", "name"),
+			newMember,
+			"userRef must not be empty",
+		)
+		errorList = append(errorList, invalid)
+	}
+
+	if newMember.Spec.UserRef.Kind == "" {
+		invalid := field.Invalid(
+			field.NewPath("spec", "userRef", "kind"),
+			newMember,
+			fmt.Sprintf("invalid userRef kind, expected %s", dockyardsv1.UserKind),
+		)
+		errorList = append(errorList, invalid)
 	}
 
 	if newMember.Labels[dockyardsv1.LabelRoleName] != string(newMember.Spec.Role) {
-		invalid := field.Invalid(
-			field.NewPath("metadata", "labels"),
-			newMember.Labels,
-			fmt.Sprintf("label '%s' must match the role defined in '%s'", dockyardsv1.LabelRoleName, field.NewPath("spec", "role")),
-		)
-		errorList = append(errorList, invalid)
+		warnings = append(warnings, fmt.Sprintf("label '%s' should match the role defined in '%s'", dockyardsv1.LabelRoleName, field.NewPath("spec", "role")))
+		newMember.Labels[dockyardsv1.LabelRoleName] = string(newMember.Spec.Role)
 	}
 
 	if newMember.Labels[dockyardsv1.LabelUserName] != string(newMember.Spec.UserRef.Name) {
-		invalid := field.Invalid(
-			field.NewPath("metadata", "labels"),
-			newMember.Labels,
-			fmt.Sprintf("label '%s' must match the name defined in '%s'", dockyardsv1.LabelUserName, field.NewPath("spec", "userRef", "name")),
-		)
-		errorList = append(errorList, invalid)
+		warnings = append(warnings, fmt.Sprintf("label '%s' should match the role defined in '%s'", dockyardsv1.LabelUserName, field.NewPath("spec", "userRef", "name")))
+		newMember.Labels[dockyardsv1.LabelUserName] = string(newMember.Spec.UserRef.Name)
 	}
 
 	if len(errorList) > 0 {
@@ -161,5 +155,5 @@ func (webhook *DockyardsMember) validate(_ context.Context, newMember *dockyards
 		return nil, apierrors.NewInvalid(qualifiedKind, newMember.Name, errorList)
 	}
 
-	return nil, nil
+	return warnings, nil
 }
