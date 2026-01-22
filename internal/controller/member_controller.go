@@ -16,11 +16,13 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/fluxcd/pkg/runtime/patch"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
+	"k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -90,6 +92,10 @@ func (r *MemberReconciler) reconcileInfo(ctx context.Context, member *dockyardsv
 
 	var user dockyardsv1.User
 	err := r.Get(ctx, key, &user)
+	if errors.IsNotFound(err) {
+		// User has not been created yet
+		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
+	}
 	if err != nil {
 		return ctrl.Result{}, err
 	}
