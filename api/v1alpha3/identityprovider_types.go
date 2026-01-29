@@ -24,8 +24,8 @@ const (
 )
 
 type IdentityProviderSpec struct {
-	DisplayName *string                 `json:"displayName,omitempty"`
-	OIDCConfigRef  *corev1.SecretReference `json:"oidc,omitempty"`
+	DisplayName   *string                 `json:"displayName,omitempty"`
+	OIDCConfigRef *corev1.SecretReference `json:"oidc,omitempty"`
 }
 
 type OIDCConfig struct {
@@ -42,12 +42,12 @@ type OIDCClientConfig struct {
 
 type OIDCProviderConfig struct {
 	Issuer                      string   `json:"issuer"`
-	AuthorizationEndpoint       string   `json:"authorizationEndpoint"`
-	TokenEndpoint               string   `json:"tokenEndpoint"`
-	DeviceAuthorizationEndpoint string   `json:"deviceAuthorizationEndpoint,omitempty"`
-	UserinfoEndpoint            string   `json:"userinfoEndpoint,omitempty"`
-	JWKSURI                     string   `json:"jwksURI"`
-	IDTokenSigningAlgs          []string `json:"idTokenSigningAlgs"`
+	AuthorizationEndpoint       string   `json:"authorization_endpoint"`
+	TokenEndpoint               string   `json:"token_endpoint"`
+	DeviceAuthorizationEndpoint string   `json:"device_authorization_endpoint,omitempty"`
+	UserinfoEndpoint            string   `json:"userinfo_endpoint,omitempty"`
+	JWKSURI                     string   `json:"jwks_uri"`
+	IDTokenSigningAlgs          []string `json:"id_token_signing_alg_values_supported"`
 }
 
 // +kubebuilder:object:root=true
