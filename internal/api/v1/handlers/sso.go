@@ -236,6 +236,7 @@ func (h *handler) getOrCreateUser(ctx context.Context, providerName string, clai
 		return nil, fmt.Errorf("could not create random password: %w", err)
 	}
 
+	now := metav1.Now()
 	user = dockyardsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -248,6 +249,22 @@ func (h *handler) getOrCreateUser(ctx context.Context, providerName string, clai
 			Password: password,
 			Email: claims.Email,
 			ProviderID: providerName + "://" + claims.PreferredUsername,
+		},
+		Status: dockyardsv1.UserStatus{
+			Conditions: []metav1.Condition{
+				metav1.Condition{
+					Type:    dockyardsv1.VerifiedCondition,
+					Status:  metav1.ConditionTrue,
+					Reason:  dockyardsv1.VerificationReasonVerified,
+					Message: "Verified by OIDC",
+					LastTransitionTime: now,
+				},
+				metav1.Condition{
+					Type:    dockyardsv1.ReadyCondition,
+					Status:  metav1.ConditionTrue,
+					LastTransitionTime: now,
+				},
+			},
 		},
 	}
 	err = h.Create(ctx, &user)

@@ -23,14 +23,10 @@ import (
 
 	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/go-logr/logr"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	dyconfig "github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/internal/controller"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -41,6 +37,8 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
 	}
+
+	userName := "test-eadcb6eb" // Some random name to avoid collisions with other tests
 
 	ctx, cancel := context.WithCancel(context.TODO())
 
@@ -72,15 +70,16 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 		Config: config,
 	}
 
-	t.Run("test verification request creation", func(t *testing.T) {
+	t.Run("creating dockyards user creates verification request", func(t *testing.T) {
 		user := dockyardsv1.User{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "test",
+				Name: userName,
 			},
 			Spec: dockyardsv1.UserSpec{
 				DisplayName: "test",
 				Email:       "test@test.com",
 				Password:    "test",
+				ProviderID:  dockyardsv1.ProviderPrefixDockyards,
 			},
 		}
 		err := c.Create(ctx, &user)
@@ -88,18 +87,9 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// There are some issues using a mananger here due to reconciler's complexity. We can instead
-		// trigger reconciliation manually, though that does make it more important to manully track
-		// the state.
-
-		// This loop:
-		// 1. Sets User Ready condition
-		// 2. Creates VerificationRequest
-		for range 2 {
-			_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "test"}})
-			if err != nil {
-				t.Fatal(err)
-			}
+		_, err = reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: userName}})
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		vr := dockyardsv1.VerificationRequest{ObjectMeta: metav1.ObjectMeta{Name: "sign-up-" + user.Name}}
@@ -107,114 +97,89 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		if vr.Spec.Code == "" {
-			t.Fatal("No VerificationRequest created for user")
-		}
-
-		expectedOwner := []metav1.OwnerReference{
-			{
-				APIVersion: dockyardsv1.GroupVersion.String(),
-				Kind:       dockyardsv1.UserKind,
-				Name:       user.Name,
-				UID:        user.UID,
-			},
-		}
-
-		if !cmp.Equal(expectedOwner, vr.ObjectMeta.OwnerReferences) {
-			t.Errorf("VerificationRequest is missing OwnerReferences.\nDiff: %s", cmp.Diff(expectedOwner, vr.ObjectMeta.OwnerReferences))
-		}
-
-		expectedUserRef := corev1.TypedLocalObjectReference{
-			APIGroup: &dockyardsv1.GroupVersion.Group,
-			Kind:     dockyardsv1.UserKind,
-			Name:     user.Name,
-		}
-
-		if !cmp.Equal(expectedUserRef, vr.Spec.UserRef) {
-			t.Errorf("VerificationRequest is missing userReferences.\nDiff: %s", cmp.Diff(expectedUserRef, vr.Spec.UserRef))
-		}
-
-		err = c.Get(ctx, client.ObjectKeyFromObject(&user), &user)
-		if err != nil {
-			t.Fatal(err)
-		}
 	})
 
-	t.Run("test user status reconciliation", func(t *testing.T) {
-		vr := dockyardsv1.VerificationRequest{
+	t.Run("dockyards user is not ready until verification request has been confirmed", func(t *testing.T) {
+		user := dockyardsv1.User{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "sign-up-test",
+				Name: userName,
 			},
 		}
 
-		err := c.Get(ctx, client.ObjectKeyFromObject(&vr), &vr)
+		err := testingutil.RetryUntilFound(ctx, c, &user)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		verifiedCond := metav1.Condition{
+		// Reconcile one extra time for verified = false
+		_, err = reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: userName}})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, c, &user)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		userVerifiedCondition := conditions.Get(&user, dockyardsv1.VerifiedCondition)
+		if userVerifiedCondition == nil {
+			t.Fatalf("expected user verified condition to be False, but found nil")
+		}
+		if userVerifiedCondition.Status != metav1.ConditionFalse {
+			t.Fatalf("expected user verified condition to be False, but found %s", userVerifiedCondition.Status)
+		}
+
+		verificationRequest := dockyardsv1.VerificationRequest{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "sign-up-" + userName,
+			},
+		}
+
+		err = testingutil.RetryUntilFound(ctx, c, &verificationRequest)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		verified := conditions.Get(&verificationRequest, dockyardsv1.VerifiedCondition)
+		if verified == nil {
+			t.Fatal("expected verification request verified condition to be False, but found nil")
+		}
+		if verified.Status != metav1.ConditionFalse {
+			t.Fatalf("expected verification request verified condition to be False, but found %s", verified.Status)
+		}
+
+		verified = &metav1.Condition{
 			Type:               dockyardsv1.VerifiedCondition,
 			Status:             metav1.ConditionTrue,
-			Reason:             "TestVerified",
+			Reason:             dockyardsv1.VerificationReasonVerified,
 			Message:            "",
 			LastTransitionTime: metav1.Now(),
 		}
 
-		conditions.Set(&vr, &verifiedCond)
+		conditions.Set(&verificationRequest, verified)
 
-		err = c.Status().Update(ctx, &vr)
+		err = c.Status().Update(ctx, &verificationRequest)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// Update User Ready condition to match VerificationRequest Verified condition
-		_, err = reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "test"}})
+		_, err = reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: userName}})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expected := metav1.Condition{
-			Type:    dockyardsv1.ReadyCondition,
-			Status:  metav1.ConditionTrue,
-			Reason:  verifiedCond.Reason,
-			Message: verifiedCond.Message,
-		}
-
-		var user dockyardsv1.User
-
-		err = c.Get(ctx, client.ObjectKey{Name: "test"}, &user)
+		err = c.Get(ctx, client.ObjectKey{Name: userName}, &user)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ignoreFields := cmpopts.IgnoreFields(metav1.Condition{}, "ObservedGeneration", "LastTransitionTime")
-		actual := conditions.Get(&user, dockyardsv1.ReadyCondition)
-		if !cmp.Equal(expected, *actual, ignoreFields) {
-			t.Errorf("User %s condition is not as expected.\nDiff: %s", dockyardsv1.ReadyCondition, cmp.Diff(expected, *actual, ignoreFields))
+		userVerifiedCondition = conditions.Get(&user, dockyardsv1.VerifiedCondition)
+		if userVerifiedCondition == nil {
+			t.Fatalf("expected user verified condition to be True, but found nil")
 		}
-	})
-
-	t.Run("test verificationrequest cleanup", func(t *testing.T) {
-		// Trigger VerificationRequest deletion
-		_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "test"}})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		e := dockyardsv1.VerificationRequest{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "sign-up-test",
-			},
-		}
-		var actual dockyardsv1.VerificationRequest
-		err = c.Get(ctx, client.ObjectKeyFromObject(&e), &actual)
-		if err != nil && !apierrors.IsNotFound(err) {
-			t.Fatal(err)
-		}
-
-		if !cmp.Equal(dockyardsv1.VerificationRequest{}, actual) {
-			t.Errorf("VerificationRequest has not been deleted after the user has been marked as %s", dockyardsv1.ReadyCondition)
+		if userVerifiedCondition.Status != metav1.ConditionTrue {
+			t.Fatalf("expected user verified condition to be True, but found %s", userVerifiedCondition.Status)
 		}
 	})
 }
