@@ -40,16 +40,6 @@ type UserReconciler struct {
 	Config *config.ConfigManager
 }
 
-type VerificationEmail struct {
-	HTML string
-	Text string
-}
-
-type VerificationEmailSpec struct {
-	VerificationURL string
-	Name            string
-}
-
 // +kubebuilder:rbac:groups=dockyards.io,resources=users,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=users/status,verbs=patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=verificationrequests,verbs=get;list;watch;create;delete;patch
