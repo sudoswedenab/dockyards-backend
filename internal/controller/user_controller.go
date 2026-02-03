@@ -77,7 +77,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 		}
 
 		conditions.Set(&user, &condition)
-		logger.Info("reconciled user", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionFalse)
+		logger.Info("user did not have a ready condition, added it", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionFalse)
 
 		return ctrl.Result{Requeue: true}, nil
 	}
@@ -90,10 +90,12 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 		}
 
 		if operationResult != controllerutil.OperationResultNone {
-			logger.Info("reconciled verificationrequest", "verificationRequestName", verificationRequest.Name, "result", operationResult)
+			logger.Info("user ready condition was false, reconciled a verification request for them", "verificationRequestName", verificationRequest.Name, "operationResult", operationResult)
 		}
 
 		if operationResult == controllerutil.OperationResultCreated {
+			logger.Info("verification request was just created, requeuing user reconciliation", "verificationRequestName", verificationRequest.Name)
+
 			return ctrl.Result{Requeue: true}, nil
 		}
 
@@ -109,7 +111,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 				LastTransitionTime: verifiedCondition.LastTransitionTime,
 			}
 			conditions.Set(&user, &condition)
-			logger.Info("reconciled user", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionTrue)
+			logger.Info("user verification request was verified, so we set the user condition to ready", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionTrue)
 
 			return ctrl.Result{Requeue: true}, nil
 		}
@@ -131,7 +133,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
 
-		logger.Info("reconciled verificationrequest", "verificationRequestName", "sign-up-"+user.Name, "result", "deleted")
+		logger.Info("deleted verification request", "verificationRequestName", vr.Name)
 	}
 
 	result, err = r.reconcileAuthorization(ctx, &user)
