@@ -19,13 +19,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fluxcd/pkg/runtime/conditions"
-	"github.com/fluxcd/pkg/runtime/patch"
 	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/bubblebabble"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -43,7 +42,7 @@ type UserReconciler struct {
 // +kubebuilder:rbac:groups=dockyards.io,resources=users,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dockyards.io,resources=users/status,verbs=patch
 // +kubebuilder:rbac:groups=dockyards.io,resources=verificationrequests,verbs=get;list;watch;create;delete;patch
-func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, reterr error) {
+func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrl.LoggerFrom(ctx)
 	var user dockyardsv1.User
 	err := r.Get(ctx, req.NamespacedName, &user)
@@ -51,40 +50,32 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	patchHelper, err := patch.NewHelper(&user, r.Client)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	defer func() {
-		err := patchHelper.Patch(ctx, &user)
-		if err != nil {
-			result = ctrl.Result{}
-			reterr = kerrors.NewAggregate([]error{reterr, err})
-		}
-	}()
-
-	readyCondition := conditions.Get(&user, dockyardsv1.ReadyCondition)
+	readyCondition := meta.FindStatusCondition(user.Status.Conditions, dockyardsv1.ReadyCondition)
 
 	// if User doesn't have a ready condition, set it to False
 	if readyCondition == nil {
-		condition := metav1.Condition{
+		patch := client.MergeFrom(user.DeepCopy())
+
+		meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
 			Type:               dockyardsv1.ReadyCondition,
 			Status:             metav1.ConditionFalse,
 			Reason:             dockyardsv1.VerificationReasonNotVerified,
 			Message:            "",
 			LastTransitionTime: metav1.Now(),
-		}
-
-		conditions.Set(&user, &condition)
+		})
 		logger.Info("user did not have a ready condition, added it", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionFalse)
+
+		err = r.Status().Patch(ctx, &user, patch)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 
 		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// if User is not ready, ensure that it has a corresponding VerificationRequest with a Verified condition
 	if readyCondition.Status == metav1.ConditionFalse {
-		verificationRequest, operationResult, err := r.reconcileVerificationRequest(ctx, &user)
+		verificationRequest, operationResult, err := r.reconcileVerificationRequest(ctx, user)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -99,18 +90,23 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 			return ctrl.Result{Requeue: true}, nil
 		}
 
-		verifiedCondition := conditions.Get(verificationRequest, dockyardsv1.VerifiedCondition)
+		verifiedCondition := meta.FindStatusCondition(verificationRequest.Status.Conditions, dockyardsv1.VerifiedCondition)
 
 		// if VerificationRequest has Verified set to True, mark User as Ready
 		if verifiedCondition != nil && verifiedCondition.Status == metav1.ConditionTrue {
-			condition := metav1.Condition{
+			patch := client.MergeFrom(user.DeepCopy())
+
+			meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
 				Type:               dockyardsv1.ReadyCondition,
 				Status:             verifiedCondition.Status,
 				Reason:             verifiedCondition.Reason,
 				Message:            verifiedCondition.Message,
 				LastTransitionTime: verifiedCondition.LastTransitionTime,
+			})
+			err = r.Status().Patch(ctx, &user, patch)
+			if err != nil {
+				return ctrl.Result{}, err
 			}
-			conditions.Set(&user, &condition)
 			logger.Info("user verification request was verified, so we set the user condition to ready", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionTrue)
 
 			return ctrl.Result{Requeue: true}, nil
@@ -136,15 +132,40 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (resul
 		logger.Info("deleted verification request", "verificationRequestName", vr.Name)
 	}
 
-	result, err = r.reconcileAuthorization(ctx, &user)
+	err = authorization.ReconcileUserAuthorization(ctx, r, &user)
 	if err != nil {
-		return result, err
+		patch := client.MergeFrom(user.DeepCopy())
+
+		meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
+			Type:               dockyardsv1.UserAuthorizationReadyCondition,
+			Status: 			metav1.ConditionFalse,
+			Reason:             dockyardsv1.UserAuthorizationInternalErrorReason,
+			Message:            err.Error(),
+			LastTransitionTime: metav1.Now(),
+		})
+		_ = r.Status().Patch(ctx, &user, patch) // Set the status error as best effort.
+
+		return ctrl.Result{}, err
+	}
+
+	patch := client.MergeFrom(user.DeepCopy())
+
+	meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
+		Type:               dockyardsv1.UserAuthorizationReadyCondition,
+		Status: 			metav1.ConditionTrue,
+		Reason:             dockyardsv1.ReadyReason,
+		Message:            "",
+		LastTransitionTime: metav1.Now(),
+	})
+	err = r.Status().Patch(ctx, &user, patch)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *UserReconciler) reconcileVerificationRequest(ctx context.Context, user *dockyardsv1.User) (*dockyardsv1.VerificationRequest, controllerutil.OperationResult, error) {
+func (r *UserReconciler) reconcileVerificationRequest(ctx context.Context, user dockyardsv1.User) (*dockyardsv1.VerificationRequest, controllerutil.OperationResult, error) {
 	verificationRequest := dockyardsv1.VerificationRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sign-up-" + user.Name,
@@ -185,19 +206,6 @@ func (r *UserReconciler) reconcileVerificationRequest(ctx context.Context, user 
 	}
 
 	return &verificationRequest, operationResult, nil
-}
-
-func (r *UserReconciler) reconcileAuthorization(ctx context.Context, user *dockyardsv1.User) (ctrl.Result, error) {
-	err := authorization.ReconcileUserAuthorization(ctx, r, user)
-	if err != nil {
-		conditions.MarkFalse(user, dockyardsv1.UserAuthorizationReadyCondition, dockyardsv1.UserAuthorizationInternalErrorReason, "%s", err)
-
-		return ctrl.Result{}, nil
-	}
-
-	conditions.MarkTrue(user, dockyardsv1.UserAuthorizationReadyCondition, dockyardsv1.ReadyReason, "")
-
-	return ctrl.Result{}, nil
 }
 
 func (r *UserReconciler) verificationReqeuestsToUsers(_ context.Context, obj client.Object) []ctrl.Request {
