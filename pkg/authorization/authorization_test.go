@@ -71,25 +71,25 @@ func TestMain(m *testing.M) {
 func TestUserAuthorization(t *testing.T) {
 	ctx := t.Context()
 
-	user := dockyardsv1.User{
+	user := &dockyardsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "authorization-",
 		},
 	}
 
-	other := dockyardsv1.User{
+	other := &dockyardsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "authorization-",
 		},
 	}
 
-	for _, u := range []*dockyardsv1.User{&user, &other} {
+	for _, u := range []*dockyardsv1.User{user, other} {
 		err := c.Create(ctx, u)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = authorization.ReconcileUserAuthorization(ctx, c, u)
+		err = authorization.ReconcileUserAuthorization(ctx, c, *u)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -191,37 +191,37 @@ func TestUserAuthorization(t *testing.T) {
 func TestOrganizationAuthorization(t *testing.T) {
 	ctx := t.Context()
 
-	superUser := dockyardsv1.User{
+	superUser := &dockyardsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "authorization-",
 		},
 	}
 
-	user := dockyardsv1.User{
+	user := &dockyardsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "authorization-",
 		},
 	}
 
-	reader := dockyardsv1.User{
+	reader := &dockyardsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "authorization-",
 		},
 	}
 
-	otherUser := dockyardsv1.User{
+	otherUser := &dockyardsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "authorization-",
 		},
 	}
 
-	for _, u := range []*dockyardsv1.User{&superUser, &user, &reader, &otherUser} {
+	for _, u := range []*dockyardsv1.User{superUser, user, reader, otherUser} {
 		err := c.Create(ctx, u)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = authorization.ReconcileUserAuthorization(ctx, c, u)
+		err = authorization.ReconcileUserAuthorization(ctx, c, *u)
 		if err != nil {
 			t.Fatal(err)
 		}

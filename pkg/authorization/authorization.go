@@ -697,7 +697,7 @@ func ReconcileMemberAuthorization(ctx context.Context, client client.Client, mem
 	return nil
 }
 
-func ReconcileUserAuthorization(ctx context.Context, c client.Client, user *dockyardsv1.User) error {
+func ReconcileUserAuthorization(ctx context.Context, c client.Client, user dockyardsv1.User) error {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "dockyards:user:" + user.Name,

@@ -119,7 +119,7 @@ func (e *TestEnvironment) CreateOrganization(ctx context.Context) (*dockyardsv1.
 		user,
 		reader,
 	} {
-		err := authorization.ReconcileUserAuthorization(ctx, c, &u)
+		err := authorization.ReconcileUserAuthorization(ctx, c, u)
 		if err != nil {
 			return nil, fmt.Errorf("error reconciling user authorization: %w", err)
 		}
