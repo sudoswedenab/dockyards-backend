@@ -249,6 +249,17 @@ func (h *handler) getOrCreateUser(ctx context.Context, providerName string, clai
 			Email: claims.Email,
 			ProviderID: providerName + "://" + claims.PreferredUsername,
 		},
+		Status: dockyardsv1.UserStatus{
+			Conditions: []metav1.Condition{
+				metav1.Condition{
+					Type: dockyardsv1.ReadyCondition,
+					Status: metav1.ConditionTrue,
+					Reason: dockyardsv1.VerificationReasonVerified,
+					Message: "Verified by OIDC",
+					LastTransitionTime: metav1.Now(),
+				},
+			},
+		},
 	}
 	err = h.Create(ctx, &user)
 	if err != nil {
