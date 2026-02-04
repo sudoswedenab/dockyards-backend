@@ -121,34 +121,36 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Info("deleted verification request", "verificationRequestName", vr.Name)
 	}
 
-	err = authorization.ReconcileUserAuthorization(ctx, r, user)
-	if err != nil {
+	if readyCondition.Status == metav1.ConditionTrue {
+		err = authorization.ReconcileUserAuthorization(ctx, r, user)
+		if err != nil {
+			patch := client.MergeFrom(user.DeepCopy())
+
+			meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
+				Type:               dockyardsv1.UserAuthorizationReadyCondition,
+				Status: 			metav1.ConditionFalse,
+				Reason:             dockyardsv1.UserAuthorizationInternalErrorReason,
+				Message:            err.Error(),
+				LastTransitionTime: metav1.Now(),
+			})
+			_ = r.Status().Patch(ctx, &user, patch) // Set the status error as best effort.
+
+			return ctrl.Result{}, err
+		}
+
 		patch := client.MergeFrom(user.DeepCopy())
 
 		meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
 			Type:               dockyardsv1.UserAuthorizationReadyCondition,
-			Status: 			metav1.ConditionFalse,
-			Reason:             dockyardsv1.UserAuthorizationInternalErrorReason,
-			Message:            err.Error(),
+			Status: 			metav1.ConditionTrue,
+			Reason:             dockyardsv1.ReadyReason,
+			Message:            "",
 			LastTransitionTime: metav1.Now(),
 		})
-		_ = r.Status().Patch(ctx, &user, patch) // Set the status error as best effort.
-
-		return ctrl.Result{}, err
-	}
-
-	patch := client.MergeFrom(user.DeepCopy())
-
-	meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
-		Type:               dockyardsv1.UserAuthorizationReadyCondition,
-		Status: 			metav1.ConditionTrue,
-		Reason:             dockyardsv1.ReadyReason,
-		Message:            "",
-		LastTransitionTime: metav1.Now(),
-	})
-	err = r.Status().Patch(ctx, &user, patch)
-	if err != nil {
-		return ctrl.Result{}, err
+		err = r.Status().Patch(ctx, &user, patch)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
