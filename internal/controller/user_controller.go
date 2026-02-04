@@ -132,7 +132,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Info("deleted verification request", "verificationRequestName", vr.Name)
 	}
 
-	err = authorization.ReconcileUserAuthorization(ctx, r, &user)
+	err = authorization.ReconcileUserAuthorization(ctx, r, user)
 	if err != nil {
 		patch := client.MergeFrom(user.DeepCopy())
 

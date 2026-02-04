@@ -61,7 +61,7 @@ func TestUserPassword_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = authorization.ReconcileUserAuthorization(ctx, c, &user)
+		err = authorization.ReconcileUserAuthorization(ctx, c, user)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -126,7 +126,7 @@ func TestUserPassword_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = authorization.ReconcileUserAuthorization(ctx, c, &user)
+		err = authorization.ReconcileUserAuthorization(ctx, c, user)
 		if err != nil {
 			t.Fatal(err)
 		}
