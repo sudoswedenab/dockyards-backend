@@ -23,12 +23,14 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -46,6 +48,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var permissionTests = []dockyardsv1.Role{
+	dockyardsv1.RoleUser,
+	dockyardsv1.RoleSuperUser,
+}
+
 func TestClusterKubeconfig_Create(t *testing.T) {
 	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
 		t.Skip("no kubebuilder assets configured")
@@ -54,12 +61,6 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 	c := testEnvironment.GetClient()
 
 	organization := testEnvironment.MustCreateOrganization(t)
-
-	superUser := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleSuperUser)
-	reader := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
-
-	superUserToken := MustSignToken(t, superUser.Name)
-	readerToken := MustSignToken(t, reader.Name)
 
 	cluster := dockyardsv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -167,145 +168,173 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("test as super user", func(t *testing.T) {
-		options := types.KubeconfigOptions{}
+	// A grep-able comment to find the tests more easily:
+	// 1. `test as user`, `test_as_user`
+	// 2. `test as superuser`, `test_as_superuser`
+	for _, test := range permissionTests {
+		t.Run(fmt.Sprintf("test as %s", strings.ToLower(string(test))), func(t *testing.T) {
+			user := testEnvironment.MustGetOrganizationUser(t, organization, test)
+			userToken := MustSignToken(t, user.Name)
+			options := types.KubeconfigOptions{}
 
-		b, err := json.Marshal(&options)
-		if err != nil {
-			t.Fatal(err)
-		}
+			b, err := json.Marshal(&options)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		u := url.URL{
-			Path: path.Join("/v1/orgs/", organization.Name, "clusters", cluster.Name, "kubeconfig"),
-		}
+			u := url.URL{
+				Path: path.Join("/v1/orgs/", organization.Name, "clusters", cluster.Name, "kubeconfig"),
+			}
 
-		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.Header.Add("Authorization", "Bearer "+superUserToken)
+			r.Header.Add("Authorization", "Bearer "+userToken)
 
-		mux.ServeHTTP(w, r)
+			mux.ServeHTTP(w, r)
 
-		statusCode := w.Result().StatusCode
-		if statusCode != http.StatusCreated {
-			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
-		}
+			statusCode := w.Result().StatusCode
+			if statusCode != http.StatusCreated {
+				t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+			}
 
-		b, err = io.ReadAll(w.Result().Body)
-		if err != nil {
-			t.Fatalf("unexpected error reading result body: %s", err)
-		}
+			b, err = io.ReadAll(w.Result().Body)
+			if err != nil {
+				t.Fatalf("unexpected error reading result body: %s", err)
+			}
 
-		actual, err := clientcmd.Load(b)
-		if err != nil {
-			t.Fatal(err)
-		}
+			actual, err := clientcmd.Load(b)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		ownerOrganization, err := apiutil.GetOwnerOrganization(ctx, c, &cluster)
-		if err != nil {
-			t.Fatal("could not get cluster oranization owner")
-		}
+			ownerOrganization, err := apiutil.GetOwnerOrganization(ctx, c, &cluster)
+			if err != nil {
+				t.Fatal("could not get cluster oranization owner")
+			}
 
-		if ownerOrganization.Name == "" {
-			t.Fatal("could not get organization name")
-		}
+			if ownerOrganization.Name == "" {
+				t.Fatal("could not get organization name")
+			}
+			memberList := dockyardsv1.MemberList{}
 
-		superUserAlias := superUser.Name + "/" + cluster.Name
-		clusterAlias := cluster.Name + "/" + ownerOrganization.Name
+			err = c.List(ctx, &memberList)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		expected := &clientcmdapi.Config{
-			CurrentContext: superUserAlias + "@" + clusterAlias,
-			Clusters: map[string]*clientcmdapi.Cluster{
-				clusterAlias: {
-					Server:                   "https://localhost:6443",
-					CertificateAuthorityData: crt,
-					Extensions:               map[string]runtime.Object{},
+			member := dockyardsv1.Member{}
+			for _, m := range memberList.Items {
+				if m.Labels[dockyardsv1.LabelUserName] == user.Name {
+					member = m
+
+					break
+				}
+			}
+
+			if member.Name == "" {
+				t.Fatal("could not find user's membership information")
+			}
+
+			userAlias := user.Name + "/" + cluster.Name
+			clusterAlias := cluster.Name + "/" + ownerOrganization.Name
+
+			expected := &clientcmdapi.Config{
+				CurrentContext: userAlias + "@" + clusterAlias,
+				Clusters: map[string]*clientcmdapi.Cluster{
+					clusterAlias: {
+						Server:                   "https://localhost:6443",
+						CertificateAuthorityData: crt,
+						Extensions:               map[string]runtime.Object{},
+					},
 				},
-			},
-			Contexts: map[string]*clientcmdapi.Context{
-				superUserAlias + "@" + clusterAlias: {
-					Cluster:    clusterAlias,
-					AuthInfo:   superUserAlias,
+				Contexts: map[string]*clientcmdapi.Context{
+					userAlias + "@" + clusterAlias: {
+						Cluster:    clusterAlias,
+						AuthInfo:   userAlias,
+						Extensions: map[string]runtime.Object{},
+					},
+				},
+				Preferences: clientcmdapi.Preferences{
 					Extensions: map[string]runtime.Object{},
 				},
-			},
-			Preferences: clientcmdapi.Preferences{
 				Extensions: map[string]runtime.Object{},
-			},
-			Extensions: map[string]runtime.Object{},
-		}
+			}
 
-		opts := cmpopts.IgnoreFields(clientcmdapi.Config{}, "AuthInfos")
+			opts := cmpopts.IgnoreFields(clientcmdapi.Config{}, "AuthInfos")
 
-		if !cmp.Equal(actual, expected, opts) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual, opts))
-		}
+			if !cmp.Equal(actual, expected, opts) {
+				t.Errorf("diff: %s", cmp.Diff(expected, actual, opts))
+			}
 
-		block, _ := pem.Decode(actual.AuthInfos[superUserAlias].ClientCertificateData)
+			block, _ := pem.Decode(actual.AuthInfos[userAlias].ClientCertificateData)
 
-		actualCertificate, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			t.Fatal(err)
-		}
+			actualCertificate, err := x509.ParseCertificate(block.Bytes)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		expectedCertificate := x509.Certificate{
-			Subject: pkix.Name{
-				CommonName: superUser.Name,
-				Organization: []string{
-					"system:masters",
+			expectedCertificate := x509.Certificate{
+				Subject: pkix.Name{
+					CommonName: user.Name,
+					Organization: []string{
+						"dockyards:" + strings.ToLower(string(member.Spec.Role)),
+					},
+					Names: actualCertificate.Subject.Names,
 				},
-				Names: actualCertificate.Subject.Names,
-			},
-			SignatureAlgorithm: x509.ECDSAWithSHA256,
-			Issuer: pkix.Name{
-				Organization: []string{
-					"testing",
+				SignatureAlgorithm: x509.ECDSAWithSHA256,
+				Issuer: pkix.Name{
+					Organization: []string{
+						"testing",
+					},
+					Names: actualCertificate.Issuer.Names,
 				},
-				Names: actualCertificate.Issuer.Names,
-			},
-			KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-			ExtKeyUsage: []x509.ExtKeyUsage{
-				x509.ExtKeyUsageClientAuth,
-			},
-			PublicKeyAlgorithm: x509.RSA,
-			Version:            3,
-			//
-			AuthorityKeyId:          actualCertificate.AuthorityKeyId,
-			Extensions:              actualCertificate.Extensions,
-			NotAfter:                actualCertificate.NotAfter,
-			NotBefore:               actualCertificate.NotBefore,
-			PublicKey:               actualCertificate.PublicKey,
-			Raw:                     actualCertificate.Raw,
-			RawIssuer:               actualCertificate.RawIssuer,
-			RawSubject:              actualCertificate.RawSubject,
-			RawSubjectPublicKeyInfo: actualCertificate.RawSubjectPublicKeyInfo,
-			RawTBSCertificate:       actualCertificate.RawTBSCertificate,
-			Signature:               actualCertificate.Signature,
-		}
+				KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+				ExtKeyUsage: []x509.ExtKeyUsage{
+					x509.ExtKeyUsageClientAuth,
+				},
+				PublicKeyAlgorithm: x509.RSA,
+				Version:            3,
+				//
+				AuthorityKeyId:          actualCertificate.AuthorityKeyId,
+				Extensions:              actualCertificate.Extensions,
+				NotAfter:                actualCertificate.NotAfter,
+				NotBefore:               actualCertificate.NotBefore,
+				PublicKey:               actualCertificate.PublicKey,
+				Raw:                     actualCertificate.Raw,
+				RawIssuer:               actualCertificate.RawIssuer,
+				RawSubject:              actualCertificate.RawSubject,
+				RawSubjectPublicKeyInfo: actualCertificate.RawSubjectPublicKeyInfo,
+				RawTBSCertificate:       actualCertificate.RawTBSCertificate,
+				Signature:               actualCertificate.Signature,
+			}
 
-		ignoreFields := cmpopts.IgnoreFields(x509.Certificate{}, "SerialNumber")
+			ignoreFields := cmpopts.IgnoreFields(x509.Certificate{}, "SerialNumber")
 
-		if !cmp.Equal(*actualCertificate, expectedCertificate, ignoreFields) {
-			t.Errorf("diff: %s", cmp.Diff(expectedCertificate, *actualCertificate, ignoreFields))
-		}
+			if !cmp.Equal(*actualCertificate, expectedCertificate, ignoreFields) {
+				t.Errorf("diff: %s", cmp.Diff(expectedCertificate, *actualCertificate, ignoreFields))
+			}
 
-		roots := x509.NewCertPool()
-		roots.AppendCertsFromPEM(crt)
+			roots := x509.NewCertPool()
+			roots.AppendCertsFromPEM(crt)
 
-		verifyOptions := x509.VerifyOptions{
-			Roots: roots,
-			KeyUsages: []x509.ExtKeyUsage{
-				x509.ExtKeyUsageClientAuth,
-			},
-		}
+			verifyOptions := x509.VerifyOptions{
+				Roots: roots,
+				KeyUsages: []x509.ExtKeyUsage{
+					x509.ExtKeyUsageClientAuth,
+				},
+			}
 
-		_, err = actualCertificate.Verify(verifyOptions)
-		if err != nil {
-			t.Errorf("expected certificate to verify without errors, got %s", err)
-		}
-	})
+			_, err = actualCertificate.Verify(verifyOptions)
+			if err != nil {
+				t.Errorf("expected certificate to verify without errors, got %s", err)
+			}
+		})
 
+	}
 	t.Run("test as reader", func(t *testing.T) {
+		user := testEnvironment.MustGetOrganizationUser(t, organization, dockyardsv1.RoleReader)
+		userToken := MustSignToken(t, user.Name)
 		options := types.KubeconfigOptions{}
 
 		b, err := json.Marshal(&options)
@@ -320,7 +349,7 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
 
-		r.Header.Add("Authorization", "Bearer "+readerToken)
+		r.Header.Add("Authorization", "Bearer "+userToken)
 
 		mux.ServeHTTP(w, r)
 
