@@ -16,6 +16,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -25,7 +26,7 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/bubblebabble"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -45,15 +46,22 @@ type UserReconciler struct {
 // +kubebuilder:rbac:groups=dockyards.io,resources=verificationrequests,verbs=get;list;watch;create;delete;patch
 func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrl.LoggerFrom(ctx)
+
 	var user dockyardsv1.User
 	err := r.Get(ctx, req.NamespacedName, &user)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if !strings.HasPrefix(user.Spec.ProviderID, dockyardsv1.ProviderPrefixDockyards) {
+		err := r.reconcileNonDockyardsProvidedUser(ctx, &user)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	readyCondition := meta.FindStatusCondition(user.Status.Conditions, dockyardsv1.ReadyCondition)
 
-	// if User doesn't have a ready condition, set it to False
 	if readyCondition == nil {
 		patch := client.MergeFrom(user.DeepCopy())
 
@@ -95,7 +103,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		})
 
 		if err != nil {
-			if !errors.IsNotFound(err) {
+			if !apierrors.IsNotFound(err) {
 				return ctrl.Result{}, err
 			}
 		}
@@ -134,6 +142,51 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *UserReconciler) reconcileNonDockyardsProvidedUser(ctx context.Context, user *dockyardsv1.User) error {
+	var err error
+
+	logger := ctrl.LoggerFrom(ctx)
+
+	publicNamespace, ok := r.Config.GetValueForKey(config.KeyPublicNamespace)
+	if !ok {
+		return errors.New("publicNamespace has not been configured")
+	}
+
+	providerName, _, ok := strings.Cut(user.Spec.ProviderID, "://")
+	if !ok {
+		return errors.New("user was not provided by dockyards, but their ProviderID format did not match what we expected either")
+	}
+
+	var identityProvider dockyardsv1.IdentityProvider
+	err = r.Get(ctx, client.ObjectKey{Name: providerName, Namespace: publicNamespace}, &identityProvider)
+	if err != nil {
+		return err
+	}
+
+	readyCondition := meta.FindStatusCondition(user.Status.Conditions, dockyardsv1.ReadyCondition)
+	if readyCondition != nil {
+		return nil
+	}
+
+	patch := client.MergeFrom(user.DeepCopy())
+
+	meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
+		Type:               dockyardsv1.ReadyCondition,
+		Status:             metav1.ConditionTrue,
+		Reason:             dockyardsv1.VerificationReasonVerified,
+		Message:            "Verified by OIDC",
+		LastTransitionTime: metav1.Now(),
+	})
+	logger.Info("user did not have a ready condition, adding it", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionFalse)
+
+	err = r.Status().Patch(ctx, user, patch)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *UserReconciler) reconcileUserVerification(ctx context.Context, user *dockyardsv1.User) error {

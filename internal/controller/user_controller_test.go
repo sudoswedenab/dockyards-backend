@@ -60,10 +60,25 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 
 	config := dyconfig.NewFakeConfigManager(map[string]string{
 		string(dyconfig.KeyExternalURL): "http://test.com",
+		string(dyconfig.KeyPublicNamespace): "dockyards-public",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	externalIDP := dockyardsv1.IdentityProvider{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "not-dockyards",
+			Namespace: "dockyards-public",
+		},
+	}
+	err = c.Create(ctx, &externalIDP)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = c.Delete(ctx, &externalIDP)
+	})
 
 	reconciler := controller.UserReconciler{
 		Client: c,
@@ -158,6 +173,7 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 				DisplayName: "test",
 				Email:       "test+d5081170@test.com",
 				Password:    "test",
+				ProviderID:  "not-dockyards://test-d5081170",
 			},
 		}
 		err := c.Create(ctx, &user)
