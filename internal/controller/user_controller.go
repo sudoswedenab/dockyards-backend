@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -69,25 +68,17 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-
-		return ctrl.Result{Requeue: true}, nil
 	}
+
+	readyCondition = meta.FindStatusCondition(user.Status.Conditions, dockyardsv1.ReadyCondition)
 
 	// if User is not ready, ensure that it has a corresponding VerificationRequest with a Verified condition
 	if readyCondition.Status == metav1.ConditionFalse {
-		verificationRequest, operationResult, err := r.reconcileVerificationRequest(ctx, user)
+		logger.Info("user ready condition is false, reconciling a verification request for them", "name", user.Name)
+
+		verificationRequest, err := r.reconcileVerificationRequest(ctx, user)
 		if err != nil {
 			return ctrl.Result{}, err
-		}
-
-		if operationResult != controllerutil.OperationResultNone {
-			logger.Info("user ready condition was false, reconciled a verification request for them", "verificationRequestName", verificationRequest.Name, "operationResult", operationResult)
-		}
-
-		if operationResult == controllerutil.OperationResultCreated {
-			logger.Info("verification request was just created, requeuing user reconciliation", "verificationRequestName", verificationRequest.Name)
-
-			return ctrl.Result{Requeue: true}, nil
 		}
 
 		verifiedCondition := meta.FindStatusCondition(verificationRequest.Status.Conditions, dockyardsv1.VerifiedCondition)
@@ -108,8 +99,6 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 				return ctrl.Result{}, err
 			}
 			logger.Info("user verification request was verified, so we set the user condition to ready", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionTrue)
-
-			return ctrl.Result{Requeue: true}, nil
 		}
 	}
 
@@ -165,7 +154,9 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{}, nil
 }
 
-func (r *UserReconciler) reconcileVerificationRequest(ctx context.Context, user dockyardsv1.User) (*dockyardsv1.VerificationRequest, controllerutil.OperationResult, error) {
+func (r *UserReconciler) reconcileVerificationRequest(ctx context.Context, user dockyardsv1.User) (dockyardsv1.VerificationRequest, error) {
+	logger := ctrl.LoggerFrom(ctx)
+
 	verificationRequest := dockyardsv1.VerificationRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sign-up-" + user.Name,
@@ -202,10 +193,14 @@ func (r *UserReconciler) reconcileVerificationRequest(ctx context.Context, user 
 		return nil
 	})
 	if err != nil {
-		return nil, controllerutil.OperationResultNone, err
+		return dockyardsv1.VerificationRequest{}, err
 	}
 
-	return &verificationRequest, operationResult, nil
+	if operationResult != controllerutil.OperationResultNone {
+		logger.Info("updated or created a verification request", "name", user.Name, "operationResult", operationResult)
+	}
+
+	return verificationRequest, nil
 }
 
 func (r *UserReconciler) verificationReqeuestsToUsers(_ context.Context, obj client.Object) []ctrl.Request {
