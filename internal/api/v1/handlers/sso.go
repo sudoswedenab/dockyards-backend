@@ -391,22 +391,22 @@ func (h *handler) getOIDCConfig(ctx context.Context, ref corev1.SecretReference)
 			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: issuer field is suspiciously empty")
 		}
 		if config.AuthorizationEndpoint == "" {
-			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: authorizationEndpoint field is suspiciously empty")
+			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: authorization_endpoint field is suspiciously empty")
 		}
 		if config.TokenEndpoint == "" {
-			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: authorizationEndpoint field is suspiciously empty")
+			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: token_endpoint field is suspiciously empty")
 		}
 		if config.DeviceAuthorizationEndpoint == "" {
-			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: deviceAuthorizationEndpoint field is suspiciously empty")
+			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: device_authorization_endpoint field is suspiciously empty")
 		}
 		if config.UserinfoEndpoint == "" {
-			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: userinfoEndpoint field is suspiciously empty")
+			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: userinfo_endpoint field is suspiciously empty")
 		}
 		if config.JWKSURI == "" {
-			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: jwks field is suspiciously empty")
+			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: jwks_uri field is suspiciously empty")
 		}
 		if len(config.IDTokenSigningAlgs) == 0 {
-			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: idTokenSigningAlgs field is suspiciously empty")
+			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("invalid oidc provider config: id_token_signing_alg_values_supported field is suspiciously empty")
 		}
 	}
 
