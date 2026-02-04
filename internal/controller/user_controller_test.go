@@ -149,6 +149,37 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 		}
 	})
 
+	t.Run("creating a non-dockyards user does not result in the creation of a verification request", func(t *testing.T) {
+		user := dockyardsv1.User{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-d5081170",
+			},
+			Spec: dockyardsv1.UserSpec{
+				DisplayName: "test",
+				Email:       "test+d5081170@test.com",
+				Password:    "test",
+			},
+		}
+		err := c.Create(ctx, &user)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			c.Delete(ctx, &user)
+		})
+
+		reconcileUserWithName(t, user.Name)
+
+		vr := dockyardsv1.VerificationRequest{ObjectMeta: metav1.ObjectMeta{Name: "sign-up-" + user.Name}}
+		err = testingutil.RetryUntilFound(ctx, c, &vr)
+		if err == nil {
+			t.Fatalf("expected to not find any verification request for user %s, but found one anyway: %s", user.Name, err)
+		}
+		if !errors.IsNotFound(err) {
+			t.Fatalf("expected to not find any verification request for user %s, but got error: %s", user.Name, err)
+		}
+	})
+
 	t.Run("creating a dockyards user adds a ready false to it", func(t *testing.T) {
 		user := dockyardsv1.User{
 			ObjectMeta: metav1.ObjectMeta{
