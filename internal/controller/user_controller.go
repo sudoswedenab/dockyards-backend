@@ -17,6 +17,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sudoswedenab/dockyards-backend/api/config"
@@ -24,6 +25,7 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/bubblebabble"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -62,7 +64,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			Message:            "",
 			LastTransitionTime: metav1.Now(),
 		})
-		logger.Info("user did not have a ready condition, added it", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionFalse)
+		logger.Info("user did not have a ready condition, adding it", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionFalse)
 
 		err = r.Status().Patch(ctx, &user, patch)
 		if err != nil {
@@ -72,31 +74,31 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	readyCondition = meta.FindStatusCondition(user.Status.Conditions, dockyardsv1.ReadyCondition)
 
-	// if User is not ready, ensure that it has a corresponding VerificationRequest with a Verified condition
-	if readyCondition.Status == metav1.ConditionFalse {
-		err := r.reconcileUserVerification(ctx, &user)
-		if err != nil {
-			return ctrl.Result{}, err
+	if strings.HasPrefix(user.Spec.ProviderID, dockyardsv1.ProviderPrefixDockyards) {
+		if readyCondition.Status == metav1.ConditionFalse {
+			err := r.reconcileUserVerification(ctx, &user)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
 	// if User is Ready, make sure VerificationRequest is deleted
 	if readyCondition.Status == metav1.ConditionTrue {
-		vr := dockyardsv1.VerificationRequest{
-			ObjectMeta: metav1.ObjectMeta{Name: "sign-up-" + user.Name},
-		}
+		name := "sign-up-" + user.Name
+		logger.Info("user is ready, deleting their verification request", "name", user.Name, "verificationRequestName", name)
 
-		err := r.Get(ctx, client.ObjectKeyFromObject(&vr), &vr)
+		err := r.Delete(ctx, &dockyardsv1.VerificationRequest{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		})
+
 		if err != nil {
-			return ctrl.Result{}, client.IgnoreNotFound(err)
+			if !errors.IsNotFound(err) {
+				return ctrl.Result{}, err
+			}
 		}
-
-		err = r.Delete(ctx, &vr)
-		if err != nil {
-			return ctrl.Result{}, client.IgnoreNotFound(err)
-		}
-
-		logger.Info("deleted verification request", "verificationRequestName", vr.Name)
 	}
 
 	if readyCondition.Status == metav1.ConditionTrue {
