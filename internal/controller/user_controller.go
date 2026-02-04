@@ -74,31 +74,9 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// if User is not ready, ensure that it has a corresponding VerificationRequest with a Verified condition
 	if readyCondition.Status == metav1.ConditionFalse {
-		logger.Info("user ready condition is false, reconciling a verification request for them", "name", user.Name)
-
-		verificationRequest, err := r.reconcileVerificationRequest(ctx, user)
+		err := r.reconcileUserVerification(ctx, &user)
 		if err != nil {
 			return ctrl.Result{}, err
-		}
-
-		verifiedCondition := meta.FindStatusCondition(verificationRequest.Status.Conditions, dockyardsv1.VerifiedCondition)
-
-		// if VerificationRequest has Verified set to True, mark User as Ready
-		if verifiedCondition != nil && verifiedCondition.Status == metav1.ConditionTrue {
-			patch := client.MergeFrom(user.DeepCopy())
-
-			meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
-				Type:               dockyardsv1.ReadyCondition,
-				Status:             verifiedCondition.Status,
-				Reason:             verifiedCondition.Reason,
-				Message:            verifiedCondition.Message,
-				LastTransitionTime: verifiedCondition.LastTransitionTime,
-			})
-			err = r.Status().Patch(ctx, &user, patch)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			logger.Info("user verification request was verified, so we set the user condition to ready", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionTrue)
 		}
 	}
 
@@ -154,6 +132,42 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *UserReconciler) reconcileUserVerification(ctx context.Context, user *dockyardsv1.User) error {
+	logger := ctrl.LoggerFrom(ctx)
+	if user == nil {
+		return nil
+	}
+
+	logger.Info("user ready condition is false, reconciling a verification request for them", "name", user.Name)
+
+	verificationRequest, err := r.reconcileVerificationRequest(ctx, *user)
+	if err != nil {
+		return err
+	}
+
+	verifiedCondition := meta.FindStatusCondition(verificationRequest.Status.Conditions, dockyardsv1.VerifiedCondition)
+
+	// if VerificationRequest has Verified set to True, mark User as Ready
+	if verifiedCondition != nil && verifiedCondition.Status == metav1.ConditionTrue {
+		patch := client.MergeFrom(user.DeepCopy())
+
+		meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
+			Type:               dockyardsv1.ReadyCondition,
+			Status:             verifiedCondition.Status,
+			Reason:             verifiedCondition.Reason,
+			Message:            verifiedCondition.Message,
+			LastTransitionTime: verifiedCondition.LastTransitionTime,
+		})
+		err = r.Status().Patch(ctx, user, patch)
+		if err != nil {
+			return err
+		}
+		logger.Info("user verification request was verified, so we set the user condition to ready", "userName", user.Name, "condition", dockyardsv1.ReadyCondition, "status", metav1.ConditionTrue)
+	}
+
+	return nil
 }
 
 func (r *UserReconciler) reconcileVerificationRequest(ctx context.Context, user dockyardsv1.User) (dockyardsv1.VerificationRequest, error) {
