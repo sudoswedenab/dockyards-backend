@@ -22,6 +22,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
@@ -115,6 +116,21 @@ func (h *handler) CreateClusterKubeconfig(ctx context.Context, cluster *dockyard
 		return nil, err
 	}
 
+	var memberList dockyardsv1.MemberList
+	err = h.List(ctx, &memberList, client.InNamespace(user.Namespace))
+	if err != nil {
+		return nil, err
+	}
+
+	var member dockyardsv1.Member
+	for _, m := range memberList.Items {
+		if m.Labels[dockyardsv1.LabelUserName] == user.Name {
+			member = m
+
+			break
+		}
+	}
+
 	ownerOrganization, err := apiutil.GetOwnerOrganization(ctx, h.Client, cluster)
 	if err != nil {
 		return nil, err
@@ -129,7 +145,7 @@ func (h *handler) CreateClusterKubeconfig(ctx context.Context, cluster *dockyard
 		Subject: pkix.Name{
 			CommonName: user.Name,
 			Organization: []string{
-				"system:masters",
+				"dockyards:" + strings.ToLower(string(member.Spec.Role)),
 			},
 		},
 		NotBefore: caCertificate.NotBefore,
