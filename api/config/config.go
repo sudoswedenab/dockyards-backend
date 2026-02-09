@@ -86,7 +86,9 @@ func (m *ConfigManager) Reconcile(ctx context.Context, req reconcile.Request) (r
 	}
 	m.data.Store(&configMap.Data)
 
-	m.logger.Debug("reloaded config map", "key", m.backingConfigMapKey, "data", configMap.Data)
+	if m.logger != nil {
+		m.logger.Debug("reloaded config map", "key", m.backingConfigMapKey, "data", configMap.Data)
+	}
 
 	return reconcile.Result{}, nil
 }
