@@ -20,6 +20,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1beta1"
 )
 
 const (
@@ -57,6 +58,7 @@ type ClusterSpec struct {
 	NoDefaultNetworkPlugin   bool                              `json:"noDefaultNetworkPlugin,omitempty"`
 	PodSubnets               []string                          `json:"podSubnets,omitempty"`
 	ServiceSubnets           []string                          `json:"serviceSubnets,omitempty"`
+	AuthenticationConfig     *apiserverv1.AuthenticationConfiguration `json:"authenticationConfig,omitempty"`
 }
 
 type ClusterStatus struct {

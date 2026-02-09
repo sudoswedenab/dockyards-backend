@@ -5,6 +5,7 @@ go 1.24.2
 require (
 	cuelang.org/go v0.12.1
 	github.com/blang/semver/v4 v4.0.0
+	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/fluxcd/pkg/runtime v0.47.1
 	github.com/go-logr/logr v1.4.3
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -13,8 +14,10 @@ require (
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/cors v1.11.0
 	github.com/spf13/pflag v1.0.6
+	github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20251127092038-25437b1a8094
 	github.com/sudoswedenab/dockyards-backend/api v1.2.3
 	golang.org/x/crypto v0.40.0
+	golang.org/x/oauth2 v0.30.0
 	k8s.io/api v0.33.3
 	k8s.io/apiextensions-apiserver v0.33.3
 	k8s.io/apimachinery v0.33.3
@@ -31,7 +34,6 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
-	github.com/coreos/go-oidc/v3 v3.17.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
 	github.com/emicklei/proto v1.13.4 // indirect
@@ -70,13 +72,13 @@ require (
 	github.com/protocolbuffers/txtpbfmt v0.0.0-20241112170944-20d2c9ebc01d // indirect
 	github.com/rogpeppe/go-internal v1.13.2-0.20241226121412-a5dc8ff20d0a // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
-	github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20251127092038-25437b1a8094 // indirect
 	github.com/tetratelabs/wazero v1.6.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	go.opentelemetry.io/otel v1.33.0 // indirect
+	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/mod v0.25.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/term v0.33.0 // indirect
@@ -89,7 +91,9 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/apiserver v0.33.3 // indirect
 	k8s.io/code-generator v0.33.3 // indirect
+	k8s.io/component-base v0.33.3 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
