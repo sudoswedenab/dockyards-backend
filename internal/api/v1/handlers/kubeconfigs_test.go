@@ -255,9 +255,6 @@ func TestClusterKubeconfig_Create(t *testing.T) {
 						Extensions: map[string]runtime.Object{},
 					},
 				},
-				Preferences: clientcmdapi.Preferences{
-					Extensions: map[string]runtime.Object{},
-				},
 				Extensions: map[string]runtime.Object{},
 			}
 

@@ -25,11 +25,9 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/name"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -39,7 +37,7 @@ type DockyardsNodePool struct {
 	Client client.Reader
 }
 
-var _ webhook.CustomValidator = &DockyardsNodePool{}
+var _ admission.Validator[*dockyardsv1.NodePool] = &DockyardsNodePool{}
 
 var nodePoolLabels = []string{
 	dockyardsv1.LabelOrganizationName,
@@ -47,36 +45,20 @@ var nodePoolLabels = []string{
 }
 
 func (webhook *DockyardsNodePool) SetupWebhookWithManager(m ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(m).
-		For(&dockyardsv1.NodePool{}).
+	return ctrl.NewWebhookManagedBy(m, &dockyardsv1.NodePool{}).
 		WithValidator(webhook).
 		Complete()
 }
 
-func (webhook *DockyardsNodePool) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	dockyardsNodePool, ok := obj.(*dockyardsv1.NodePool)
-	if !ok {
-		return nil, nil
-	}
-
-	return nil, webhook.validate(ctx, nil, dockyardsNodePool)
+func (webhook *DockyardsNodePool) ValidateCreate(ctx context.Context, nodePool *dockyardsv1.NodePool) (admission.Warnings, error) {
+	return nil, webhook.validate(ctx, nil, nodePool)
 }
 
-func (webhook *DockyardsNodePool) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	oldNodePool, ok := oldObj.(*dockyardsv1.NodePool)
-	if !ok {
-		return nil, nil
-	}
-
-	newNodePool, ok := newObj.(*dockyardsv1.NodePool)
-	if !ok {
-		return nil, nil
-	}
-
+func (webhook *DockyardsNodePool) ValidateUpdate(ctx context.Context, oldNodePool, newNodePool *dockyardsv1.NodePool) (admission.Warnings, error) {
 	return nil, webhook.validate(ctx, oldNodePool, newNodePool)
 }
 
-func (webhook *DockyardsNodePool) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsNodePool) ValidateDelete(_ context.Context, _ *dockyardsv1.NodePool) (admission.Warnings, error) {
 	return nil, nil
 }
 

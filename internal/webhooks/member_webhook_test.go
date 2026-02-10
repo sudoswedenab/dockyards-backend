@@ -16,7 +16,6 @@ package webhooks_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -75,11 +74,11 @@ func TestDockyardsMemberValidateUpdate(t *testing.T) {
 
 	tt := []struct {
 		name  string
-		setup func() (runtime.Object, runtime.Object, error)
+		setup func() (*dockyardsv1.Member, *dockyardsv1.Member, error)
 	}{
 		{
 			name: "valid member update",
-			setup: func() (runtime.Object, runtime.Object, error) {
+			setup: func() (*dockyardsv1.Member, *dockyardsv1.Member, error) {
 				labels := validMemberLabels("valid-update")
 				oldMember := newTestMember("valid-update", "valid-update", labels)
 
@@ -91,7 +90,7 @@ func TestDockyardsMemberValidateUpdate(t *testing.T) {
 		},
 		{
 			name: "immutable user reference",
-			setup: func() (runtime.Object, runtime.Object, error) {
+			setup: func() (*dockyardsv1.Member, *dockyardsv1.Member, error) {
 				labels := validMemberLabels("immutable-old")
 				oldMember := newTestMember("immutable-user", "immutable-old", labels)
 
@@ -111,24 +110,6 @@ func TestDockyardsMemberValidateUpdate(t *testing.T) {
 						),
 					},
 				)
-			},
-		},
-		{
-			name: "unexpected new object type",
-			setup: func() (runtime.Object, runtime.Object, error) {
-				labels := validMemberLabels("type-check")
-				oldMember := newTestMember("type-check", "type-check", labels)
-
-				return oldMember.DeepCopy(), &dockyardsv1.Organization{}, apierrors.NewBadRequest("new object has an unexpected type")
-			},
-		},
-		{
-			name: "unexpected old object type",
-			setup: func() (runtime.Object, runtime.Object, error) {
-				labels := validMemberLabels("type-check")
-				newMember := newTestMember("type-check", "type-check", labels)
-
-				return &dockyardsv1.Organization{}, newMember.DeepCopy(), apierrors.NewInternalError(errors.New("existing object has an unexpected type"))
 			},
 		},
 	}

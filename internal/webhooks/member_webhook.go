@@ -16,18 +16,15 @@ package webhooks
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -39,15 +36,10 @@ type DockyardsMember struct {
 	Client client.Reader
 }
 
-var _ webhook.CustomValidator = &DockyardsMember{}
-var _ webhook.CustomDefaulter = &DockyardsMember{}
+var _ admission.Validator[*dockyardsv1.Member] = &DockyardsMember{}
+var _ admission.Defaulter[*dockyardsv1.Member] = &DockyardsMember{}
 
-func (webhook *DockyardsMember) Default(ctx context.Context, obj runtime.Object) error {
-	member, ok := obj.(*dockyardsv1.Member)
-	if !ok {
-		return apierrors.NewBadRequest("new object has an unexpected type")
-	}
-
+func (webhook *DockyardsMember) Default(ctx context.Context, member *dockyardsv1.Member) error {
 	organization, err := apiutil.GetOrganizationByNamespaceRef(ctx, webhook.Client, member.Namespace)
 	if err != nil {
 		return err
@@ -69,33 +61,17 @@ func (webhook *DockyardsMember) Default(ctx context.Context, obj runtime.Object)
 }
 
 func (webhook *DockyardsMember) SetupWebhookWithManager(m ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(m).
-		For(&dockyardsv1.Member{}).
+	return ctrl.NewWebhookManagedBy(m, &dockyardsv1.Member{}).
 		WithValidator(webhook).
 		WithDefaulter(webhook).
 		Complete()
 }
 
-func (webhook *DockyardsMember) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	dockyardsMember, ok := obj.(*dockyardsv1.Member)
-	if !ok {
-		return nil, apierrors.NewBadRequest("new object has an unexpected type")
-	}
-
-	return webhook.validate(ctx, dockyardsMember)
+func (webhook *DockyardsMember) ValidateCreate(ctx context.Context, member *dockyardsv1.Member) (admission.Warnings, error) {
+	return webhook.validate(ctx, member)
 }
 
-func (webhook *DockyardsMember) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	newMember, ok := newObj.(*dockyardsv1.Member)
-	if !ok {
-		return nil, apierrors.NewBadRequest("new object has an unexpected type")
-	}
-
-	oldMember, ok := oldObj.(*dockyardsv1.Member)
-	if !ok {
-		return nil, apierrors.NewInternalError(errors.New("existing object has an unexpected type"))
-	}
-
+func (webhook *DockyardsMember) ValidateUpdate(ctx context.Context, oldMember, newMember *dockyardsv1.Member) (admission.Warnings, error) {
 	var errs field.ErrorList
 	if !reflect.DeepEqual(oldMember.Spec.UserRef, newMember.Spec.UserRef) {
 		invalid := field.Invalid(field.NewPath("spec", "userRef"), newMember.Spec.UserRef, "field is immutable")
@@ -113,7 +89,7 @@ func (webhook *DockyardsMember) ValidateUpdate(ctx context.Context, oldObj, newO
 	return webhook.validate(ctx, newMember)
 }
 
-func (webhook *DockyardsMember) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsMember) ValidateDelete(_ context.Context, _ *dockyardsv1.Member) (admission.Warnings, error) {
 	return nil, nil
 }
 

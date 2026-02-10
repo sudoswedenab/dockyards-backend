@@ -22,11 +22,9 @@ import (
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -38,23 +36,17 @@ type DockyardsOrganization struct {
 	Client client.Reader
 }
 
-var _ webhook.CustomValidator = &DockyardsOrganization{}
-var _ webhook.CustomDefaulter = &DockyardsOrganization{}
+var _ admission.Validator[*dockyardsv1.Organization] = &DockyardsOrganization{}
+var _ admission.Defaulter[*dockyardsv1.Organization] = &DockyardsOrganization{}
 
 func (webhook *DockyardsOrganization) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&dockyardsv1.Organization{}).
+	return ctrl.NewWebhookManagedBy(mgr, &dockyardsv1.Organization{}).
 		WithValidator(webhook).
 		WithDefaulter(webhook).
 		Complete()
 }
 
-func (webhook *DockyardsOrganization) Default(_ context.Context, obj runtime.Object) error {
-	organization, ok := obj.(*dockyardsv1.Organization)
-	if !ok {
-		return apierrors.NewBadRequest("new object has an unexpected type")
-	}
-
+func (webhook *DockyardsOrganization) Default(_ context.Context, organization *dockyardsv1.Organization) error {
 	if organization.Labels == nil {
 		organization.Labels = make(map[string]string)
 	}
@@ -64,25 +56,15 @@ func (webhook *DockyardsOrganization) Default(_ context.Context, obj runtime.Obj
 	return nil
 }
 
-func (webhook *DockyardsOrganization) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	dockyardsOrganization, ok := obj.(*dockyardsv1.Organization)
-	if !ok {
-		return nil, nil
-	}
-
-	return webhook.validate(ctx, dockyardsOrganization)
+func (webhook *DockyardsOrganization) ValidateCreate(ctx context.Context, organization *dockyardsv1.Organization) (admission.Warnings, error) {
+	return webhook.validate(ctx, organization)
 }
 
-func (webhook *DockyardsOrganization) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	dockyardsOrganization, ok := newObj.(*dockyardsv1.Organization)
-	if !ok {
-		return nil, nil
-	}
-
-	return webhook.validate(ctx, dockyardsOrganization)
+func (webhook *DockyardsOrganization) ValidateUpdate(ctx context.Context, _, organization *dockyardsv1.Organization) (admission.Warnings, error) {
+	return webhook.validate(ctx, organization)
 }
 
-func (webhook *DockyardsOrganization) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsOrganization) ValidateDelete(_ context.Context, _ *dockyardsv1.Organization) (admission.Warnings, error) {
 	return nil, nil
 }
 

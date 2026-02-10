@@ -22,7 +22,6 @@ import (
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,32 +36,23 @@ type DockyardsUser struct {
 	AllowedDomains []string
 }
 
+var _ admission.Validator[*dockyardsv1.User] = &DockyardsUser{}
+
 func (webhook *DockyardsUser) SetupWebhookWithManager(m ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(m).
-		For(&dockyardsv1.User{}).
+	return ctrl.NewWebhookManagedBy(m, &dockyardsv1.User{}).
 		WithValidator(webhook).
 		Complete()
 }
 
-func (webhook *DockyardsUser) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	dockyardsUser, ok := obj.(*dockyardsv1.User)
-	if !ok {
-		return nil, nil
-	}
-
-	return nil, webhook.validate(ctx, dockyardsUser)
+func (webhook *DockyardsUser) ValidateCreate(ctx context.Context, user *dockyardsv1.User) (admission.Warnings, error) {
+	return nil, webhook.validate(ctx, user)
 }
 
-func (webhook *DockyardsUser) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	dockyardsUser, ok := newObj.(*dockyardsv1.User)
-	if !ok {
-		return nil, nil
-	}
-
-	return nil, webhook.validate(ctx, dockyardsUser)
+func (webhook *DockyardsUser) ValidateUpdate(ctx context.Context, _, newUser *dockyardsv1.User) (admission.Warnings, error) {
+	return nil, webhook.validate(ctx, newUser)
 }
 
-func (webhook *DockyardsUser) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsUser) ValidateDelete(_ context.Context, _ *dockyardsv1.User) (admission.Warnings, error) {
 	return nil, nil
 }
 

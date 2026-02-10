@@ -21,7 +21,6 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -41,24 +40,18 @@ type DockyardsCluster struct {
 	Client client.Reader
 }
 
-var _ admission.CustomValidator = &DockyardsCluster{}
-var _ admission.CustomDefaulter = &DockyardsCluster{}
+var _ admission.Validator[*dockyardsv1.Cluster] = &DockyardsCluster{}
+var _ admission.Defaulter[*dockyardsv1.Cluster] = &DockyardsCluster{}
 
 func (webhook *DockyardsCluster) SetupWebhookWithManager(m ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(m).
-		For(&dockyardsv1.Cluster{}).
+	return ctrl.NewWebhookManagedBy(m, &dockyardsv1.Cluster{}).
 		WithValidator(webhook).
 		WithDefaulter(webhook).
 		Complete()
 }
 
-func (webhook *DockyardsCluster) Default(ctx context.Context, obj runtime.Object) error {
+func (webhook *DockyardsCluster) Default(ctx context.Context, cluster *dockyardsv1.Cluster) error {
 	var errorList field.ErrorList
-
-	cluster, ok := obj.(*dockyardsv1.Cluster)
-	if !ok {
-		return nil
-	}
 
 	if cluster.Spec.Version == "" {
 		release, err := apiutil.GetDefaultRelease(ctx, webhook.Client, dockyardsv1.ReleaseTypeKubernetes)
@@ -86,26 +79,16 @@ func (webhook *DockyardsCluster) Default(ctx context.Context, obj runtime.Object
 	return nil
 }
 
-func (webhook *DockyardsCluster) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	dockyardsCluster, ok := obj.(*dockyardsv1.Cluster)
-	if !ok {
-		return nil, nil
-	}
-
-	return nil, webhook.validate(dockyardsCluster)
+func (webhook *DockyardsCluster) ValidateCreate(_ context.Context, cluster *dockyardsv1.Cluster) (admission.Warnings, error) {
+	return nil, webhook.validate(cluster)
 }
 
-func (webhook *DockyardsCluster) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	dockyardsCluster, ok := obj.(*dockyardsv1.Cluster)
-	if !ok {
+func (webhook *DockyardsCluster) ValidateDelete(_ context.Context, cluster *dockyardsv1.Cluster) (admission.Warnings, error) {
+	if apiutil.HasExpired(cluster) {
 		return nil, nil
 	}
 
-	if apiutil.HasExpired(dockyardsCluster) {
-		return nil, nil
-	}
-
-	if dockyardsCluster.Spec.BlockDeletion {
+	if cluster.Spec.BlockDeletion {
 		forbidden := field.Forbidden(
 			field.NewPath("spec", "blockDeletion"),
 			"deletion is blocked",
@@ -115,7 +98,7 @@ func (webhook *DockyardsCluster) ValidateDelete(_ context.Context, obj runtime.O
 
 		return nil, apierrors.NewInvalid(
 			qualifiedKind,
-			dockyardsCluster.Name,
+			cluster.Name,
 			field.ErrorList{
 				forbidden,
 			},
@@ -125,17 +108,7 @@ func (webhook *DockyardsCluster) ValidateDelete(_ context.Context, obj runtime.O
 	return nil, nil
 }
 
-func (webhook *DockyardsCluster) ValidateUpdate(_ context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
-	oldCluster, ok := oldObj.(*dockyardsv1.Cluster)
-	if !ok {
-		return nil, nil
-	}
-
-	newCluster, ok := newObj.(*dockyardsv1.Cluster)
-	if !ok {
-		return nil, nil
-	}
-
+func (webhook *DockyardsCluster) ValidateUpdate(_ context.Context, oldCluster *dockyardsv1.Cluster, newCluster *dockyardsv1.Cluster) (admission.Warnings, error) {
 	if newCluster.Spec.AllocateInternalIP != oldCluster.Spec.AllocateInternalIP {
 		invalid := field.Invalid(
 			field.NewPath("spec", "allocateInternalIP"),
