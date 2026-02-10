@@ -16,17 +16,14 @@ package webhooks
 
 import (
 	"context"
-	"errors"
 	"net/mail"
 
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -52,11 +49,10 @@ var invitationImmutableSpecFields = []invitationImmutableField{
 	},
 }
 
-var _ webhook.CustomValidator = &DockyardsInvitation{}
+var _ admission.Validator[*dockyardsv1.Invitation] = &DockyardsInvitation{}
 
 func (webhook *DockyardsInvitation) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	err := ctrl.NewWebhookManagedBy(mgr).
-		For(&dockyardsv1.Invitation{}).
+	err := ctrl.NewWebhookManagedBy(mgr, &dockyardsv1.Invitation{}).
 		WithValidator(webhook).
 		Complete()
 	if err != nil {
@@ -66,26 +62,11 @@ func (webhook *DockyardsInvitation) SetupWebhookWithManager(mgr ctrl.Manager) er
 	return nil
 }
 
-func (webhook *DockyardsInvitation) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	invitation, ok := obj.(*dockyardsv1.Invitation)
-	if !ok {
-		return nil, apierrors.NewBadRequest("unexpected type")
-	}
-
+func (webhook *DockyardsInvitation) ValidateCreate(ctx context.Context, invitation *dockyardsv1.Invitation) (admission.Warnings, error) {
 	return webhook.validate(ctx, invitation)
 }
 
-func (webhook *DockyardsInvitation) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	newInv, ok := newObj.(*dockyardsv1.Invitation)
-	if !ok {
-		return nil, apierrors.NewBadRequest("new object has an unexpected type")
-	}
-
-	oldInv, ok := oldObj.(*dockyardsv1.Invitation)
-	if !ok {
-		return nil, apierrors.NewInternalError(errors.New("existing object has an unexpected type"))
-	}
-
+func (webhook *DockyardsInvitation) ValidateUpdate(ctx context.Context, oldInv, newInv *dockyardsv1.Invitation) (admission.Warnings, error) {
 	var errs field.ErrorList
 	for _, f := range invitationImmutableSpecFields {
 		if f.get(&oldInv.Spec) != f.get(&newInv.Spec) {
@@ -175,6 +156,6 @@ func (webhook *DockyardsInvitation) validate(ctx context.Context, invitation *do
 	return nil, nil
 }
 
-func (webhook *DockyardsInvitation) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+func (webhook *DockyardsInvitation) ValidateDelete(_ context.Context, _ *dockyardsv1.Invitation) (admission.Warnings, error) {
 	return nil, nil
 }
