@@ -18,6 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
@@ -89,6 +91,8 @@ func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockya
 	if len(cluster.Spec.ServiceSubnets) > 0 {
 		v1Cluster.ServiceSubnets = &cluster.Spec.ServiceSubnets
 	}
+
+	v1Cluster.AuthenticationConfig = toAuthenticationConfiguration(cluster.Spec.AuthenticationConfig)
 
 	return &v1Cluster
 }
@@ -755,4 +759,170 @@ func add(errs *[]error, err error) {
 	}
 
 	*errs = append(*errs, err)
+}
+
+func toAuthenticationConfiguration(value *apiserverv1.AuthenticationConfiguration) *types.AuthenticationConfiguration {
+	if value == nil {
+		return nil
+	}
+
+	return &types.AuthenticationConfiguration{
+		Anonymous: toAnonymousAuthConfig(value.Anonymous),
+		Jwt: toJwtAuthenticator(value.JWT),
+	}
+}
+
+func toJwtAuthenticator(value []apiserverv1.JWTAuthenticator) []types.JwtAuthenticator {
+	if value == nil {
+		return nil
+	}
+
+	result := make([]types.JwtAuthenticator, len(value))
+	for i, e := range value {
+		result[i] = types.JwtAuthenticator{
+			ClaimMappings: toClaimMappings(e.ClaimMappings),
+			ClaimValidationRules: toClaimValidationRules(e.ClaimValidationRules),
+			Issuer: toIssuer(e.Issuer),
+			UserValidationRules: toUserValidationRules(e.UserValidationRules),
+		}
+	}
+
+	return result
+}
+
+func toClaimMappings(value apiserverv1.ClaimMappings) types.ClaimMappings {
+	return types.ClaimMappings{
+		Extra: toExtraMapping(value.Extra),
+		Groups: toPrefixedClaimOrExpression(value.Groups),
+		UID: toClaimOrExpression(value.UID),
+		Username: deref(toPrefixedClaimOrExpression(value.Username)),
+	}
+}
+
+func toPrefixedClaimOrExpression(value apiserverv1.PrefixedClaimOrExpression) *types.PrefixedClaimOrExpression {
+	zeros := apiserverv1.PrefixedClaimOrExpression{}
+	if value == zeros {
+		return nil
+	}
+
+	return &types.PrefixedClaimOrExpression{
+		Claim: toString(value.Claim),
+		Expression: toString(value.Expression),
+		Prefix: clone(value.Prefix),
+	}
+}
+
+func toClaimOrExpression(value apiserverv1.ClaimOrExpression) *types.ClaimOrExpression {
+	zeros := apiserverv1.ClaimOrExpression{}
+	if value == zeros {
+		return nil
+	}
+
+	return &types.ClaimOrExpression{
+		Claim: toString(value.Claim),
+		Expression: toString(value.Expression),
+	}
+}
+
+func toExtraMapping(value []apiserverv1.ExtraMapping) *[]types.ExtraMapping {
+	if value == nil {
+		return nil
+	}
+
+	result := make([]types.ExtraMapping, len(value))
+	for i, e := range result {
+		result[i] = types.ExtraMapping{
+			Key: e.Key,
+			ValueExpression: e.ValueExpression,
+		}
+	}
+
+	return &result
+}
+
+func toClaimValidationRules(value []apiserverv1.ClaimValidationRule) *[]types.ClaimValidationRule {
+	if value == nil {
+		return nil
+	}
+
+	result := make([]types.ClaimValidationRule, len(value))
+	for i, e := range value {
+		result[i] = types.ClaimValidationRule{
+			Claim: toString(e.Claim),
+			Expression: toString(e.Expression),
+			Message: toString(e.Message),
+			RequiredValue: toString(e.RequiredValue),
+		}
+	}
+
+	return &result
+}
+
+func toIssuer(value apiserverv1.Issuer) types.Issuer {
+	return types.Issuer{
+		AudienceMatchPolicy: toString(string(value.AudienceMatchPolicy)),
+		Audiences: slices.Clone(value.Audiences),
+		CertificateAuthority: toString(value.CertificateAuthority),
+		DiscoveryURL: value.DiscoveryURL,
+		EgressSelectorType: toString(string(value.EgressSelectorType)),
+		URL: value.URL,
+	}
+}
+
+func clone(value *string) *string {
+	if value == nil {
+		return nil
+	}
+
+	return ptr.To(*value)
+}
+
+func toUserValidationRules(value []apiserverv1.UserValidationRule) *[]types.UserValidationRule {
+	if value == nil {
+		return nil
+	}
+
+	result := make([]types.UserValidationRule, len(value))
+	for i, e := range result {
+		result[i] = types.UserValidationRule{
+			Expression: e.Expression,
+			Message: clone(e.Message),
+		}
+	}
+
+	return &result
+}
+
+func toAnonymousAuthConfig(value *apiserverv1.AnonymousAuthConfig) *types.AnonymousAuthConfig {
+	if value == nil {
+		return nil
+	}
+
+	return &types.AnonymousAuthConfig{
+		Conditions: toAnonymousAuthConditions(value.Conditions),
+		Enabled: ptr.To(value.Enabled),
+	}
+}
+
+func toAnonymousAuthConditions(value []apiserverv1.AnonymousAuthCondition) *[]types.AnonymousAuthCondition {
+	if value == nil {
+		return nil
+	}
+
+	result := make([]types.AnonymousAuthCondition, len(value))
+	for i, e := range value {
+		result[i] = types.AnonymousAuthCondition{
+			Path: toString(e.Path),
+		}
+	}
+
+	return &result
+}
+
+func toString(value string) *string {
+	if value == "" {
+		return nil
+	}
+
+	return &value
 }
