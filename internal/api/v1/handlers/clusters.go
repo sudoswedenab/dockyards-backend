@@ -17,7 +17,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -32,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1beta1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -295,10 +295,10 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 		cluster.Spec.ServiceSubnets = *request.ServiceSubnets
 	}
 
-	var errs []error
-	cluster.Spec.AuthenticationConfig = parseAuthenticationConfiguration(request.AuthenticationConfig, ".AuthenticationConfig", &errs)
+	var errs field.ErrorList
+	cluster.Spec.AuthenticationConfig = parseAuthenticationConfiguration(request.AuthenticationConfig, field.NewPath("AuthenticationConfig"), &errs)
 	if len(errs) != 0 {
-		return nil, apierrors.NewBadRequest(errors.Join(errs...).Error())
+		return nil, apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", errs)
 	}
 
 	err := h.Create(ctx, &cluster)
@@ -465,7 +465,7 @@ func (h *handler) GetOrganizationCluster(ctx context.Context, organization *dock
 	return v1Cluster, nil
 }
 
-func parseAuthenticationConfiguration(value *types.AuthenticationConfiguration, path string, errs *[]error) *apiserverv1.AuthenticationConfiguration {
+func parseAuthenticationConfiguration(value *types.AuthenticationConfiguration, path *field.Path, errs *field.ErrorList) *apiserverv1.AuthenticationConfiguration {
 	if value == nil {
 		return nil
 	}
@@ -475,12 +475,12 @@ func parseAuthenticationConfiguration(value *types.AuthenticationConfiguration, 
 			Kind: "AuthenticationConfiguration",
 			APIVersion: "apiserver.config.k8s.io/v1",
 		},
-		JWT: parseJWTAuthenticator(value.Jwt, path + ".JWT", errs),
-		Anonymous: parseAnonymousAuthConfig(value.Anonymous, path + ".Anonymous", errs),
+		JWT: parseJWTAuthenticator(value.Jwt, path.Child("jwt"), errs),
+		Anonymous: parseAnonymousAuthConfig(value.Anonymous, path.Child("anonymous"), errs),
 	}
 }
 
-func parseJWTAuthenticator(value []types.JwtAuthenticator, path string, errs *[]error) []apiserverv1.JWTAuthenticator {
+func parseJWTAuthenticator(value []types.JwtAuthenticator, path *field.Path, errs *field.ErrorList) []apiserverv1.JWTAuthenticator {
 	if value == nil {
 		return nil
 	}
@@ -489,32 +489,32 @@ func parseJWTAuthenticator(value []types.JwtAuthenticator, path string, errs *[]
 
 	result := make([]apiserverv1.JWTAuthenticator, len(value))
 	for i, e := range value {
-		p := fmt.Sprintf("%s[%d]", path, i)
+		p := path.Index(i)
 		if urls[e.Issuer.URL] {
-			add(errs, fmt.Errorf("%s: .Issuer.URLs must be unique", p))
+			add(errs, field.Duplicate(p.Child("issuer").Child("url"), e.Issuer.URL))
 		}
 		urls[e.Issuer.URL] = true
 		result[i] = apiserverv1.JWTAuthenticator{
-			Issuer: parseIssuer(e.Issuer, p + ".Issuer", errs),
-			ClaimValidationRules: parseClaimValidationRules(e.ClaimValidationRules, p + ".ClaimValidationRules", errs),
-			ClaimMappings: parseClaimMappings(e.ClaimMappings, p + ".ClaimMappings", errs),
-			UserValidationRules: parseUserValidationRules(e.UserValidationRules, p + ".UserValidationRules", errs),
+			Issuer: parseIssuer(e.Issuer, p.Child("issuer"), errs),
+			ClaimValidationRules: parseClaimValidationRules(e.ClaimValidationRules, p.Child("claim_validation_rules"), errs),
+			ClaimMappings: parseClaimMappings(e.ClaimMappings, p.Child("claim_mappings"), errs),
+			UserValidationRules: parseUserValidationRules(e.UserValidationRules, p.Child("user_validation_rules"), errs),
 		}
 	}
 
 	return result
 }
 
-func parseIssuer(value types.Issuer, path string, errs *[]error) apiserverv1.Issuer {
+func parseIssuer(value types.Issuer, path *field.Path, errs *field.ErrorList) apiserverv1.Issuer {
 	if value.DiscoveryURL != nil {
 		if value.URL == *value.DiscoveryURL {
-			add(errs, fmt.Errorf("%s: .DiscoveryURL must be different from .URL", path))
+			add(errs, field.Invalid(path.Child("discovery_url"), value.URL, "must be different from .URL"))
 		}
 	}
 
 	for i, e := range value.Audiences {
 		if e == "" {
-			add(errs, fmt.Errorf("%s.Audiences[%d]: Required to be non-empty", path, i))
+			add(errs, field.Required(path.Child("audiences").Index(i), ""))
 		}
 	}
 
@@ -523,12 +523,12 @@ func parseIssuer(value types.Issuer, path string, errs *[]error) apiserverv1.Iss
 		DiscoveryURL: value.DiscoveryURL,
 		CertificateAuthority: deref(value.CertificateAuthority),
 		Audiences: value.Audiences,
-		AudienceMatchPolicy: parseAudienceMatchPolicy(value.AudienceMatchPolicy, path + ".AudienceMatchPolicy", errs),
-		EgressSelectorType: parseEgressSelectorType(value.EgressSelectorType, path + ".EgressSelectorType", errs),
+		AudienceMatchPolicy: parseAudienceMatchPolicy(value.AudienceMatchPolicy, path.Child("audience_match_policy"), errs),
+		EgressSelectorType: parseEgressSelectorType(value.EgressSelectorType, path.Child("egress_selector_type"), errs),
 	}
 }
 
-func parseClaimValidationRules(value *[]types.ClaimValidationRule, path string, errs *[]error) []apiserverv1.ClaimValidationRule {
+func parseClaimValidationRules(value *[]types.ClaimValidationRule, path *field.Path, errs *field.ErrorList) []apiserverv1.ClaimValidationRule {
 	if value == nil {
 		return nil
 	}
@@ -536,9 +536,10 @@ func parseClaimValidationRules(value *[]types.ClaimValidationRule, path string, 
 	if *value == nil {
 		return nil
 	}
+
 	result := make([]apiserverv1.ClaimValidationRule, len(*value))
 	for i, e := range *value {
-		p := fmt.Sprintf("%s[%d]", path, i)
+		p := path.Index(i)
 
 		claim := deref(e.Claim)
 		requiredValue := deref(e.RequiredValue)
@@ -546,23 +547,23 @@ func parseClaimValidationRules(value *[]types.ClaimValidationRule, path string, 
 		message := deref(e.Message)
 
 		if popcount(claim, expression, message) > 1 {
-			add(errs, fmt.Errorf("%s: .Claim, .Expression and .Message are mutually exclusive", p))
+			add(errs, field.Invalid(p, e, ".Claim, .Expression and .Message are mutually exclusive"))
 		}
 
 		if popcount(expression, claim, requiredValue) > 1 {
-			add(errs, fmt.Errorf("%s: .Expression, .Claim and .RequiredValue are mutually exclusive", p))
+			add(errs, field.Invalid(p, e, ".Expression, .Claim and .RequiredValue are mutually exclusive"))
 		}
 
 		if popcount(message, claim, requiredValue) > 1 {
-			add(errs, fmt.Errorf("%s: .Message, .Claim and .RequiredValue are mutually exclusive", p))
+			add(errs, field.Invalid(p, e, ".Message, .Claim and .RequiredValue are mutually exclusive"))
 		}
 
 		if popcount(requiredValue, expression, message) > 1 {
-			add(errs, fmt.Errorf("%s: .RequiredValue, .Expression and .Message are mutually exclusive", p))
+			add(errs, field.Invalid(p, e, ".RequiredValue, .Expression and .Message are mutually exclusive"))
 		}
 
 		if requiredValue == "" && claim != "" {
-			add(errs, fmt.Errorf("%s: If claim is set and required is not set, the claim must be present with a value set to the empty string", p))
+			add(errs, field.Invalid(p, e, "If .Claim is set and .RequiredValue is not set, the claim must be present with a value set to the empty string"))
 		}
 
 		result[i] = apiserverv1.ClaimValidationRule{
@@ -582,7 +583,7 @@ func popcount[T comparable](v... T) int {
 	zeros := *new(T)
 
 	for _, e := range v {
-		if e != zeros {
+		if e == zeros {
 			continue
 		}
 		c++
@@ -591,26 +592,26 @@ func popcount[T comparable](v... T) int {
 	return c
 }
 
-func parseClaimMappings(value types.ClaimMappings, path string, errs *[]error) apiserverv1.ClaimMappings {
+func parseClaimMappings(value types.ClaimMappings, path *field.Path, errs *field.ErrorList) apiserverv1.ClaimMappings {
 	return apiserverv1.ClaimMappings{
-		Username: parsePrefixedClaimOrExpression(value.Username, path + ".Username", errs),
-		Groups: parsePrefixedClaimOrExpression(deref(value.Groups), path + ".Groups", errs),
-		UID: parseClaimOrExpression(deref(value.UID), path + ".UID", errs),
-		Extra: parseExtraMapping(value.Extra, path + ".Extra", errs),
+		Username: parsePrefixedClaimOrExpression(value.Username, path.Child("username"), errs),
+		Groups: parsePrefixedClaimOrExpression(deref(value.Groups), path.Child("groups"), errs),
+		UID: parseClaimOrExpression(deref(value.UID), path.Child("uid"), errs),
+		Extra: parseExtraMapping(value.Extra, path.Child("extra"), errs),
 	}
 }
 
-func parsePrefixedClaimOrExpression(value types.PrefixedClaimOrExpression, path string, errs *[]error) apiserverv1.PrefixedClaimOrExpression {
+func parsePrefixedClaimOrExpression(value types.PrefixedClaimOrExpression, path *field.Path, errs *field.ErrorList) apiserverv1.PrefixedClaimOrExpression {
 	claim := deref(value.Claim)
 	expression := deref(value.Expression)
 	prefix := value.Prefix
 
 	if popcount(claim, expression) > 1 {
-		add(errs, fmt.Errorf("%s: .Claim and .Expression are mutually exclusive", path))
+		add(errs, field.Invalid(path, value, ".Claim and .Expression are mutually exclusive"))
 	}
 
 	if claim != "" && prefix == nil {
-		add(errs, fmt.Errorf("%s: If .Claim is set, .Prefix must be set (can be the empty string)", path))
+		add(errs, field.Invalid(path, value, "If .Claim is set, .Prefix must be set (can be the empty string)"))
 	}
 
 	return apiserverv1.PrefixedClaimOrExpression{
@@ -620,12 +621,12 @@ func parsePrefixedClaimOrExpression(value types.PrefixedClaimOrExpression, path 
 	}
 }
 
-func parseClaimOrExpression(value types.ClaimOrExpression, path string, errs *[]error) apiserverv1.ClaimOrExpression {
+func parseClaimOrExpression(value types.ClaimOrExpression, path *field.Path, errs *field.ErrorList) apiserverv1.ClaimOrExpression {
 	claim := deref(value.Claim)
 	expression := deref(value.Expression)
 
 	if popcount(claim, expression) > 1 {
-		add(errs, fmt.Errorf("%s: .Claim and .Expression are mutually exclusive", path))
+		add(errs, field.Invalid(path, value, ".Claim and .Expression are mutually exclusive"))
 	}
 
 	return apiserverv1.ClaimOrExpression{
@@ -634,7 +635,7 @@ func parseClaimOrExpression(value types.ClaimOrExpression, path string, errs *[]
 	}
 }
 
-func parseExtraMapping(value *[]types.ExtraMapping, path string, errs *[]error) []apiserverv1.ExtraMapping {
+func parseExtraMapping(value *[]types.ExtraMapping, path *field.Path, errs *field.ErrorList) []apiserverv1.ExtraMapping {
 	if value == nil {
 		return nil
 	}
@@ -647,14 +648,14 @@ func parseExtraMapping(value *[]types.ExtraMapping, path string, errs *[]error) 
 
 	result := make([]apiserverv1.ExtraMapping, len(*value))
 	for i, e := range result {
-		p := fmt.Sprintf("%s[%d]", path, i)
+		p := path.Index(i)
 
 		if e.Key != strings.ToLower(e.Key) {
-			add(errs, fmt.Errorf("%s: .Key must be lowercase", p))
+			add(errs, field.Invalid(p.Child("key"), e.Key, "must be lowercase"))
 		}
 
 		if seenBefore[e.Key] {
-			add(errs, fmt.Errorf("%s: .Key must be unique", p))
+			add(errs, field.Duplicate(p.Child("key"), e.Key))
 		}
 		seenBefore[e.Key] = true
 
@@ -667,7 +668,7 @@ func parseExtraMapping(value *[]types.ExtraMapping, path string, errs *[]error) 
 	return result
 }
 
-func parseUserValidationRules(value *[]types.UserValidationRule, path string, errs *[]error) []apiserverv1.UserValidationRule {
+func parseUserValidationRules(value *[]types.UserValidationRule, path *field.Path, errs *field.ErrorList) []apiserverv1.UserValidationRule {
 	_ = path
 	_ = errs
 
@@ -690,7 +691,7 @@ func parseUserValidationRules(value *[]types.UserValidationRule, path string, er
 	return result
 }
 
-func parseAudienceMatchPolicy(value *string, path string, errs *[]error) apiserverv1.AudienceMatchPolicyType {
+func parseAudienceMatchPolicy(value *string, path *field.Path, errs *field.ErrorList) apiserverv1.AudienceMatchPolicyType {
 	_ = path
 	_ = errs
 
@@ -701,7 +702,7 @@ func parseAudienceMatchPolicy(value *string, path string, errs *[]error) apiserv
 	return apiserverv1.AudienceMatchPolicyType(*value)
 }
 
-func parseEgressSelectorType(value *string, path string, errs *[]error) apiserverv1.EgressSelectorType {
+func parseEgressSelectorType(value *string, path *field.Path, errs *field.ErrorList) apiserverv1.EgressSelectorType {
 	_ = path
 	_ = errs
 
@@ -712,18 +713,18 @@ func parseEgressSelectorType(value *string, path string, errs *[]error) apiserve
 	return apiserverv1.EgressSelectorType(*value)
 }
 
-func parseAnonymousAuthConfig(value *types.AnonymousAuthConfig, path string, errs *[]error) *apiserverv1.AnonymousAuthConfig {
+func parseAnonymousAuthConfig(value *types.AnonymousAuthConfig, path *field.Path, errs *field.ErrorList) *apiserverv1.AnonymousAuthConfig {
 	if value == nil {
 		return nil
 	}
 
 	return &apiserverv1.AnonymousAuthConfig{
 		Enabled: deref(value.Enabled),
-		Conditions: parseAnonymousAuthCondition(value.Conditions, path + ".Conditions", errs),
+		Conditions: parseAnonymousAuthCondition(value.Conditions, path.Child("conditions"), errs),
 	}
 }
 
-func parseAnonymousAuthCondition(value *[]types.AnonymousAuthCondition, path string, errs *[]error) []apiserverv1.AnonymousAuthCondition {
+func parseAnonymousAuthCondition(value *[]types.AnonymousAuthCondition, path *field.Path, errs *field.ErrorList) []apiserverv1.AnonymousAuthCondition {
 	_ = path
 	_ = errs
 
@@ -753,7 +754,7 @@ func deref[T any](value *T) T {
 	return *value
 }
 
-func add(errs *[]error, err error) {
+func add(errs *field.ErrorList, err *field.Error) {
 	if errs == nil {
 		return
 	}
