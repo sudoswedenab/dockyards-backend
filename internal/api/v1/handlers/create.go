@@ -17,6 +17,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -170,7 +171,7 @@ func CreateClusterResource[T1, T2 any](h *handler, resource string, f CreateClus
 			var response types.UnprocessableEntityErrors
 
 			for _, cause := range statusError.ErrStatus.Details.Causes {
-				response.Errors = append(response.Errors, cause.Message)
+				response.Errors = append(response.Errors, fmt.Sprintf("%s: %s", cause.Field, cause.Message))
 			}
 
 			b, err := json.Marshal(response)
