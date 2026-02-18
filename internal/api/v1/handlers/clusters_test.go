@@ -694,6 +694,438 @@ func TestOrganizationClusters_Create(t *testing.T) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual))
 		}
 	})
+
+	t.Run("create cluster with valid looking authentication config", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-valid-authorization-config-26a9d8e0",
+			AuthenticationConfig: &types.AuthenticationConfiguration{
+				Jwt: []types.JwtAuthenticator{
+					{
+						ClaimMappings: types.ClaimMappings{
+							Username: types.PrefixedClaimOrExpression{
+								Claim: ptr.To("email"),
+								Prefix: ptr.To(""),
+							},
+						},
+						Issuer: types.Issuer{
+							URL: "https://example.local",
+							Audiences: []string{"aud"},
+						},
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		expected := http.StatusCreated
+		statusCode := w.Result().StatusCode
+		if statusCode != expected {
+			body, _ := io.ReadAll(w.Body)
+			t.Fatalf("expected status code %d, got %d: %s", expected, statusCode, string(body))
+		}
+	})
+
+	t.Run("create cluster with duplicate authentication config issuer fails", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-invalid-authorization-config-afd33641",
+			AuthenticationConfig: &types.AuthenticationConfiguration{
+				Jwt: []types.JwtAuthenticator{
+					{
+						ClaimMappings: types.ClaimMappings{
+							Username: types.PrefixedClaimOrExpression{
+								Claim: ptr.To("email"),
+								Prefix: ptr.To(""),
+							},
+						},
+						Issuer: types.Issuer{
+							URL: "https://example.local",
+							Audiences: []string{"aud"},
+						},
+					},
+					{
+						ClaimMappings: types.ClaimMappings{
+							Username: types.PrefixedClaimOrExpression{
+								Claim: ptr.To("email"),
+								Prefix: ptr.To(""),
+							},
+						},
+						Issuer: types.Issuer{
+							URL: "https://example.local",
+							Audiences: []string{"aud"},
+						},
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		expected := http.StatusUnprocessableEntity
+		statusCode := w.Result().StatusCode
+		if statusCode != expected {
+			body, _ := io.ReadAll(w.Body)
+			t.Fatalf("expected status code %d, got %d: %s", expected, statusCode, string(body))
+		}
+	})
+
+	t.Run("create cluster with discovery url same as url fails", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-invalid-authorization-config-6e2f1a39",
+			AuthenticationConfig: &types.AuthenticationConfiguration{
+				Jwt: []types.JwtAuthenticator{
+					{
+						ClaimMappings: types.ClaimMappings{
+							Username: types.PrefixedClaimOrExpression{
+								Claim: ptr.To("email"),
+								Prefix: ptr.To(""),
+							},
+						},
+						Issuer: types.Issuer{
+							URL: "https://example.local",
+							DiscoveryURL: ptr.To("https://example.local"),
+							Audiences: []string{"aud"},
+						},
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		expected := http.StatusUnprocessableEntity
+		statusCode := w.Result().StatusCode
+		if statusCode != expected {
+			body, _ := io.ReadAll(w.Body)
+			t.Fatalf("expected status code %d, got %d: %s", expected, statusCode, string(body))
+		}
+	})
+
+	t.Run("create cluster with empty audiences fails", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-invalid-authorization-config-3e029c88",
+			AuthenticationConfig: &types.AuthenticationConfiguration{
+				Jwt: []types.JwtAuthenticator{
+					{
+						ClaimMappings: types.ClaimMappings{
+							Username: types.PrefixedClaimOrExpression{
+								Claim: ptr.To("email"),
+								Prefix: ptr.To(""),
+							},
+						},
+						Issuer: types.Issuer{
+							URL: "https://example.local",
+							Audiences: []string{""},
+						},
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		expected := http.StatusUnprocessableEntity
+		statusCode := w.Result().StatusCode
+		if statusCode != expected {
+			body, _ := io.ReadAll(w.Body)
+			t.Fatalf("expected status code %d, got %d: %s", expected, statusCode, string(body))
+		}
+	})
+
+	t.Run("create cluster with both claim and expression fails", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-invalid-authorization-config-54729cbd",
+			AuthenticationConfig: &types.AuthenticationConfiguration{
+				Jwt: []types.JwtAuthenticator{
+					{
+						ClaimMappings: types.ClaimMappings{
+							Username: types.PrefixedClaimOrExpression{
+								Claim: ptr.To("email"),
+								Expression: ptr.To("someexpr"),
+								Prefix: ptr.To(""),
+							},
+						},
+						Issuer: types.Issuer{
+							URL: "https://example.local",
+							Audiences: []string{"aud"},
+						},
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		expected := http.StatusUnprocessableEntity
+		statusCode := w.Result().StatusCode
+		if statusCode != expected {
+			body, _ := io.ReadAll(w.Body)
+			t.Fatalf("expected status code %d, got %d: %s", expected, statusCode, string(body))
+		}
+	})
+
+	t.Run("create cluster with both claim and message fails", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-invalid-authorization-config-952a9b29",
+			AuthenticationConfig: &types.AuthenticationConfiguration{
+				Jwt: []types.JwtAuthenticator{
+					{
+						ClaimMappings: types.ClaimMappings{
+							Username: types.PrefixedClaimOrExpression{
+								Claim: ptr.To("email"),
+								Prefix: ptr.To(""),
+							},
+						},
+						ClaimValidationRules: ptr.To([]types.ClaimValidationRule{
+							{
+								Claim: ptr.To("expr"),
+								Message: ptr.To("message"),
+							},
+						}),
+						Issuer: types.Issuer{
+							URL: "https://example.local",
+							Audiences: []string{"aud"},
+						},
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		expected := http.StatusUnprocessableEntity
+		statusCode := w.Result().StatusCode
+		if statusCode != expected {
+			body, _ := io.ReadAll(w.Body)
+			t.Fatalf("expected status code %d, got %d: %s", expected, statusCode, string(body))
+		}
+	})
+
+	t.Run("create cluster with both message and required value fails", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-invalid-authorization-config-68b44cc2",
+			AuthenticationConfig: &types.AuthenticationConfiguration{
+				Jwt: []types.JwtAuthenticator{
+					{
+						ClaimMappings: types.ClaimMappings{
+							Username: types.PrefixedClaimOrExpression{
+								Claim: ptr.To("email"),
+								Prefix: ptr.To(""),
+							},
+						},
+						ClaimValidationRules: ptr.To([]types.ClaimValidationRule{
+							{
+								Message: ptr.To("message"),
+								RequiredValue: ptr.To("value"),
+							},
+						}),
+						Issuer: types.Issuer{
+							URL: "https://example.local",
+							Audiences: []string{"aud"},
+						},
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		expected := http.StatusUnprocessableEntity
+		statusCode := w.Result().StatusCode
+		if statusCode != expected {
+			body, _ := io.ReadAll(w.Body)
+			t.Fatalf("expected status code %d, got %d: %s", expected, statusCode, string(body))
+		}
+	})
+
+	t.Run("create cluster with claim fails if no prefix", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-invalid-authorization-config-ea88570c",
+			AuthenticationConfig: &types.AuthenticationConfiguration{
+				Jwt: []types.JwtAuthenticator{
+					{
+						ClaimMappings: types.ClaimMappings{
+							Username: types.PrefixedClaimOrExpression{
+								Claim: ptr.To("email"),
+								Prefix: nil,
+							},
+						},
+						Issuer: types.Issuer{
+							URL: "https://example.local",
+							Audiences: []string{"aud"},
+						},
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		expected := http.StatusUnprocessableEntity
+		statusCode := w.Result().StatusCode
+		if statusCode != expected {
+			body, _ := io.ReadAll(w.Body)
+			t.Fatalf("expected status code %d, got %d: %s", expected, statusCode, string(body))
+		}
+	})
+
+	t.Run("username claim and expression are mutually exclusive", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-invalid-authorization-config-7d44f9a5",
+			AuthenticationConfig: &types.AuthenticationConfiguration{
+				Jwt: []types.JwtAuthenticator{
+					{
+						ClaimMappings: types.ClaimMappings{
+							Username: types.PrefixedClaimOrExpression{
+								Claim: ptr.To("email"),
+								Prefix: ptr.To("prefix"),
+								Expression: ptr.To("some_expr"),
+							},
+						},
+						Issuer: types.Issuer{
+							URL: "https://example.local",
+							Audiences: []string{"aud"},
+						},
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		expected := http.StatusUnprocessableEntity
+		statusCode := w.Result().StatusCode
+		if statusCode != expected {
+			body, _ := io.ReadAll(w.Body)
+			t.Fatalf("expected status code %d, got %d: %s", expected, statusCode, string(body))
+		}
+	})
 }
 
 func TestOrganizationClusters_Delete(t *testing.T) {
