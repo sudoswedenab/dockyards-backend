@@ -296,7 +296,7 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 	}
 
 	var errs field.ErrorList
-	cluster.Spec.AuthenticationConfig = parseAuthenticationConfiguration(request.AuthenticationConfig, field.NewPath("AuthenticationConfig"), &errs)
+	cluster.Spec.AuthenticationConfig = parseAuthenticationConfiguration(request.AuthenticationConfig, field.NewPath("authentication_config"), &errs)
 	if len(errs) != 0 {
 		return nil, apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", errs)
 	}
