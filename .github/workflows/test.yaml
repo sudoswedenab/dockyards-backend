@@ -25,7 +25,12 @@ jobs:
       - uses: actions/setup-go@v5.5.0
         with:
           go-version-file: go.mod
-      - run: |
+      - name: Install prerequisites
+        run: |
           go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.19
+          go install github.com/sudoswedenab/colorizer@76c59db
+      - name: Run tests
+        run: |
+          set -o pipefail
           source <(setup-envtest use --print env 1.31.0)
-          go test ./... -v
+          go test ./... -v | colorizer
