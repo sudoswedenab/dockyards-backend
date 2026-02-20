@@ -1,4 +1,168 @@
-# How to configure workload cluster permissions
+## Table of Contents:
+
+- [How to configure dockyards workload clusters to use OIDC for authentication](#how-to-configure-dockyards-workload-clusters-to-use-oidc)
+- [How to configure dockyards management cluster to use OIDC for authentication](#how-to-configure-dockyards-management-clusters-to-use-oidc)
+- [How to configure workload cluster permissions](#how-to-configure-workload-cluster-permissions)
+
+## How to configure dockyards management cluster to use OIDC for authentication
+
+To configure the management cluster to use OIDC you will need to create a
+[`IdentityProvider`](identity-provider-crd).
+
+It looks something like this:
+
+```yaml
+
+apiVersion: dockyards.io/v1alpha3
+kind: IdentityProvider
+metadata:
+  name: midgard-lab # Unique name identifying the identity provider.
+spec:
+  displayName: midgard_lab # Human readable name
+  oidc: # Location where we're storing a identity provider secret
+    name: midgard-lab
+    namespace: dockyards-system
+
+```
+
+The IdentityProvider secret should look something like this:
+
+```yaml
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: midgard-lab
+  namespace: dockyards-system
+type: Opaque
+stringData:
+  clientConfig: |
+    {
+      "clientID": "midgard_lab", // OIDC client id.
+      "clientSecret": "YOUR_OIDC_CLIENT_SECRET",
+      "redirectURL": "https://{DOCKYARDS_DOMAIN}/api/backend/v1/callback-sso"
+    }
+  providerConfig: |
+    {
+      "issuer":  // "https://{IDENTITY_PROVIDER_DOMAIN}/realms/{REALM_NAME}",
+      "authorization_endpoint": "https://{IDENTITY_PROVIDER_DOMAIN}/realms/{REALM_NAME}/protocol/openid-connect/auth",
+      "token_endpoint": "https://{IDENTITY_PROVIDER_DOMAIN}/realms/{REALM_NAME}/protocol/openid-connect/token",
+      "device_authorization_endpoint": "https://{IDENTITY_PROVIDER_DOMAIN}/realms/{REALM_NAME}/protocol/openid-connect/auth/device",
+      "userinfo_endpoint": "https://{IDENTITY_PROVIDER_DOMAIN}/realms/{REALM_NAME}/protocol/openid-connect/userinfo",
+      "jwks_uri": "https://{IDENTITY_PROVIDER_DOMAIN}/realms/{REALM_NAME}/protocol/openid-connect/certs",
+      "id_token_signing_alg_values_supported": [
+        "PS384",
+        "RS384",
+        "EdDSA",
+        "ES384",
+        "HS256",
+        "HS512",
+        "ES256",
+        "RS256",
+        "HS384",
+        "ES512",
+        "PS256",
+        "PS512",
+        "RS512"
+      ]
+    }
+
+```
+
+The values for the `providerConfig` can in the case of Keycloak be be found at `https://{IDENTITY_PROVIDER_DOMAIN}/realms/{REALM}/.well-known/openid-configuration`.
+
+When you have created the above objects, you should be able to log in to
+the platform using the `GET /v1/login-sso` API endpoint.
+
+The user will be created lazily upon sign in and will not be a part of any
+organization until it's either invited somewhere or added via to an
+organization via [`dockyards-ldap`][dockyards-ldap].
+
+[identity-provider-crd]: https://github.com/sudoswedenab/dockyards-backend/blob/main/config/crd/dockyards.io_identityproviders.yaml
+[dockyards-ldap]: https://github.com/sudoswedenab/dockyards-ldap
+
+## How to configure dockyards workload clusters to use OIDC for authentication
+
+To configure dockyards workload clusters with OIDC, you will need to
+provide the [`authenticationConfig`][auth-config] option when creating
+a cluster via the `POST /v1/orgs/{organizationName}/clusters` endpoint.
+This will ensure that a Kubernetes [AuthenticationConfiguration][k8s-auth-config]
+is supplied to the `kube-apiserver` of the cluster.
+
+If you want use an [`AuthenticationConfiguration`][k8s-auth-config] like
+this:
+
+```yaml
+
+apiVersion: apiserver.config.k8s.io/v1
+kind: AuthenticationConfiguration
+jwt:
+- issuer:
+    url: "ISSUER_URL" # (e.g. https://{DOMAIN}/realms/{REALM} in the case of keycloak)
+    audiences:
+    - midgard # Whatever is in the aud field of the JWT token.
+    audienceMatchPolicy: MatchAny
+  claimMappings:
+    username:
+      claim: "preferred_username"
+      prefix: "oidc:"
+    groups:
+      expression: "claims.roles.split(',')"
+    uid:
+      claim: "sub"
+  userValidationRules:
+  - expression: "!user.username.startsWith('system:')"
+    message: "username cannot use reserved system: prefix"
+  - expression: "user.groups.all(group, !group.startsWith('system:'))"
+    message: "groups cannot use reserved system: prefix"
+
+```
+
+You will have to provide the following JSON value in the `authenticationConfig` field
+of the POST request body:
+
+```json
+
+{
+  "jwt": [
+    {
+      "issuer": "ISSUER_URL" // (e.g. https://{DOMAIN}/realms/{REALM} in the case of keycloak)
+      "audiences": [
+        "midgard" // Whatever is in the aud field of the JWT token.
+      ],
+      "audience_match_policy": "MatchAny",
+      "claim_mappings": {
+        "username": {
+          "claim": "preferred_username",
+          "prefix": "oidc:"
+        },
+        "groups": {
+          "expression": "claims.roles.split(',')"
+        },
+        "uid": {
+          "claim": "sub"
+        }
+      },
+      "user_validation_rules": [
+        {
+          "expression": "!user.username.startsWith('system:')",
+          "message": "username cannot use reserved system: prefix"
+        },
+        {
+          "expression": "user.groups.all(group, !group.startsWith('system:'))",
+          "message": "groups cannot use reserved system: prefix"
+        }
+      ]
+    }
+  ]
+}
+
+```
+
+[auth-config]: https://github.com/sudoswedenab/dockyards-api/blob/265894d40de99945ec91f7e47bdc37599f4ca763/spec/types.yaml#L592-L625
+[k8s-auth-config]: https://kubernetes.io/docs/reference/access-authn-authz/authentication/#using-authentication-configuration
+
+## How to configure workload cluster permissions
 
 To configure workload cluster permissions you will need to create a
 [git repository workload][git-repo-workload] which contains the [Role][role]s
