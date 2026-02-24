@@ -230,6 +230,27 @@ roleRef:
 
 ```
 
+To create a [git repository workload][git-repo-workload] you will need to
+call the create cluster workload endpoint (`POST /v1/orgs/{organizationName}/clusters/{clusterName}/workloads`)
+with something like the following body:
+
+```json
+
+{
+  "workload_template_name": "git-repository",
+  "name": "permissions", // Or whatever name you want
+  "input": {
+    "url": "URL TO GIT REPOSITORY",
+    "interval": "5m",
+    "path": ".",
+    "ref": {
+      "branch": "main"
+    }
+  }
+}
+
+```
+
 [git-repo-workload]: https://github.com/sudoswedenab/dockyards-workload-templates/blob/main/templates/git-repository/git-repository.cue
 [role]: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-example
 [role-binding]: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#rolebinding-and-clusterrolebinding
