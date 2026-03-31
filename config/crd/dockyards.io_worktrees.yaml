@@ -31,6 +31,8 @@ spec:
   - name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: Worktree is a namespaced resource representing a materialized
+          worktree output.
         properties:
           apiVersion:
             description: |-
@@ -55,13 +57,25 @@ spec:
                 additionalProperties:
                   format: byte
                   type: string
+                description: Files is a map of file paths to file contents that should
+                  be written into the worktree.
                 type: object
+              urls:
+                description: URLs are one or more source URLs to fetch into the worktree.
+                items:
+                  type: string
+                type: array
             type: object
           status:
+            description: WorktreeStatus defines the observed state of a Worktree.
             properties:
               commitHash:
+                description: CommitHash is the commit hash associated with the worktree
+                  output, if available.
                 type: string
               conditions:
+                description: Conditions represent the latest available observations
+                  of the Worktree's state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -118,8 +132,12 @@ spec:
                   type: object
                 type: array
               referenceName:
+                description: ReferenceName is an implementation-defined reference
+                  name associated with the worktree output, if available.
                 type: string
               url:
+                description: URL is the URL for accessing the rendered worktree output,
+                  if available.
                 type: string
             type: object
         type: object

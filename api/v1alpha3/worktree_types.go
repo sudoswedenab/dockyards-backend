@@ -23,18 +23,31 @@ const (
 )
 
 type WorktreeSpec struct {
+	// URLs are one or more source URLs to fetch into the worktree.
+	URLs []string `json:"urls,omitempty"`
+
+	// Files is a map of file paths to file contents that should be written into the worktree.
 	Files map[string][]byte `json:"files,omitempty"`
 }
 
+// WorktreeStatus defines the observed state of a Worktree.
 type WorktreeStatus struct {
-	Conditions    []metav1.Condition `json:"conditions,omitempty"`
-	URL           *string            `json:"url,omitempty"`
-	ReferenceName *string            `json:"referenceName,omitempty"`
-	CommitHash    *string            `json:"commitHash,omitempty"`
+	// Conditions represent the latest available observations of the Worktree's state.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// URL is the URL for accessing the rendered worktree output, if available.
+	URL *string `json:"url,omitempty"`
+
+	// ReferenceName is an implementation-defined reference name associated with the worktree output, if available.
+	ReferenceName *string `json:"referenceName,omitempty"`
+
+	// CommitHash is the commit hash associated with the worktree output, if available.
+	CommitHash *string `json:"commitHash,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// Worktree is a namespaced resource representing a materialized worktree output.
 type Worktree struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -44,6 +57,7 @@ type Worktree struct {
 }
 
 // +kubebuilder:object:root=true
+// WorktreeList contains a list of Worktree objects.
 type WorktreeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
