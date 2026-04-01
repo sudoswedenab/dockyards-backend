@@ -84,6 +84,10 @@ func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockya
 		v1Cluster.NoDefaultNetworkPlugin = &cluster.Spec.NoDefaultNetworkPlugin
 	}
 
+	if cluster.Spec.NoDefaultIngressProvider {
+		v1Cluster.NoDefaultIngressProvider = &cluster.Spec.NoDefaultIngressProvider
+	}
+
 	if len(cluster.Spec.PodSubnets) > 0 {
 		v1Cluster.PodSubnets = &cluster.Spec.PodSubnets
 	}
@@ -287,6 +291,10 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 		cluster.Spec.NoDefaultNetworkPlugin = true
 	}
 
+	if request.NoDefaultIngressProvider != nil && *request.NoDefaultIngressProvider {
+		cluster.Spec.NoDefaultIngressProvider = true
+	}
+
 	if request.PodSubnets != nil {
 		cluster.Spec.PodSubnets = *request.PodSubnets
 	}
@@ -472,10 +480,10 @@ func parseAuthenticationConfiguration(value *types.AuthenticationConfiguration, 
 
 	return &apiserverv1.AuthenticationConfiguration{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "AuthenticationConfiguration",
+			Kind:       "AuthenticationConfiguration",
 			APIVersion: "apiserver.config.k8s.io/v1",
 		},
-		JWT: parseJWTAuthenticator(value.Jwt, path.Child("jwt"), errs),
+		JWT:       parseJWTAuthenticator(value.Jwt, path.Child("jwt"), errs),
 		Anonymous: parseAnonymousAuthConfig(value.Anonymous, path.Child("anonymous"), errs),
 	}
 }
@@ -495,10 +503,10 @@ func parseJWTAuthenticator(value []types.JwtAuthenticator, path *field.Path, err
 		}
 		urls[e.Issuer.URL] = true
 		result[i] = apiserverv1.JWTAuthenticator{
-			Issuer: parseIssuer(e.Issuer, p.Child("issuer"), errs),
+			Issuer:               parseIssuer(e.Issuer, p.Child("issuer"), errs),
 			ClaimValidationRules: parseClaimValidationRules(e.ClaimValidationRules, p.Child("claim_validation_rules"), errs),
-			ClaimMappings: parseClaimMappings(e.ClaimMappings, p.Child("claim_mappings"), errs),
-			UserValidationRules: parseUserValidationRules(e.UserValidationRules, p.Child("user_validation_rules"), errs),
+			ClaimMappings:        parseClaimMappings(e.ClaimMappings, p.Child("claim_mappings"), errs),
+			UserValidationRules:  parseUserValidationRules(e.UserValidationRules, p.Child("user_validation_rules"), errs),
 		}
 	}
 
@@ -519,12 +527,12 @@ func parseIssuer(value types.Issuer, path *field.Path, errs *field.ErrorList) ap
 	}
 
 	return apiserverv1.Issuer{
-		URL: value.URL,
-		DiscoveryURL: value.DiscoveryURL,
+		URL:                  value.URL,
+		DiscoveryURL:         value.DiscoveryURL,
 		CertificateAuthority: deref(value.CertificateAuthority),
-		Audiences: value.Audiences,
-		AudienceMatchPolicy: parseAudienceMatchPolicy(value.AudienceMatchPolicy, path.Child("audience_match_policy"), errs),
-		EgressSelectorType: parseEgressSelectorType(value.EgressSelectorType, path.Child("egress_selector_type"), errs),
+		Audiences:            value.Audiences,
+		AudienceMatchPolicy:  parseAudienceMatchPolicy(value.AudienceMatchPolicy, path.Child("audience_match_policy"), errs),
+		EgressSelectorType:   parseEgressSelectorType(value.EgressSelectorType, path.Child("egress_selector_type"), errs),
 	}
 }
 
@@ -567,17 +575,17 @@ func parseClaimValidationRules(value *[]types.ClaimValidationRule, path *field.P
 		}
 
 		result[i] = apiserverv1.ClaimValidationRule{
-			Claim: claim,
+			Claim:         claim,
 			RequiredValue: requiredValue,
-			Expression: expression,
-			Message: message,
+			Expression:    expression,
+			Message:       message,
 		}
 	}
 
 	return result
 }
 
-func popcount[T comparable](v... T) int {
+func popcount[T comparable](v ...T) int {
 	c := 0
 
 	zeros := *new(T)
@@ -595,9 +603,9 @@ func popcount[T comparable](v... T) int {
 func parseClaimMappings(value types.ClaimMappings, path *field.Path, errs *field.ErrorList) apiserverv1.ClaimMappings {
 	return apiserverv1.ClaimMappings{
 		Username: parsePrefixedClaimOrExpression(value.Username, path.Child("username"), errs),
-		Groups: parsePrefixedClaimOrExpression(deref(value.Groups), path.Child("groups"), errs),
-		UID: parseClaimOrExpression(deref(value.UID), path.Child("uid"), errs),
-		Extra: parseExtraMapping(value.Extra, path.Child("extra"), errs),
+		Groups:   parsePrefixedClaimOrExpression(deref(value.Groups), path.Child("groups"), errs),
+		UID:      parseClaimOrExpression(deref(value.UID), path.Child("uid"), errs),
+		Extra:    parseExtraMapping(value.Extra, path.Child("extra"), errs),
 	}
 }
 
@@ -615,8 +623,8 @@ func parsePrefixedClaimOrExpression(value types.PrefixedClaimOrExpression, path 
 	}
 
 	return apiserverv1.PrefixedClaimOrExpression{
-		Claim: deref(value.Claim),
-		Prefix: value.Prefix,
+		Claim:      deref(value.Claim),
+		Prefix:     value.Prefix,
 		Expression: deref(value.Expression),
 	}
 }
@@ -630,7 +638,7 @@ func parseClaimOrExpression(value types.ClaimOrExpression, path *field.Path, err
 	}
 
 	return apiserverv1.ClaimOrExpression{
-		Claim: deref(value.Claim),
+		Claim:      deref(value.Claim),
 		Expression: deref(value.Expression),
 	}
 }
@@ -660,7 +668,7 @@ func parseExtraMapping(value *[]types.ExtraMapping, path *field.Path, errs *fiel
 		seenBefore[e.Key] = true
 
 		result[i] = apiserverv1.ExtraMapping{
-			Key: e.Key,
+			Key:             e.Key,
 			ValueExpression: e.ValueExpression,
 		}
 	}
@@ -684,7 +692,7 @@ func parseUserValidationRules(value *[]types.UserValidationRule, path *field.Pat
 	for i, e := range *value {
 		result[i] = apiserverv1.UserValidationRule{
 			Expression: e.Expression,
-			Message: deref(e.Message),
+			Message:    deref(e.Message),
 		}
 	}
 
@@ -719,7 +727,7 @@ func parseAnonymousAuthConfig(value *types.AnonymousAuthConfig, path *field.Path
 	}
 
 	return &apiserverv1.AnonymousAuthConfig{
-		Enabled: deref(value.Enabled),
+		Enabled:    deref(value.Enabled),
 		Conditions: parseAnonymousAuthCondition(value.Conditions, path.Child("conditions"), errs),
 	}
 }
@@ -769,7 +777,7 @@ func toAuthenticationConfiguration(value *apiserverv1.AuthenticationConfiguratio
 
 	return &types.AuthenticationConfiguration{
 		Anonymous: toAnonymousAuthConfig(value.Anonymous),
-		Jwt: toJwtAuthenticator(value.JWT),
+		Jwt:       toJwtAuthenticator(value.JWT),
 	}
 }
 
@@ -781,10 +789,10 @@ func toJwtAuthenticator(value []apiserverv1.JWTAuthenticator) []types.JwtAuthent
 	result := make([]types.JwtAuthenticator, len(value))
 	for i, e := range value {
 		result[i] = types.JwtAuthenticator{
-			ClaimMappings: toClaimMappings(e.ClaimMappings),
+			ClaimMappings:        toClaimMappings(e.ClaimMappings),
 			ClaimValidationRules: toClaimValidationRules(e.ClaimValidationRules),
-			Issuer: toIssuer(e.Issuer),
-			UserValidationRules: toUserValidationRules(e.UserValidationRules),
+			Issuer:               toIssuer(e.Issuer),
+			UserValidationRules:  toUserValidationRules(e.UserValidationRules),
 		}
 	}
 
@@ -793,9 +801,9 @@ func toJwtAuthenticator(value []apiserverv1.JWTAuthenticator) []types.JwtAuthent
 
 func toClaimMappings(value apiserverv1.ClaimMappings) types.ClaimMappings {
 	return types.ClaimMappings{
-		Extra: toExtraMapping(value.Extra),
-		Groups: toPrefixedClaimOrExpression(value.Groups),
-		UID: toClaimOrExpression(value.UID),
+		Extra:    toExtraMapping(value.Extra),
+		Groups:   toPrefixedClaimOrExpression(value.Groups),
+		UID:      toClaimOrExpression(value.UID),
 		Username: deref(toPrefixedClaimOrExpression(value.Username)),
 	}
 }
@@ -807,9 +815,9 @@ func toPrefixedClaimOrExpression(value apiserverv1.PrefixedClaimOrExpression) *t
 	}
 
 	return &types.PrefixedClaimOrExpression{
-		Claim: toString(value.Claim),
+		Claim:      toString(value.Claim),
 		Expression: toString(value.Expression),
-		Prefix: clone(value.Prefix),
+		Prefix:     clone(value.Prefix),
 	}
 }
 
@@ -820,7 +828,7 @@ func toClaimOrExpression(value apiserverv1.ClaimOrExpression) *types.ClaimOrExpr
 	}
 
 	return &types.ClaimOrExpression{
-		Claim: toString(value.Claim),
+		Claim:      toString(value.Claim),
 		Expression: toString(value.Expression),
 	}
 }
@@ -833,7 +841,7 @@ func toExtraMapping(value []apiserverv1.ExtraMapping) *[]types.ExtraMapping {
 	result := make([]types.ExtraMapping, len(value))
 	for i, e := range result {
 		result[i] = types.ExtraMapping{
-			Key: e.Key,
+			Key:             e.Key,
 			ValueExpression: e.ValueExpression,
 		}
 	}
@@ -849,9 +857,9 @@ func toClaimValidationRules(value []apiserverv1.ClaimValidationRule) *[]types.Cl
 	result := make([]types.ClaimValidationRule, len(value))
 	for i, e := range value {
 		result[i] = types.ClaimValidationRule{
-			Claim: toString(e.Claim),
-			Expression: toString(e.Expression),
-			Message: toString(e.Message),
+			Claim:         toString(e.Claim),
+			Expression:    toString(e.Expression),
+			Message:       toString(e.Message),
 			RequiredValue: toString(e.RequiredValue),
 		}
 	}
@@ -861,12 +869,12 @@ func toClaimValidationRules(value []apiserverv1.ClaimValidationRule) *[]types.Cl
 
 func toIssuer(value apiserverv1.Issuer) types.Issuer {
 	return types.Issuer{
-		AudienceMatchPolicy: toString(string(value.AudienceMatchPolicy)),
-		Audiences: slices.Clone(value.Audiences),
+		AudienceMatchPolicy:  toString(string(value.AudienceMatchPolicy)),
+		Audiences:            slices.Clone(value.Audiences),
 		CertificateAuthority: toString(value.CertificateAuthority),
-		DiscoveryURL: value.DiscoveryURL,
-		EgressSelectorType: toString(string(value.EgressSelectorType)),
-		URL: value.URL,
+		DiscoveryURL:         value.DiscoveryURL,
+		EgressSelectorType:   toString(string(value.EgressSelectorType)),
+		URL:                  value.URL,
 	}
 }
 
@@ -887,7 +895,7 @@ func toUserValidationRules(value []apiserverv1.UserValidationRule) *[]types.User
 	for i, e := range result {
 		result[i] = types.UserValidationRule{
 			Expression: e.Expression,
-			Message: clone(e.Message),
+			Message:    clone(e.Message),
 		}
 	}
 
@@ -901,7 +909,7 @@ func toAnonymousAuthConfig(value *apiserverv1.AnonymousAuthConfig) *types.Anonym
 
 	return &types.AnonymousAuthConfig{
 		Conditions: toAnonymousAuthConditions(value.Conditions),
-		Enabled: ptr.To(value.Enabled),
+		Enabled:    ptr.To(value.Enabled),
 	}
 }
 

@@ -620,6 +620,67 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		}
 	})
 
+	t.Run("test no default ingress provider", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name:                     "test-no-default-ingress-provider",
+			NoDefaultIngressProvider: ptr.To(true),
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		b, err = io.ReadAll(w.Result().Body)
+		if err != nil {
+			t.Fatalf("error reading result body: %s", err)
+		}
+
+		var actual types.Cluster
+		err = json.Unmarshal(b, &actual)
+		if err != nil {
+			t.Fatalf("error unmarshalling result body: %s", err)
+		}
+
+		var actualCluster dockyardsv1.Cluster
+		err = c.Get(ctx, client.ObjectKey{Name: actual.Name, Namespace: organization.Spec.NamespaceRef.Name}, &actualCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !actualCluster.Spec.NoDefaultIngressProvider {
+			t.Fatalf("expected cluster spec noDefaultIngressProvider to be true")
+		}
+
+		expected := types.Cluster{
+			CreatedAt:                actualCluster.CreationTimestamp.Time,
+			ID:                       string(actualCluster.UID),
+			Name:                     actualCluster.Name,
+			NoDefaultIngressProvider: ptr.To(true),
+			Version:                  &actualCluster.Status.Version,
+		}
+
+		if !cmp.Equal(actual, expected) {
+			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+	})
+
 	t.Run("test subnets", func(t *testing.T) {
 		clusterOptions := types.ClusterOptions{
 			Name: "test-subnets",
@@ -703,12 +764,12 @@ func TestOrganizationClusters_Create(t *testing.T) {
 					{
 						ClaimMappings: types.ClaimMappings{
 							Username: types.PrefixedClaimOrExpression{
-								Claim: ptr.To("email"),
+								Claim:  ptr.To("email"),
 								Prefix: ptr.To(""),
 							},
 						},
 						Issuer: types.Issuer{
-							URL: "https://example.local",
+							URL:       "https://example.local",
 							Audiences: []string{"aud"},
 						},
 					},
@@ -748,24 +809,24 @@ func TestOrganizationClusters_Create(t *testing.T) {
 					{
 						ClaimMappings: types.ClaimMappings{
 							Username: types.PrefixedClaimOrExpression{
-								Claim: ptr.To("email"),
+								Claim:  ptr.To("email"),
 								Prefix: ptr.To(""),
 							},
 						},
 						Issuer: types.Issuer{
-							URL: "https://example.local",
+							URL:       "https://example.local",
 							Audiences: []string{"aud"},
 						},
 					},
 					{
 						ClaimMappings: types.ClaimMappings{
 							Username: types.PrefixedClaimOrExpression{
-								Claim: ptr.To("email"),
+								Claim:  ptr.To("email"),
 								Prefix: ptr.To(""),
 							},
 						},
 						Issuer: types.Issuer{
-							URL: "https://example.local",
+							URL:       "https://example.local",
 							Audiences: []string{"aud"},
 						},
 					},
@@ -805,14 +866,14 @@ func TestOrganizationClusters_Create(t *testing.T) {
 					{
 						ClaimMappings: types.ClaimMappings{
 							Username: types.PrefixedClaimOrExpression{
-								Claim: ptr.To("email"),
+								Claim:  ptr.To("email"),
 								Prefix: ptr.To(""),
 							},
 						},
 						Issuer: types.Issuer{
-							URL: "https://example.local",
+							URL:          "https://example.local",
 							DiscoveryURL: ptr.To("https://example.local"),
-							Audiences: []string{"aud"},
+							Audiences:    []string{"aud"},
 						},
 					},
 				},
@@ -851,12 +912,12 @@ func TestOrganizationClusters_Create(t *testing.T) {
 					{
 						ClaimMappings: types.ClaimMappings{
 							Username: types.PrefixedClaimOrExpression{
-								Claim: ptr.To("email"),
+								Claim:  ptr.To("email"),
 								Prefix: ptr.To(""),
 							},
 						},
 						Issuer: types.Issuer{
-							URL: "https://example.local",
+							URL:       "https://example.local",
 							Audiences: []string{""},
 						},
 					},
@@ -896,13 +957,13 @@ func TestOrganizationClusters_Create(t *testing.T) {
 					{
 						ClaimMappings: types.ClaimMappings{
 							Username: types.PrefixedClaimOrExpression{
-								Claim: ptr.To("email"),
+								Claim:      ptr.To("email"),
 								Expression: ptr.To("someexpr"),
-								Prefix: ptr.To(""),
+								Prefix:     ptr.To(""),
 							},
 						},
 						Issuer: types.Issuer{
-							URL: "https://example.local",
+							URL:       "https://example.local",
 							Audiences: []string{"aud"},
 						},
 					},
@@ -942,18 +1003,18 @@ func TestOrganizationClusters_Create(t *testing.T) {
 					{
 						ClaimMappings: types.ClaimMappings{
 							Username: types.PrefixedClaimOrExpression{
-								Claim: ptr.To("email"),
+								Claim:  ptr.To("email"),
 								Prefix: ptr.To(""),
 							},
 						},
 						ClaimValidationRules: ptr.To([]types.ClaimValidationRule{
 							{
-								Claim: ptr.To("expr"),
+								Claim:   ptr.To("expr"),
 								Message: ptr.To("message"),
 							},
 						}),
 						Issuer: types.Issuer{
-							URL: "https://example.local",
+							URL:       "https://example.local",
 							Audiences: []string{"aud"},
 						},
 					},
@@ -993,18 +1054,18 @@ func TestOrganizationClusters_Create(t *testing.T) {
 					{
 						ClaimMappings: types.ClaimMappings{
 							Username: types.PrefixedClaimOrExpression{
-								Claim: ptr.To("email"),
+								Claim:  ptr.To("email"),
 								Prefix: ptr.To(""),
 							},
 						},
 						ClaimValidationRules: ptr.To([]types.ClaimValidationRule{
 							{
-								Message: ptr.To("message"),
+								Message:       ptr.To("message"),
 								RequiredValue: ptr.To("value"),
 							},
 						}),
 						Issuer: types.Issuer{
-							URL: "https://example.local",
+							URL:       "https://example.local",
 							Audiences: []string{"aud"},
 						},
 					},
@@ -1044,12 +1105,12 @@ func TestOrganizationClusters_Create(t *testing.T) {
 					{
 						ClaimMappings: types.ClaimMappings{
 							Username: types.PrefixedClaimOrExpression{
-								Claim: ptr.To("email"),
+								Claim:  ptr.To("email"),
 								Prefix: nil,
 							},
 						},
 						Issuer: types.Issuer{
-							URL: "https://example.local",
+							URL:       "https://example.local",
 							Audiences: []string{"aud"},
 						},
 					},
@@ -1089,13 +1150,13 @@ func TestOrganizationClusters_Create(t *testing.T) {
 					{
 						ClaimMappings: types.ClaimMappings{
 							Username: types.PrefixedClaimOrExpression{
-								Claim: ptr.To("email"),
-								Prefix: ptr.To("prefix"),
+								Claim:      ptr.To("email"),
+								Prefix:     ptr.To("prefix"),
 								Expression: ptr.To("some_expr"),
 							},
 						},
 						Issuer: types.Issuer{
-							URL: "https://example.local",
+							URL:       "https://example.local",
 							Audiences: []string{"aud"},
 						},
 					},
