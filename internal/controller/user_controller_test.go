@@ -58,9 +58,9 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 
 	c := testEnvironment.GetClient()
 
-	config := dyconfig.NewFakeConfigManager(map[string]string{
-		string(dyconfig.KeyExternalURL): "http://test.com",
-		string(dyconfig.KeyPublicNamespace): "dockyards-public",
+	config := dyconfig.NewFakeConfigManager(map[dyconfig.Key]string{
+		dyconfig.KeyExternalURL: "http://test.com",
+		dyconfig.KeyPublicNamespace: "dockyards-public",
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -133,8 +133,8 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	fakeConfig := config.NewFakeConfigManager(map[string]string{
-		string(config.KeyPublicNamespace): testEnvironment.GetPublicNamespace(),
+	fakeConfig := config.NewFakeConfigManager(map[config.Key]string{
+		config.KeyPublicNamespace: testEnvironment.GetPublicNamespace(),
 	})
 
 	handlerOptions := []handlers.HandlerOption{
