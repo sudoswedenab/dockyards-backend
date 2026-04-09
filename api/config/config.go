@@ -34,7 +34,7 @@ import (
 type ConfigManager struct {
 	client    client.Client
 	backingConfigMapKey client.ObjectKey
-	data      atomic.Pointer[map[string]string]
+	data      atomic.Pointer[map[Key]string]
 	logger    *slog.Logger
 }
 
@@ -68,7 +68,7 @@ func NewConfigManager(mgr ctrl.Manager, backingConfigMapKey client.ObjectKey, op
 	return result, nil
 }
 
-func NewFakeConfigManager(data map[string]string) *ConfigManager {
+func NewFakeConfigManager(data map[Key]string) *ConfigManager {
 	result := &ConfigManager{}
 	result.data.Store(&data)
 	return result
@@ -84,10 +84,16 @@ func (m *ConfigManager) Reconcile(ctx context.Context, req reconcile.Request) (r
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	m.data.Store(&configMap.Data)
+
+	data := make(map[Key]string, len(configMap.Data))
+	for k, v := range configMap.Data {
+		data[Key(k)] = v
+	}
+
+	m.data.Store(&data)
 
 	if m.logger != nil {
-		m.logger.Debug("reloaded config map", "key", m.backingConfigMapKey, "data", configMap.Data)
+		m.logger.Debug("reloaded config map", "key", m.backingConfigMapKey, "data", data)
 	}
 
 	return reconcile.Result{}, nil
@@ -102,7 +108,7 @@ func (m *ConfigManager) GetValueForKey(key Key) (string, bool) {
 	if config == nil {
 		return "", false 
 	}
-	value, ok := config[string(key)]
+	value, ok := config[key]
 	return value, ok
 }
 
