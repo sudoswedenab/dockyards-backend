@@ -75,6 +75,10 @@ func NewFakeConfigManager(data map[Key]string) *ConfigManager {
 }
 
 func (m *ConfigManager) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	if m == nil {
+		return reconcile.Result{}, nil
+	}
+
 	if req.NamespacedName != m.backingConfigMapKey {
 		return reconcile.Result{}, nil
 	}
@@ -100,6 +104,10 @@ func (m *ConfigManager) Reconcile(ctx context.Context, req reconcile.Request) (r
 }
 
 func (m *ConfigManager) GetValueForKey(key Key) (string, bool) {
+	if m == nil {
+		return "", false
+	}
+
 	configPtr := m.data.Load()
 	if configPtr == nil {
 		return "", false 
@@ -113,6 +121,10 @@ func (m *ConfigManager) GetValueForKey(key Key) (string, bool) {
 }
 
 func (m *ConfigManager) GetValueOrDefault(key Key, defaultValue string) string {
+	if m == nil {
+		return defaultValue
+	}
+
 	value, ok := m.GetValueForKey(key)
 	if !ok {
 		return defaultValue
