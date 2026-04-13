@@ -16,11 +16,13 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"slices"
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v3"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	"github.com/sudoswedenab/dockyards-backend/api/config"
@@ -97,6 +99,7 @@ func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockya
 	}
 
 	v1Cluster.AuthenticationConfig = toAuthenticationConfiguration(cluster.Spec.AuthenticationConfig)
+	v1Cluster.Advanced = toClusterAdvancedOptions(cluster.Spec.Advanced)
 
 	return &v1Cluster
 }
@@ -305,6 +308,7 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 
 	var errs field.ErrorList
 	cluster.Spec.AuthenticationConfig = parseAuthenticationConfiguration(request.AuthenticationConfig, field.NewPath("authentication_config"), &errs)
+	cluster.Spec.Advanced = parseAdvancedOptions(request.Advanced, field.NewPath("advanced"), &errs)
 	if len(errs) != 0 {
 		return nil, apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", errs)
 	}
@@ -471,6 +475,62 @@ func (h *handler) GetOrganizationCluster(ctx context.Context, organization *dock
 	v1Cluster := h.toV1Cluster(&cluster, &nodePoolList)
 
 	return v1Cluster, nil
+}
+
+func parsePatches(input *[]map[string]any, path *field.Path, errs *field.ErrorList) []dockyardsv1.Patch {
+	if input == nil {
+		return nil
+	}
+
+	if *input == nil {
+		return nil
+	}
+
+	result := make([]dockyardsv1.Patch, 0, len(*input))
+
+	for i, value := range *input {
+		data, err := json.Marshal(value)
+		if err != nil {
+			add(errs, field.TypeInvalid(path.Index(i), value, "this value could not be encoded to JSON"))
+
+			continue
+		}
+		result = append(result, dockyardsv1.Patch{Raw: data})
+	}
+
+	return result
+}
+
+func parseTalosOptions(value *types.ClusterTalosOptions, path *field.Path, errs *field.ErrorList) dockyardsv1.ClusterTalosOptions {
+	if value == nil {
+		return dockyardsv1.ClusterTalosOptions{}
+	}
+
+	return dockyardsv1.ClusterTalosOptions{
+		AdditionalSharedConfigPatches:          parsePatches(value.AdditionalSharedConfigPatches, path.Child("additional_shared_config_patches"), errs),
+		AdditionalControlPlaneConfigPatches:    parsePatches(value.AdditionalControlPlaneConfigPatches, path.Child("additional_control_plane_config_patches"), errs),
+		AdditionalWorkerConfigPatches:          parsePatches(value.AdditionalWorkerConfigPatches, path.Child("additional_worker_config_patches"), errs),
+	}
+}
+
+func parseKubevirtConfig(value *types.ClusterKubevirtOptions, path *field.Path, errs *field.ErrorList) dockyardsv1.ClusterKubevirtOptions {
+	if value == nil {
+		return dockyardsv1.ClusterKubevirtOptions{}
+	}
+
+	return dockyardsv1.ClusterKubevirtOptions{
+		Talos: parseTalosOptions(value.Talos, path.Child("talos"), errs),
+	}
+}
+
+func parseAdvancedOptions(value *types.ClusterAdvancedOptions, path *field.Path, errs *field.ErrorList) dockyardsv1.ClusterAdvancedOptions {
+	if value == nil {
+		return dockyardsv1.ClusterAdvancedOptions{}
+	}
+
+	return dockyardsv1.ClusterAdvancedOptions{
+		Kubevirt: parseKubevirtConfig(value.Kubevirt, path.Child("kubevirt"), errs),
+	}
 }
 
 func parseAuthenticationConfiguration(value *types.AuthenticationConfiguration, path *field.Path, errs *field.ErrorList) *apiserverv1.AuthenticationConfiguration {
@@ -934,4 +994,68 @@ func toString(value string) *string {
 	}
 
 	return &value
+}
+
+func toPatches(value []dockyardsv1.Patch) *[]map[string]any {
+	if len(value) == 0 {
+		return nil
+	}
+
+	result := make([]map[string]any, 0, len(value))
+	for _, v := range value {
+		patch := map[string]any{}
+
+		err := json.Unmarshal(v.Raw, &patch)
+		if err == nil {
+			result = append(result, patch)
+
+			continue
+		}
+
+		// Failed to decode JSON, so maybe someone has poked some YAML inside instead.
+		err = yaml.Unmarshal(v.Raw, &patch)
+		if err == nil {
+			result = append(result, patch)
+
+			continue
+		}
+
+		// RawExtension is documented to only be JSON or YAML, but in case we fail anyway,
+		// let's just strip it from the response since the response was otherwise successful.
+		continue
+	}
+
+	return &result
+}
+
+func toClusterTalosOptions(value dockyardsv1.ClusterTalosOptions) *types.ClusterTalosOptions {
+	if value.IsZero() {
+		return nil
+	}
+
+	return &types.ClusterTalosOptions{
+		AdditionalSharedConfigPatches:       toPatches(value.AdditionalSharedConfigPatches),
+		AdditionalControlPlaneConfigPatches: toPatches(value.AdditionalControlPlaneConfigPatches),
+		AdditionalWorkerConfigPatches:       toPatches(value.AdditionalWorkerConfigPatches),
+	}
+}
+
+func toClusterKubevirtOptions(value dockyardsv1.ClusterKubevirtOptions) *types.ClusterKubevirtOptions {
+	if value.IsZero() {
+		return nil
+	}
+
+	return &types.ClusterKubevirtOptions{
+		Talos: toClusterTalosOptions(value.Talos),
+	}
+}
+
+func toClusterAdvancedOptions(value dockyardsv1.ClusterAdvancedOptions) *types.ClusterAdvancedOptions {
+	if value.IsZero() {
+		return nil
+	}
+
+	return &types.ClusterAdvancedOptions{
+		Kubevirt: toClusterKubevirtOptions(value.Kubevirt),
+	}
 }
