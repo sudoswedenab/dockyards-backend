@@ -20,6 +20,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	apiserverv1 "k8s.io/apiserver/pkg/apis/apiserver/v1beta1"
 )
 
@@ -47,18 +48,82 @@ func (e *ClusterAPIEndpoint) String() string {
 	return "https://" + net.JoinHostPort(e.Host, port)
 }
 
+type Patch = runtime.RawExtension
+
+type ClusterTalosOptions struct {
+	// Additional patches to apply to the talosconfig of all nodes.
+	AdditionalSharedConfigPatches       []Patch `json:"additionalSharedConfigPatches,omitempty"`
+
+	// Additional patches to apply to the talosconfig of controlplane nodes.
+	AdditionalControlPlaneConfigPatches []Patch `json:"additionalControlPlaneConfigPatches,omitempty"`
+
+	// Additional patches to apply to the talosconfig of worker nodes.
+	AdditionalWorkerConfigPatches       []Patch `json:"additionalWorkerConfigPatches,omitempty"`
+}
+
+func (o *ClusterTalosOptions)IsZero() bool {
+	if len(o.AdditionalSharedConfigPatches) != 0 {
+		return false
+	}
+
+	if len(o.AdditionalControlPlaneConfigPatches) != 0 {
+		return false
+	}
+
+	if len(o.AdditionalWorkerConfigPatches) != 0 {
+		return false
+	}
+
+	return true
+}
+
+type ClusterKubevirtOptions struct {
+	// Options to apply to talos
+	Talos ClusterTalosOptions `json:"talos,omitempty,omitzero"`
+}
+
+func (o *ClusterKubevirtOptions) IsZero() bool {
+	if !o.Talos.IsZero() {
+		return false
+	}
+
+	return true
+}
+
+// These are meant as an escape hatch for users who know it in their heart
+// that on their cloud platform there is a configuration option that, when
+// tuned, makes their cluster go wrooom, but since dockyards either hasn't
+// or wont add explicit support for the feature, they cannot turn the knob.
+//
+// These options require an advanced knowledge of how the platform operates
+// and which cloud environment is being actively used, so tread carefully
+// when using these options.
+type ClusterAdvancedOptions struct {
+	// Options to apply to kubevirt in case we're running in a kubevirt environment.
+	Kubevirt ClusterKubevirtOptions `json:"kubevirt,omitempty,omitzero"`
+}
+
+func (o *ClusterAdvancedOptions) IsZero() bool {
+	if !o.Kubevirt.IsZero() {
+		return false
+	}
+
+	return true
+}
+
 type ClusterSpec struct {
-	Version                  string                            `json:"version,omitempty"`
-	NoDefaultIngressProvider bool                              `json:"noDefaultIngressProvider,omitempty"`
-	Upgrades                 []ClusterUpgrade                  `json:"upgrades,omitempty"`
-	BlockDeletion            bool                              `json:"blockDeletion,omitempty"`
-	AllocateInternalIP       bool                              `json:"allocateInternalIP,omitempty"`
-	IPPoolRef                *corev1.TypedLocalObjectReference `json:"ipPoolRef,omitempty"`
-	Duration                 *metav1.Duration                  `json:"duration,omitempty"`
-	NoDefaultNetworkPlugin   bool                              `json:"noDefaultNetworkPlugin,omitempty"`
-	PodSubnets               []string                          `json:"podSubnets,omitempty"`
-	ServiceSubnets           []string                          `json:"serviceSubnets,omitempty"`
-	AuthenticationConfig     *apiserverv1.AuthenticationConfiguration `json:"authenticationConfig,omitempty"`
+	Version                  string                                     `json:"version,omitempty"`
+	NoDefaultIngressProvider bool                                       `json:"noDefaultIngressProvider,omitempty"`
+	Upgrades                 []ClusterUpgrade                           `json:"upgrades,omitempty"`
+	BlockDeletion            bool                                       `json:"blockDeletion,omitempty"`
+	AllocateInternalIP       bool                                       `json:"allocateInternalIP,omitempty"`
+	IPPoolRef                *corev1.TypedLocalObjectReference          `json:"ipPoolRef,omitempty"`
+	Duration                 *metav1.Duration                           `json:"duration,omitempty"`
+	NoDefaultNetworkPlugin   bool                                       `json:"noDefaultNetworkPlugin,omitempty"`
+	PodSubnets               []string                                   `json:"podSubnets,omitempty"`
+	ServiceSubnets           []string                                   `json:"serviceSubnets,omitempty"`
+	AuthenticationConfig     *apiserverv1.AuthenticationConfiguration   `json:"authenticationConfig,omitempty"`
+	Advanced                 ClusterAdvancedOptions                     `json:"advanced,omitempty,omitzero"`
 }
 
 type ClusterStatus struct {

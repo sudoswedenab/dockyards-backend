@@ -69,6 +69,48 @@ spec:
             type: object
           spec:
             properties:
+              advanced:
+                description: |-
+                  These are meant as an escape hatch for users who know it in their heart
+                  that on their cloud platform there is a configuration option that, when
+                  tuned, makes their cluster go wrooom, but since dockyards either hasn't
+                  or wont add explicit support for the feature, they cannot turn the knob.
+
+                  These options require an advanced knowledge of how the platform operates
+                  and which cloud environment is being actively used, so tread carefully
+                  when using these options.
+                properties:
+                  kubevirt:
+                    description: Options to apply to kubevirt in case we're running
+                      in a kubevirt environment.
+                    properties:
+                      talos:
+                        description: Options to apply to talos
+                        properties:
+                          additionalControlPlaneConfigPatches:
+                            description: Additional patches to apply to the talosconfig
+                              of controlplane nodes.
+                            items:
+                              type: object
+                              x-kubernetes-preserve-unknown-fields: true
+                            type: array
+                          additionalSharedConfigPatches:
+                            description: Additional patches to apply to the talosconfig
+                              of all nodes.
+                            items:
+                              type: object
+                              x-kubernetes-preserve-unknown-fields: true
+                            type: array
+                          additionalWorkerConfigPatches:
+                            description: Additional patches to apply to the talosconfig
+                              of worker nodes.
+                            items:
+                              type: object
+                              x-kubernetes-preserve-unknown-fields: true
+                            type: array
+                        type: object
+                    type: object
+                type: object
               allocateInternalIP:
                 type: boolean
               authenticationConfig:

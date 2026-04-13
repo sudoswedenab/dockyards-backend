@@ -142,8 +142,17 @@ import "time"
 
 // Cluster defines model for cluster.
 #Cluster: {
-	allocate_internal_ip?: null | bool   @go(AllocateInternalIP,*bool)
-	api_endpoint?:         null | string @go(APIEndpoint,*string)
+	// Advanced These are meant as an escape hatch for users who know it in their heart
+	// that on their cloud platform there is a configuration option that, when
+	// tuned, makes their cluster go wrooom, but since dockyards either hasn't
+	// or wont add explicit support for the feature, they cannot turn the knob.
+	//
+	// These options require an advanced knowledge of how the platform operates
+	// and which cloud environment is being actively used, so tread carefully
+	// when using these options.
+	advanced?:             null | #ClusterAdvancedOptions @go(Advanced,*ClusterAdvancedOptions)
+	allocate_internal_ip?: null | bool                    @go(AllocateInternalIP,*bool)
+	api_endpoint?:         null | string                  @go(APIEndpoint,*string)
 
 	// AuthenticationConfig provides versioned configuration for authentication.
 	authentication_config?: null | #AuthenticationConfiguration @go(AuthenticationConfig,*AuthenticationConfiguration)
@@ -167,9 +176,37 @@ import "time"
 	version?:    null | string    @go(Version,*string)
 }
 
+// ClusterAdvancedOptions These are meant as an escape hatch for users who know it in their heart
+// that on their cloud platform there is a configuration option that, when
+// tuned, makes their cluster go wrooom, but since dockyards either hasn't
+// or wont add explicit support for the feature, they cannot turn the knob.
+//
+// These options require an advanced knowledge of how the platform operates
+// and which cloud environment is being actively used, so tread carefully
+// when using these options.
+#ClusterAdvancedOptions: {
+	// Kubevirt Options applied to kubevirt in case we're running in a kubevirt environment.
+	kubevirt?: null | #ClusterKubevirtOptions @go(Kubevirt,*ClusterKubevirtOptions)
+}
+
+// ClusterKubevirtOptions Options applied to kubevirt in case we're running in a kubevirt environment.
+#ClusterKubevirtOptions: {
+	// Talos Options to apply to talos.
+	talos?: null | #ClusterTalosOptions @go(Talos,*ClusterTalosOptions)
+}
+
 // ClusterOptions defines model for cluster_options.
 #ClusterOptions: {
-	allocate_internal_ip?: null | bool @go(AllocateInternalIP,*bool)
+	// Advanced These are meant as an escape hatch for users who know it in their heart
+	// that on their cloud platform there is a configuration option that, when
+	// tuned, makes their cluster go wrooom, but since dockyards either hasn't
+	// or wont add explicit support for the feature, they cannot turn the knob.
+	//
+	// These options require an advanced knowledge of how the platform operates
+	// and which cloud environment is being actively used, so tread carefully
+	// when using these options.
+	advanced?:             null | #ClusterAdvancedOptions @go(Advanced,*ClusterAdvancedOptions)
+	allocate_internal_ip?: null | bool                    @go(AllocateInternalIP,*bool)
 
 	// AuthenticationConfig provides versioned configuration for authentication.
 	authentication_config?:       null | #AuthenticationConfiguration @go(AuthenticationConfig,*AuthenticationConfiguration)
@@ -184,6 +221,24 @@ import "time"
 	pod_subnets?: null | [...string] @go(PodSubnets,*[]string)
 	service_subnets?: null | [...string] @go(ServiceSubnets,*[]string)
 	version?: null | string @go(Version,*string)
+}
+
+// ClusterTalosOptions Options to apply to talos.
+#ClusterTalosOptions: {
+	// AdditionalControlPlaneConfigPatches Patches applied to the talosconfig of controlplane nodes.
+	additional_control_plane_config_patches?: null | [... {
+		...
+	}] @go(AdditionalControlPlaneConfigPatches,*[]map[string]interface{})
+
+	// AdditionalSharedConfigPatches Patches applied to the talosconfig of all nodes.
+	additional_shared_config_patches?: null | [... {
+		...
+	}] @go(AdditionalSharedConfigPatches,*[]map[string]interface{})
+
+	// AdditionalWorkerConfigPatches Patches applied to the talosconfig of worker nodes.
+	additional_worker_config_patches?: null | [... {
+		...
+	}] @go(AdditionalWorkerConfigPatches,*[]map[string]interface{})
 }
 
 // ClusterTemplate defines model for cluster_template.

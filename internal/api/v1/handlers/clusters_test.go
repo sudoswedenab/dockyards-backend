@@ -1187,6 +1187,97 @@ func TestOrganizationClusters_Create(t *testing.T) {
 			t.Fatalf("expected status code %d, got %d: %s", expected, statusCode, string(body))
 		}
 	})
+
+	t.Run("test advanced talos patch does not get discarded", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name:    "test-advanced-talos-patches",
+			Advanced: &types.ClusterAdvancedOptions{
+				Kubevirt: &types.ClusterKubevirtOptions{
+					Talos: &types.ClusterTalosOptions{
+						AdditionalSharedConfigPatches: ptr.To([]map[string]any(nil)),
+						AdditionalControlPlaneConfigPatches: ptr.To([]map[string]any{}),
+						AdditionalWorkerConfigPatches: ptr.To([]map[string]any{
+							{
+								"workerConfigPatch0": "hello",
+							},
+							{
+								"workerConfigPatch1": "there",
+							},
+						}),
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		expectedCluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      clusterOptions.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion:         dockyardsv1.GroupVersion.String(),
+						Kind:               dockyardsv1.OrganizationKind,
+						Name:               organization.Name,
+						UID:                organization.UID,
+						BlockOwnerDeletion: ptr.To(true),
+					},
+				},
+			},
+			Spec: dockyardsv1.ClusterSpec{
+				Advanced: dockyardsv1.ClusterAdvancedOptions{
+					Kubevirt: dockyardsv1.ClusterKubevirtOptions{
+						Talos: dockyardsv1.ClusterTalosOptions{
+							AdditionalSharedConfigPatches: nil,
+							AdditionalControlPlaneConfigPatches: nil,
+							AdditionalWorkerConfigPatches: []dockyardsv1.Patch{
+								{
+									Raw: mustMarshalJSON(map[string]any{
+										"workerConfigPatch0": "hello",
+									}),
+								},
+								{
+									Raw: mustMarshalJSON(map[string]any{
+										"workerConfigPatch1": "there",
+									}),
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		var actualCluster dockyardsv1.Cluster
+		err = c.Get(ctx, client.ObjectKeyFromObject(&expectedCluster), &actualCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actualCluster.Spec, expectedCluster.Spec) {
+			t.Errorf("diff: %s", cmp.Diff(expectedCluster.Spec, actualCluster.Spec))
+		}
+	})
 }
 
 func TestOrganizationClusters_Delete(t *testing.T) {
@@ -1729,4 +1820,12 @@ func TestOrganizationClusters_Get(t *testing.T) {
 			t.Fatalf("expected status code %d, got %d", http.StatusUnauthorized, statusCode)
 		}
 	})
+}
+
+func mustMarshalJSON(value any) []byte {
+	bytes, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
 }
