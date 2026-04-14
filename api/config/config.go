@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"sync/atomic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -130,4 +131,56 @@ func (m *ConfigManager) GetValueOrDefault(key Key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+func (m *ConfigManager) GetStringSlice(key Key) ([]string, bool) {
+	if m == nil {
+		return nil, false
+	}
+
+	return m.GetStringSlice2(key, ",")
+}
+
+func (m *ConfigManager) GetStringSliceOrDefault(key Key, defaultValue []string) []string {
+	if m == nil {
+		return defaultValue
+	}
+
+	result, found := m.GetStringSlice(key)
+	if !found {
+		return defaultValue
+	}
+
+	return result
+}
+
+func (m *ConfigManager) GetStringSlice2(key Key, splitOn string) ([]string, bool) {
+	if m == nil {
+		return nil, false
+	}
+
+	raw, found := m.GetValueForKey(key)
+	if !found {
+		return nil, false
+	}
+
+	items := strings.Split(raw, splitOn)
+	for i, value := range items {
+		items[i] = strings.TrimSpace(value)
+	}
+
+	return items, true
+}
+
+func (m *ConfigManager) GetStringSliceOrDefault2(key Key, splitOn string, defaultValue []string) []string {
+	if m == nil {
+		return defaultValue
+	}
+
+	result, found := m.GetStringSlice2(key, splitOn)
+	if !found {
+		return defaultValue
+	}
+
+	return result
 }
