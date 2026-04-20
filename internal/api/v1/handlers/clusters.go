@@ -1038,6 +1038,8 @@ func toClusterTalosOptions(value dockyardsv1.ClusterTalosOptions) *types.Cluster
 	}
 
 	return &types.ClusterTalosOptions{
+		ExternalNodeInterface:               ptr.To(value.ExternalNodeInterface),
+		ExternalNodeIpv4Subnet:              ptr.To(value.ExternalNodeIPv4Subnet),
 		AdditionalSharedConfigPatches:       toPatches(value.AdditionalSharedConfigPatches),
 		AdditionalControlPlaneConfigPatches: toPatches(value.AdditionalControlPlaneConfigPatches),
 		AdditionalWorkerConfigPatches:       toPatches(value.AdditionalWorkerConfigPatches),

@@ -108,6 +108,13 @@ spec:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
                             type: array
+                          externalNodeIPv4Subnet:
+                            description: IPv4 subnet to be used for the additional
+                              network interface
+                            type: string
+                          externalNodeInterface:
+                            description: Name of the additional network interface
+                            type: string
                         type: object
                     type: object
                 type: object
