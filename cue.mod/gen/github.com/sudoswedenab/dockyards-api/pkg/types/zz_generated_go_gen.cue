@@ -473,6 +473,7 @@ import "time"
 	id:                             string           @go(ID)
 	load_balancer?:                 null | bool      @go(LoadBalancer,*bool)
 	name:                           string           @go(Name)
+	node_labels?: null | {[string]: string} @go(NodeLabels,*map[string]string)
 	nodes?: null | [...#Node] @go(Nodes,*[]Node)
 	quantity?: null | int    @go(Quantity,*int)
 	ram_size?: null | string @go(RAMSize,*string)
@@ -488,8 +489,9 @@ import "time"
 	disk_size?:                     null | string @go(DiskSize,*string)
 	load_balancer?:                 null | bool   @go(LoadBalancer,*bool)
 	name?:                          null | string @go(Name,*string)
-	quantity?:                      null | int    @go(Quantity,*int)
-	ram_size?:                      null | string @go(RAMSize,*string)
+	node_labels?: null | {[string]: string} @go(NodeLabels,*map[string]string)
+	quantity?: null | int    @go(Quantity,*int)
+	ram_size?: null | string @go(RAMSize,*string)
 	storage_resources?: null | [...#StorageResource] @go(StorageResources,*[]StorageResource)
 }
 
