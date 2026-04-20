@@ -46,6 +46,7 @@ type NodePoolSpec struct {
 	StorageResources []NodePoolStorageResource    `json:"storageResources,omitempty"`
 	ReleaseRef       *corev1.TypedObjectReference `json:"releaseRef,omitempty"`
 	Security         NodePoolSecurity             `json:"security,omitempty"`
+	NodeLabels       map[string]string            `json:"nodeLabels,omitempty"`
 }
 
 type NodePoolStatus struct {
