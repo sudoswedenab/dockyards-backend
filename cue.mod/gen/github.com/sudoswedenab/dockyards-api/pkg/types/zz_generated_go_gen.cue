@@ -233,6 +233,14 @@ import "time"
 
 	// AdditionalWorkerConfigPatches Patches applied to the talosconfig of worker nodes.
 	additional_worker_config_patches?: null | [... {...}] @go(AdditionalWorkerConfigPatches,*[]map[string]interface{})
+
+	// ExternalNodeInterface Name of the additional network interface to be applied on all nodes
+	// in the cluster.
+	external_node_interface?: null | string @go(ExternalNodeInterface,*string)
+
+	// ExternalNodeIpv4Subnet Subnet to be used on the additional network interface on all nodes
+	// in the cluster.
+	external_node_ipv4_subnet?: null | string @go(ExternalNodeIpv4Subnet,*string)
 }
 
 // ClusterTemplate defines model for cluster_template.

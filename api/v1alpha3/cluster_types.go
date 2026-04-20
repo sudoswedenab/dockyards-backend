@@ -51,17 +51,23 @@ func (e *ClusterAPIEndpoint) String() string {
 type Patch = runtime.RawExtension
 
 type ClusterTalosOptions struct {
+	// Name of the additional network interface
+	ExternalNodeInterface string `json:"externalNodeInterface,omitempty"`
+
+	// IPv4 subnet to be used for the additional network interface
+	ExternalNodeIPv4Subnet string `json:"externalNodeIPv4Subnet,omitempty"`
+
 	// Additional patches to apply to the talosconfig of all nodes.
-	AdditionalSharedConfigPatches       []Patch `json:"additionalSharedConfigPatches,omitempty"`
+	AdditionalSharedConfigPatches []Patch `json:"additionalSharedConfigPatches,omitempty"`
 
 	// Additional patches to apply to the talosconfig of controlplane nodes.
 	AdditionalControlPlaneConfigPatches []Patch `json:"additionalControlPlaneConfigPatches,omitempty"`
 
 	// Additional patches to apply to the talosconfig of worker nodes.
-	AdditionalWorkerConfigPatches       []Patch `json:"additionalWorkerConfigPatches,omitempty"`
+	AdditionalWorkerConfigPatches []Patch `json:"additionalWorkerConfigPatches,omitempty"`
 }
 
-func (o *ClusterTalosOptions)IsZero() bool {
+func (o *ClusterTalosOptions) IsZero() bool {
 	if len(o.AdditionalSharedConfigPatches) != 0 {
 		return false
 	}
@@ -112,18 +118,18 @@ func (o *ClusterAdvancedOptions) IsZero() bool {
 }
 
 type ClusterSpec struct {
-	Version                  string                                     `json:"version,omitempty"`
-	NoDefaultIngressProvider bool                                       `json:"noDefaultIngressProvider,omitempty"`
-	Upgrades                 []ClusterUpgrade                           `json:"upgrades,omitempty"`
-	BlockDeletion            bool                                       `json:"blockDeletion,omitempty"`
-	AllocateInternalIP       bool                                       `json:"allocateInternalIP,omitempty"`
-	IPPoolRef                *corev1.TypedLocalObjectReference          `json:"ipPoolRef,omitempty"`
-	Duration                 *metav1.Duration                           `json:"duration,omitempty"`
-	NoDefaultNetworkPlugin   bool                                       `json:"noDefaultNetworkPlugin,omitempty"`
-	PodSubnets               []string                                   `json:"podSubnets,omitempty"`
-	ServiceSubnets           []string                                   `json:"serviceSubnets,omitempty"`
-	AuthenticationConfig     *apiserverv1.AuthenticationConfiguration   `json:"authenticationConfig,omitempty"`
-	Advanced                 ClusterAdvancedOptions                     `json:"advanced,omitempty,omitzero"`
+	Version                  string                                   `json:"version,omitempty"`
+	NoDefaultIngressProvider bool                                     `json:"noDefaultIngressProvider,omitempty"`
+	Upgrades                 []ClusterUpgrade                         `json:"upgrades,omitempty"`
+	BlockDeletion            bool                                     `json:"blockDeletion,omitempty"`
+	AllocateInternalIP       bool                                     `json:"allocateInternalIP,omitempty"`
+	IPPoolRef                *corev1.TypedLocalObjectReference        `json:"ipPoolRef,omitempty"`
+	Duration                 *metav1.Duration                         `json:"duration,omitempty"`
+	NoDefaultNetworkPlugin   bool                                     `json:"noDefaultNetworkPlugin,omitempty"`
+	PodSubnets               []string                                 `json:"podSubnets,omitempty"`
+	ServiceSubnets           []string                                 `json:"serviceSubnets,omitempty"`
+	AuthenticationConfig     *apiserverv1.AuthenticationConfiguration `json:"authenticationConfig,omitempty"`
+	Advanced                 ClusterAdvancedOptions                   `json:"advanced,omitempty,omitzero"`
 }
 
 type ClusterStatus struct {

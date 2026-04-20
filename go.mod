@@ -13,7 +13,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/cors v1.11.0
 	github.com/spf13/pflag v1.0.9
-	github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260420064929-0a91c4ea14c3
+	github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260420113451-275611ed2175
 	github.com/sudoswedenab/dockyards-backend/api v1.2.3
 	golang.org/x/crypto v0.45.0
 	golang.org/x/oauth2 v0.30.0
