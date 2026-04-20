@@ -535,6 +535,68 @@ func TestOrganizationClusters_Create(t *testing.T) {
 		}
 	})
 
+	t.Run("test node labels", func(t *testing.T) {
+		mgr := testEnvironment.GetManager()
+		c := testEnvironment.GetClient()
+
+		labels := map[string]string{
+			"example.com/pool": "worker",
+			"foo":              "bar",
+		}
+
+		clusterOptions := types.ClusterOptions{
+			Name: "test-node-labels",
+			NodePoolOptions: &[]types.NodePoolOptions{
+				{
+					Name:       ptr.To("worker"),
+					Quantity:   ptr.To(1),
+					NodeLabels: &labels,
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+userToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+
+		nodePool := dockyardsv1.NodePool{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      clusterOptions.Name + "-worker",
+				Namespace: organization.Spec.NamespaceRef.Name,
+			},
+		}
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = c.Get(ctx, client.ObjectKeyFromObject(&nodePool), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(nodePool.Spec.NodeLabels, labels) {
+			t.Errorf("diff: %s", cmp.Diff(labels, nodePool.Spec.NodeLabels))
+		}
+	})
+
 	t.Run("test duration", func(t *testing.T) {
 		clusterOptions := types.ClusterOptions{
 			Name:     "test-duration",
@@ -1190,11 +1252,11 @@ func TestOrganizationClusters_Create(t *testing.T) {
 
 	t.Run("test advanced talos patch does not get discarded", func(t *testing.T) {
 		clusterOptions := types.ClusterOptions{
-			Name:    "test-advanced-talos-patches",
+			Name: "test-advanced-talos-patches",
 			Advanced: &types.ClusterAdvancedOptions{
 				Kubevirt: &types.ClusterKubevirtOptions{
 					Talos: &types.ClusterTalosOptions{
-						AdditionalSharedConfigPatches: ptr.To([]map[string]any(nil)),
+						AdditionalSharedConfigPatches:       ptr.To([]map[string]any(nil)),
 						AdditionalControlPlaneConfigPatches: ptr.To([]map[string]any{}),
 						AdditionalWorkerConfigPatches: ptr.To([]map[string]any{
 							{
@@ -1248,7 +1310,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 				Advanced: dockyardsv1.ClusterAdvancedOptions{
 					Kubevirt: dockyardsv1.ClusterKubevirtOptions{
 						Talos: dockyardsv1.ClusterTalosOptions{
-							AdditionalSharedConfigPatches: nil,
+							AdditionalSharedConfigPatches:       nil,
 							AdditionalControlPlaneConfigPatches: nil,
 							AdditionalWorkerConfigPatches: []dockyardsv1.Patch{
 								{

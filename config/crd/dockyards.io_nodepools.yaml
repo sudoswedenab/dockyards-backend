@@ -67,6 +67,10 @@ spec:
                 type: boolean
               loadBalancer:
                 type: boolean
+              nodeLabels:
+                additionalProperties:
+                  type: string
+                type: object
               releaseRef:
                 description: TypedObjectReference contains enough information to let
                   you locate the typed referenced object

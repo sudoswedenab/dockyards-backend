@@ -22,12 +22,12 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/name"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -153,6 +153,10 @@ func (h *handler) nodePoolOptionsToNodePool(ctx context.Context, nodePoolOptions
 
 	if nodePoolOptions.ControlPlaneComponentsOnly != nil {
 		nodePool.Spec.DedicatedRole = *nodePoolOptions.ControlPlaneComponentsOnly
+	}
+
+	if nodePoolOptions.NodeLabels != nil {
+		nodePool.Spec.NodeLabels = *nodePoolOptions.NodeLabels
 	}
 
 	nodePool.Spec.Resources = corev1.ResourceList{}
@@ -507,9 +511,9 @@ func parseTalosOptions(value *types.ClusterTalosOptions, path *field.Path, errs 
 	}
 
 	return dockyardsv1.ClusterTalosOptions{
-		AdditionalSharedConfigPatches:          parsePatches(value.AdditionalSharedConfigPatches, path.Child("additional_shared_config_patches"), errs),
-		AdditionalControlPlaneConfigPatches:    parsePatches(value.AdditionalControlPlaneConfigPatches, path.Child("additional_control_plane_config_patches"), errs),
-		AdditionalWorkerConfigPatches:          parsePatches(value.AdditionalWorkerConfigPatches, path.Child("additional_worker_config_patches"), errs),
+		AdditionalSharedConfigPatches:       parsePatches(value.AdditionalSharedConfigPatches, path.Child("additional_shared_config_patches"), errs),
+		AdditionalControlPlaneConfigPatches: parsePatches(value.AdditionalControlPlaneConfigPatches, path.Child("additional_control_plane_config_patches"), errs),
+		AdditionalWorkerConfigPatches:       parsePatches(value.AdditionalWorkerConfigPatches, path.Child("additional_worker_config_patches"), errs),
 	}
 }
 
