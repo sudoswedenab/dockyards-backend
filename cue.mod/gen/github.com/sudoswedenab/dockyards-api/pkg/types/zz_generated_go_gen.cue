@@ -226,19 +226,13 @@ import "time"
 // ClusterTalosOptions Options to apply to talos.
 #ClusterTalosOptions: {
 	// AdditionalControlPlaneConfigPatches Patches applied to the talosconfig of controlplane nodes.
-	additional_control_plane_config_patches?: null | [... {
-		...
-	}] @go(AdditionalControlPlaneConfigPatches,*[]map[string]interface{})
+	additional_control_plane_config_patches?: null | [... {...}] @go(AdditionalControlPlaneConfigPatches,*[]map[string]interface{})
 
 	// AdditionalSharedConfigPatches Patches applied to the talosconfig of all nodes.
-	additional_shared_config_patches?: null | [... {
-		...
-	}] @go(AdditionalSharedConfigPatches,*[]map[string]interface{})
+	additional_shared_config_patches?: null | [... {...}] @go(AdditionalSharedConfigPatches,*[]map[string]interface{})
 
 	// AdditionalWorkerConfigPatches Patches applied to the talosconfig of worker nodes.
-	additional_worker_config_patches?: null | [... {
-		...
-	}] @go(AdditionalWorkerConfigPatches,*[]map[string]interface{})
+	additional_worker_config_patches?: null | [... {...}] @go(AdditionalWorkerConfigPatches,*[]map[string]interface{})
 }
 
 // ClusterTemplate defines model for cluster_template.
