@@ -511,6 +511,8 @@ func parseTalosOptions(value *types.ClusterTalosOptions, path *field.Path, errs 
 	}
 
 	return dockyardsv1.ClusterTalosOptions{
+		ExternalNodeInterface:               deref(value.ExternalNodeInterface),
+		ExternalNodeIPv4Subnet:              deref(value.ExternalNodeIpv4Subnet),
 		AdditionalSharedConfigPatches:       parsePatches(value.AdditionalSharedConfigPatches, path.Child("additional_shared_config_patches"), errs),
 		AdditionalControlPlaneConfigPatches: parsePatches(value.AdditionalControlPlaneConfigPatches, path.Child("additional_control_plane_config_patches"), errs),
 		AdditionalWorkerConfigPatches:       parsePatches(value.AdditionalWorkerConfigPatches, path.Child("additional_worker_config_patches"), errs),
@@ -1038,8 +1040,8 @@ func toClusterTalosOptions(value dockyardsv1.ClusterTalosOptions) *types.Cluster
 	}
 
 	return &types.ClusterTalosOptions{
-		ExternalNodeInterface:               ptr.To(value.ExternalNodeInterface),
-		ExternalNodeIpv4Subnet:              ptr.To(value.ExternalNodeIPv4Subnet),
+		ExternalNodeInterface:               toString(value.ExternalNodeInterface),
+		ExternalNodeIpv4Subnet:              toString(value.ExternalNodeIPv4Subnet),
 		AdditionalSharedConfigPatches:       toPatches(value.AdditionalSharedConfigPatches),
 		AdditionalControlPlaneConfigPatches: toPatches(value.AdditionalControlPlaneConfigPatches),
 		AdditionalWorkerConfigPatches:       toPatches(value.AdditionalWorkerConfigPatches),

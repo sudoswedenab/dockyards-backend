@@ -68,6 +68,14 @@ type ClusterTalosOptions struct {
 }
 
 func (o *ClusterTalosOptions) IsZero() bool {
+	if o.ExternalNodeInterface != "" {
+		return false
+	}
+
+	if o.ExternalNodeIPv4Subnet != "" {
+		return false
+	}
+
 	if len(o.AdditionalSharedConfigPatches) != 0 {
 		return false
 	}

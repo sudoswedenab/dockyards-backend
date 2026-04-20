@@ -63,6 +63,22 @@ func TestValidateJSON(t *testing.T) {
 			expected: http.StatusUnprocessableEntity,
 		},
 		{
+			name:   "test cluster options talos camelCase aliases",
+			schema: "#clusterOptions",
+			body: `{
+				"name":"hello",
+				"advanced":{
+					"kubevirt":{
+						"talos":{
+							"externalNodeInterface":"eth1",
+							"externalNodeIPv4Subnet":"10.71.22.80/29"
+						}
+					}
+				}
+			}`,
+			expected: http.StatusOK,
+		},
+		{
 			name:     "test valid workload",
 			schema:   "#workloadOptions",
 			body:     `{"namespace":"test","workload_template_name":"test","name":"test"}`,

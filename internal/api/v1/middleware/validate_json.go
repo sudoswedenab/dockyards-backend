@@ -35,6 +35,7 @@ import (
 type validate struct {
 	next   http.Handler
 	schema cue.Value
+	name   string
 }
 
 func (v validate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -48,6 +49,14 @@ func (v validate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.Body.Close()
+
+	if v.name == "#clusterOptions" {
+		if normalized, nerr := normalizeClusterOptionsJSON(body); nerr == nil {
+			body = normalized
+		} else {
+			logger.Debug("cue pre-validation normalization failed", "err", nerr)
+		}
+	}
 
 	err = cuejson.Validate(body, v.schema)
 	if err != nil {
@@ -99,10 +108,65 @@ func (j *ValidateJSON) WithSchema(s string) func(http.Handler) http.Handler {
 	}
 
 	fn := func(next http.Handler) http.Handler {
-		return validate{schema: schema, next: next}
+		return validate{schema: schema, next: next, name: s}
 	}
 
 	return fn
+}
+
+func normalizeClusterOptionsJSON(body []byte) ([]byte, error) {
+	var root map[string]any
+	if err := json.Unmarshal(body, &root); err != nil {
+		return body, err
+	}
+
+	advanced, ok := root["advanced"].(map[string]any)
+	if !ok {
+		return body, nil
+	}
+
+	kubevirt, ok := advanced["kubevirt"].(map[string]any)
+	if !ok {
+		return body, nil
+	}
+
+	talos, ok := kubevirt["talos"].(map[string]any)
+	if !ok {
+		return body, nil
+	}
+
+	// Accept camelCase aliases for these new talos fields; convert to the API's snake_case.
+	changed := false
+	if _, exists := talos["external_node_interface"]; !exists {
+		if v, ok := talos["externalNodeInterface"]; ok {
+			talos["external_node_interface"] = v
+			delete(talos, "externalNodeInterface")
+			changed = true
+		}
+	}
+	if _, exists := talos["external_node_ipv4_subnet"]; !exists {
+		if v, ok := talos["externalNodeIPv4Subnet"]; ok {
+			talos["external_node_ipv4_subnet"] = v
+			delete(talos, "externalNodeIPv4Subnet")
+			changed = true
+		}
+		if v, ok := talos["externalNodeIpv4Subnet"]; ok {
+			talos["external_node_ipv4_subnet"] = v
+			delete(talos, "externalNodeIpv4Subnet")
+			changed = true
+		}
+	}
+
+	if !changed {
+		return body, nil
+	}
+
+	out, err := json.Marshal(root)
+	if err != nil {
+		return body, err
+	}
+
+	return out, nil
 }
 
 //go:embed validate_json.cue
