@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -36,6 +37,10 @@ type Expirable interface {
 }
 
 func GetOwnerOrganization(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Organization, error) {
+	return getOwner(ctx, c, o, dockyardsv1.LabelOrganizationName, &dockyardsv1.Organization{}, getOwnerOrganizationSlow)
+}
+
+func getOwnerOrganizationSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Organization, error) {
 	for _, ownerReference := range o.GetOwnerReferences() {
 		if ownerReference.Kind != dockyardsv1.OrganizationKind {
 			continue
@@ -73,6 +78,10 @@ func GetOwnerOrganization(ctx context.Context, c client.Client, o client.Object)
 }
 
 func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Cluster, error) {
+	return getOwner(ctx, c, o, dockyardsv1.LabelClusterName, &dockyardsv1.Cluster{}, getOwnerClusterSlow)
+}
+
+func getOwnerClusterSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Cluster, error) {
 	for _, ownerReference := range o.GetOwnerReferences() {
 		if ownerReference.Kind != dockyardsv1.ClusterKind {
 			continue
@@ -115,6 +124,10 @@ func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*do
 }
 
 func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.NodePool, error) {
+	return getOwner(ctx, c, o, dockyardsv1.LabelNodePoolName, &dockyardsv1.NodePool{}, getOwnerNodePoolSlow)
+}
+
+func getOwnerNodePoolSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.NodePool, error) {
 	for _, ownerReference := range o.GetOwnerReferences() {
 		if ownerReference.Kind != dockyardsv1.NodePoolKind {
 			continue
@@ -156,6 +169,10 @@ func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*d
 }
 
 func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Deployment, error) {
+	return getOwner(ctx, c, o, dockyardsv1.LabelDeploymentName, &dockyardsv1.Deployment{}, getOwnerDeploymentSlow)
+}
+
+func getOwnerDeploymentSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Deployment, error) {
 	for _, ownerReference := range o.GetOwnerReferences() {
 		if ownerReference.Kind != dockyardsv1.DeploymentKind {
 			continue
@@ -188,6 +205,171 @@ func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (
 			Kind:  dockyardsv1.DeploymentKind,
 		},
 		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
+}
+
+func GetOwnerHelmDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.HelmDeployment, error) {
+	return getOwner(ctx, c, o, dockyardsv1.LabelHelmDeploymentName, &dockyardsv1.HelmDeployment{}, getOwnerHelmDeploymentSlow)
+}
+
+func getOwnerHelmDeploymentSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.HelmDeployment, error) {
+	for _, ownerReference := range o.GetOwnerReferences() {
+		if ownerReference.Kind != dockyardsv1.HelmDeploymentKind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
+			continue
+		}
+
+		var deployment dockyardsv1.HelmDeployment
+		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
+		if err != nil {
+			return nil, err
+		}
+
+		return &deployment, nil
+	}
+
+	return nil, &errors.StatusError{ErrStatus: metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind:  dockyardsv1.HelmDeploymentKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
+}
+
+func GetOwnerKustomizeDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.KustomizeDeployment, error) {
+	return getOwner(ctx, c, o, dockyardsv1.LabelKustomizeDeploymentName, &dockyardsv1.KustomizeDeployment{}, getOwnerKustomizeDeploymentSlow)
+}
+
+func getOwnerKustomizeDeploymentSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.KustomizeDeployment, error) {
+	for _, ownerReference := range o.GetOwnerReferences() {
+		if ownerReference.Kind != dockyardsv1.KustomizeDeploymentKind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
+			continue
+		}
+
+		var deployment dockyardsv1.KustomizeDeployment
+		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
+		if err != nil {
+			return nil, err
+		}
+
+		return &deployment, nil
+	}
+
+	return nil, &errors.StatusError{ErrStatus: metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind:  dockyardsv1.KustomizeDeploymentKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
+}
+
+func GetOwnerContainerImageDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.ContainerImageDeployment, error) {
+	return getOwner(ctx, c, o, dockyardsv1.LabelContainerImageDeployment, &dockyardsv1.ContainerImageDeployment{}, getOwnerContainerImageDeploymentSlow)
+}
+
+func getOwnerContainerImageDeploymentSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.ContainerImageDeployment, error) {
+	for _, ownerReference := range o.GetOwnerReferences() {
+		if ownerReference.Kind != dockyardsv1.ContainerImageDeploymentKind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
+			continue
+		}
+
+		var deployment dockyardsv1.ContainerImageDeployment
+		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
+		if err != nil {
+			return nil, err
+		}
+
+		return &deployment, nil
+	}
+
+	return nil, &errors.StatusError{ErrStatus: metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind:  dockyardsv1.ContainerImageDeploymentKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
+}
+
+func GetOwnerWorkload(ctx context.Context, c client.Client, obj client.Object) (*dockyardsv1.Workload, error) {
+	return getOwner(ctx, c, obj, dockyardsv1.LabelWorkloadName, &dockyardsv1.Workload{}, getOwnerWorkloadSlow)
+}
+
+func getOwnerWorkloadSlow(ctx context.Context, c client.Client, obj client.Object) (*dockyardsv1.Workload, error) {
+	for _, ownerReference := range obj.GetOwnerReferences() {
+		if ownerReference.Kind != dockyardsv1.WorkloadKind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
+			continue
+		}
+
+		objectKey := client.ObjectKey{
+			Name:      ownerReference.Name,
+			Namespace: obj.GetNamespace(),
+		}
+
+		var workload dockyardsv1.Workload
+		err = c.Get(ctx, objectKey, &workload)
+		if err != nil {
+			return nil, err
+		}
+
+		return &workload, nil
+	}
+
+	return nil, &errors.StatusError{ErrStatus: metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind:  dockyardsv1.OrganizationKind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", obj.GetName()),
 	}}
 }
 
@@ -225,114 +407,6 @@ func GetNamespaceOrganization(ctx context.Context, c client.Client, namespace st
 	}
 
 	return nil, nil
-}
-
-func GetOwnerHelmDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.HelmDeployment, error) {
-	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.HelmDeploymentKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		var deployment dockyardsv1.HelmDeployment
-		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
-		if err != nil {
-			return nil, err
-		}
-
-		return &deployment, nil
-	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.HelmDeploymentKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
-	}}
-}
-
-func GetOwnerKustomizeDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.KustomizeDeployment, error) {
-	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.KustomizeDeploymentKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		var deployment dockyardsv1.KustomizeDeployment
-		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
-		if err != nil {
-			return nil, err
-		}
-
-		return &deployment, nil
-	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.KustomizeDeploymentKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
-	}}
-}
-
-func GetOwnerContainerImageDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.ContainerImageDeployment, error) {
-	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.ContainerImageDeploymentKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		var deployment dockyardsv1.ContainerImageDeployment
-		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
-		if err != nil {
-			return nil, err
-		}
-
-		return &deployment, nil
-	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.ContainerImageDeploymentKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
-	}}
 }
 
 func IsSubjectAllowed(ctx context.Context, c client.Client, subject string, resourceAttributes *authorizationv1.ResourceAttributes) (bool, error) {
@@ -493,47 +567,6 @@ func IsReady(conditionable Conditionable) bool {
 	return meta.IsStatusConditionTrue(conditions, dockyardsv1.ReadyCondition)
 }
 
-func GetOwnerWorkload(ctx context.Context, c client.Client, obj client.Object) (*dockyardsv1.Workload, error) {
-	for _, ownerReference := range obj.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.WorkloadKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		objectKey := client.ObjectKey{
-			Name:      ownerReference.Name,
-			Namespace: obj.GetNamespace(),
-		}
-
-		var workload dockyardsv1.Workload
-		err = c.Get(ctx, objectKey, &workload)
-		if err != nil {
-			return nil, err
-		}
-
-		return &workload, nil
-	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.OrganizationKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", obj.GetName()),
-	}}
-}
-
 func GetOrganizationByNamespaceRef(ctx context.Context, c client.Reader, namespaceName string) (*dockyardsv1.Organization, error) {
 	var organizationList dockyardsv1.OrganizationList
 	err := c.List(ctx, &organizationList)
@@ -565,4 +598,19 @@ func GetOrganizationByNamespaceRef(ctx context.Context, c client.Reader, namespa
 			Message: fmt.Sprintf("could not find organization referencing namespace %s", namespaceName),
 		},
 	}
+}
+
+func getOwner[T client.Object](ctx context.Context, c client.Client, o client.Object, ownerLabel string, owner T, fallback func(ctx context.Context, c client.Client, obj client.Object) (T, error)) (T, error) {
+	labels := o.GetLabels()
+	ownerName := labels[ownerLabel]
+	if ownerName == "" {
+		return fallback(ctx, c, o)
+	}
+
+	err := c.Get(ctx, types.NamespacedName{Namespace: o.GetNamespace(), Name: ownerName}, owner)
+	if err != nil {
+		return fallback(ctx, c, o)
+	}
+
+	return owner, nil
 }
