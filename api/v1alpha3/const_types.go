@@ -15,20 +15,23 @@
 package v1alpha3
 
 const (
-	LabelOrganizationName       = "dockyards.io/organization-name"
-	LabelClusterName            = "dockyards.io/cluster-name"
-	LabelNodePoolName           = "dockyards.io/node-pool-name"
-	LabelNodeName               = "dockyards.io/node-name"
-	LabelDeploymentName         = "dockyards.io/deployment-name"
-	LabelReleaseName            = "dockyards.io/release-name"
-	LabelCredentialTemplateName = "dockyards.io/credential-template-name"
-	LabelWorkloadName           = "dockyards.io/workload-name"
-	LabelWorkloadTemplateName   = "dockyards.io/workload-template-name"
-	LabelNamespaceName          = "dockyards.io/namespace-name"
-	LabelUserName               = "dockyards.io/user-name"
-	LabelMemberName             = "dockyards.io/member-name"
-	LabelRoleName               = "dockyards.io/role-name"
-	LabelProviderName           = "dockyards.io/provider-name"
+	LabelOrganizationName         = "dockyards.io/organization-name"
+	LabelClusterName              = "dockyards.io/cluster-name"
+	LabelNodePoolName             = "dockyards.io/node-pool-name"
+	LabelNodeName                 = "dockyards.io/node-name"
+	LabelDeploymentName           = "dockyards.io/deployment-name"
+	LabelHelmDeploymentName       = "dockyards.io/helm-deployment-name"
+	LabelContainerImageDeployment = "dockyards.io/helm-deployment-name"
+	LabelKustomizeDeploymentName  = "dockyards.io/container-image-deployment-name"
+	LabelReleaseName              = "dockyards.io/release-name"
+	LabelCredentialTemplateName   = "dockyards.io/credential-template-name"
+	LabelWorkloadName             = "dockyards.io/workload-name"
+	LabelWorkloadTemplateName     = "dockyards.io/workload-template-name"
+	LabelNamespaceName            = "dockyards.io/namespace-name"
+	LabelUserName                 = "dockyards.io/user-name"
+	LabelMemberName               = "dockyards.io/member-name"
+	LabelRoleName                 = "dockyards.io/role-name"
+	LabelProviderName             = "dockyards.io/provider-name"
 )
 
 const (
