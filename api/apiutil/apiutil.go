@@ -23,7 +23,6 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/api/featurenames"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	authorizationv1 "k8s.io/api/authorization/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,341 +35,92 @@ type Expirable interface {
 	GetExpiration() *metav1.Time
 }
 
-func GetOwnerOrganization(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Organization, error) {
-	return getOwner(ctx, c, o, dockyardsv1.LabelOrganizationName, &dockyardsv1.Organization{}, getOwnerOrganizationSlow)
-}
-
-func getOwnerOrganizationSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Organization, error) {
-	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.OrganizationKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group == dockyardsv1.GroupVersion.Group {
-			objectKey := client.ObjectKey{
-				Name: ownerReference.Name,
-			}
-
-			var organization dockyardsv1.Organization
-			err := c.Get(ctx, objectKey, &organization)
-			if err != nil {
-				return nil, err
-			}
-			return &organization, nil
-		}
+func GetOwnerOrganization(ctx context.Context, c client.Client, o client.Object) (dockyardsv1.Organization, error) {
+	label := dockyardsv1.LabelOrganizationName
+	owner := dockyardsv1.Organization{}
+	owner.Kind = dockyardsv1.OrganizationKind
+	err := getOwner(ctx, c, o, label, &owner)
+	if err != nil {
+		return owner, err
 	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.OrganizationKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
-	}}
+	return owner, nil
 }
 
-func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Cluster, error) {
-	return getOwner(ctx, c, o, dockyardsv1.LabelClusterName, &dockyardsv1.Cluster{}, getOwnerClusterSlow)
-}
-
-func getOwnerClusterSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Cluster, error) {
-	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.ClusterKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		if groupVersion.Group == dockyardsv1.GroupVersion.Group {
-			objectKey := client.ObjectKey{
-				Name:      ownerReference.Name,
-				Namespace: o.GetNamespace(),
-			}
-
-			var cluster dockyardsv1.Cluster
-			err := c.Get(ctx, objectKey, &cluster)
-			if err != nil {
-				return nil, err
-			}
-			return &cluster, nil
-		}
+func GetOwnerCluster(ctx context.Context, c client.Client, o client.Object) (dockyardsv1.Cluster, error) {
+	label := dockyardsv1.LabelClusterName
+	owner := dockyardsv1.Cluster{}
+	owner.Kind = dockyardsv1.ClusterKind
+	err := getOwner(ctx, c, o, label, &owner)
+	if err != nil {
+		return owner, err
 	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.ClusterKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
-	}}
+	return owner, nil
 }
 
-func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.NodePool, error) {
-	return getOwner(ctx, c, o, dockyardsv1.LabelNodePoolName, &dockyardsv1.NodePool{}, getOwnerNodePoolSlow)
-}
-
-func getOwnerNodePoolSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.NodePool, error) {
-	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.NodePoolKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		objectKey := client.ObjectKey{
-			Name:      ownerReference.Name,
-			Namespace: o.GetNamespace(),
-		}
-
-		var nodePool dockyardsv1.NodePool
-		err = c.Get(ctx, objectKey, &nodePool)
-		if err != nil {
-			return nil, err
-		}
-
-		return &nodePool, nil
+func GetOwnerNodePool(ctx context.Context, c client.Client, o client.Object) (dockyardsv1.NodePool, error) {
+	label := dockyardsv1.LabelNodePoolName
+	owner := dockyardsv1.NodePool{}
+	owner.Kind = dockyardsv1.NodePoolKind
+	err := getOwner(ctx, c, o, label, &owner)
+	if err != nil {
+		return owner, err
 	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.NodePoolKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
-	}}
+	return owner, nil
 }
 
-func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Deployment, error) {
-	return getOwner(ctx, c, o, dockyardsv1.LabelDeploymentName, &dockyardsv1.Deployment{}, getOwnerDeploymentSlow)
-}
-
-func getOwnerDeploymentSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.Deployment, error) {
-	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.DeploymentKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		var deployment dockyardsv1.Deployment
-		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
-		if err != nil {
-			return nil, err
-		}
-
-		return &deployment, nil
+func GetOwnerDeployment(ctx context.Context, c client.Client, o client.Object) (dockyardsv1.Deployment, error) {
+	label := dockyardsv1.LabelDeploymentName
+	owner := dockyardsv1.Deployment{}
+	owner.Kind = dockyardsv1.DeploymentKind
+	err := getOwner(ctx, c, o, label, &owner)
+	if err != nil {
+		return owner, err
 	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.DeploymentKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
-	}}
+	return owner, nil
 }
 
-func GetOwnerHelmDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.HelmDeployment, error) {
-	return getOwner(ctx, c, o, dockyardsv1.LabelHelmDeploymentName, &dockyardsv1.HelmDeployment{}, getOwnerHelmDeploymentSlow)
-}
-
-func getOwnerHelmDeploymentSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.HelmDeployment, error) {
-	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.HelmDeploymentKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		var deployment dockyardsv1.HelmDeployment
-		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
-		if err != nil {
-			return nil, err
-		}
-
-		return &deployment, nil
+func GetOwnerHelmDeployment(ctx context.Context, c client.Client, o client.Object) (dockyardsv1.HelmDeployment, error) {
+	label := dockyardsv1.LabelHelmDeploymentName
+	owner := dockyardsv1.HelmDeployment{}
+	owner.Kind = dockyardsv1.HelmDeploymentKind
+	err := getOwner(ctx, c, o, label, &owner)
+	if err != nil {
+		return owner, err
 	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.HelmDeploymentKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
-	}}
+	return owner, nil
 }
 
-func GetOwnerKustomizeDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.KustomizeDeployment, error) {
-	return getOwner(ctx, c, o, dockyardsv1.LabelKustomizeDeploymentName, &dockyardsv1.KustomizeDeployment{}, getOwnerKustomizeDeploymentSlow)
-}
-
-func getOwnerKustomizeDeploymentSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.KustomizeDeployment, error) {
-	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.KustomizeDeploymentKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		var deployment dockyardsv1.KustomizeDeployment
-		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
-		if err != nil {
-			return nil, err
-		}
-
-		return &deployment, nil
+func GetOwnerKustomizeDeployment(ctx context.Context, c client.Client, o client.Object) (dockyardsv1.KustomizeDeployment, error) {
+	label := dockyardsv1.LabelKustomizeDeploymentName
+	owner := dockyardsv1.KustomizeDeployment{}
+	owner.Kind = dockyardsv1.KustomizeDeploymentKind
+	err := getOwner(ctx, c, o, label, &owner)
+	if err != nil {
+		return owner, err
 	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.KustomizeDeploymentKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
-	}}
+	return owner, nil
 }
 
-func GetOwnerContainerImageDeployment(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.ContainerImageDeployment, error) {
-	return getOwner(ctx, c, o, dockyardsv1.LabelContainerImageDeployment, &dockyardsv1.ContainerImageDeployment{}, getOwnerContainerImageDeploymentSlow)
-}
-
-func getOwnerContainerImageDeploymentSlow(ctx context.Context, c client.Client, o client.Object) (*dockyardsv1.ContainerImageDeployment, error) {
-	for _, ownerReference := range o.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.ContainerImageDeploymentKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		var deployment dockyardsv1.ContainerImageDeployment
-		err = c.Get(ctx, client.ObjectKeyFromObject(o), &deployment)
-		if err != nil {
-			return nil, err
-		}
-
-		return &deployment, nil
+func GetOwnerContainerImageDeployment(ctx context.Context, c client.Client, o client.Object) (dockyardsv1.ContainerImageDeployment, error) {
+	label := dockyardsv1.LabelContainerImageDeployment
+	owner := dockyardsv1.ContainerImageDeployment{}
+	owner.Kind = dockyardsv1.ContainerImageDeploymentKind
+	err := getOwner(ctx, c, o, label, &owner)
+	if err != nil {
+		return owner, err
 	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.ContainerImageDeploymentKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
-	}}
+	return owner, nil
 }
 
-func GetOwnerWorkload(ctx context.Context, c client.Client, obj client.Object) (*dockyardsv1.Workload, error) {
-	return getOwner(ctx, c, obj, dockyardsv1.LabelWorkloadName, &dockyardsv1.Workload{}, getOwnerWorkloadSlow)
-}
-
-func getOwnerWorkloadSlow(ctx context.Context, c client.Client, obj client.Object) (*dockyardsv1.Workload, error) {
-	for _, ownerReference := range obj.GetOwnerReferences() {
-		if ownerReference.Kind != dockyardsv1.WorkloadKind {
-			continue
-		}
-
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		objectKey := client.ObjectKey{
-			Name:      ownerReference.Name,
-			Namespace: obj.GetNamespace(),
-		}
-
-		var workload dockyardsv1.Workload
-		err = c.Get(ctx, objectKey, &workload)
-		if err != nil {
-			return nil, err
-		}
-
-		return &workload, nil
+func GetOwnerWorkload(ctx context.Context, c client.Client, o client.Object) (dockyardsv1.Workload, error) {
+	label := dockyardsv1.LabelWorkloadName
+	owner := dockyardsv1.Workload{}
+	owner.Kind = dockyardsv1.WorkloadKind
+	err := getOwner(ctx, c, o, label, &owner)
+	if err != nil {
+		return owner, err
 	}
-
-	return nil, &errors.StatusError{ErrStatus: metav1.Status{
-		Status: metav1.StatusFailure,
-		Code:   http.StatusNotFound,
-		Reason: metav1.StatusReasonNotFound,
-		Details: &metav1.StatusDetails{
-			Group: dockyardsv1.GroupVersion.Group,
-			Kind:  dockyardsv1.OrganizationKind,
-		},
-		Message: fmt.Sprintf("could not find owner for %s", obj.GetName()),
-	}}
+	return owner, nil
 }
 
 func IsFeatureEnabled(ctx context.Context, c client.Reader, featureName featurenames.FeatureName, inNamespace string) (bool, error) {
@@ -586,7 +336,7 @@ func GetOrganizationByNamespaceRef(ctx context.Context, c client.Reader, namespa
 		return &organization, nil
 	}
 
-	return nil, &errors.StatusError{
+	return nil, &apierrors.StatusError{
 		ErrStatus: metav1.Status{
 			Status: metav1.StatusFailure,
 			Code:   http.StatusNotFound,
@@ -600,17 +350,59 @@ func GetOrganizationByNamespaceRef(ctx context.Context, c client.Reader, namespa
 	}
 }
 
-func getOwner[T client.Object](ctx context.Context, c client.Client, o client.Object, ownerLabel string, owner T, fallback func(ctx context.Context, c client.Client, obj client.Object) (T, error)) (T, error) {
+func getOwner[T client.Object](ctx context.Context, c client.Client, o client.Object, ownerLabel string, owner T) error {
 	labels := o.GetLabels()
 	ownerName := labels[ownerLabel]
 	if ownerName == "" {
-		return fallback(ctx, c, o)
+		return getOwnerSlow(ctx, c, o, owner)
 	}
 
 	err := c.Get(ctx, types.NamespacedName{Namespace: o.GetNamespace(), Name: ownerName}, owner)
 	if err != nil {
-		return fallback(ctx, c, o)
+		return getOwnerSlow(ctx, c, o, owner)
 	}
 
-	return owner, nil
+	return nil
+}
+
+func getOwnerSlow[T client.Object](ctx context.Context, c client.Client, o client.Object, owner T) error {
+	ownerRef, err := FindOwnerReference(o, owner.GetObjectKind().GroupVersionKind().Kind)
+	if err != nil {
+		return err
+	}
+
+	err = c.Get(ctx, client.ObjectKey{Name: ownerRef.Name}, owner)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func FindOwnerReference(o client.Object, kind string) (metav1.OwnerReference, error) {
+	for _, ownerReference := range o.GetOwnerReferences() {
+		if ownerReference.Kind != kind {
+			continue
+		}
+
+		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
+		if err != nil {
+			return metav1.OwnerReference{}, err
+		}
+
+		if groupVersion.Group == dockyardsv1.GroupVersion.Group {
+			return ownerReference, nil
+		}
+	}
+
+	return metav1.OwnerReference{}, &apierrors.StatusError{ErrStatus: metav1.Status{
+		Status: metav1.StatusFailure,
+		Code:   http.StatusNotFound,
+		Reason: metav1.StatusReasonNotFound,
+		Details: &metav1.StatusDetails{
+			Group: dockyardsv1.GroupVersion.Group,
+			Kind:  kind,
+		},
+		Message: fmt.Sprintf("could not find owner for %s", o.GetName()),
+	}}
 }
