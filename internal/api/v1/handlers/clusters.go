@@ -252,7 +252,7 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 				return nil, statusError
 			}
 
-			if *nodePoolOptions.Quantity > maxReplicas {
+			if nodePoolOptions.ControlPlane != nil && *nodePoolOptions.ControlPlane && *nodePoolOptions.Quantity > maxReplicas {
 				statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind(), "", nil)
 
 				return nil, statusError
