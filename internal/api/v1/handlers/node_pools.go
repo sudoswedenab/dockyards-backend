@@ -195,7 +195,7 @@ func (h *handler) UpdateClusterNodePool(ctx context.Context, cluster *dockyardsv
 
 	replicas := patchRequest.Quantity
 	if replicas != nil {
-		if *replicas <= 0 || *replicas > maxReplicas {
+		if *replicas <= 0 || (nodePool.Spec.ControlPlane && *replicas > maxReplicas) {
 			logger.Debug("invalid amount of replicas", "replicas", *replicas)
 
 			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
@@ -285,7 +285,7 @@ func (h *handler) UpdateClusterNodePool(ctx context.Context, cluster *dockyardsv
 	}
 
 	if patchRequest.Quantity != nil {
-		if *patchRequest.Quantity > maxReplicas {
+		if nodePool.Spec.ControlPlane && *patchRequest.Quantity > maxReplicas {
 			logger.Debug("invalid amount of replicas", "quantity", patchRequest.Quantity)
 
 			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
@@ -341,7 +341,7 @@ func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv
 	}
 
 	nodePoolQuantity := *request.Quantity
-	if nodePoolQuantity > maxReplicas {
+	if request.ControlPlane != nil && *request.ControlPlane && nodePoolQuantity > maxReplicas {
 		statusError := apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.WorkloadKind).GroupKind(), "", nil)
 
 		return nil, statusError

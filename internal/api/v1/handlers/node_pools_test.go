@@ -2167,10 +2167,40 @@ func TestClusterNodePools_Create(t *testing.T) {
 		}
 	})
 
-	t.Run("test high quantity", func(t *testing.T) {
+	t.Run("test high quantity worker node pool", func(t *testing.T) {
 		nodePoolOptions := types.NodePoolOptions{
-			Name:     ptr.To("test"),
-			Quantity: ptr.To(50),
+			Name:         ptr.To("test"),
+			ControlPlane: ptr.To(false),
+			Quantity:     ptr.To(50),
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
+		}
+
+		b, err := json.Marshal(nodePoolOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+		}
+	})
+
+	t.Run("test high quantity controlplane node pool", func(t *testing.T) {
+		nodePoolOptions := types.NodePoolOptions{
+			Name:         ptr.To("controlplane"),
+			ControlPlane: ptr.To(true),
+			Quantity:     ptr.To(50),
 		}
 
 		u := url.URL{
