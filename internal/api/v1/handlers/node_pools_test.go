@@ -976,6 +976,89 @@ func TestClusterNodePools_Update(t *testing.T) {
 		}
 	})
 
+	t.Run("test node annotations and node taints", func(t *testing.T) {
+		nodePool := dockyardsv1.NodePool{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-node-metadata-",
+				Namespace:    cluster.Namespace,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.ClusterKind,
+						Name:       cluster.Name,
+						UID:        cluster.UID,
+					},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		nodeAnnotations := map[string]string{
+			"example.com/annotation": "enabled",
+		}
+		nodeLabels := map[string]string{
+			"example.com/pool": "worker",
+		}
+		nodeTaints := map[string]string{
+			"example.com/taint": "NoSchedule",
+		}
+
+		update := types.NodePoolOptions{
+			NodeAnnotations: &nodeAnnotations,
+			NodeLabels:      &nodeLabels,
+			NodeTaints:      &nodeTaints,
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
+		}
+
+		w := httptest.NewRecorder()
+
+		b, err := json.Marshal(update)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.NodePool
+		err = c.Get(ctx, client.ObjectKeyFromObject(&nodePool), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actual.Spec.NodeAnnotations, nodeAnnotations) {
+			t.Errorf("diff: %s", cmp.Diff(nodeAnnotations, actual.Spec.NodeAnnotations))
+		}
+
+		if !cmp.Equal(actual.Spec.NodeLabels, nodeLabels) {
+			t.Errorf("diff: %s", cmp.Diff(nodeLabels, actual.Spec.NodeLabels))
+		}
+
+		if !cmp.Equal(actual.Spec.NodeTaints, nodeTaints) {
+			t.Errorf("diff: %s", cmp.Diff(nodeTaints, actual.Spec.NodeTaints))
+		}
+	})
+
 	t.Run("test storage resources", func(t *testing.T) {
 		nodePool := dockyardsv1.NodePool{
 			ObjectMeta: metav1.ObjectMeta{
@@ -1748,21 +1831,26 @@ func TestClusterNodePools_Create(t *testing.T) {
 	})
 
 	t.Run("test complex options", func(t *testing.T) {
-		nodePoolOptions := types.NodePoolOptions{
-			Name:                       ptr.To("test2"),
+		nodePoolName := "test2"
+		nodeAnnotations := map[string]string{"example.com/annotation": "enabled"}
+		nodeTaints := map[string]string{"example.com/taint": "NoSchedule"}
+		requestBody := types.NodePoolOptions{
+			Name:                       &nodePoolName,
 			Quantity:                   ptr.To(3),
 			LoadBalancer:               ptr.To(true),
 			ControlPlaneComponentsOnly: ptr.To(true),
 			RAMSize:                    ptr.To("1234M"),
 			CPUCount:                   ptr.To(12),
 			DiskSize:                   ptr.To("123Gi"),
+			NodeAnnotations:            &nodeAnnotations,
+			NodeTaints:                 &nodeTaints,
 		}
 
 		u := url.URL{
 			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools"),
 		}
 
-		b, err := json.Marshal(nodePoolOptions)
+		b, err := json.Marshal(requestBody)
 		if err != nil {
 			t.Fatalf("unexpected error marshalling test options: %s", err)
 		}
@@ -1776,7 +1864,12 @@ func TestClusterNodePools_Create(t *testing.T) {
 
 		statusCode := w.Result().StatusCode
 		if statusCode != http.StatusCreated {
-			t.Fatalf("expected status code %d, got %d", http.StatusCreated, statusCode)
+			responseBody, readErr := io.ReadAll(w.Result().Body)
+			if readErr != nil {
+				t.Fatalf("expected status code %d, got %d (error reading body: %s)", http.StatusCreated, statusCode, readErr)
+			}
+
+			t.Fatalf("expected status code %d, got %d, body: %s", http.StatusCreated, statusCode, string(responseBody))
 		}
 
 		b, err = io.ReadAll(w.Result().Body)
@@ -1791,7 +1884,7 @@ func TestClusterNodePools_Create(t *testing.T) {
 		}
 
 		objectKey := client.ObjectKey{
-			Name:      cluster.Name + "-" + *nodePoolOptions.Name,
+			Name:      cluster.Name + "-" + nodePoolName,
 			Namespace: cluster.Namespace,
 		}
 
@@ -1814,6 +1907,8 @@ func TestClusterNodePools_Create(t *testing.T) {
 			ID:                         string(nodePool.UID),
 			LoadBalancer:               ptr.To(true),
 			Name:                       nodePool.Name,
+			NodeAnnotations:            &nodeAnnotations,
+			NodeTaints:                 &nodeTaints,
 			Quantity:                   ptr.To(3),
 			RAMSize:                    ptr.To("1234M"),
 		}

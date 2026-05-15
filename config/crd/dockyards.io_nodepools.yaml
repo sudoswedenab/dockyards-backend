@@ -67,7 +67,15 @@ spec:
                 type: boolean
               loadBalancer:
                 type: boolean
+              nodeAnnotations:
+                additionalProperties:
+                  type: string
+                type: object
               nodeLabels:
+                additionalProperties:
+                  type: string
+                type: object
+              nodeTaints:
                 additionalProperties:
                   type: string
                 type: object

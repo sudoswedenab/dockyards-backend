@@ -156,7 +156,15 @@ func (h *handler) nodePoolOptionsToNodePool(ctx context.Context, nodePoolOptions
 	}
 
 	if nodePoolOptions.NodeLabels != nil {
-		nodePool.Spec.NodeLabels = *nodePoolOptions.NodeLabels
+		nodePool.Spec.NodeLabels = cloneStringMap(*nodePoolOptions.NodeLabels)
+	}
+
+	if nodePoolOptions.NodeAnnotations != nil {
+		nodePool.Spec.NodeAnnotations = cloneStringMap(*nodePoolOptions.NodeAnnotations)
+	}
+
+	if nodePoolOptions.NodeTaints != nil {
+		nodePool.Spec.NodeTaints = cloneStringMap(*nodePoolOptions.NodeTaints)
 	}
 
 	nodePool.Spec.Resources = corev1.ResourceList{}
