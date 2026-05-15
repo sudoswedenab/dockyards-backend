@@ -18,6 +18,8 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -36,28 +38,33 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (h *handler) config(ctx context.Context, providerName string) (*oauth2.Config, *oidc.Provider, error) {
+func (h *handler) config(ctx context.Context, providerName string) (*oauth2.Config, *oidc.Provider, context.Context, error) {
 	publicNamespace := h.Config.GetValueOrDefault(config.KeyPublicNamespace, "dockyards-public")
 
 	var identityProvider dockyardsv1.IdentityProvider
 	err := h.Get(ctx, client.ObjectKey{Name: providerName, Namespace: publicNamespace}, &identityProvider)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not get provider: %w", err)
+		return nil, nil, nil, fmt.Errorf("could not get provider: %w", err)
 	}
 
 	configRef := identityProvider.Spec.OIDCConfigRef
 	if configRef == nil {
-		return nil, nil, errors.New("oidc config ref was is not set")
+		return nil, nil, nil, errors.New("oidc config ref was is not set")
 	}
 
 	oidcConfig, _, err := h.getOIDCConfig(ctx, *configRef)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not get oidc config: %w", err)
+		return nil, nil, nil, fmt.Errorf("could not get oidc config: %w", err)
 	}
 
-	provider, err := h.getOIDCProvider(ctx, oidcConfig)
+	oidcCtx, err := h.getOIDCContext(ctx, oidcConfig)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not get oidc provider: %w", err)
+		return nil, nil, nil, fmt.Errorf("could not configure oidc context: %w", err)
+	}
+
+	provider, err := h.getOIDCProvider(oidcCtx, oidcConfig)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("could not get oidc provider: %w", err)
 	}
 
 	client := oidcConfig.ClientConfig
@@ -69,7 +76,7 @@ func (h *handler) config(ctx context.Context, providerName string) (*oauth2.Conf
 		Scopes:       []string{"openid", "email", "profile"},
 	}
 
-	return &config, provider, nil
+	return &config, provider, oidcCtx, nil
 }
 
 func (h *handler) LoginOIDC(w http.ResponseWriter, r *http.Request) error {
@@ -78,7 +85,7 @@ func (h *handler) LoginOIDC(w http.ResponseWriter, r *http.Request) error {
 	providerName := r.URL.Query().Get("idp")
 	callbackURL := r.URL.Query().Get("callbackURL")
 
-	config, _, err := h.config(ctx, providerName)
+	config, _, _, err := h.config(ctx, providerName)
 	if err != nil {
 		return apierrors.NewInternalError(err)
 	}
@@ -126,9 +133,9 @@ func decodeState(data string) (*stateStruct, error) {
 }
 
 type Claims struct {
-	Email string `json:"email"`
+	Email             string `json:"email"`
 	PreferredUsername string `json:"preferred_username"`
-	Name string `json:"name"`
+	Name              string `json:"name"`
 }
 
 func (h *handler) Callback(w http.ResponseWriter, r *http.Request) error {
@@ -161,12 +168,12 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) error {
 		return apierrors.NewInternalError(err)
 	}
 
-	config, provider, err := h.config(ctx, state.IDP)
+	config, provider, oidcCtx, err := h.config(ctx, state.IDP)
 	if err != nil {
 		return apierrors.NewInternalError(fmt.Errorf("could not get config: %w", err))
 	}
 
-	oauth2Token, err := config.Exchange(ctx, code)
+	oauth2Token, err := config.Exchange(oidcCtx, code)
 	if err != nil {
 		return apierrors.NewInternalError(fmt.Errorf("could not exchange tokens: %w", err))
 	}
@@ -180,7 +187,7 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) error {
 		ClientID: config.ClientID,
 	})
 
-	token, err := verifier.Verify(ctx, rawIDToken)
+	token, err := verifier.Verify(oidcCtx, rawIDToken)
 	if err != nil {
 		return apierrors.NewInternalError(err)
 	}
@@ -217,7 +224,7 @@ func (h *handler) getOrCreateUser(ctx context.Context, providerName string, clai
 	var user dockyardsv1.User
 	err := h.Get(ctx, client.ObjectKey{Name: name}, &user)
 	if err == nil {
-		if !strings.HasPrefix(user.Spec.ProviderID, providerName + "://") {
+		if !strings.HasPrefix(user.Spec.ProviderID, providerName+"://") {
 			return nil, errors.New("user provider id was invalid")
 		}
 		if user.Labels[dockyardsv1.LabelProviderName] != providerName {
@@ -245,17 +252,17 @@ func (h *handler) getOrCreateUser(ctx context.Context, providerName string, clai
 		},
 		Spec: dockyardsv1.UserSpec{
 			DisplayName: claims.Name,
-			Password: password,
-			Email: claims.Email,
-			ProviderID: providerName + "://" + claims.PreferredUsername,
+			Password:    password,
+			Email:       claims.Email,
+			ProviderID:  providerName + "://" + claims.PreferredUsername,
 		},
 		Status: dockyardsv1.UserStatus{
 			Conditions: []metav1.Condition{
-				metav1.Condition{
-					Type: dockyardsv1.ReadyCondition,
-					Status: metav1.ConditionTrue,
-					Reason: dockyardsv1.VerificationReasonVerified,
-					Message: "Verified by OIDC",
+				{
+					Type:               dockyardsv1.ReadyCondition,
+					Status:             metav1.ConditionTrue,
+					Reason:             dockyardsv1.VerificationReasonVerified,
+					Message:            "Verified by OIDC",
 					LastTransitionTime: metav1.Now(),
 				},
 			},
@@ -290,6 +297,7 @@ type stateStruct struct {
 	IDP         string `json:"idp"`
 	CallbackURL string `json:"callbackURL"`
 }
+
 func makeState(identityProviderName string, callbackURL string) (string, error) {
 	src := make([]byte, 18)
 	_, err := rand.Read(src)
@@ -299,8 +307,8 @@ func makeState(identityProviderName string, callbackURL string) (string, error) 
 
 	csrf := base64.URLEncoding.EncodeToString(src)
 	stateJSON, err := json.Marshal(stateStruct{
-		CSRF: csrf,
-		IDP: identityProviderName,
+		CSRF:        csrf,
+		IDP:         identityProviderName,
 		CallbackURL: callbackURL,
 	})
 	if err != nil {
@@ -348,6 +356,47 @@ func (h *handler) getOIDCProvider(ctx context.Context, oidcConfig dockyardsv1.OI
 	return nil, fmt.Errorf("oidc config needs either provider config or provider discovery url")
 }
 
+func (h *handler) getOIDCContext(ctx context.Context, oidcConfig dockyardsv1.OIDCConfig) (context.Context, error) {
+	ca := strings.TrimSpace(oidcConfig.CertificateAuthority)
+	if ca == "" {
+		return ctx, nil
+	}
+
+	roots, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, fmt.Errorf("could not load system certificate pool: %w", err)
+	}
+	if roots == nil {
+		roots = x509.NewCertPool()
+	}
+
+	if ok := roots.AppendCertsFromPEM([]byte(ca)); !ok {
+		return nil, errors.New("oidc certificateAuthority field did not contain any valid PEM certificates")
+	}
+
+	baseTransport, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		return nil, errors.New("unexpected default HTTP transport type")
+	}
+
+	transport := baseTransport.Clone()
+	tlsConfig := transport.TLSClientConfig
+	if tlsConfig == nil {
+		tlsConfig = &tls.Config{}
+	} else {
+		tlsConfig = tlsConfig.Clone()
+	}
+	tlsConfig.RootCAs = roots
+	transport.TLSClientConfig = tlsConfig
+
+	httpClient := &http.Client{Transport: transport}
+
+	ctx = oidc.ClientContext(ctx, httpClient)
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
+
+	return ctx, nil
+}
+
 func (h *handler) getOIDCConfig(ctx context.Context, ref corev1.SecretReference) (dockyardsv1.OIDCConfig, corev1.Secret, error) {
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -366,8 +415,14 @@ func (h *handler) getOIDCConfig(ctx context.Context, ref corev1.SecretReference)
 	obj := make(map[string]any, len(secret.Data))
 	for key, value := range secret.Data {
 		var v any
-		err = json.Unmarshal(value, &v);
+		err = json.Unmarshal(value, &v)
 		if err != nil {
+			if key == "providerDiscoveryURL" || key == "certificateAuthority" {
+				obj[key] = string(value)
+
+				continue
+			}
+
 			return dockyardsv1.OIDCConfig{}, corev1.Secret{}, fmt.Errorf("could not unmarshal oidc config key '%s': %w", key, err)
 		}
 		obj[key] = v
