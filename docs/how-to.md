@@ -66,10 +66,18 @@ stringData:
         "RS512"
       ]
     }
+  certificateAuthority: |
+    -----BEGIN CERTIFICATE-----
+    YOUR_IDP_CA_CERTIFICATE_PEM
+    -----END CERTIFICATE-----
 
 ```
 
 The values for the `providerConfig` can in the case of Keycloak be be found at `https://{IDENTITY_PROVIDER_DOMAIN}/realms/{REALM}/.well-known/openid-configuration`.
+
+If your identity provider uses a certificate chain that is not trusted by the
+default system trust store, provide the PEM-encoded CA certificate (or chain)
+in the `certificateAuthority` field.
 
 When you have created the above objects, you should be able to log in to
 the platform using the `GET /v1/login-sso` API endpoint.

@@ -32,6 +32,7 @@ type OIDCConfig struct {
 	ClientConfig         OIDCClientConfig    `json:"clientConfig"`
 	ProviderDiscoveryURL *string             `json:"providerDiscoveryURL,omitempty"`
 	ProviderConfig       *OIDCProviderConfig `json:"providerConfig,omitempty"`
+	CertificateAuthority string              `json:"certificateAuthority,omitempty"`
 }
 
 type OIDCClientConfig struct {
