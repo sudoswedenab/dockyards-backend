@@ -163,6 +163,10 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260420113451-275611ed2175 h1:6Cb/xRcQrbRxLlBEjIg892gYeSJXZiMWNyDTccmV9bs=
 github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260420113451-275611ed2175/go.mod h1:vrza2nx/tVgIUTq0AqA/jzyWNstlyVdcpzh+1+mu22s=
+github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260515110217-38ade7e764ae h1:Czzr+DXE/uVEzNxMGMDeWyo8oUXL8fLwLRkFjbmk50k=
+github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260515110217-38ade7e764ae/go.mod h1:vrza2nx/tVgIUTq0AqA/jzyWNstlyVdcpzh+1+mu22s=
+github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260515115221-308952f6d167 h1:DLVKADRmP3M9BItcgJqi3Tb/kTzG/SLBjOrJ3Pm/b/I=
+github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260515115221-308952f6d167/go.mod h1:vrza2nx/tVgIUTq0AqA/jzyWNstlyVdcpzh+1+mu22s=
 github.com/tetratelabs/wazero v1.6.0 h1:z0H1iikCdP8t+q341xqepY4EWvHEw8Es7tlqiVzlP3g=
 github.com/tetratelabs/wazero v1.6.0/go.mod h1:0U0G41+ochRKoPKCJlh0jMg1CHkyfK8kDqiirMmKY8A=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=

@@ -80,10 +80,30 @@ spec:
                   and which cloud environment is being actively used, so tread carefully
                   when using these options.
                 properties:
+                  gateway:
+                    description: Options to override the installation-wide Gateway
+                      API configuration.
+                    properties:
+                      parentRef:
+                        description: Gateway parentRef settings used for this specific
+                          DockyardsCluster.
+                        properties:
+                          name:
+                            description: Gateway name to use for this cluster.
+                            type: string
+                          namespace:
+                            description: Gateway namespace to use for this cluster.
+                            type: string
+                        type: object
+                    type: object
                   kubevirt:
                     description: Options to apply to kubevirt in case we're running
                       in a kubevirt environment.
                     properties:
+                      dataVolumeStorageClassName:
+                        description: Overrides the installation-wide default StorageClass
+                          for kubevirt DataVolumes.
+                        type: string
                       talos:
                         description: Options to apply to talos
                         properties:
