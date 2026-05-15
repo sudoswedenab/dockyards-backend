@@ -525,7 +525,29 @@ func parseKubevirtConfig(value *types.ClusterKubevirtOptions, path *field.Path, 
 	}
 
 	return dockyardsv1.ClusterKubevirtOptions{
-		Talos: parseTalosOptions(value.Talos, path.Child("talos"), errs),
+		DataVolumeStorageClassName: deref(value.DataVolumeStorageClassName),
+		Talos:                      parseTalosOptions(value.Talos, path.Child("talos"), errs),
+	}
+}
+
+func parseGatewayParentRef(value *types.ClusterGatewayParentRefOptions) dockyardsv1.ClusterGatewayParentRefOptions {
+	if value == nil {
+		return dockyardsv1.ClusterGatewayParentRefOptions{}
+	}
+
+	return dockyardsv1.ClusterGatewayParentRefOptions{
+		Name:      deref(value.Name),
+		Namespace: deref(value.Namespace),
+	}
+}
+
+func parseGatewayOptions(value *types.ClusterGatewayOptions) dockyardsv1.ClusterGatewayOptions {
+	if value == nil {
+		return dockyardsv1.ClusterGatewayOptions{}
+	}
+
+	return dockyardsv1.ClusterGatewayOptions{
+		ParentRef: parseGatewayParentRef(value.ParentRef),
 	}
 }
 
@@ -535,6 +557,7 @@ func parseAdvancedOptions(value *types.ClusterAdvancedOptions, path *field.Path,
 	}
 
 	return dockyardsv1.ClusterAdvancedOptions{
+		Gateway:  parseGatewayOptions(value.Gateway),
 		Kubevirt: parseKubevirtConfig(value.Kubevirt, path.Child("kubevirt"), errs),
 	}
 }
@@ -1054,7 +1077,29 @@ func toClusterKubevirtOptions(value dockyardsv1.ClusterKubevirtOptions) *types.C
 	}
 
 	return &types.ClusterKubevirtOptions{
-		Talos: toClusterTalosOptions(value.Talos),
+		DataVolumeStorageClassName: toString(value.DataVolumeStorageClassName),
+		Talos:                      toClusterTalosOptions(value.Talos),
+	}
+}
+
+func toClusterGatewayParentRefOptions(value dockyardsv1.ClusterGatewayParentRefOptions) *types.ClusterGatewayParentRefOptions {
+	if value.IsZero() {
+		return nil
+	}
+
+	return &types.ClusterGatewayParentRefOptions{
+		Name:      toString(value.Name),
+		Namespace: toString(value.Namespace),
+	}
+}
+
+func toClusterGatewayOptions(value dockyardsv1.ClusterGatewayOptions) *types.ClusterGatewayOptions {
+	if value.IsZero() {
+		return nil
+	}
+
+	return &types.ClusterGatewayOptions{
+		ParentRef: toClusterGatewayParentRefOptions(value.ParentRef),
 	}
 }
 
@@ -1064,6 +1109,7 @@ func toClusterAdvancedOptions(value dockyardsv1.ClusterAdvancedOptions) *types.C
 	}
 
 	return &types.ClusterAdvancedOptions{
+		Gateway:  toClusterGatewayOptions(value.Gateway),
 		Kubevirt: toClusterKubevirtOptions(value.Kubevirt),
 	}
 }

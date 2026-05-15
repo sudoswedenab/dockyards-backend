@@ -1415,6 +1415,84 @@ func TestOrganizationClusters_Create(t *testing.T) {
 			t.Errorf("diff: %s", cmp.Diff(expectedCluster.Spec, actualCluster.Spec))
 		}
 	})
+
+	t.Run("test advanced kubevirt storage class and gateway options do not get discarded", func(t *testing.T) {
+		clusterOptions := types.ClusterOptions{
+			Name: "test-advanced-kubevirt-storageclass-and-gateway",
+			Advanced: &types.ClusterAdvancedOptions{
+				Kubevirt: &types.ClusterKubevirtOptions{
+					DataVolumeStorageClassName: ptr.To("fast-ssd"),
+				},
+				Gateway: &types.ClusterGatewayOptions{
+					ParentRef: &types.ClusterGatewayParentRefOptions{
+						Name:      ptr.To("public-gateway"),
+						Namespace: ptr.To("dockyards-public"),
+					},
+				},
+			},
+		}
+
+		b, err := json.Marshal(clusterOptions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters"),
+		}
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusCreated {
+			body, _ := io.ReadAll(w.Body)
+			t.Fatalf("expected status code %d, got %d: %s", http.StatusCreated, statusCode, string(body))
+		}
+
+		expectedCluster := dockyardsv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      clusterOptions.Name,
+				Namespace: organization.Spec.NamespaceRef.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion:         dockyardsv1.GroupVersion.String(),
+						Kind:               dockyardsv1.OrganizationKind,
+						Name:               organization.Name,
+						UID:                organization.UID,
+						BlockOwnerDeletion: ptr.To(true),
+					},
+				},
+			},
+			Spec: dockyardsv1.ClusterSpec{
+				Advanced: dockyardsv1.ClusterAdvancedOptions{
+					Kubevirt: dockyardsv1.ClusterKubevirtOptions{
+						DataVolumeStorageClassName: "fast-ssd",
+					},
+					Gateway: dockyardsv1.ClusterGatewayOptions{
+						ParentRef: dockyardsv1.ClusterGatewayParentRefOptions{
+							Name:      "public-gateway",
+							Namespace: "dockyards-public",
+						},
+					},
+				},
+			},
+		}
+
+		var actualCluster dockyardsv1.Cluster
+		err = c.Get(ctx, client.ObjectKeyFromObject(&expectedCluster), &actualCluster)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !cmp.Equal(actualCluster.Spec, expectedCluster.Spec) {
+			t.Errorf("diff: %s", cmp.Diff(expectedCluster.Spec, actualCluster.Spec))
+		}
+	})
 }
 
 func TestOrganizationClusters_Delete(t *testing.T) {

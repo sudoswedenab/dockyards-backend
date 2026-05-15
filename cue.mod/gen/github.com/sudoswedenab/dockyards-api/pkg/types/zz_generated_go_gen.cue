@@ -185,12 +185,36 @@ import "time"
 // and which cloud environment is being actively used, so tread carefully
 // when using these options.
 #ClusterAdvancedOptions: {
+	// Gateway Options to override the installation-wide Gateway API configuration
+	// for this specific DockyardsCluster.
+	gateway?: null | #ClusterGatewayOptions @go(Gateway,*ClusterGatewayOptions)
+
 	// Kubevirt Options applied to kubevirt in case we're running in a kubevirt environment.
 	kubevirt?: null | #ClusterKubevirtOptions @go(Kubevirt,*ClusterKubevirtOptions)
 }
 
+// ClusterGatewayOptions Options to override the installation-wide Gateway API configuration
+// for this specific DockyardsCluster.
+#ClusterGatewayOptions: {
+	// ParentRef Gateway parentRef settings used for this specific DockyardsCluster.
+	parent_ref?: null | #ClusterGatewayParentRefOptions @go(ParentRef,*ClusterGatewayParentRefOptions)
+}
+
+// ClusterGatewayParentRefOptions Gateway parentRef settings used for this specific DockyardsCluster.
+#ClusterGatewayParentRefOptions: {
+	// Name Gateway name to use for this cluster.
+	name?: null | string @go(Name,*string)
+
+	// Namespace Gateway namespace to use for this cluster.
+	namespace?: null | string @go(Namespace,*string)
+}
+
 // ClusterKubevirtOptions Options applied to kubevirt in case we're running in a kubevirt environment.
 #ClusterKubevirtOptions: {
+	// DataVolumeStorageClassName Overrides the installation-wide default StorageClass for kubevirt
+	// DataVolumes on this specific DockyardsCluster.
+	data_volume_storage_class_name?: null | string @go(DataVolumeStorageClassName,*string)
+
 	// Talos Options to apply to talos.
 	talos?: null | #ClusterTalosOptions @go(Talos,*ClusterTalosOptions)
 }

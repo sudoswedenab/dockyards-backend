@@ -92,12 +92,54 @@ func (o *ClusterTalosOptions) IsZero() bool {
 }
 
 type ClusterKubevirtOptions struct {
+	// Overrides the installation-wide default StorageClass for kubevirt DataVolumes.
+	DataVolumeStorageClassName string `json:"dataVolumeStorageClassName,omitempty"`
+
 	// Options to apply to talos
 	Talos ClusterTalosOptions `json:"talos,omitempty,omitzero"`
 }
 
 func (o *ClusterKubevirtOptions) IsZero() bool {
+	if o.DataVolumeStorageClassName != "" {
+		return false
+	}
+
 	if !o.Talos.IsZero() {
+		return false
+	}
+
+	return true
+}
+
+// Options to override the installation-wide Gateway API configuration.
+type ClusterGatewayOptions struct {
+	// Gateway parentRef settings used for this specific DockyardsCluster.
+	ParentRef ClusterGatewayParentRefOptions `json:"parentRef,omitempty,omitzero"`
+}
+
+func (o *ClusterGatewayOptions) IsZero() bool {
+	if !o.ParentRef.IsZero() {
+		return false
+	}
+
+	return true
+}
+
+// Gateway parentRef settings used for this specific DockyardsCluster.
+type ClusterGatewayParentRefOptions struct {
+	// Gateway name to use for this cluster.
+	Name string `json:"name,omitempty"`
+
+	// Gateway namespace to use for this cluster.
+	Namespace string `json:"namespace,omitempty"`
+}
+
+func (o *ClusterGatewayParentRefOptions) IsZero() bool {
+	if o.Name != "" {
+		return false
+	}
+
+	if o.Namespace != "" {
 		return false
 	}
 
@@ -113,11 +155,18 @@ func (o *ClusterKubevirtOptions) IsZero() bool {
 // and which cloud environment is being actively used, so tread carefully
 // when using these options.
 type ClusterAdvancedOptions struct {
+	// Options to override the installation-wide Gateway API configuration.
+	Gateway ClusterGatewayOptions `json:"gateway,omitempty,omitzero"`
+
 	// Options to apply to kubevirt in case we're running in a kubevirt environment.
 	Kubevirt ClusterKubevirtOptions `json:"kubevirt,omitempty,omitzero"`
 }
 
 func (o *ClusterAdvancedOptions) IsZero() bool {
+	if !o.Gateway.IsZero() {
+		return false
+	}
+
 	if !o.Kubevirt.IsZero() {
 		return false
 	}
