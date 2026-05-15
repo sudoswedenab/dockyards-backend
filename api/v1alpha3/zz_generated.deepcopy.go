@@ -1608,8 +1608,22 @@ func (in *NodePoolSpec) DeepCopyInto(out *NodePoolSpec) {
 		(*in).DeepCopyInto(*out)
 	}
 	out.Security = in.Security
+	if in.NodeAnnotations != nil {
+		in, out := &in.NodeAnnotations, &out.NodeAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.NodeLabels != nil {
 		in, out := &in.NodeLabels, &out.NodeLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.NodeTaints != nil {
+		in, out := &in.NodeTaints, &out.NodeTaints
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val

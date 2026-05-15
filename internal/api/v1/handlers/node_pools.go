@@ -108,6 +108,21 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, nodeList *dockyar
 		v1NodePool.StorageResources = &storageResources
 	}
 
+	if nodePool.Spec.NodeAnnotations != nil {
+		nodeAnnotations := cloneStringMap(nodePool.Spec.NodeAnnotations)
+		v1NodePool.NodeAnnotations = &nodeAnnotations
+	}
+
+	if nodePool.Spec.NodeLabels != nil {
+		nodeLabels := cloneStringMap(nodePool.Spec.NodeLabels)
+		v1NodePool.NodeLabels = &nodeLabels
+	}
+
+	if nodePool.Spec.NodeTaints != nil {
+		nodeTaints := cloneStringMap(nodePool.Spec.NodeTaints)
+		v1NodePool.NodeTaints = &nodeTaints
+	}
+
 	return &v1NodePool
 }
 
@@ -210,6 +225,18 @@ func (h *handler) UpdateClusterNodePool(ctx context.Context, cluster *dockyardsv
 
 	if patchRequest.ControlPlaneComponentsOnly != nil {
 		nodePool.Spec.DedicatedRole = *patchRequest.ControlPlaneComponentsOnly
+	}
+
+	if patchRequest.NodeAnnotations != nil {
+		nodePool.Spec.NodeAnnotations = cloneStringMap(*patchRequest.NodeAnnotations)
+	}
+
+	if patchRequest.NodeLabels != nil {
+		nodePool.Spec.NodeLabels = cloneStringMap(*patchRequest.NodeLabels)
+	}
+
+	if patchRequest.NodeTaints != nil {
+		nodePool.Spec.NodeTaints = cloneStringMap(*patchRequest.NodeTaints)
 	}
 
 	if patchRequest.StorageResources != nil {
@@ -385,6 +412,18 @@ func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv
 
 	if request.ControlPlaneComponentsOnly != nil {
 		nodePool.Spec.DedicatedRole = *request.ControlPlaneComponentsOnly
+	}
+
+	if request.NodeAnnotations != nil {
+		nodePool.Spec.NodeAnnotations = cloneStringMap(*request.NodeAnnotations)
+	}
+
+	if request.NodeLabels != nil {
+		nodePool.Spec.NodeLabels = cloneStringMap(*request.NodeLabels)
+	}
+
+	if request.NodeTaints != nil {
+		nodePool.Spec.NodeTaints = cloneStringMap(*request.NodeTaints)
 	}
 
 	if request.StorageResources != nil {
