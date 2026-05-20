@@ -16,12 +16,12 @@ package webhooks
 
 import (
 	"context"
+	"fmt"
 	"net/netip"
 
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -131,55 +131,35 @@ func (webhook *DockyardsCluster) ValidateUpdate(_ context.Context, oldCluster *d
 }
 
 func (webhook *DockyardsCluster) validate(dockyardsCluster *dockyardsv1.Cluster) error {
-	hasOrganizationOwner := false
-	for _, ownerReference := range dockyardsCluster.OwnerReferences {
-		if ownerReference.Kind != dockyardsv1.OrganizationKind {
-			continue
-		}
+	var errs field.ErrorList
 
-		groupVersion, err := schema.ParseGroupVersion(ownerReference.APIVersion)
-		if err != nil {
-			return err
-		}
-
-		if groupVersion.Group != dockyardsv1.GroupVersion.Group {
-			continue
-		}
-
-		hasOrganizationOwner = true
-	}
-
-	if !hasOrganizationOwner {
-		required := field.Required(
+	owner, err := apiutil.FindOwnerReference(dockyardsCluster, dockyardsv1.OrganizationKind)
+	if err != nil {
+		errs = append(errs, field.Required(
 			field.NewPath("metadata", "ownerReferences"),
-			"must have organization owner reference",
-		)
-		qualifiedKind := dockyardsv1.GroupVersion.WithKind(dockyardsv1.ClusterKind).GroupKind()
-
-		return apierrors.NewInvalid(
-			qualifiedKind,
-			dockyardsCluster.Name,
-			field.ErrorList{
-				required,
-			},
-		)
+			"organization owner reference not found",
+		))
 	}
 
-	errorList := field.ErrorList{}
+	if value := dockyardsCluster.Labels[dockyardsv1.LabelClusterName]; value != owner.Name {
+		errs = append(errs, field.Invalid(
+			field.NewPath("metadata", "labels", dockyardsv1.LabelClusterName),
+			value,
+			fmt.Sprintf("expected '%s'", owner.Name),
+		))
+	}
 
 	prefixes := []netip.Prefix{}
 
 	for i, subnet := range dockyardsCluster.Spec.PodSubnets {
 		newPrefix, err := netip.ParsePrefix(subnet)
 		if err != nil {
-			invalid := field.Invalid(field.NewPath("spec", "podSubnets").Index(i), subnet, "unable to parse pod subnet as prefix")
-			errorList = append(errorList, invalid)
+			errs = append(errs, field.Invalid(field.NewPath("spec", "podSubnets").Index(i), subnet, "unable to parse pod subnet as prefix"))
 		}
 
 		for _, prefix := range prefixes {
 			if newPrefix.Overlaps(prefix) {
-				invalid := field.Invalid(field.NewPath("spec", "podSubnets").Index(i), subnet, "subnet overlaps with prefix "+prefix.String())
-				errorList = append(errorList, invalid)
+				errs = append(errs, field.Invalid(field.NewPath("spec", "podSubnets").Index(i), subnet, "subnet overlaps with prefix "+prefix.String()))
 			}
 		}
 
@@ -189,21 +169,19 @@ func (webhook *DockyardsCluster) validate(dockyardsCluster *dockyardsv1.Cluster)
 	for i, subnet := range dockyardsCluster.Spec.ServiceSubnets {
 		newPrefix, err := netip.ParsePrefix(subnet)
 		if err != nil {
-			invalid := field.Invalid(field.NewPath("spec", "serviceSubnets").Index(i), subnet, "unable to parse service subnet as prefix")
-			errorList = append(errorList, invalid)
+			errs = append(errs, field.Invalid(field.NewPath("spec", "serviceSubnets").Index(i), subnet, "unable to parse service subnet as prefix"))
 		}
 
 		for _, prefix := range prefixes {
 			if newPrefix.Overlaps(prefix) {
-				invalid := field.Invalid(field.NewPath("spec", "serviceSubnets").Index(i), subnet, "subnet overlaps with prefix "+prefix.String())
-				errorList = append(errorList, invalid)
+				errs = append(errs, field.Invalid(field.NewPath("spec", "serviceSubnets").Index(i), subnet, "subnet overlaps with prefix "+prefix.String()))
 			}
 		}
 
 		prefixes = append(prefixes, newPrefix)
 	}
 
-	if len(errorList) == 0 {
+	if len(errs) == 0 {
 		return nil
 	}
 
@@ -212,6 +190,6 @@ func (webhook *DockyardsCluster) validate(dockyardsCluster *dockyardsv1.Cluster)
 	return apierrors.NewInvalid(
 		qualifiedKind,
 		dockyardsCluster.Name,
-		errorList,
+		errs,
 	)
 }

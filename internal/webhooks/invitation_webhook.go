@@ -16,8 +16,10 @@ package webhooks
 
 import (
 	"context"
+	"fmt"
 	"net/mail"
 
+	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -85,12 +87,11 @@ func (webhook *DockyardsInvitation) ValidateUpdate(ctx context.Context, oldInv, 
 }
 
 func (webhook *DockyardsInvitation) validate(ctx context.Context, invitation *dockyardsv1.Invitation) (admission.Warnings, error) {
+	var errs field.ErrorList
+
 	_, err := mail.ParseAddress(invitation.Spec.Email)
 	if err != nil {
-		invalid := field.Invalid(field.NewPath("spec", "email"), invitation.Spec.Email, "unable to parse as address")
-		errs := field.ErrorList{invalid}
-
-		return nil, apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.InvitationKind).GroupKind(), invitation.Name, errs)
+		errs = append(errs, field.Invalid(field.NewPath("spec", "email"), invitation.Spec.Email, "unable to parse as address"))
 	}
 
 	matchingFields := client.MatchingFields{
@@ -100,60 +101,87 @@ func (webhook *DockyardsInvitation) validate(ctx context.Context, invitation *do
 	var invitationList dockyardsv1.InvitationList
 	err = webhook.Client.List(ctx, &invitationList, &matchingFields, client.InNamespace(invitation.Namespace))
 	if err != nil {
-		return nil, err
+		errs = append(errs, field.InternalError(field.NewPath("spec", "email"), err))
 	}
 
 	if len(invitationList.Items) != 0 {
-		invalid := field.Invalid(field.NewPath("spec", "email"), invitation.Spec.Email, "address already invited")
-		errs := field.ErrorList{invalid}
-
-		return nil, apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.InvitationKind).GroupKind(), invitation.Name, errs)
+		errs = append(errs, field.Invalid(field.NewPath("spec", "email"), invitation.Spec.Email, "address already invited"))
 	}
 
 	var userList dockyardsv1.UserList
 	err = webhook.Client.List(ctx, &userList, matchingFields)
 	if err != nil {
-		return nil, err
+		errs = append(errs, field.InternalError(field.NewPath("spec", "email"), err))
 	}
 
-	if len(userList.Items) == 0 {
-		return nil, nil
-	}
-
-	existingUser := userList.Items[0]
-
-	matchingFields = client.MatchingFields{
-		index.MemberReferencesField: existingUser.Name,
-	}
-
-	var organizationList dockyardsv1.OrganizationList
-	err = webhook.Client.List(ctx, &organizationList, matchingFields)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, organization := range organizationList.Items {
-		if organization.Spec.NamespaceRef == nil {
-			continue
+	for _, existingUser := range userList.Items {
+		matchingFields = client.MatchingFields{
+			index.MemberReferencesField: existingUser.Name,
 		}
 
-		if organization.Spec.NamespaceRef.Name != invitation.Namespace {
-			continue
+		var organizationList dockyardsv1.OrganizationList
+		err = webhook.Client.List(ctx, &organizationList, matchingFields)
+		if err != nil {
+			errs = append(errs, field.InternalError(field.NewPath("spec", "email"), err))
 		}
 
-		for _, memberRef := range organization.Spec.MemberRefs { //nolint:staticcheck
-			if memberRef.Name != existingUser.Name {
+		for _, organization := range organizationList.Items {
+			if organization.Spec.NamespaceRef == nil {
 				continue
 			}
 
-			invalid := field.Invalid(field.NewPath("spec", "email"), invitation.Spec.Email, "user already member")
-			errs := field.ErrorList{invalid}
+			if organization.Spec.NamespaceRef.Name != invitation.Namespace {
+				continue
+			}
 
-			return nil, apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.InvitationKind).GroupKind(), invitation.Name, errs)
+			for _, memberRef := range organization.Spec.MemberRefs { //nolint:staticcheck
+				if memberRef.Name != existingUser.Name {
+					continue
+				}
+
+				errs = append(errs, field.Invalid(field.NewPath("spec", "email"), invitation.Spec.Email, "user already member"))
+
+				break
+			}
 		}
 	}
 
-	return nil, nil
+	owner, err := apiutil.FindOwnerReference(invitation, dockyardsv1.OrganizationKind)
+	if err != nil {
+		errs = append(errs, field.Required(
+			field.NewPath("metadata", "ownerReferences"),
+			"invitation does not have a organization owner",
+		))
+	}
+
+	if value := invitation.Labels[dockyardsv1.LabelOrganizationName]; value != owner.Name {
+		errs = append(errs, field.Invalid(
+			field.NewPath("metadata", "labels", dockyardsv1.LabelOrganizationName),
+			value,
+			fmt.Sprintf("expected '%s'", owner.Name),
+		))
+	}
+
+	if value := invitation.Labels[dockyardsv1.LabelRoleName]; value != string(invitation.Spec.Role) {
+		errs = append(errs, field.Invalid(
+			field.NewPath("metadata", "labels", dockyardsv1.LabelRoleName),
+			value,
+			fmt.Sprintf("expected '%s'", string(invitation.Spec.Role)),
+		))
+	}
+
+	if invitation.Spec.Role == "" {
+		errs = append(errs, field.Required(
+			field.NewPath("metadata", "spec", "role"),
+			"",
+		))
+	}
+
+	if len(errs) == 0 {
+		return nil, nil
+	}
+
+	return nil, apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.InvitationKind).GroupKind(), invitation.Name, errs)
 }
 
 func (webhook *DockyardsInvitation) ValidateDelete(_ context.Context, _ *dockyardsv1.Invitation) (admission.Warnings, error) {
