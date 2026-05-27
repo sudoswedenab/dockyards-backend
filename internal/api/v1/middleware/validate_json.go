@@ -156,6 +156,13 @@ func normalizeClusterOptionsJSON(body []byte) ([]byte, error) {
 			changed = true
 		}
 	}
+	if _, exists := talos["installer_url"]; !exists {
+		if v, ok := talos["installerURL"]; ok {
+			talos["installer_url"] = v
+			delete(talos, "installerURL")
+			changed = true
+		}
+	}
 
 	if !changed {
 		return body, nil

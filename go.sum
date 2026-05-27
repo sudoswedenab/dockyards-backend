@@ -171,6 +171,8 @@ github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260515120324-983cccd9f7fa h1:
 github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260515120324-983cccd9f7fa/go.mod h1:vrza2nx/tVgIUTq0AqA/jzyWNstlyVdcpzh+1+mu22s=
 github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260515122743-3a32eb6f5b3d h1:AsixympRQV3aw3gi8Gc/yMc9mMirTlJa/EsnzuJFvcU=
 github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260515122743-3a32eb6f5b3d/go.mod h1:vrza2nx/tVgIUTq0AqA/jzyWNstlyVdcpzh+1+mu22s=
+github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260527133938-45cce55a4756 h1:7mrQIwFzQZzyXELYHVKgQedvPV1ZEmQI9pCFBAGONSE=
+github.com/sudoswedenab/dockyards-api/pkg v0.0.0-20260527133938-45cce55a4756/go.mod h1:vrza2nx/tVgIUTq0AqA/jzyWNstlyVdcpzh+1+mu22s=
 github.com/tetratelabs/wazero v1.6.0 h1:z0H1iikCdP8t+q341xqepY4EWvHEw8Es7tlqiVzlP3g=
 github.com/tetratelabs/wazero v1.6.0/go.mod h1:0U0G41+ochRKoPKCJlh0jMg1CHkyfK8kDqiirMmKY8A=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=

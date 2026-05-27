@@ -51,6 +51,9 @@ func (e *ClusterAPIEndpoint) String() string {
 type Patch = runtime.RawExtension
 
 type ClusterTalosOptions struct {
+	// URL that points to a non-image factory Talos installer archive
+	InstallerURL string `json:"installerURL,omitempty"`
+
 	// Name of the additional network interface
 	ExternalNodeInterface string `json:"externalNodeInterface,omitempty"`
 
@@ -68,6 +71,10 @@ type ClusterTalosOptions struct {
 }
 
 func (o *ClusterTalosOptions) IsZero() bool {
+	if o.InstallerURL != "" {
+		return false
+	}
+
 	if o.ExternalNodeInterface != "" {
 		return false
 	}
