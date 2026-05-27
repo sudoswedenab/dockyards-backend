@@ -135,10 +135,18 @@ spec:
                           externalNodeInterface:
                             description: Name of the additional network interface
                             type: string
-                          installerURL:
-                            description: URL that points to a non-image factory Talos
-                              installer archive
-                            type: string
+                          installImage:
+                            description: Talos install image options.
+                            properties:
+                              size:
+                                description: Size of the DataVolume to be allocated
+                                  for this image.
+                                type: string
+                              url:
+                                description: URL points to a non-image factory Talos
+                                  installer archive.
+                                type: string
+                            type: object
                         type: object
                     type: object
                 type: object

@@ -519,12 +519,23 @@ func parseTalosOptions(value *types.ClusterTalosOptions, path *field.Path, errs 
 	}
 
 	return dockyardsv1.ClusterTalosOptions{
-		InstallerURL:                       deref(value.InstallerURL),
+		InstallImage:                       parseTalosInstallImageOptions(value.InstallImage),
 		ExternalNodeInterface:               deref(value.ExternalNodeInterface),
 		ExternalNodeIPv4Subnet:              deref(value.ExternalNodeIpv4Subnet),
 		AdditionalSharedConfigPatches:       parsePatches(value.AdditionalSharedConfigPatches, path.Child("additional_shared_config_patches"), errs),
 		AdditionalControlPlaneConfigPatches: parsePatches(value.AdditionalControlPlaneConfigPatches, path.Child("additional_control_plane_config_patches"), errs),
 		AdditionalWorkerConfigPatches:       parsePatches(value.AdditionalWorkerConfigPatches, path.Child("additional_worker_config_patches"), errs),
+	}
+}
+
+func parseTalosInstallImageOptions(value *types.TalosInstallImageOptions) dockyardsv1.TalosInstallImageOptions {
+	if value == nil {
+		return dockyardsv1.TalosInstallImageOptions{}
+	}
+
+	return dockyardsv1.TalosInstallImageOptions{
+		URL:  deref(value.URL),
+		Size: deref(value.Size),
 	}
 }
 
@@ -1072,12 +1083,23 @@ func toClusterTalosOptions(value dockyardsv1.ClusterTalosOptions) *types.Cluster
 	}
 
 	return &types.ClusterTalosOptions{
-		InstallerURL:                       toString(value.InstallerURL),
+		InstallImage:                       toClusterTalosInstallImageOptions(value.InstallImage),
 		ExternalNodeInterface:               toString(value.ExternalNodeInterface),
 		ExternalNodeIpv4Subnet:              toString(value.ExternalNodeIPv4Subnet),
 		AdditionalSharedConfigPatches:       toPatches(value.AdditionalSharedConfigPatches),
 		AdditionalControlPlaneConfigPatches: toPatches(value.AdditionalControlPlaneConfigPatches),
 		AdditionalWorkerConfigPatches:       toPatches(value.AdditionalWorkerConfigPatches),
+	}
+}
+
+func toClusterTalosInstallImageOptions(value dockyardsv1.TalosInstallImageOptions) *types.TalosInstallImageOptions {
+	if value.IsZero() {
+		return nil
+	}
+
+	return &types.TalosInstallImageOptions{
+		URL:  toString(value.URL),
+		Size: toString(value.Size),
 	}
 }
 
