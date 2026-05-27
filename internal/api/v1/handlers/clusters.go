@@ -519,6 +519,7 @@ func parseTalosOptions(value *types.ClusterTalosOptions, path *field.Path, errs 
 	}
 
 	return dockyardsv1.ClusterTalosOptions{
+		InstallerURL:                       deref(value.InstallerURL),
 		ExternalNodeInterface:               deref(value.ExternalNodeInterface),
 		ExternalNodeIPv4Subnet:              deref(value.ExternalNodeIpv4Subnet),
 		AdditionalSharedConfigPatches:       parsePatches(value.AdditionalSharedConfigPatches, path.Child("additional_shared_config_patches"), errs),
@@ -1071,6 +1072,7 @@ func toClusterTalosOptions(value dockyardsv1.ClusterTalosOptions) *types.Cluster
 	}
 
 	return &types.ClusterTalosOptions{
+		InstallerURL:                       toString(value.InstallerURL),
 		ExternalNodeInterface:               toString(value.ExternalNodeInterface),
 		ExternalNodeIpv4Subnet:              toString(value.ExternalNodeIPv4Subnet),
 		AdditionalSharedConfigPatches:       toPatches(value.AdditionalSharedConfigPatches),

@@ -1382,6 +1382,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 			Advanced: &types.ClusterAdvancedOptions{
 				Kubevirt: &types.ClusterKubevirtOptions{
 					Talos: &types.ClusterTalosOptions{
+						InstallerURL:         ptr.To("https://example.invalid/talos/openstack-amd64.raw.xz"),
 						ExternalNodeInterface:  ptr.To("eth1"),
 						ExternalNodeIpv4Subnet: ptr.To("10.71.22.80/29"),
 					},
@@ -1429,6 +1430,7 @@ func TestOrganizationClusters_Create(t *testing.T) {
 				Advanced: dockyardsv1.ClusterAdvancedOptions{
 					Kubevirt: dockyardsv1.ClusterKubevirtOptions{
 						Talos: dockyardsv1.ClusterTalosOptions{
+							InstallerURL:                       "https://example.invalid/talos/openstack-amd64.raw.xz",
 							ExternalNodeInterface:               "eth1",
 							ExternalNodeIPv4Subnet:              "10.71.22.80/29",
 							AdditionalSharedConfigPatches:       nil,

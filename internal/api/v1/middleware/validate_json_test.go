@@ -70,6 +70,7 @@ func TestValidateJSON(t *testing.T) {
 				"advanced":{
 					"kubevirt":{
 						"talos":{
+							"installerURL":"https://example.invalid/talos/openstack-amd64.raw.xz",
 							"externalNodeInterface":"eth1",
 							"externalNodeIPv4Subnet":"10.71.22.80/29"
 						}

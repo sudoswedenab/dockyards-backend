@@ -265,6 +265,10 @@ import "time"
 	// ExternalNodeIpv4Subnet Subnet to be used on the additional network interface on all nodes
 	// in the cluster.
 	external_node_ipv4_subnet?: null | string @go(ExternalNodeIpv4Subnet,*string)
+
+	// InstallerURL A custom (i.e. not Talos Image Factory) URL from which an archive with
+	// a Talos image can be pulled
+	installer_url?: null | string @go(InstallerURL,*string)
 }
 
 // ClusterTemplate defines model for cluster_template.
