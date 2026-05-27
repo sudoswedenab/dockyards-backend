@@ -265,10 +265,7 @@ import "time"
 	// ExternalNodeIpv4Subnet Subnet to be used on the additional network interface on all nodes
 	// in the cluster.
 	external_node_ipv4_subnet?: null | string @go(ExternalNodeIpv4Subnet,*string)
-
-	// InstallerURL A custom (i.e. not Talos Image Factory) URL from which an archive with
-	// a Talos image can be pulled
-	installer_url?: null | string @go(InstallerURL,*string)
+	install_image?:             null | #TalosInstallImageOptions @go(InstallImage,*TalosInstallImageOptions)
 }
 
 // ClusterTemplate defines model for cluster_template.
@@ -624,6 +621,16 @@ import "time"
 	operating_system?:          null | string @go(OperatingSystem,*string)
 	os_image?:                  null | string @go(OsImage,*string)
 	system_uuid?:               null | string @go(SystemUUID,*string)
+}
+
+// TalosInstallImageOptions defines model for talos_install_image_options.
+#TalosInstallImageOptions: {
+	// Size Size of the DataVolume to be allocated for this image
+	size?: null | string @go(Size,*string)
+
+	// URL A custom (i.e. not Talos Image Factory) URL from which an archive with
+	// a Talos image can be pulled
+	url?: null | string @go(URL,*string)
 }
 
 // Tokens defines model for tokens.
