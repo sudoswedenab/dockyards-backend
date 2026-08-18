@@ -3,7 +3,9 @@ module github.com/sudoswedenab/dockyards-backend/api
 go 1.25.0
 
 require (
+	github.com/creack/pty v1.1.9
 	github.com/google/go-cmp v0.7.0
+	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	k8s.io/api v0.35.0
 	k8s.io/apiextensions-apiserver v0.35.0
 	k8s.io/apimachinery v0.35.0
