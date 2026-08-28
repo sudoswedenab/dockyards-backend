@@ -130,11 +130,67 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 	return nil
 }
 
+type ReconcilerOptions struct {
+	DockyardsSystemNamespace string
+	Config                   *dyconfig.ConfigManager
+}
+
+func setupReconcilers(mgr ctrl.Manager, options ReconcilerOptions) error {
+	var err error
+
+	err = (&controller.OrganizationReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr)
+	if err != nil {
+		return fmt.Errorf("creating new organization reconciler: %w", err)
+	}
+
+	err = (&controller.ClusterReconciler{
+		Client:             mgr.GetClient(),
+		DockyardsNamespace: options.DockyardsSystemNamespace,
+	}).SetupWithManager(mgr)
+	if err != nil {
+		return fmt.Errorf("creating new cluster reconciler: %w", err)
+	}
+
+	err = (&controller.WorkloadReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr)
+	if err != nil {
+		return fmt.Errorf("creating new workload reconciler: %w", err)
+	}
+
+	err = (&controller.UserReconciler{
+		Client: mgr.GetClient(),
+		Config: options.Config,
+	}).SetupWithManager(mgr)
+	if err != nil {
+		return fmt.Errorf("creating new verificationrequest reconciler: %w", err)
+	}
+
+	err = (&controller.InvitationReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManger(mgr)
+	if err != nil {
+		return fmt.Errorf("creating new invitation reconciler: %w", err)
+	}
+
+	err = (&controller.MemberReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr)
+	if err != nil {
+		return fmt.Errorf("creating new member reconciler: %w", err)
+	}
+
+	return nil
+}
+
 func main() {
 	var logLevel string
 	var configMap string
 	var collectMetricsInterval int
 	var enableWebhooks bool
+	var enableReconcilers bool
 	var metricsBindAddress string
 	var allowedOrigins []string
 	var dockyardsSystemNamespace string
@@ -143,6 +199,7 @@ func main() {
 	pflag.StringVar(&configMap, "config-map", "dockyards-system", "ConfigMap name")
 	pflag.IntVar(&collectMetricsInterval, "collect-metrics-interval", 30, "collect metrics interval seconds")
 	pflag.BoolVar(&enableWebhooks, "enable-webhooks", false, "enable webhooks")
+	pflag.BoolVar(&enableReconcilers, "enable-reconcilers", true, "enable reconcilers")
 	pflag.StringVar(&metricsBindAddress, "metrics-bind-address", "0", "metrics bind address")
 	pflag.StringSliceVar(&allowedOrigins, "allow-origin", []string{"http://localhost", "http://localhost:8000"}, "allow origin")
 	pflag.StringVar(&dockyardsSystemNamespace, "dockyards-namespace", "dockyards-system", "dockyards namespace")
@@ -335,60 +392,18 @@ func main() {
 		}
 	}()
 
-	err = (&controller.OrganizationReconciler{
-		Client: mgr.GetClient(),
-	}).SetupWithManager(mgr)
-	if err != nil {
-		logger.Error("error creating new organization reconciler", "err", err)
+	if enableReconcilers {
+		logger.Info("enabling reconcilers")
 
-		os.Exit(1)
-	}
+		err = setupReconcilers(mgr, ReconcilerOptions{
+			DockyardsSystemNamespace: dockyardsSystemNamespace,
+			Config: dockyardsConfig,
+		})
+		if err != nil {
+			logger.Error("error setting up reconcilers", "err", err)
 
-	err = (&controller.ClusterReconciler{
-		Client:             mgr.GetClient(),
-		DockyardsNamespace: dockyardsSystemNamespace,
-	}).SetupWithManager(mgr)
-	if err != nil {
-		logger.Error("error creating new cluster reconciler", "err", err)
-
-		os.Exit(1)
-	}
-
-	err = (&controller.WorkloadReconciler{
-		Client: mgr.GetClient(),
-	}).SetupWithManager(mgr)
-	if err != nil {
-		logger.Error("error creating new workload reconciler", "err", err)
-
-		os.Exit(1)
-	}
-
-	err = (&controller.UserReconciler{
-		Client: mgr.GetClient(),
-		Config: dockyardsConfig,
-	}).SetupWithManager(mgr)
-	if err != nil {
-		logger.Error("error creating new verificationrequest reconciler", "err", err)
-
-		os.Exit(1)
-	}
-
-	err = (&controller.InvitationReconciler{
-		Client: mgr.GetClient(),
-	}).SetupWithManger(mgr)
-	if err != nil {
-		logger.Error("error creating new invitation reconciler", "err", err)
-
-		os.Exit(1)
-	}
-
-	err = (&controller.MemberReconciler{
-		Client: mgr.GetClient(),
-	}).SetupWithManager(mgr)
-	if err != nil {
-		logger.Error("error creating new member reconciler", "err", err)
-
-		os.Exit(1)
+			os.Exit(1)
+		}
 	}
 
 	if enableWebhooks {
