@@ -26,6 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const DeleteVerb = "delete"
+
 type DeleteClusterResourceFunc func(context.Context, *dockyardsv1.Cluster, string) error
 
 func DeleteClusterResource(h *handler, resource string, f DeleteClusterResourceFunc) http.HandlerFunc {
@@ -88,7 +90,7 @@ func DeleteClusterResource(h *handler, resource string, f DeleteClusterResourceF
 			Group:     dockyardsv1.GroupVersion.Group,
 			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
-			Verb:      "delete",
+			Verb:      DeleteVerb,
 		}
 
 		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
@@ -200,7 +202,7 @@ func DeleteOrganizationResource(h *handler, resource string, f DeleteOrganizatio
 			Name:      resourceName,
 			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
-			Verb:      "delete",
+			Verb:      DeleteVerb,
 		}
 
 		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
@@ -263,7 +265,7 @@ func DeleteGlobalResource(h *handler, resource string, f DeleteGlobalResourceFun
 			Group:    dockyardsv1.GroupVersion.Group,
 			Resource: resource,
 			Name:     resourceName,
-			Verb:     "delete",
+			Verb:     DeleteVerb,
 		}
 
 		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
