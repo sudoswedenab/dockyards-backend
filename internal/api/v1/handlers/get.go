@@ -27,6 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const GetVerb = "get"
+
 type GetClusterResourceFunc[T any] func(context.Context, *dockyardsv1.Cluster, string) (*T, error)
 
 func GetClusterResource[T any](h *handler, resource string, f GetClusterResourceFunc[T]) http.HandlerFunc {
@@ -89,7 +91,7 @@ func GetClusterResource[T any](h *handler, resource string, f GetClusterResource
 			Group:     dockyardsv1.GroupVersion.Group,
 			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
-			Verb:      "get",
+			Verb:      GetVerb,
 		}
 
 		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
@@ -215,7 +217,7 @@ func GetOrganizationResource[T any](h *handler, resource string, f GetOrganizati
 			Group:     dockyardsv1.GroupVersion.Group,
 			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
-			Verb:      "get",
+			Verb:      GetVerb,
 		}
 
 		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
@@ -293,7 +295,7 @@ func GetGlobalResource[T any](h *handler, resource string, f GetGlobalResourceFu
 			Group:    dockyardsv1.GroupVersion.Group,
 			Name:     resourceName,
 			Resource: resource,
-			Verb:     "get",
+			Verb:     GetVerb,
 		}
 
 		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
@@ -392,6 +394,7 @@ func GetNamelessResource[T any](f GetNamelessResourceFunc[T]) http.HandlerFunc {
 }
 
 type UnprotectedResourceFunc[T any] func(context.Context) (*T, error)
+
 func UnprotectedResource[T any](f UnprotectedResourceFunc[T]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

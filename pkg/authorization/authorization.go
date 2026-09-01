@@ -30,6 +30,22 @@ const (
 	LabelAuthenticatedAggregateRole = "rbac.dockyards.io/aggregate-to-authenticated"
 )
 
+const (
+	CreateVerb = "create"
+	WatchVerb  = "watch"
+	ListVerb   = "list"
+	DeleteVerb = "delete"
+	GetVerb    = "get"
+	PatchVerb  = "patch"
+	UpdateVerb = "update"
+)
+
+const (
+	ClusterRoleKind           = "ClusterRole"
+	DockyardsInvitationPlural = "invitations"
+	DockyardsMemberPlural     = "members"
+)
+
 func ReconcileOrganizationSuperUserClusterRole(ctx context.Context, c client.Client, organization *dockyardsv1.Organization) error {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
@@ -54,9 +70,9 @@ func ReconcileOrganizationSuperUserClusterRole(ctx context.Context, c client.Cli
 		clusterRole.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
-					"delete",
-					"patch",
-					"update",
+					DeleteVerb,
+					PatchVerb,
+					UpdateVerb,
 				},
 				APIGroups: []string{
 					dockyardsv1.GroupVersion.Group,
@@ -99,7 +115,7 @@ func ReconcileOrganizationSuperUserClusterRole(ctx context.Context, c client.Cli
 		clusterRoleBinding.Labels[dockyardsv1.LabelOrganizationName] = organization.Name
 
 		clusterRoleBinding.RoleRef = rbacv1.RoleRef{
-			Kind: "ClusterRole",
+			Kind: ClusterRoleKind,
 			Name: clusterRole.Name,
 		}
 
@@ -158,9 +174,9 @@ func ReconcileOrganizationReaderClusterRole(ctx context.Context, c client.Client
 		clusterRole.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
-					"get",
-					"list",
-					"watch",
+					GetVerb,
+					ListVerb,
+					WatchVerb,
 				},
 				APIGroups: []string{
 					dockyardsv1.GroupVersion.Group,
@@ -201,7 +217,7 @@ func ReconcileOrganizationReaderClusterRole(ctx context.Context, c client.Client
 		}
 
 		clusterRoleBinding.RoleRef = rbacv1.RoleRef{
-			Kind: "ClusterRole",
+			Kind: ClusterRoleKind,
 			Name: clusterRole.Name,
 		}
 
@@ -256,14 +272,14 @@ func ReconcileOtherUserClusterRoleAndBindings(ctx context.Context, c client.Clie
 		clusterRole.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
-					"delete",
-					"patch",
+					DeleteVerb,
+					PatchVerb,
 				},
 				APIGroups: []string{
 					dockyardsv1.GroupVersion.Group,
 				},
 				Resources: []string{
-					"invitations",
+					DockyardsInvitationPlural,
 				},
 				ResourceNames: []string{
 					organization.Name,
@@ -298,7 +314,7 @@ func ReconcileOtherUserClusterRoleAndBindings(ctx context.Context, c client.Clie
 		}
 
 		clusterRoleBinding.RoleRef = rbacv1.RoleRef{
-			Kind: "ClusterRole",
+			Kind: ClusterRoleKind,
 			Name: clusterRole.Name,
 		}
 
@@ -374,9 +390,9 @@ func ReconcileClusterAuthorization(ctx context.Context, client client.Client) er
 		clusterRole.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
-					"get",
-					"list",
-					"watch",
+					GetVerb,
+					ListVerb,
+					WatchVerb,
 				},
 				APIGroups: []string{
 					dockyardsv1.GroupVersion.Group,
@@ -384,8 +400,8 @@ func ReconcileClusterAuthorization(ctx context.Context, client client.Client) er
 				Resources: []string{
 					"clusters",
 					"dnszones",
-					"invitations",
-					"members",
+					DockyardsInvitationPlural,
+					DockyardsMemberPlural,
 					"nodepools",
 					"nodes",
 					"workloads",
@@ -409,10 +425,10 @@ func ReconcileClusterAuthorization(ctx context.Context, client client.Client) er
 		clusterRole.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
-					"create",
-					"delete",
-					"patch",
-					"update",
+					CreateVerb,
+					DeleteVerb,
+					PatchVerb,
+					UpdateVerb,
 				},
 				APIGroups: []string{
 					dockyardsv1.GroupVersion.Group,
@@ -442,27 +458,27 @@ func ReconcileClusterAuthorization(ctx context.Context, client client.Client) er
 		clusterRole.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
-					"create",
-					"delete",
+					CreateVerb,
+					DeleteVerb,
 				},
 				APIGroups: []string{
 					dockyardsv1.GroupVersion.Group,
 				},
 				Resources: []string{
-					"invitations",
+					DockyardsInvitationPlural,
 				},
 			},
 			{
 				Verbs: []string{
-					"delete",
-					"patch",
-					"update",
+					DeleteVerb,
+					PatchVerb,
+					UpdateVerb,
 				},
 				APIGroups: []string{
 					dockyardsv1.GroupVersion.Group,
 				},
 				Resources: []string{
-					"members",
+					DockyardsMemberPlural,
 				},
 			},
 		}
@@ -501,13 +517,13 @@ func ReconcileMemberAuthorization(ctx context.Context, client client.Client, mem
 		role.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
-					"delete",
+					DeleteVerb,
 				},
 				APIGroups: []string{
 					dockyardsv1.GroupVersion.Group,
 				},
 				Resources: []string{
-					"members",
+					DockyardsMemberPlural,
 				},
 				ResourceNames: []string{
 					"@me",
@@ -586,7 +602,7 @@ func ReconcileMemberAuthorization(ctx context.Context, client client.Client, mem
 
 		roleBinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
-			Kind:     "ClusterRole",
+			Kind:     ClusterRoleKind,
 			Name:     "dockyards:reader",
 		}
 
@@ -631,7 +647,7 @@ func ReconcileMemberAuthorization(ctx context.Context, client client.Client, mem
 
 		roleBinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
-			Kind:     "ClusterRole",
+			Kind:     ClusterRoleKind,
 			Name:     "dockyards:user",
 		}
 
@@ -676,7 +692,7 @@ func ReconcileMemberAuthorization(ctx context.Context, client client.Client, mem
 
 		roleBinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
-			Kind:     "ClusterRole",
+			Kind:     ClusterRoleKind,
 			Name:     "dockyards:super-user",
 		}
 
@@ -712,10 +728,10 @@ func ReconcileUserAuthorization(ctx context.Context, c client.Client, user docky
 		clusterRole.Rules = []rbacv1.PolicyRule{
 			{
 				Verbs: []string{
-					"delete",
-					"get",
-					"patch",
-					"update",
+					DeleteVerb,
+					GetVerb,
+					PatchVerb,
+					UpdateVerb,
 				},
 				APIGroups: []string{
 					dockyardsv1.GroupVersion.Group,
@@ -756,7 +772,7 @@ func ReconcileUserAuthorization(ctx context.Context, c client.Client, user docky
 
 		clusterRoleBinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
-			Kind:     "ClusterRole",
+			Kind:     ClusterRoleKind,
 			Name:     clusterRole.Name,
 		}
 
