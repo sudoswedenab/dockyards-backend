@@ -29,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const PatchVerb = "patch"
+
 type UpdateClusterResourceFunc[T any] func(context.Context, *dockyardsv1.Cluster, string, *T) error
 
 func UpdateClusterResource[T any](h *handler, resource string, f UpdateClusterResourceFunc[T]) http.HandlerFunc {
@@ -91,7 +93,7 @@ func UpdateClusterResource[T any](h *handler, resource string, f UpdateClusterRe
 			Group:     dockyardsv1.GroupVersion.Group,
 			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
-			Verb:      "patch",
+			Verb:      PatchVerb,
 		}
 
 		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
@@ -265,7 +267,7 @@ func UpdateOrganizationResource[T any](h *handler, resource string, f UpdateOrga
 			Group:     dockyardsv1.GroupVersion.Group,
 			Namespace: organization.Spec.NamespaceRef.Name,
 			Resource:  resource,
-			Verb:      "patch",
+			Verb:      PatchVerb,
 		}
 
 		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)
@@ -393,7 +395,7 @@ func UpdateGlobalResource[T any](h *handler, resource string, f UpdateGlobalReso
 			Group:    dockyardsv1.GroupVersion.Group,
 			Name:     resourceName,
 			Resource: resource,
-			Verb:     "patch",
+			Verb:     PatchVerb,
 		}
 
 		allowed, err := apiutil.IsSubjectAllowed(ctx, h.Client, subject, &resourceAttributes)

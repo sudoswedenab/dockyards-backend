@@ -36,6 +36,7 @@ const (
 	AccessTokenPrivateKeyKey  = "accessTokenPrivateKey"
 	RefreshTokenPrivateKeyKey = "refreshTokenPrivateKey"
 	AccessTokenPublicKeyKey   = "accessTokenPublicKey"
+	ECPrivateKeyKey           = "EC PRIVATE KEY"
 )
 
 func GetOrGenerateKeys(ctx context.Context, c client.Client, namespace string) (*ecdsa.PrivateKey, *ecdsa.PrivateKey, error) {
@@ -70,7 +71,7 @@ func GetOrGenerateKeys(ctx context.Context, c client.Client, namespace string) (
 			}
 
 			block := pem.Block{
-				Type:  "EC PRIVATE KEY",
+				Type:  ECPrivateKeyKey,
 				Bytes: b,
 			}
 
@@ -92,7 +93,7 @@ func GetOrGenerateKeys(ctx context.Context, c client.Client, namespace string) (
 			}
 
 			block := pem.Block{
-				Type:  "EC PRIVATE KEY",
+				Type:  ECPrivateKeyKey,
 				Bytes: b,
 			}
 
@@ -108,7 +109,7 @@ func GetOrGenerateKeys(ctx context.Context, c client.Client, namespace string) (
 	}
 
 	accessTokenPrivateKeyDER, _ := pem.Decode(accessTokenPrivateKeyPEM)
-	if accessTokenPrivateKeyDER == nil || accessTokenPrivateKeyDER.Type != "EC PRIVATE KEY" {
+	if accessTokenPrivateKeyDER == nil || accessTokenPrivateKeyDER.Type != ECPrivateKeyKey {
 		return nil, nil, errors.New("invalid access private key")
 	}
 
@@ -118,7 +119,7 @@ func GetOrGenerateKeys(ctx context.Context, c client.Client, namespace string) (
 	}
 
 	refreshTokenPrivateKeyDER, _ := pem.Decode(refreshTokenPrivateKeyPEM)
-	if refreshTokenPrivateKeyDER == nil || refreshTokenPrivateKeyDER.Type != "EC PRIVATE KEY" {
+	if refreshTokenPrivateKeyDER == nil || refreshTokenPrivateKeyDER.Type != ECPrivateKeyKey {
 		return nil, nil, errors.New("invalid refresh private key")
 	}
 

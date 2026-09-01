@@ -40,6 +40,11 @@ type PrometheusMetrics struct {
 
 type PrometheusMetricsOption func(*PrometheusMetrics)
 
+const (
+	LabelNameKey             = "name"
+	LabelOrganizationNameKey = "organization_name"
+)
+
 func WithLogger(logger *slog.Logger) PrometheusMetricsOption {
 	return func(m *PrometheusMetrics) {
 		m.logger = logger
@@ -66,7 +71,7 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 			Name: "dockyards_backend_organization",
 		},
 		[]string{
-			"name",
+			LabelNameKey,
 		},
 	)
 
@@ -75,7 +80,7 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 			Name: "dockyards_backend_user",
 		},
 		[]string{
-			"name",
+			LabelNameKey,
 		},
 	)
 
@@ -84,8 +89,8 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 			Name: "dockyards_backend_credential",
 		},
 		[]string{
-			"name",
-			"organization_name",
+			LabelNameKey,
+			LabelOrganizationNameKey,
 		},
 	)
 
@@ -94,8 +99,8 @@ func NewPrometheusMetrics(prometheusMetricsOptions ...PrometheusMetricsOption) (
 			Name: "dockyards_backend_cluster",
 		},
 		[]string{
-			"name",
-			"organization_name",
+			LabelNameKey,
+			LabelOrganizationNameKey,
 		},
 	)
 
@@ -164,7 +169,7 @@ func (m *PrometheusMetrics) CollectMetrics() error {
 
 	for _, organization := range organizationList.Items {
 		labels := prometheus.Labels{
-			"name": organization.Name,
+			LabelNameKey: organization.Name,
 		}
 
 		m.organizationMetric.With(labels).Set(1)
@@ -182,7 +187,7 @@ func (m *PrometheusMetrics) CollectMetrics() error {
 
 	for _, user := range userList.Items {
 		labels := prometheus.Labels{
-			"name": user.Name,
+			LabelNameKey: user.Name,
 		}
 
 		m.userMetric.With(labels).Set(1)
@@ -211,8 +216,8 @@ func (m *PrometheusMetrics) CollectMetrics() error {
 		}
 
 		labels := prometheus.Labels{
-			"name":              secret.Name,
-			"organization_name": ownerOrganization.Name,
+			LabelNameKey:             secret.Name,
+			LabelOrganizationNameKey: ownerOrganization.Name,
 		}
 
 		m.credentialMetric.With(labels).Set(1)
@@ -235,8 +240,8 @@ func (m *PrometheusMetrics) CollectMetrics() error {
 		}
 
 		labels := prometheus.Labels{
-			"name":              cluster.Name,
-			"organization_name": ownerOrganization.Name,
+			LabelNameKey:             cluster.Name,
+			LabelOrganizationNameKey: ownerOrganization.Name,
 		}
 
 		m.clusterMetric.With(labels).Set(1)
