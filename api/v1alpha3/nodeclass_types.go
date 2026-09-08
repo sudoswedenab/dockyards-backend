@@ -24,12 +24,14 @@ const (
 )
 
 type NodeClassSpec struct {
-	NodeSelector map[string]string   `json:"nodeSelector,omitempty"`
-	Affinity     *corev1.Affinity    `json:"affinity,omitempty"`
-	Tolerations  []corev1.Toleration `json:"tolerations,omitempty"`
+	NodeSelector map[string]string    `json:"nodeSelector,omitempty"`
+	NodeAffinity *corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
+	Tolerations  []corev1.Toleration  `json:"tolerations,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 type NodeClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

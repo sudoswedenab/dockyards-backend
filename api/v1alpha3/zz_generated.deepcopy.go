@@ -1543,9 +1543,9 @@ func (in *NodeClassSpec) DeepCopyInto(out *NodeClassSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.Affinity != nil {
-		in, out := &in.Affinity, &out.Affinity
-		*out = new(v1.Affinity)
+	if in.NodeAffinity != nil {
+		in, out := &in.NodeAffinity, &out.NodeAffinity
+		*out = new(v1.NodeAffinity)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Tolerations != nil {
