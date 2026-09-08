@@ -49,6 +49,7 @@ type NodePoolSpec struct {
 	NodeAnnotations  map[string]string            `json:"nodeAnnotations,omitempty"`
 	NodeLabels       map[string]string            `json:"nodeLabels,omitempty"`
 	NodeTaints       map[string]string            `json:"nodeTaints,omitempty"`
+	NodeClassRef     *corev1.TypedObjectReference `json:"nodeClassRef,omitempty"`
 }
 
 type NodePoolStatus struct {
