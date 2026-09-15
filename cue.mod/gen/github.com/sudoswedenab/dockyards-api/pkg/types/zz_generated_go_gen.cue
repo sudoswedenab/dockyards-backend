@@ -250,13 +250,19 @@ import "time"
 // ClusterTalosOptions Options to apply to talos.
 #ClusterTalosOptions: {
 	// AdditionalControlPlaneConfigPatches Patches applied to the talosconfig of controlplane nodes.
-	additional_control_plane_config_patches?: null | [... {...}] @go(AdditionalControlPlaneConfigPatches,*[]map[string]interface{})
+	additional_control_plane_config_patches?: null | [... {
+		...
+	}] @go(AdditionalControlPlaneConfigPatches,*[]map[string]interface{})
 
 	// AdditionalSharedConfigPatches Patches applied to the talosconfig of all nodes.
-	additional_shared_config_patches?: null | [... {...}] @go(AdditionalSharedConfigPatches,*[]map[string]interface{})
+	additional_shared_config_patches?: null | [... {
+		...
+	}] @go(AdditionalSharedConfigPatches,*[]map[string]interface{})
 
 	// AdditionalWorkerConfigPatches Patches applied to the talosconfig of worker nodes.
-	additional_worker_config_patches?: null | [... {...}] @go(AdditionalWorkerConfigPatches,*[]map[string]interface{})
+	additional_worker_config_patches?: null | [... {
+		...
+	}] @go(AdditionalWorkerConfigPatches,*[]map[string]interface{})
 
 	// ExternalNodeInterface Name of the additional network interface to be applied on all nodes
 	// in the cluster.
@@ -264,7 +270,7 @@ import "time"
 
 	// ExternalNodeIpv4Subnet Subnet to be used on the additional network interface on all nodes
 	// in the cluster.
-	external_node_ipv4_subnet?: null | string @go(ExternalNodeIpv4Subnet,*string)
+	external_node_ipv4_subnet?: null | string                    @go(ExternalNodeIpv4Subnet,*string)
 	install_image?:             null | #TalosInstallImageOptions @go(InstallImage,*TalosInstallImageOptions)
 }
 
@@ -494,6 +500,14 @@ import "time"
 	updated_at?:  null | time.Time   @go(UpdatedAt,*time.Time)
 }
 
+// NodeClassReferenceOptions defines model for node_class_reference_options.
+#NodeClassReferenceOptions: {
+	api_group?: null | string @go(APIGroup,*string)
+	kind:       string        @go(Kind)
+	name:       string        @go(Name)
+	namespace:  string        @go(Namespace)
+}
+
 // NodePool defines model for node_pool.
 #NodePool: {
 	cluster_id?:                    null | string    @go(ClusterID,*string)
@@ -525,6 +539,7 @@ import "time"
 	load_balancer?:                 null | bool   @go(LoadBalancer,*bool)
 	name?:                          null | string @go(Name,*string)
 	node_annotations?: null | {[string]: string} @go(NodeAnnotations,*map[string]string)
+	node_class_ref?: null | #NodeClassReferenceOptions @go(NodeClassRef,*NodeClassReferenceOptions)
 	node_labels?: null | {[string]: string} @go(NodeLabels,*map[string]string)
 	node_taints?: null | {[string]: string} @go(NodeTaints,*map[string]string)
 	quantity?: null | int    @go(Quantity,*int)

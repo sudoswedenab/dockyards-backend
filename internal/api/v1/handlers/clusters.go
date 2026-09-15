@@ -167,6 +167,10 @@ func (h *handler) nodePoolOptionsToNodePool(ctx context.Context, nodePoolOptions
 		nodePool.Spec.NodeTaints = cloneStringMap(*nodePoolOptions.NodeTaints)
 	}
 
+	if nodePoolOptions.NodeClassRef != nil {
+		nodePool.Spec.NodeClassRef = nodeClassReferenceOptionsToTypedObjectReference(nodePoolOptions.NodeClassRef)
+	}
+
 	nodePool.Spec.Resources = corev1.ResourceList{}
 
 	if nodePoolOptions.CPUCount != nil {
@@ -519,7 +523,7 @@ func parseTalosOptions(value *types.ClusterTalosOptions, path *field.Path, errs 
 	}
 
 	return dockyardsv1.ClusterTalosOptions{
-		InstallImage:                       parseTalosInstallImageOptions(value.InstallImage),
+		InstallImage:                        parseTalosInstallImageOptions(value.InstallImage),
 		ExternalNodeInterface:               deref(value.ExternalNodeInterface),
 		ExternalNodeIPv4Subnet:              deref(value.ExternalNodeIpv4Subnet),
 		AdditionalSharedConfigPatches:       parsePatches(value.AdditionalSharedConfigPatches, path.Child("additional_shared_config_patches"), errs),
@@ -1083,7 +1087,7 @@ func toClusterTalosOptions(value dockyardsv1.ClusterTalosOptions) *types.Cluster
 	}
 
 	return &types.ClusterTalosOptions{
-		InstallImage:                       toClusterTalosInstallImageOptions(value.InstallImage),
+		InstallImage:                        toClusterTalosInstallImageOptions(value.InstallImage),
 		ExternalNodeInterface:               toString(value.ExternalNodeInterface),
 		ExternalNodeIpv4Subnet:              toString(value.ExternalNodeIPv4Subnet),
 		AdditionalSharedConfigPatches:       toPatches(value.AdditionalSharedConfigPatches),
