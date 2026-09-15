@@ -1059,6 +1059,83 @@ func TestClusterNodePools_Update(t *testing.T) {
 		}
 	})
 
+	t.Run("test node class ref", func(t *testing.T) {
+		nodePool := dockyardsv1.NodePool{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-node-class-ref-",
+				Namespace:    cluster.Namespace,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind:       dockyardsv1.ClusterKind,
+						Name:       cluster.Name,
+						UID:        cluster.UID,
+					},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &nodePool)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		nodeClassRef := types.NodeClassReferenceOptions{
+			APIGroup:  ptr.To("dockyards.io"),
+			Kind:      "NodeClass",
+			Name:      "custom-node-class",
+			Namespace: cluster.Namespace,
+		}
+
+		update := types.NodePoolOptions{
+			NodeClassRef: &nodeClassRef,
+		}
+
+		u := url.URL{
+			Path: path.Join("/v1/orgs", organization.Name, "clusters", cluster.Name, "node-pools", nodePool.Name),
+		}
+
+		w := httptest.NewRecorder()
+
+		b, err := json.Marshal(update)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		r := httptest.NewRequest(http.MethodPatch, u.Path, bytes.NewBuffer(b))
+
+		r.Header.Add("Authorization", "Bearer "+superUserToken)
+
+		mux.ServeHTTP(w, r)
+
+		statusCode := w.Result().StatusCode
+		if statusCode != http.StatusAccepted {
+			t.Fatalf("expected status code %d, got %d", http.StatusAccepted, statusCode)
+		}
+
+		var actual dockyardsv1.NodePool
+		err = c.Get(ctx, client.ObjectKeyFromObject(&nodePool), &actual)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedNodeClassRef := &corev1.TypedObjectReference{
+			APIGroup:  ptr.To("dockyards.io"),
+			Kind:      "NodeClass",
+			Name:      "custom-node-class",
+			Namespace: ptr.To(cluster.Namespace),
+		}
+
+		if !cmp.Equal(actual.Spec.NodeClassRef, expectedNodeClassRef) {
+			t.Errorf("diff: %s", cmp.Diff(expectedNodeClassRef, actual.Spec.NodeClassRef))
+		}
+	})
+
 	t.Run("test storage resources", func(t *testing.T) {
 		nodePool := dockyardsv1.NodePool{
 			ObjectMeta: metav1.ObjectMeta{
@@ -1834,6 +1911,12 @@ func TestClusterNodePools_Create(t *testing.T) {
 		nodePoolName := "test2"
 		nodeAnnotations := map[string]string{"example.com/annotation": "enabled"}
 		nodeTaints := map[string]string{"example.com/taint": "NoSchedule"}
+		nodeClassRef := types.NodeClassReferenceOptions{
+			APIGroup:  ptr.To("dockyards.io"),
+			Kind:      "NodeClass",
+			Name:      "complex-node-class",
+			Namespace: cluster.Namespace,
+		}
 		requestBody := types.NodePoolOptions{
 			Name:                       &nodePoolName,
 			Quantity:                   ptr.To(3),
@@ -1843,6 +1926,7 @@ func TestClusterNodePools_Create(t *testing.T) {
 			CPUCount:                   ptr.To(12),
 			DiskSize:                   ptr.To("123Gi"),
 			NodeAnnotations:            &nodeAnnotations,
+			NodeClassRef:               &nodeClassRef,
 			NodeTaints:                 &nodeTaints,
 		}
 
@@ -1915,6 +1999,17 @@ func TestClusterNodePools_Create(t *testing.T) {
 
 		if !cmp.Equal(actual, expected) {
 			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		}
+
+		expectedNodeClassRef := &corev1.TypedObjectReference{
+			APIGroup:  ptr.To("dockyards.io"),
+			Kind:      "NodeClass",
+			Name:      "complex-node-class",
+			Namespace: ptr.To(cluster.Namespace),
+		}
+
+		if !cmp.Equal(nodePool.Spec.NodeClassRef, expectedNodeClassRef) {
+			t.Errorf("diff: %s", cmp.Diff(expectedNodeClassRef, nodePool.Spec.NodeClassRef))
 		}
 	})
 

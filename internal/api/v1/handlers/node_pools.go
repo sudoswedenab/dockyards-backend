@@ -239,6 +239,10 @@ func (h *handler) UpdateClusterNodePool(ctx context.Context, cluster *dockyardsv
 		nodePool.Spec.NodeTaints = cloneStringMap(*patchRequest.NodeTaints)
 	}
 
+	if patchRequest.NodeClassRef != nil {
+		nodePool.Spec.NodeClassRef = nodeClassReferenceOptionsToTypedObjectReference(patchRequest.NodeClassRef)
+	}
+
 	if patchRequest.StorageResources != nil {
 		storageResource, err := nodePoolStorageResourcesFromStorageResources(*patchRequest.StorageResources)
 		if err != nil {
@@ -335,6 +339,19 @@ func nodePoolStorageResourcesFromStorageResources(storageResources []types.Stora
 	return result, nil
 }
 
+func nodeClassReferenceOptionsToTypedObjectReference(nodeClassRef *types.NodeClassReferenceOptions) *corev1.TypedObjectReference {
+	if nodeClassRef == nil {
+		return nil
+	}
+
+	return &corev1.TypedObjectReference{
+		APIGroup:  nodeClassRef.APIGroup,
+		Kind:      nodeClassRef.Kind,
+		Name:      nodeClassRef.Name,
+		Namespace: ptr.To(nodeClassRef.Namespace),
+	}
+}
+
 func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv1.Cluster, request *types.NodePoolOptions) (*types.NodePool, error) {
 	if request.Name == nil {
 		return nil, nil
@@ -424,6 +441,10 @@ func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv
 
 	if request.NodeTaints != nil {
 		nodePool.Spec.NodeTaints = cloneStringMap(*request.NodeTaints)
+	}
+
+	if request.NodeClassRef != nil {
+		nodePool.Spec.NodeClassRef = nodeClassReferenceOptionsToTypedObjectReference(request.NodeClassRef)
 	}
 
 	if request.StorageResources != nil {
