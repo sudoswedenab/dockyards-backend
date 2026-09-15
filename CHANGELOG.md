@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.3](https://github.com/sudoswedenab/dockyards-backend/compare/v0.18.2...v0.18.3) (2026-09-15)
+
+
+### Features
+
+* allow specifying NodeClassRef when creating Cluster/NodePool through API ([3b8ee61](https://github.com/sudoswedenab/dockyards-backend/commit/3b8ee61d0eda1de233fb3ad37b9bfdc23e15afe9))
+
+
+### Bug Fixes
+
+* ensure that nodeclass crd is included in the oci ([502e3df](https://github.com/sudoswedenab/dockyards-backend/commit/502e3dfcb869aa29519047b8476324514dbcb7bc))
+
 ## [0.18.2](https://github.com/sudoswedenab/dockyards-backend/compare/v0.18.1...v0.18.2) (2026-09-08)
 
 
