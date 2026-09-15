@@ -16,10 +16,8 @@ name: build
 on:
   push:
     branches:
-      - main
       - feat/*
-    tags:
-      - v*
+      - fix/*
 permissions:
   id-token: write
   contents: read
@@ -29,14 +27,10 @@ jobs:
     steps:
       - id: prep
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "buildid=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          else
-            branch=${GITHUB_REF##*/}
-            sha=${GITHUB_SHA::8}
-            ts=$(date +%s)
-            echo "buildid=${branch}-${sha}-${ts}" >> "$GITHUB_OUTPUT"
-          fi
+          branch=${GITHUB_REF##*/}
+          sha=${GITHUB_SHA::8}
+          ts=$(date +%s)
+          echo "buildid=${branch}-${sha}-${ts}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4.2.2
       - uses: sudoswedenab/sudo-actions/build-push@main
         with:
