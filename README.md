@@ -14,7 +14,7 @@ Dockyards-backend provides the control plane for the Dockyards platform, enablin
 
 ## Architecture
 
-```
+```mermaid
 flowchart TB
     subgraph API["Dockyards Backend API"]
         public[Public HTTP\n:9000]
