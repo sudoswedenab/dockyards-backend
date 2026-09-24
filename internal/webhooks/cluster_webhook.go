@@ -141,9 +141,9 @@ func (webhook *DockyardsCluster) validate(dockyardsCluster *dockyardsv1.Cluster)
 		))
 	}
 
-	if value := dockyardsCluster.Labels[dockyardsv1.LabelClusterName]; value != owner.Name {
+	if value := dockyardsCluster.Labels[dockyardsv1.LabelOrganizationName]; value != owner.Name {
 		errs = append(errs, field.Invalid(
-			field.NewPath("metadata", "labels", dockyardsv1.LabelClusterName),
+			field.NewPath("metadata", "labels", dockyardsv1.LabelOrganizationName),
 			value,
 			fmt.Sprintf("expected '%s'", owner.Name),
 		))
