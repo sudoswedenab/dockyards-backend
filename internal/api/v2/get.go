@@ -70,7 +70,7 @@ func (a *API) GetNamespacedResource(w http.ResponseWriter, r *http.Request) {
 		Name:      name,
 		Namespace: namespace,
 		Resource:  customResourceDefinition.Spec.Names.Plural,
-		Verb:      "list",
+		Verb:      "get",
 		Version:   version,
 	}
 
