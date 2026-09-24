@@ -68,12 +68,12 @@ func ContextWithLogger(parent context.Context, logger *slog.Logger) context.Cont
 func LoggerFrom(ctx context.Context) *slog.Logger {
 	v := ctx.Value(log)
 	if v == nil {
-		return nil
+		return slog.Default()
 	}
 
 	logger, ok := v.(*slog.Logger)
 	if !ok {
-		return nil
+		return slog.Default()
 	}
 
 	return logger
