@@ -18,14 +18,14 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
-  name: virtualmachines.dockyards.io
+  name: virtualmachineinstances.dockyards.io
 spec:
   group: dockyards.io
   names:
-    kind: VirtualMachine
-    listKind: VirtualMachineList
-    plural: virtualmachines
-    singular: virtualmachine
+    kind: VirtualMachineInstance
+    listKind: VirtualMachineInstanceList
+    plural: virtualmachineinstances
+    singular: virtualmachineinstance
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

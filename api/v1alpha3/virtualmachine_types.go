@@ -20,48 +20,48 @@ import (
 )
 
 const (
-	VirtualMachineKind                         = "VirtualMachine"
-	ResourceVirtualMachine corev1.ResourceName = "virtualmachine"
+	VirtualMachineInstanceKind                         = "VirtualMachineInstance"
+	ResourceVirtualMachineInstance corev1.ResourceName = "virtualmachineinstance"
 )
 
-type VirtualMachineStatus struct {
+type VirtualMachineInstanceStatus struct {
 	Created         bool               `json:"created,omitempty"`
 	Ready           bool               `json:"ready,omitempty"`
 	PrintableStatus string             `json:"printableStatus,omitempty"`
 	Conditions      []metav1.Condition `json:"conditions,omitempty"`
 }
 
-type VirtualMachineSpec struct {
+type VirtualMachineInstanceSpec struct {
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
-type VirtualMachine struct {
+type VirtualMachineInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   VirtualMachineSpec   `json:"spec,omitempty"`
-	Status VirtualMachineStatus `json:"status,omitempty"`
+	Spec   VirtualMachineInstanceSpec   `json:"spec,omitempty"`
+	Status VirtualMachineInstanceStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
-type VirtualMachineList struct {
+type VirtualMachineInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []VirtualMachine `json:"items,omitempty"`
+	Items []VirtualMachineInstance `json:"items,omitempty"`
 }
 
-func (m *VirtualMachine) GetConditions() []metav1.Condition {
+func (m *VirtualMachineInstance) GetConditions() []metav1.Condition {
 	return m.Status.Conditions
 }
 
-func (m *VirtualMachine) SetConditions(conditions []metav1.Condition) {
+func (m *VirtualMachineInstance) SetConditions(conditions []metav1.Condition) {
 	m.Status.Conditions = conditions
 }
 
 func init() {
-	SchemeBuilder.Register(&VirtualMachine{}, &VirtualMachineList{})
+	SchemeBuilder.Register(&VirtualMachineInstance{}, &VirtualMachineInstanceList{})
 }
