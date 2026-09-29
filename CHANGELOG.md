@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.4](https://github.com/sudoswedenab/dockyards-backend/compare/v0.18.3...v0.18.4) (2026-09-29)
+
+
+### Features
+
+* add dockyards.io/virtual-machine-name label constant ([e503d4b](https://github.com/sudoswedenab/dockyards-backend/commit/e503d4b2df1d2a00953433ad6eeb1f231884ceb3))
+* add virtualmachine crd ([54b315d](https://github.com/sudoswedenab/dockyards-backend/commit/54b315dfb63e6f305b4d9953e14ae70c08508600))
+
 ## [0.18.3](https://github.com/sudoswedenab/dockyards-backend/compare/v0.18.2...v0.18.3) (2026-09-15)
 
 
