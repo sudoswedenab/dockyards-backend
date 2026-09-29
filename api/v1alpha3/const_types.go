@@ -32,6 +32,7 @@ const (
 	LabelMemberName               = "dockyards.io/member-name"
 	LabelRoleName                 = "dockyards.io/role-name"
 	LabelProviderName             = "dockyards.io/provider-name"
+	LabelVirtualMachineName       = "dockyards.io/virtual-machine-name"
 )
 
 const (
