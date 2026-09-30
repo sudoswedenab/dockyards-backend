@@ -405,7 +405,7 @@ func ReconcileClusterAuthorization(ctx context.Context, client client.Client) er
 					"nodepools",
 					"nodes",
 					"workloads",
-					"virtualmachines",
+					"virtualmachineinstances",
 				},
 			},
 		}
