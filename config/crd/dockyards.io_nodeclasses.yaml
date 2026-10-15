@@ -35,6 +35,8 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: NodeClass defines reusable node scheduling constraints that can
+          be referenced by workloads.
         properties:
           apiVersion:
             description: |-
@@ -54,10 +56,10 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines reusable node scheduling constraints.
             properties:
               nodeAffinity:
-                description: Node affinity is a group of node affinity scheduling
-                  rules.
+                description: NodeAffinity defines additional node selection constraints.
                 properties:
                   preferredDuringSchedulingIgnoredDuringExecution:
                     description: |-
@@ -257,8 +259,11 @@ spec:
               nodeSelector:
                 additionalProperties:
                   type: string
+                description: NodeSelector matches nodes by exact label key and value.
                 type: object
               tolerations:
+                description: Tolerations allow scheduling onto nodes with matching
+                  taints.
                 items:
                   description: |-
                     The pod this Toleration is attached to tolerates any taint that matches

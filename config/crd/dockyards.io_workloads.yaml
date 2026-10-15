@@ -45,6 +45,8 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: Workload represents an instantiated deployment based on a workload
+          template.
         properties:
           apiVersion:
             description: |-
@@ -64,24 +66,34 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired workload deployment configuration.
             properties:
               clusterComponent:
+                description: ClusterComponent marks this workload as a cluster-level
+                  component.
                 type: boolean
               input:
+                description: Input contains template input values for rendering this
+                  workload.
                 x-kubernetes-preserve-unknown-fields: true
               provenience:
+                description: Provenience indicates who created this workload definition.
                 enum:
                 - Dockyards
                 - User
                 type: string
               targetNamespace:
+                description: TargetNamespace is the namespace where workload resources
+                  are applied.
                 type: string
               workloadTemplateInput:
-                description: 'Deprecated: Use input instead.'
+                description: |-
+                  Deprecated: Use input instead.
+                  WorkloadTemplateInput contains legacy template input values.
                 x-kubernetes-preserve-unknown-fields: true
               workloadTemplateRef:
-                description: TypedObjectReference contains enough information to let
-                  you locate the typed referenced object
+                description: WorkloadTemplateRef references the workload template
+                  to render.
                 properties:
                   apiGroup:
                     description: |-
@@ -110,8 +122,11 @@ spec:
             - targetNamespace
             type: object
           status:
+            description: Status represents the observed workload state.
             properties:
               conditions:
+                description: Conditions represents the latest available observations
+                  of workload state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -168,8 +183,9 @@ spec:
                   type: object
                 type: array
               dependencyRefs:
-                description: 'Deprecated: Superseded by workload inventories type.
-                  Will be removed in the next version.'
+                description: |-
+                  Deprecated: Superseded by workload inventories type. Will be removed in the next version.
+                  DependencyRefs contains legacy workload dependency references.
                 items:
                   description: |-
                     TypedLocalObjectReference contains enough information to let you locate the
@@ -194,11 +210,13 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
               references:
-                description: 'Deprecated: Superseded by workload inventories type.
-                  Will be removed in the next version.'
+                description: |-
+                  Deprecated: Superseded by workload inventories type. Will be removed in the next version.
+                  References contains legacy workload reference metadata.
                 items:
-                  description: 'Deprecated: Superseded by workload inventories type.
-                    Will be removed in the next version.'
+                  description: |-
+                    Deprecated: Superseded by workload inventories type. Will be removed in the next version.
+                    WorkloadReference defines a legacy reference to a related workload.
                   properties:
                     apiGroup:
                       description: |-
@@ -219,9 +237,8 @@ spec:
                         (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
                       type: string
                     parent:
-                      description: |-
-                        TypedLocalObjectReference contains enough information to let you locate the
-                        typed referenced object inside the same namespace.
+                      description: Parent references a parent workload in the legacy
+                        dependency graph.
                       properties:
                         apiGroup:
                           description: |-
@@ -241,6 +258,8 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     urls:
+                      description: URLs lists URLs associated with the referenced
+                        workload.
                       items:
                         type: string
                       type: array
@@ -250,6 +269,8 @@ spec:
                   type: object
                 type: array
               urls:
+                description: URLs contains currently observed URLs exposed by this
+                  workload.
                 items:
                   type: string
                 type: array

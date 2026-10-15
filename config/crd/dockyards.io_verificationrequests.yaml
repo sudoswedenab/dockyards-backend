@@ -35,6 +35,8 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: VerificationRequest represents a request to verify user identity
+          or ownership.
         properties:
           apiVersion:
             description: |-
@@ -54,21 +56,27 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired verification request payload.
             properties:
               bodyHTML:
+                description: BodyHTML is the optional HTML message body.
                 type: string
               bodyText:
+                description: BodyText is the plain-text message body.
                 type: string
               code:
+                description: Code is the verification code expected from the user.
                 type: string
               duration:
+                description: Duration defines how long the verification request remains
+                  valid.
                 type: string
               subject:
+                description: Subject is the message subject line sent to the user.
                 type: string
               userRef:
-                description: |-
-                  TypedLocalObjectReference contains enough information to let you locate the
-                  typed referenced object inside the same namespace.
+                description: UserRef references the user receiving this verification
+                  request.
                 properties:
                   apiGroup:
                     description: |-
@@ -94,8 +102,11 @@ spec:
             - userRef
             type: object
           status:
+            description: Status represents the observed verification request state.
             properties:
               conditions:
+                description: Conditions represents the latest available observations
+                  of verification state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -152,9 +163,13 @@ spec:
                   type: object
                 type: array
               expirationTimestamp:
+                description: ExpirationTimestamp is when this verification request
+                  expires.
                 format: date-time
                 type: string
               providerID:
+                description: ProviderID identifies the backing provider verification
+                  resource.
                 type: string
             type: object
         type: object

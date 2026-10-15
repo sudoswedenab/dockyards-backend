@@ -22,25 +22,32 @@ const (
 	WorkloadInventoryKind = "WorkloadInventory"
 )
 
+// WorkloadInventorySpec defines how workloads are selected and exposed.
 type WorkloadInventorySpec struct {
+	// Selector matches workloads included in this inventory.
 	Selector metav1.LabelSelector `json:"selector"`
 
+	// URLs lists externally reachable URLs aggregated for matching workloads.
 	URLs []string `json:"urls,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// WorkloadInventory represents an inventory of workloads selected by labels.
 type WorkloadInventory struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the workload inventory selection and output settings.
 	Spec WorkloadInventorySpec `json:"spec,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// WorkloadInventoryList contains a list of WorkloadInventory resources.
 type WorkloadInventoryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of WorkloadInventory resources.
 	Items []WorkloadInventory `json:"items,omitempty"`
 }
 

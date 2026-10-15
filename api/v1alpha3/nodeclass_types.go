@@ -23,27 +23,35 @@ const (
 	NodeClassKind = "NodeClass"
 )
 
+// NodeClassSpec defines reusable scheduling rules for selecting nodes.
 type NodeClassSpec struct {
+	// NodeSelector matches nodes by exact label key and value.
 	NodeSelector map[string]string    `json:"nodeSelector,omitempty"`
+	// NodeAffinity defines additional node selection constraints.
 	NodeAffinity *corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
+	// Tolerations allow scheduling onto nodes with matching taints.
 	Tolerations  []corev1.Toleration  `json:"tolerations,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
+// NodeClass defines reusable node scheduling constraints that can be referenced by workloads.
 type NodeClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines reusable node scheduling constraints.
 	Spec NodeClassSpec `json:"spec,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// NodeClassList contains a list of NodeClass resources.
 type NodeClassList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of NodeClass resources.
 	Items []NodeClass `json:"items,omitempty"`
 }
 

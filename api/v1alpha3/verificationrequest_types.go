@@ -24,19 +24,30 @@ const (
 	VerifiedCondition       = "Verified"
 )
 
+// VerificationRequestSpec defines the desired verification request payload.
 type VerificationRequestSpec struct {
+	// Code is the verification code expected from the user.
 	Code     string                           `json:"code"`
+	// Subject is the message subject line sent to the user.
 	Subject  string                           `json:"subject"`
+	// BodyHTML is the optional HTML message body.
 	BodyHTML string                           `json:"bodyHTML,omitempty"`
+	// BodyText is the plain-text message body.
 	BodyText string                           `json:"bodyText"`
+	// UserRef references the user receiving this verification request.
 	UserRef  corev1.TypedLocalObjectReference `json:"userRef"`
+	// Duration defines how long the verification request remains valid.
 	Duration *metav1.Duration                 `json:"duration,omitempty"`
 }
 
+// VerificationRequestStatus defines the observed state of a verification request.
 type VerificationRequestStatus struct {
-	ProviderID string                `json:"providerID,omitempty"`
+	// ProviderID identifies the backing provider verification resource.
+	ProviderID string `json:"providerID,omitempty"`
+	// ExpirationTimestamp is when this verification request expires.
 	ExpirationTimestamp *metav1.Time `json:"expirationTimestamp,omitempty"`
-	Conditions []metav1.Condition    `json:"conditions,omitempty"`
+	// Conditions represents the latest available observations of verification state.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -44,19 +55,24 @@ type VerificationRequestStatus struct {
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
+// VerificationRequest represents a request to verify user identity or ownership.
 type VerificationRequest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the desired verification request payload.
 	Spec   VerificationRequestSpec   `json:"spec,omitempty"`
+	// Status represents the observed verification request state.
 	Status VerificationRequestStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// VerificationRequestList contains a list of VerificationRequest resources.
 type VerificationRequestList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of VerificationRequest resources.
 	Items []VerificationRequest `json:"items"`
 }
 

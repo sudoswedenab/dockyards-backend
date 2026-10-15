@@ -44,6 +44,7 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: Invitation represents an invitation for a user to join an organization.
         properties:
           apiVersion:
             description: |-
@@ -63,20 +64,26 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired invitation details.
             properties:
               duration:
+                description: Duration defines how long the invitation remains valid
+                  from creation time.
                 type: string
               email:
+                description: Email is the recipient email address for the invitation.
                 type: string
               role:
+                description: Role is the organization role granted when the invitation
+                  is accepted.
                 enum:
                 - SuperUser
                 - User
                 - Reader
                 type: string
               senderRef:
-                description: TypedObjectReference contains enough information to let
-                  you locate the typed referenced object
+                description: SenderRef references the user or service that created
+                  the invitation.
                 properties:
                   apiGroup:
                     description: |-
@@ -105,8 +112,10 @@ spec:
             - role
             type: object
           status:
+            description: Status represents the observed invitation state.
             properties:
               expirationTimestamp:
+                description: ExpirationTimestamp is when the invitation expires.
                 format: date-time
                 type: string
             type: object

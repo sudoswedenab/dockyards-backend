@@ -22,32 +22,44 @@ const (
 	CredentialTemplateKind = "CredentialTemplate"
 )
 
+// CredentialOption defines one configurable credential input.
 type CredentialOption struct {
+	// Default is the prefilled value for this option.
 	Default     string `json:"default,omitempty"`
+	// DisplayName is the human-readable label shown for this option.
 	DisplayName string `json:"displayName,omitempty"`
+	// Key is the unique identifier used when storing this option value.
 	Key         string `json:"key"`
+	// Plaintext indicates whether the value should be treated as non-secret.
 	Plaintext   bool   `json:"plaintext,omitempty"`
+	// Type defines the expected input type for this option.
 	Type        string `json:"type,omitempty"`
 }
 
+// CredentialTemplateSpec defines a reusable set of credential options.
 type CredentialTemplateSpec struct {
+	// Options contains the credential fields required by this template.
 	Options []CredentialOption `json:"options"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
+// CredentialTemplate defines reusable credential input schema.
 type CredentialTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the credential template options.
 	Spec CredentialTemplateSpec `json:"spec,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// CredentialTemplateList contains a list of CredentialTemplate resources.
 type CredentialTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of CredentialTemplate resources.
 	Items []CredentialTemplate `json:"items,omitempty"`
 }
 

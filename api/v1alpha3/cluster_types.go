@@ -29,12 +29,17 @@ const (
 	ResourceCluster corev1.ResourceName = "cluster"
 )
 
+// ClusterUpgrade describes a requested cluster version upgrade.
 type ClusterUpgrade struct {
+	// To is the Kubernetes version to upgrade the cluster to.
 	To string `json:"to"`
 }
 
+// ClusterAPIEndpoint defines the external Kubernetes API endpoint for a cluster.
 type ClusterAPIEndpoint struct {
+	// Host is the DNS name or IP address of the API endpoint.
 	Host string `json:"host"`
+	// Port is the TCP port exposed by the API endpoint.
 	Port int32  `json:"port"`
 }
 
@@ -50,6 +55,7 @@ func (e *ClusterAPIEndpoint) String() string {
 
 type Patch = runtime.RawExtension
 
+// TalosInstallImageOptions customizes how Talos installer images are sourced.
 type TalosInstallImageOptions struct {
 	// URL points to a non-image factory Talos installer archive.
 	URL string `json:"url,omitempty"`
@@ -70,6 +76,7 @@ func (o *TalosInstallImageOptions) IsZero() bool {
 	return true
 }
 
+// ClusterTalosOptions defines Talos-specific cluster options.
 type ClusterTalosOptions struct {
 	// Talos install image options.
 	InstallImage TalosInstallImageOptions `json:"installImage,omitempty,omitzero"`
@@ -118,6 +125,7 @@ func (o *ClusterTalosOptions) IsZero() bool {
 	return true
 }
 
+// ClusterKubevirtOptions defines kubevirt-specific cluster options.
 type ClusterKubevirtOptions struct {
 	// Overrides the installation-wide default StorageClass for kubevirt DataVolumes.
 	DataVolumeStorageClassName string `json:"dataVolumeStorageClassName,omitempty"`
@@ -201,27 +209,47 @@ func (o *ClusterAdvancedOptions) IsZero() bool {
 	return true
 }
 
+// ClusterSpec defines the desired configuration of a Dockyards cluster.
 type ClusterSpec struct {
+	// Version is the desired Kubernetes version for the cluster.
 	Version                  string                                   `json:"version,omitempty"`
+	// NoDefaultIngressProvider disables installation of the default ingress provider.
 	NoDefaultIngressProvider bool                                     `json:"noDefaultIngressProvider,omitempty"`
+	// Upgrades lists requested version upgrades for the cluster.
 	Upgrades                 []ClusterUpgrade                         `json:"upgrades,omitempty"`
+	// BlockDeletion prevents cluster deletion while set to true.
 	BlockDeletion            bool                                     `json:"blockDeletion,omitempty"`
+	// AllocateInternalIP requests allocation of an internal API endpoint IP.
 	AllocateInternalIP       bool                                     `json:"allocateInternalIP,omitempty"`
+	// IPPoolRef references the IP pool used for API endpoint allocation.
 	IPPoolRef                *corev1.TypedLocalObjectReference        `json:"ipPoolRef,omitempty"`
+	// Duration defines the cluster lifetime from creation time.
 	Duration                 *metav1.Duration                         `json:"duration,omitempty"`
+	// NoDefaultNetworkPlugin disables installation of the default network plugin.
 	NoDefaultNetworkPlugin   bool                                     `json:"noDefaultNetworkPlugin,omitempty"`
+	// PodSubnets configures CIDR ranges used for pod networking.
 	PodSubnets               []string                                 `json:"podSubnets,omitempty"`
+	// ServiceSubnets configures CIDR ranges used for service networking.
 	ServiceSubnets           []string                                 `json:"serviceSubnets,omitempty"`
+	// AuthenticationConfig provides custom Kubernetes API authentication settings.
 	AuthenticationConfig     *apiserverv1.AuthenticationConfiguration `json:"authenticationConfig,omitempty"`
+	// Advanced contains platform-specific override settings.
 	Advanced                 ClusterAdvancedOptions                   `json:"advanced,omitempty,omitzero"`
 }
 
+// ClusterStatus defines the observed state of a Dockyards cluster.
 type ClusterStatus struct {
+	// Conditions represents the latest available observations of cluster state.
 	Conditions          []metav1.Condition `json:"conditions,omitempty"`
+	// ClusterServiceID identifies the corresponding cluster in backend services.
 	ClusterServiceID    string             `json:"clusterServiceID,omitempty"`
+	// Version is the currently observed Kubernetes version.
 	Version             string             `json:"version,omitempty"`
+	// DNSZones lists DNS zones assigned to the cluster.
 	DNSZones            []string           `json:"dnsZones,omitempty"`
+	// APIEndpoint is the observed external Kubernetes API endpoint.
 	APIEndpoint         ClusterAPIEndpoint `json:"apiEndpoint,omitempty"`
+	// ExpirationTimestamp is when the cluster is expected to expire.
 	ExpirationTimestamp *metav1.Time       `json:"expirationTimestamp,omitempty"`
 }
 
@@ -233,19 +261,24 @@ type ClusterStatus struct {
 // +kubebuilder:printcolumn:name="Version",type=string,priority=1,JSONPath=".status.version"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Duration",type=string,priority=1,JSONPath=".spec.duration"
+// Cluster represents a managed Kubernetes cluster in Dockyards.
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the desired cluster configuration.
 	Spec   ClusterSpec   `json:"spec,omitempty"`
+	// Status represents the observed cluster state.
 	Status ClusterStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// ClusterList contains a list of Cluster resources.
 type ClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of Cluster resources.
 	Items []Cluster `json:"items,omitempty"`
 }
 

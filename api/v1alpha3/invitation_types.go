@@ -23,14 +23,21 @@ const (
 	InvitationKind = "Invitation"
 )
 
+// InvitationSpec defines the desired invitation details.
 type InvitationSpec struct {
+	// Duration defines how long the invitation remains valid from creation time.
 	Duration  *metav1.Duration             `json:"duration,omitempty"`
+	// Email is the recipient email address for the invitation.
 	Email     string                       `json:"email"`
+	// Role is the organization role granted when the invitation is accepted.
 	Role      Role                         `json:"role"`
+	// SenderRef references the user or service that created the invitation.
 	SenderRef *corev1.TypedObjectReference `json:"senderRef,omitempty"`
 }
 
+// InvitationStatus defines the observed state of an invitation.
 type InvitationStatus struct {
+	// ExpirationTimestamp is when the invitation expires.
 	ExpirationTimestamp *metav1.Time `json:"expirationTimestamp,omitempty"`
 }
 
@@ -40,19 +47,24 @@ type InvitationStatus struct {
 // +kubebuilder:printcolumn:name="Duration",type=string,JSONPath=".spec.duration"
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// Invitation represents an invitation for a user to join an organization.
 type Invitation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the desired invitation details.
 	Spec   InvitationSpec   `json:"spec,omitempty"`
+	// Status represents the observed invitation state.
 	Status InvitationStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// InvitationList contains a list of Invitation resources.
 type InvitationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of Invitation resources.
 	Items []Invitation `json:"items"`
 }
 

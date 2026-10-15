@@ -35,6 +35,8 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: DNSZoneClaim requests allocation of a DNS zone for namespaced
+          resources.
         properties:
           annotations:
             additionalProperties:
@@ -68,8 +70,11 @@ spec:
           namespace:
             type: string
           status:
+            description: Status represents the observed claim state.
             properties:
               conditions:
+                description: Conditions represents the latest available observations
+                  of claim state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -126,9 +131,8 @@ spec:
                   type: object
                 type: array
               dnsZoneRef:
-                description: |-
-                  TypedLocalObjectReference contains enough information to let you locate the
-                  typed referenced object inside the same namespace.
+                description: DNSZoneRef references the DNSZone allocated for this
+                  claim.
                 properties:
                   apiGroup:
                     description: |-
