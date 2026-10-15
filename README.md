@@ -112,17 +112,18 @@ Watches `dockyardsv1.Member` resources. Reconciles:
 
 ## CRDs (api/v1alpha3)
 
-The backend defines the following custom resource types in the `dockyards.dockyards.io/v1alpha3` API group:
+The backend defines the following custom resource types in the `dockyards.io/v1alpha3` API group:
 
 | Category | CRDs |
 |---|---|
 | **Core** | `Cluster`, `Organization`, `Workload`, `User`, `Member`, `Invitation` |
 | **Infrastructure** | `NodePool`, `NodeClass`, `DNSZone`, `DNSZoneClaim` |
-| **Deployment** | `HelmDeployment`, `KustomizeDeployment`, `ContainerImageDeployment`, `Release`, `Deployment` |
+| **Deployment** | `Release` |
+| **Deprecated** | `Deployment`, `HelmDeployment`, `KustomizeDeployment`, `ContainerImageDeployment` |
 | **Templates** | `WorkloadTemplate`, `ClusterTemplate`, `CredentialTemplate` |
 | **Identity** | `IdentityProvider`, `OrganizationVoucher`, `VerificationRequest` |
-| **Inventory** | `WorkloadInventory`, `WorkTree` |
-| **Other** | `Feature`, `Conditions`, `Const` |
+| **Inventory** | `WorkloadInventory`, `Worktree` |
+| **Other** | `Feature` |
 
 ## Webhooks
 
