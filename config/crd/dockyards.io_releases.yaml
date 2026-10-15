@@ -35,6 +35,7 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: Release represents version metadata for a release channel.
         properties:
           apiVersion:
             description: |-
@@ -54,23 +55,33 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired release query configuration.
             properties:
               ranges:
+                description: Ranges filters versions using semver ranges.
                 items:
                   type: string
                 type: array
               type:
+                description: Type selects which release catalog is queried.
                 type: string
             required:
             - type
             type: object
           status:
+            description: Status represents the observed release catalog state.
             properties:
               latestURL:
+                description: LatestURL is an optional download URL for the latest
+                  version.
                 type: string
               latestVersion:
+                description: LatestVersion is the newest version matching the requested
+                  criteria.
                 type: string
               versions:
+                description: Versions lists all discovered versions matching the requested
+                  criteria.
                 items:
                   type: string
                 type: array

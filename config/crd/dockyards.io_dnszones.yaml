@@ -47,6 +47,8 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: DNSZone represents a managed DNS zone available to Dockyards
+          resources.
         properties:
           apiVersion:
             description: |-
@@ -66,17 +68,24 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired DNS zone configuration.
             properties:
               name:
+                description: Name is the fully qualified DNS zone name.
                 type: string
               providerID:
+                description: ProviderID identifies the external DNS provider zone
+                  resource.
                 type: string
             required:
             - name
             type: object
           status:
+            description: Status represents the observed DNS zone state.
             properties:
               conditions:
+                description: Conditions represents the latest available observations
+                  of DNS zone state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.

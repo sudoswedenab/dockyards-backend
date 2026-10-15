@@ -31,6 +31,8 @@ spec:
   - name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: Worktree represents a managed source tree and its synchronization
+          state.
         properties:
           apiVersion:
             description: |-
@@ -50,18 +52,24 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired worktree contents.
             properties:
               files:
                 additionalProperties:
                   format: byte
                   type: string
+                description: Files maps relative file paths to file contents.
                 type: object
             type: object
           status:
+            description: Status represents the observed worktree state.
             properties:
               commitHash:
+                description: CommitHash is the current commit hash for the worktree.
                 type: string
               conditions:
+                description: Conditions represents the latest available observations
+                  of worktree state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -118,8 +126,11 @@ spec:
                   type: object
                 type: array
               referenceName:
+                description: ReferenceName is the branch or ref name currently associated
+                  with the worktree.
                 type: string
               url:
+                description: URL is the remote URL where this worktree can be accessed.
                 type: string
             type: object
         type: object

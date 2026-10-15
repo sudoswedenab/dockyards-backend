@@ -23,12 +23,17 @@ const (
 	OrganizationVoucherKind = "OrganizationVoucher"
 )
 
+// OrganizationVoucherSpec defines the desired organization voucher data.
 type OrganizationVoucherSpec struct {
+	// Code is the voucher code presented during redemption.
 	Code    string                       `json:"code"`
+	// PoolRef references the voucher pool this voucher belongs to.
 	PoolRef *corev1.TypedObjectReference `json:"poolRef"`
 }
 
+// OrganizationVoucherStatus defines the observed state of an organization voucher.
 type OrganizationVoucherStatus struct {
+	// Redeemed indicates whether this voucher has already been redeemed.
 	Redeemed bool `json:"redeemed,omitempty"`
 }
 
@@ -38,19 +43,24 @@ type OrganizationVoucherStatus struct {
 // +kubebuilder:printcolumn:name="PoolReference",type=string,JSONPath=".spec.poolRef.name"
 // +kubebuilder:printcolumn:name="Code",type=string,JSONPath=".spec.code"
 // +kubebuilder:printcolumn:name="Redeemed",type=boolean,JSONPath=".status.redeemed"
+// OrganizationVoucher represents a redeemable code for organization onboarding.
 type OrganizationVoucher struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the desired organization voucher data.
 	Spec   OrganizationVoucherSpec   `json:"spec,omitempty"`
+	// Status represents the observed voucher state.
 	Status OrganizationVoucherStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// OrganizationVoucherList contains a list of OrganizationVoucher resources.
 type OrganizationVoucherList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of OrganizationVoucher resources.
 	Items []OrganizationVoucher `json:"items,omitempty"`
 }
 

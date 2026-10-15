@@ -23,26 +23,33 @@ const (
 	DNSZoneClaimKind = "DNSZoneClaim"
 )
 
+// DNSZoneClaimStatus defines the observed state of a DNSZoneClaim.
 type DNSZoneClaimStatus struct {
+	// Conditions represents the latest available observations of claim state.
 	Conditions []metav1.Condition                `json:"conditions,omitempty"`
+	// DNSZoneRef references the DNSZone allocated for this claim.
 	DNSZoneRef *corev1.TypedLocalObjectReference `json:"dnsZoneRef,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
+// DNSZoneClaim requests allocation of a DNS zone for namespaced resources.
 type DNSZoneClaim struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,inline"`
 
+	// Status represents the observed claim state.
 	Status DNSZoneClaimStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// DNSZoneClaimList contains a list of DNSZoneClaim resources.
 type DNSZoneClaimList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of DNSZoneClaim resources.
 	Items []DNSZoneClaim `json:"items,omitempty"`
 }
 

@@ -29,12 +29,17 @@ const (
 	WorkloadTemplateKind = "WorkloadTemplate"
 )
 
+// WorkloadTemplateSpec defines the desired workload template content.
 type WorkloadTemplateSpec struct {
+	// Source contains the template source content.
 	Source string               `json:"source,omitempty"`
+	// Type identifies the template format used in Source.
 	Type   WorkloadTemplateType `json:"type"`
 }
 
+// WorkloadTemplateStatus defines the observed state of a workload template.
 type WorkloadTemplateStatus struct {
+	// InputSchema describes accepted input values for this template.
 	InputSchema *apiextensionsv1.JSON `json:"inputSchema,omitempty"`
 }
 
@@ -42,19 +47,24 @@ type WorkloadTemplateStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Type",type=string,JSONPath=".spec.type"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
+// WorkloadTemplate represents a reusable workload definition template.
 type WorkloadTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the desired workload template content.
 	Spec   WorkloadTemplateSpec   `json:"spec,omitempty"`
+	// Status represents the observed workload template state.
 	Status WorkloadTemplateStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// WorkloadTemplateList contains a list of WorkloadTemplate resources.
 type WorkloadTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of WorkloadTemplate resources.
 	Items []WorkloadTemplate `json:"items,omitempty"`
 }
 

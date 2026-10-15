@@ -31,6 +31,7 @@ spec:
   - name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: IdentityProvider defines a cluster-scoped identity provider configuration.
         properties:
           apiVersion:
             description: |-
@@ -50,13 +51,14 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired identity provider configuration.
             properties:
               displayName:
+                description: DisplayName is the human-readable name shown for this
+                  identity provider.
                 type: string
               oidc:
-                description: |-
-                  SecretReference represents a Secret Reference. It has enough information to retrieve secret
-                  in any namespace
+                description: OIDCConfigRef references a secret containing OIDC configuration.
                 properties:
                   name:
                     description: name is unique within a namespace to reference a

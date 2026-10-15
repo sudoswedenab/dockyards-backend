@@ -49,6 +49,8 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: Organization represents a cluster-scoped tenant organization
+          in Dockyards.
         properties:
           apiVersion:
             description: |-
@@ -68,10 +70,11 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired organization configuration.
             properties:
               credentialRef:
-                description: TypedObjectReference contains enough information to let
-                  you locate the typed referenced object
+                description: CredentialRef references credentials used for organization
+                  provisioning.
                 properties:
                   apiGroup:
                     description: |-
@@ -96,12 +99,16 @@ spec:
                 - name
                 type: object
               displayName:
+                description: DisplayName is the human-readable name for the organization.
                 type: string
               duration:
+                description: Duration defines how long the organization remains active
+                  from creation time.
                 type: string
               memberRefs:
-                description: 'Deprecated: Superseded by the member type. Will be removed
-                  in the next version.'
+                description: |-
+                  Deprecated: Superseded by the member type. Will be removed in the next version.
+                  MemberRefs contains legacy organization member references.
                 items:
                   properties:
                     apiGroup:
@@ -117,18 +124,15 @@ spec:
                       description: Name is the name of resource being referenced
                       type: string
                     role:
-                      description: 'Deprecated: Superseded by role type. Will be removed
-                        in the next version.'
+                      description: Role is the legacy role assigned to the referenced
+                        member.
                       enum:
                       - SuperUser
                       - User
                       - Reader
                       type: string
                     uid:
-                      description: |-
-                        UID is a type that holds unique ID values, including UUIDs.  Because we
-                        don't ONLY use UUIDs, this is an alias to string.  Being a type captures
-                        intent and helps make sure that UIDs and names do not get conflated.
+                      description: UID is the user UID of the referenced member.
                       type: string
                   required:
                   - kind
@@ -139,9 +143,8 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
               namespaceRef:
-                description: |-
-                  LocalObjectReference contains enough information to let you locate the
-                  referenced object inside the same namespace.
+                description: NamespaceRef references the Kubernetes namespace associated
+                  with this organization.
                 properties:
                   name:
                     default: ""
@@ -155,8 +158,8 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               projectRef:
-                description: TypedObjectReference contains enough information to let
-                  you locate the typed referenced object
+                description: ProjectRef references the project associated with this
+                  organization.
                 properties:
                   apiGroup:
                     description: |-
@@ -181,13 +184,20 @@ spec:
                 - name
                 type: object
               providerID:
+                description: ProviderID identifies the backing provider organization
+                  resource.
                 type: string
               skipAutoAssign:
+                description: SkipAutoAssign disables automatic assignment behavior
+                  for this organization.
                 type: boolean
             type: object
           status:
+            description: Status represents the observed organization state.
             properties:
               conditions:
+                description: Conditions represents the latest available observations
+                  of organization state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -244,10 +254,14 @@ spec:
                   type: object
                 type: array
               expirationTimestamp:
+                description: ExpirationTimestamp is when the organization is expected
+                  to expire.
                 format: date-time
                 type: string
               namespaceRef:
-                description: 'Deprecated: use spec.namespaceRef'
+                description: |-
+                  Deprecated: use spec.namespaceRef
+                  NamespaceRef is the legacy namespace reference for this organization.
                 properties:
                   name:
                     default: ""
@@ -267,7 +281,8 @@ spec:
                   - type: string
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
-                description: ResourceList is a set of (resource name, quantity) pairs.
+                description: ResourceQuotas reports currently observed organization
+                  resource quotas.
                 type: object
             type: object
         required:

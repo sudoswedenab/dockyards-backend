@@ -41,6 +41,8 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: NodePool represents a group of cluster nodes sharing the same
+          configuration.
         properties:
           apiVersion:
             description: |-
@@ -60,20 +62,29 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired node pool configuration.
             properties:
               controlPlane:
+                description: ControlPlane marks nodes in this pool as control plane
+                  nodes.
                 type: boolean
               dedicatedRole:
+                description: DedicatedRole prevents scheduling general workloads on
+                  these nodes.
                 type: boolean
               loadBalancer:
+                description: LoadBalancer marks nodes in this pool as load balancer
+                  nodes.
                 type: boolean
               nodeAnnotations:
                 additionalProperties:
                   type: string
+                description: NodeAnnotations are applied to Kubernetes Node objects
+                  created from this pool.
                 type: object
               nodeClassRef:
-                description: TypedObjectReference contains enough information to let
-                  you locate the typed referenced object
+                description: NodeClassRef references a NodeClass used for node scheduling
+                  defaults.
                 properties:
                   apiGroup:
                     description: |-
@@ -100,14 +111,18 @@ spec:
               nodeLabels:
                 additionalProperties:
                   type: string
+                description: NodeLabels are applied to Kubernetes Node objects created
+                  from this pool.
                 type: object
               nodeTaints:
                 additionalProperties:
                   type: string
+                description: NodeTaints are applied to Kubernetes Node objects created
+                  from this pool.
                 type: object
               releaseRef:
-                description: TypedObjectReference contains enough information to let
-                  you locate the typed referenced object
+                description: ReleaseRef references the OS or image release used by
+                  this node pool.
                 properties:
                   apiGroup:
                     description: |-
@@ -132,6 +147,7 @@ spec:
                 - name
                 type: object
               replicas:
+                description: Replicas is the desired number of nodes in the pool.
                 format: int32
                 type: integer
               resources:
@@ -141,27 +157,42 @@ spec:
                   - type: string
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
-                description: ResourceList is a set of (resource name, quantity) pairs.
+                description: Resources configures requested compute resources per
+                  node.
                 type: object
               security:
+                description: Security defines security settings applied to nodes in
+                  this pool.
                 properties:
                   enableAppArmor:
+                    description: EnableAppArmor enables AppArmor support on nodes
+                      in this pool.
                     type: boolean
                 type: object
               storage:
+                description: Storage enables storage capabilities for nodes in this
+                  pool.
                 type: boolean
               storageResources:
+                description: StorageResources defines additional storage resource
+                  capacities per node.
                 items:
+                  description: NodePoolStorageResource defines an additional storage
+                    resource exposed by nodes in the pool.
                   properties:
                     name:
+                      description: Name is the resource name advertised on nodes.
                       type: string
                     quantity:
                       anyOf:
                       - type: integer
                       - type: string
+                      description: Quantity is the allocatable amount exposed for
+                        this resource.
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
                     type:
+                      description: Type defines the storage backing type.
                       type: string
                   required:
                   - name
@@ -170,10 +201,15 @@ spec:
                 type: array
             type: object
           status:
+            description: Status represents the observed node pool state.
             properties:
               clusterServiceID:
+                description: ClusterServiceID identifies the corresponding node pool
+                  in backend services.
                 type: string
               conditions:
+                description: Conditions represents the latest available observations
+                  of node pool state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -236,7 +272,8 @@ spec:
                   - type: string
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
-                description: ResourceList is a set of (resource name, quantity) pairs.
+                description: Resources reports aggregate observed resources across
+                  nodes in this pool.
                 type: object
             type: object
         type: object

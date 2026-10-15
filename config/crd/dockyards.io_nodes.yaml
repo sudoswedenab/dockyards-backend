@@ -56,6 +56,7 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: Node represents a machine that is part of a managed cluster.
         properties:
           apiVersion:
             description: |-
@@ -75,21 +76,29 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired node configuration.
             properties:
               providerID:
+                description: ProviderID identifies the backing infrastructure node
+                  instance.
                 type: string
             type: object
           status:
+            description: Status represents the observed node state.
             properties:
               cloudServiceID:
-                description: 'Deprecated: This field is deprecated, use spec.providerID
-                  instead.'
+                description: |-
+                  Deprecated: This field is deprecated, use spec.providerID instead.
+                  CloudServiceID is the legacy cloud provider identifier for this node.
                 type: string
               clusterServiceID:
-                description: 'Deprecated: This field is deprecated and will be removed
-                  in the next version.'
+                description: |-
+                  Deprecated: This field is deprecated and will be removed in the next version.
+                  ClusterServiceID is the legacy backend identifier for this node.
                 type: string
               conditions:
+                description: Conditions represents the latest available observations
+                  of node state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -152,11 +161,11 @@ spec:
                   - type: string
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
-                description: ResourceList is a set of (resource name, quantity) pairs.
+                description: Resources reports allocatable compute resources on this
+                  node.
                 type: object
               systemInfo:
-                description: NodeSystemInfo is a set of ids/uuids to uniquely identify
-                  the node.
+                description: SystemInfo contains runtime system details for the node.
                 properties:
                   architecture:
                     description: The Architecture reported by the node

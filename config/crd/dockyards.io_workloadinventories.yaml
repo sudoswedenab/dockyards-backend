@@ -31,6 +31,8 @@ spec:
   - name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: WorkloadInventory represents an inventory of workloads selected
+          by labels.
         properties:
           apiVersion:
             description: |-
@@ -50,12 +52,11 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the workload inventory selection and output
+              settings.
             properties:
               selector:
-                description: |-
-                  A label selector is a label query over a set of resources. The result of matchLabels and
-                  matchExpressions are ANDed. An empty label selector matches all objects. A null
-                  label selector matches no objects.
+                description: Selector matches workloads included in this inventory.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -101,6 +102,8 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               urls:
+                description: URLs lists externally reachable URLs aggregated for matching
+                  workloads.
                 items:
                   type: string
                 type: array

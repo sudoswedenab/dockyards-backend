@@ -41,6 +41,7 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: Member represents a user membership in an organization.
         properties:
           apiVersion:
             description: |-
@@ -60,17 +61,17 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired membership configuration.
             properties:
               role:
+                description: Role is the role granted to the referenced user.
                 enum:
                 - SuperUser
                 - User
                 - Reader
                 type: string
               userRef:
-                description: |-
-                  TypedLocalObjectReference contains enough information to let you locate the
-                  typed referenced object inside the same namespace.
+                description: UserRef references the user resource for this membership.
                 properties:
                   apiGroup:
                     description: |-
@@ -94,8 +95,11 @@ spec:
             - userRef
             type: object
           status:
+            description: Status represents the observed membership state.
             properties:
               conditions:
+                description: Conditions represents the latest available observations
+                  of membership state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -152,8 +156,12 @@ spec:
                   type: object
                 type: array
               displayName:
+                description: DisplayName is the current display name of the referenced
+                  user.
                 type: string
               email:
+                description: Email is the current email address of the referenced
+                  user.
                 type: string
             type: object
         type: object

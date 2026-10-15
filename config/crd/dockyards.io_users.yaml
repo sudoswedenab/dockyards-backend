@@ -48,6 +48,7 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: User represents a cluster-scoped user account managed by Dockyards.
         properties:
           apiVersion:
             description: |-
@@ -67,26 +68,37 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired user account configuration.
             properties:
               displayName:
+                description: DisplayName is the human-readable name for the user.
                 type: string
               duration:
+                description: Duration defines how long the user account remains active
+                  from creation time.
                 type: string
               email:
+                description: Email is the user's primary email address.
                 type: string
               password:
+                description: Password is the initial password value for this user.
                 type: string
               phone:
+                description: Phone is the user's phone number.
                 type: string
               providerID:
+                description: ProviderID identifies the backing provider user resource.
                 type: string
             required:
             - email
             - password
             type: object
           status:
+            description: Status represents the observed user account state.
             properties:
               conditions:
+                description: Conditions represents the latest available observations
+                  of user state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -143,6 +155,8 @@ spec:
                   type: object
                 type: array
               expirationTimestamp:
+                description: ExpirationTimestamp is when the user account is expected
+                  to expire.
                 format: date-time
                 type: string
             type: object

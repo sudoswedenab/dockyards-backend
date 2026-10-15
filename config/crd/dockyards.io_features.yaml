@@ -35,6 +35,7 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: Feature represents a feature flag or capability managed by Dockyards.
         properties:
           apiVersion:
             description: |-
@@ -54,8 +55,10 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired feature configuration.
             type: object
           status:
+            description: Status represents the observed feature state.
             type: object
         type: object
     served: true

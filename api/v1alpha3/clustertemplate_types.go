@@ -22,31 +22,39 @@ const (
 	ClusterTemplateKind = "ClusterTemplate"
 )
 
+// NodePoolTemplate defines a node pool template included in a cluster template.
 type NodePoolTemplate struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the desired configuration for this node pool template.
 	Spec NodePoolSpec `json:"spec,omitempty"`
 }
 
+// ClusterTemplateSpec defines reusable templates for cluster composition.
 type ClusterTemplateSpec struct {
+	// NodePoolTemplates lists the node pool templates applied to clusters using this template.
 	NodePoolTemplates []NodePoolTemplate `json:"nodePoolTemplates,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
+// ClusterTemplate defines reusable cluster defaults and node pool templates.
 type ClusterTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the template configuration used when creating clusters.
 	Spec ClusterTemplateSpec `json:"spec,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// ClusterTemplateList contains a list of ClusterTemplate resources.
 type ClusterTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of ClusterTemplate resources.
 	Items []ClusterTemplate `json:"items,omitempty"`
 }
 

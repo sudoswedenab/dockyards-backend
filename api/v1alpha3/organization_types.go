@@ -21,6 +21,7 @@ import (
 )
 
 // Deprecated: Superseded by role type. Will be removed in the next version.
+// OrganizationMemberRole defines a legacy role value for organization members.
 type OrganizationMemberRole string
 
 const (
@@ -38,32 +39,48 @@ type OrganizationMemberReference struct {
 	corev1.TypedLocalObjectReference `json:",inline"`
 
 	// +kubebuilder:validation:Enum=SuperUser;User;Reader
+	// Role is the legacy role assigned to the referenced member.
 	Role OrganizationMemberRole `json:"role"`
+	// UID is the user UID of the referenced member.
 	UID  types.UID              `json:"uid"`
 }
 
+// OrganizationSpec defines the desired organization configuration.
 type OrganizationSpec struct {
+	// DisplayName is the human-readable name for the organization.
 	DisplayName string `json:"displayName,omitempty"`
 
 	// Deprecated: Superseded by the member type. Will be removed in the next version.
+	// MemberRefs contains legacy organization member references.
 	MemberRefs []OrganizationMemberReference `json:"memberRefs,omitempty"`
 
+	// ProjectRef references the project associated with this organization.
 	ProjectRef    *corev1.TypedObjectReference `json:"projectRef,omitempty"`
+	// CredentialRef references credentials used for organization provisioning.
 	CredentialRef *corev1.TypedObjectReference `json:"credentialRef,omitempty"`
 
+	// SkipAutoAssign disables automatic assignment behavior for this organization.
 	SkipAutoAssign bool             `json:"skipAutoAssign,omitempty"`
+	// Duration defines how long the organization remains active from creation time.
 	Duration       *metav1.Duration `json:"duration,omitempty"`
 
+	// NamespaceRef references the Kubernetes namespace associated with this organization.
 	NamespaceRef *corev1.LocalObjectReference `json:"namespaceRef,omitempty"`
+	// ProviderID identifies the backing provider organization resource.
 	ProviderID   *string                      `json:"providerID,omitempty"`
 }
 
+// OrganizationStatus defines the observed state of an organization.
 type OrganizationStatus struct {
+	// Conditions represents the latest available observations of organization state.
 	Conditions          []metav1.Condition `json:"conditions,omitempty"`
+	// ExpirationTimestamp is when the organization is expected to expire.
 	ExpirationTimestamp *metav1.Time       `json:"expirationTimestamp,omitempty"`
 
 	// Deprecated: use spec.namespaceRef
+	// NamespaceRef is the legacy namespace reference for this organization.
 	NamespaceRef   *corev1.LocalObjectReference `json:"namespaceRef,omitempty"`
+	// ResourceQuotas reports currently observed organization resource quotas.
 	ResourceQuotas corev1.ResourceList          `json:"resourceQuotas,omitempty"`
 }
 
@@ -76,19 +93,24 @@ type OrganizationStatus struct {
 // +kubebuilder:printcolumn:name="NamespaceReference",type=string,priority=1,JSONPath=".spec.namespaceRef.name"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Duration",type=string,priority=1,JSONPath=".spec.duration"
+// Organization represents a cluster-scoped tenant organization in Dockyards.
 type Organization struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the desired organization configuration.
 	Spec   OrganizationSpec   `json:"spec"`
+	// Status represents the observed organization state.
 	Status OrganizationStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// OrganizationList contains a list of Organization resources.
 type OrganizationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of Organization resources.
 	Items []Organization `json:"items"`
 }
 

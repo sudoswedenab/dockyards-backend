@@ -22,27 +22,34 @@ const (
 	FeatureKind = "Feature"
 )
 
+// FeatureSpec defines the desired state of a platform feature.
 type FeatureSpec struct{}
 
+// FeatureStatus defines the observed state of a platform feature.
 type FeatureStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
+// Feature represents a feature flag or capability managed by Dockyards.
 type Feature struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the desired feature configuration.
 	Spec   FeatureSpec   `json:"spec,omitempty"`
+	// Status represents the observed feature state.
 	Status FeatureStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// FeatureList contains a list of Feature resources.
 type FeatureList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of Feature resources.
 	Items []Feature `json:"items,omitempty"`
 }
 

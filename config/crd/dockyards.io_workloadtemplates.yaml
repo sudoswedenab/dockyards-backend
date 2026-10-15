@@ -38,6 +38,7 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: WorkloadTemplate represents a reusable workload definition template.
         properties:
           apiVersion:
             description: |-
@@ -57,17 +58,23 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired workload template content.
             properties:
               source:
+                description: Source contains the template source content.
                 type: string
               type:
+                description: Type identifies the template format used in Source.
                 type: string
             required:
             - type
             type: object
           status:
+            description: Status represents the observed workload template state.
             properties:
               inputSchema:
+                description: InputSchema describes accepted input values for this
+                  template.
                 x-kubernetes-preserve-unknown-fields: true
             type: object
         type: object

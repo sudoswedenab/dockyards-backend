@@ -41,6 +41,8 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
+        description: OrganizationVoucher represents a redeemable code for organization
+          onboarding.
         properties:
           apiVersion:
             description: |-
@@ -60,12 +62,14 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec defines the desired organization voucher data.
             properties:
               code:
+                description: Code is the voucher code presented during redemption.
                 type: string
               poolRef:
-                description: TypedObjectReference contains enough information to let
-                  you locate the typed referenced object
+                description: PoolRef references the voucher pool this voucher belongs
+                  to.
                 properties:
                   apiGroup:
                     description: |-
@@ -94,8 +98,11 @@ spec:
             - poolRef
             type: object
           status:
+            description: Status represents the observed voucher state.
             properties:
               redeemed:
+                description: Redeemed indicates whether this voucher has already been
+                  redeemed.
                 type: boolean
             type: object
         type: object

@@ -22,12 +22,17 @@ const (
 	DNSZoneKind = "DNSZone"
 )
 
+// DNSZoneSpec defines the desired DNS zone configuration.
 type DNSZoneSpec struct {
+	// Name is the fully qualified DNS zone name.
 	Name       string `json:"name"`
+	// ProviderID identifies the external DNS provider zone resource.
 	ProviderID string `json:"providerID,omitempty"`
 }
 
+// DNSZoneStatus defines the observed state of a DNS zone.
 type DNSZoneStatus struct {
+	// Conditions represents the latest available observations of DNS zone state.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
@@ -38,19 +43,24 @@ type DNSZoneStatus struct {
 // +kubebuilder:printcolumn:name="ZoneName",type=string,JSONPath=".spec.name"
 // +kubebuilder:printcolumn:name="ProviderID",type=string,JSONPath=".spec.providerID"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
+// DNSZone represents a managed DNS zone available to Dockyards resources.
 type DNSZone struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec defines the desired DNS zone configuration.
 	Spec   DNSZoneSpec   `json:"spec,omitempty"`
+	// Status represents the observed DNS zone state.
 	Status DNSZoneStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// DNSZoneList contains a list of DNSZone resources.
 type DNSZoneList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items contains the list of DNSZone resources.
 	Items []DNSZone `json:"items,omitempty"`
 }
 
