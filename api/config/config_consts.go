@@ -14,12 +14,14 @@
 
 package config
 
-// NOTE: May be extended in other git repos.
+// NOTE: Open enum, may be extended in other git repos.
 type Key string
 
 // These config keys are shared between dockyards applications.
 const (
-	KeyExternalURL     Key = "externalURL"
-	KeyEnvironmentName Key = "environmentName"
-	KeyPublicNamespace Key = "publicNamespace"
+	KeyExternalURL       Key = "externalURL"
+	KeyEnvironmentName   Key = "environmentName"
+	KeyPublicNamespace   Key = "publicNamespace"
+	KeyAllowedOrigins    Key = "allowedOrigins"
+	KeyVirtualMachineAPI Key = "virtualMachineAPI"
 )
