@@ -64,6 +64,7 @@ func (a *API) DeleteNamespacedResource(w http.ResponseWriter, r *http.Request) {
 	err = a.Delete(ctx, &u)
 	if err != nil {
 		applyError(w, err)
+
 		return
 	}
 

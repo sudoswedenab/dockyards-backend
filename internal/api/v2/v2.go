@@ -71,6 +71,7 @@ func NewAPI(mgr manager.Manager, accessKey crypto.PublicKey, allowedOrigins []st
 						return true
 					}
 				}
+
 				return false
 			},
 		},
@@ -111,6 +112,7 @@ func (a *API) subjectFromToken(tokenString string) (string, error) {
 func (a *API) subjectFrom(r *http.Request) (string, error) {
 	header := r.Header.Get("Authorization")
 	token := strings.TrimPrefix(header, "Bearer ")
+
 	return a.subjectFromToken(token)
 }
 
@@ -147,6 +149,7 @@ func applyError(w http.ResponseWriter, err error) {
 	var status apierrors.APIStatus
 	if !errors.As(err, &status) {
 		w.WriteHeader(http.StatusInternalServerError)
+
 		return
 	}
 	s := status.Status()
@@ -165,13 +168,14 @@ func (a *API) HandleResource(w http.ResponseWriter, r *http.Request) {
 	logger := middleware.LoggerFrom(ctx)
 
 	switch r.Method {
-	case "PUT":
-	case "POST":
-	case "PATCH":
-	case "DELETE":
+	case http.MethodPut:
+	case http.MethodPost:
+	case http.MethodPatch:
+	case http.MethodDelete:
 		break
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
+
 		return
 	}
 
@@ -201,9 +205,10 @@ func (a *API) HandleResource(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch r.Method {
-	case "DELETE":
+	case http.MethodDelete:
 		if !a.isAllowed(ctx, subject, &obj, "delete") {
 			w.WriteHeader(http.StatusForbidden)
+
 			return
 		}
 
@@ -211,11 +216,13 @@ func (a *API) HandleResource(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.Error("could not delete object", "err", err)
 			applyError(w, err)
+
 			return
 		}
-	case "PUT":
+	case http.MethodPut:
 		if !a.isAllowed(ctx, subject, &obj, "update") {
 			w.WriteHeader(http.StatusForbidden)
+
 			return
 		}
 
@@ -223,11 +230,13 @@ func (a *API) HandleResource(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.Error("could not update object", "err", err)
 			applyError(w, err)
+
 			return
 		}
-	case "POST":
+	case http.MethodPost:
 		if !a.isAllowed(ctx, subject, &obj, "create") {
 			w.WriteHeader(http.StatusForbidden)
+
 			return
 		}
 
@@ -235,11 +244,13 @@ func (a *API) HandleResource(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			applyError(w, err)
 			logger.Error("could not create object", "err", err)
+
 			return
 		}
-	case "PATCH":
+	case http.MethodPatch:
 		if !a.isAllowed(ctx, subject, &obj, "patch") {
 			w.WriteHeader(http.StatusForbidden)
+
 			return
 		}
 
@@ -247,6 +258,7 @@ func (a *API) HandleResource(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			applyError(w, err)
 			logger.Error("could not patch object", "err", err)
+
 			return
 		}
 	}
