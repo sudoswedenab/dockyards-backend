@@ -14,9 +14,6 @@ const (
 	ServerMessageKindInput          ServerMessageKind = '.'
 )
 
-type ServerAuthenticate struct {
-}
-
 // Sent to client when connection as a response to ClientConnect when it
 // is was successful.
 type ServerConnect struct {
@@ -37,7 +34,6 @@ type ServerInput struct {
 }
 
 type ServerMessage struct {
-	Authenticate ServerAuthenticate
 	Connect      ServerConnect
 	Disconnect   ServerDisconnect
 	Input        ServerInput
@@ -108,13 +104,6 @@ func (m ServerMessage) Encode(b *bytes.Buffer) []byte {
 	}
 
 	return b.Bytes()
-}
-
-func (m *ServerAuthenticate) decode(b *bytes.Buffer) error {
-	return nil
-}
-
-func (m *ServerAuthenticate) encode(b *bytes.Buffer) {
 }
 
 func (m *ServerConnect) decode(b *bytes.Buffer) error {

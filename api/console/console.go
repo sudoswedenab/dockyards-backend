@@ -189,8 +189,6 @@ func (s *Server) handleMessage(m ClientMessage) error {
 	switch m.Kind {
 	case ClientMessageKindInvalid:
 		return nil
-	case ClientMessageKindAuthenticate:
-		return fmt.Errorf("client tried to authenticate twice")
 	case ClientMessageKindConnect:
 		return s.connect(m.Connect)
 	case ClientMessageKindDisconnect:
