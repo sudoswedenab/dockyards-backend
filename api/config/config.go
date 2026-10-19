@@ -133,6 +133,10 @@ func (m *ConfigManager) GetValueOrDefault(key Key, defaultValue string) string {
 	return value
 }
 
+func (m *ConfigManager) GetBool(key Key) bool {
+	return m.GetValueOrDefault(key, "false") == "true"
+}
+
 func (m *ConfigManager) GetStringSlice(key Key) ([]string, bool) {
 	if m == nil {
 		return nil, false
