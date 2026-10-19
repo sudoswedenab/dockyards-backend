@@ -9,7 +9,6 @@ import (
 type ClientMessageKind uint8
 const (
 	ClientMessageKindInvalid        ClientMessageKind = 0
-	ClientMessageKindAuthenticate   ClientMessageKind = '@'
 	ClientMessageKindConnect        ClientMessageKind = '>'
 	ClientMessageKindDisconnect 	ClientMessageKind = '<'
 	ClientMessageKindInput          ClientMessageKind = '.'
