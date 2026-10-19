@@ -21,7 +21,7 @@ import (
 
 const (
 	VirtualMachineInstanceKind                         = "VirtualMachineInstance"
-	ResourceVirtualMachineInstance corev1.ResourceName = "virtualmachineinstance"
+	ResourceVirtualMachineInstance corev1.ResourceName = "virtualmachineinstances"
 )
 
 type VirtualMachineInstanceStatus struct {
