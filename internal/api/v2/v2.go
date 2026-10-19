@@ -18,11 +18,11 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"errors"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
-	"io"
-	"errors"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
@@ -30,11 +30,11 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 )
 
 type API struct {
@@ -59,11 +59,7 @@ func NewAPI(mgr manager.Manager, accessKey crypto.PublicKey, allowedOrigins []st
 			EnableCompression: true,
 			ReadBufferSize:  bufferSize,
 			WriteBufferSize: bufferSize,
-			WriteBufferPool: &sync.Pool{
-				New: func() any {
-					return make([]byte, 0, bufferSize)
-				},
-			},
+			WriteBufferPool: &sync.Pool{},
 			CheckOrigin: func(r *http.Request) bool {
 				origin := r.Header.Get("Origin")
 				if origin == "" {
