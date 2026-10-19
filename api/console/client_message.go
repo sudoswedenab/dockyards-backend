@@ -59,7 +59,7 @@ type ClientMessage struct {
 func (m *ClientMessage) StreamID() uint16 {
 	switch (m.Kind) {
 	case ClientMessageKindInvalid:
-		fallthrough
+		return 0
 	case ClientMessageKindConnect:
 		return m.Connect.StreamID
 	case ClientMessageKindDisconnect:
