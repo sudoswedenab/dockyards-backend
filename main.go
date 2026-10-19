@@ -397,7 +397,7 @@ func main() {
 
 		err = setupReconcilers(mgr, ReconcilerOptions{
 			DockyardsSystemNamespace: dockyardsSystemNamespace,
-			Config: dockyardsConfig,
+			Config:                   dockyardsConfig,
 		})
 		if err != nil {
 			logger.Error("error setting up reconcilers", "err", err)

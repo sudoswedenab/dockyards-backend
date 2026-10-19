@@ -77,7 +77,7 @@ func TestMain(m *testing.M) {
 
 	mux = http.NewServeMux()
 
-	a := v2.NewAPI(mgr, &accessKey.PublicKey)
+	a := v2.NewAPI(mgr, &accessKey.PublicKey, nil)
 	a.RegisterRoutes(mux)
 
 	code := m.Run()

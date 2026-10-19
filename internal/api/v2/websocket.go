@@ -57,6 +57,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 	ws, err := a.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		logger.Error("could not upgrade websocket connection", "err", err)
+
 		return
 	}
 	defer ws.Close()
@@ -68,11 +69,13 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			bytes, err := json.Marshal(message)
 			if err != nil {
 				logger.Error("could not marshal message", "err", err)
+
 				continue
 			}
 			err = ws.WriteMessage(websocket.TextMessage, bytes)
 			if err != nil {
 				logger.Error("could not write message", "err", err)
+
 				continue
 			}
 		}
@@ -92,6 +95,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			restmapping, err := a.RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
 			if err != nil {
 				logger.Error("could not get resource rest mapping", "err", err)
+
 				continue
 			}
 
@@ -107,6 +111,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			allowed, err := apiutil.IsSubjectAllowed(ctx, a, *subj, &resourceAttributes)
 			if err != nil {
 				logger.Error("could not check if user is allowed", "err", err)
+
 				continue
 			}
 
@@ -117,6 +122,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			notification, err := jsonrpc2.NewNotificationWithBody(e.Method, e.Data)
 			if err != nil {
 				logger.Error("could not create notification", "err", err)
+
 				continue
 			}
 
@@ -131,7 +137,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 	watchingResource := make(map[schema.GroupVersionKind]informerHandle)
 	defer func() {
 		for _, ih := range watchingResource {
-			ih.informer.RemoveEventHandler(ih.handle)
+			_ = ih.informer.RemoveEventHandler(ih.handle)
 		}
 	}()
 
@@ -139,6 +145,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 		_, payload, err := ws.ReadMessage()
 		if err != nil {
 			logger.Error("could not read message", "err", err)
+
 			break
 		}
 
@@ -146,6 +153,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 		err = json.Unmarshal(payload, &message)
 		if err != nil {
 			logger.Error("could not parse message", "err", err)
+
 			break
 		}
 
@@ -160,12 +168,14 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				logger.Error("event could not parse event token", "err", err)
 				writer <- jsonrpc2.NewError(message.ID, jsonrpc2.ErrInvalidParams)
+
 				continue
 			}
 			s, err := a.subjectFromToken(token)
 			if err != nil {
 				logger.Error("could not get subject from token", "err", err)
 				writer <- jsonrpc2.NewError(message.ID, jsonrpc2.ErrUnauthorized)
+
 				continue
 			}
 			subject.Store(&s)
@@ -175,6 +185,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				logger.Error("could not get group version kind", "err", err)
 				writer <- jsonrpc2.NewError(message.ID, jsonrpc2.ErrInvalidParams)
+
 				continue
 			}
 			groupVersionKind := schema.GroupVersionKind{
@@ -186,7 +197,10 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				continue
 			}
-			ih.informer.RemoveEventHandler(ih.handle)
+			err = ih.informer.RemoveEventHandler(ih.handle)
+			if err != nil {
+				logger.Error("could remove informer event handler", "err", err)
+			}
 			delete(watchingResource, groupVersionKind)
 		case EventResourceWatch:
 			var gvk [3]string
@@ -194,6 +208,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				logger.Error("could not get group version kind", "err", err)
 				writer <- jsonrpc2.NewError(message.ID, jsonrpc2.ErrInvalidParams)
+
 				continue
 			}
 
@@ -212,6 +227,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			informer, err := a.cache.GetInformer(ctx, &obj, cache.BlockUntilSynced(false))
 			if err != nil {
 				logger.Error("could not get informer", "err", err)
+
 				continue
 			}
 
@@ -237,6 +253,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			}, 30 * time.Second)
 			if err != nil {
 				logger.Error("could not add event handler to informer", "err", err)
+
 				continue
 			}
 
