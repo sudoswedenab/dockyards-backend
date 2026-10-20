@@ -351,7 +351,7 @@ func main() {
 
 	publicHandler := corsHandler.Handler(publicMux)
 
-	v2API := v2.NewAPI(mgr, &accessKey.PublicKey, allowedOrigins)
+	v2API := v2.NewAPI(mgr, &accessKey.PublicKey, dockyardsConfig)
 	v2API.RegisterRoutes(publicMux)
 
 	publicServer := &http.Server{

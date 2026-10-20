@@ -27,6 +27,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
+	dyconfig "github.com/sudoswedenab/dockyards-backend/api/config"
 	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -46,7 +47,7 @@ type API struct {
 	accessKey crypto.PublicKey
 }
 
-func NewAPI(mgr manager.Manager, accessKey crypto.PublicKey, allowedOrigins []string) *API {
+func NewAPI(mgr manager.Manager, accessKey crypto.PublicKey, config *dyconfig.ConfigManager) *API {
 	mux := http.NewServeMux()
 
 	const bufferSize = 4096
@@ -66,7 +67,9 @@ func NewAPI(mgr manager.Manager, accessKey crypto.PublicKey, allowedOrigins []st
 					// The client is not a web browser, so cors is irrelevant.
 					return true
 				}
-				for _, o := range allowedOrigins {
+
+				origins := config.GetStringSliceOrDefault(dyconfig.KeyAllowedOrigins, nil)
+				for _, o := range origins {
 					if origin == o {
 						return true
 					}
