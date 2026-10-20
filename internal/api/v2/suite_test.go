@@ -26,6 +26,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/golang-jwt/jwt/v5"
+	dyconfig "github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	v2 "github.com/sudoswedenab/dockyards-backend/internal/api/v2"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
@@ -77,7 +78,9 @@ func TestMain(m *testing.M) {
 
 	mux = http.NewServeMux()
 
-	a := v2.NewAPI(mgr, &accessKey.PublicKey, nil)
+	config := dyconfig.NewFakeConfigManager(map[dyconfig.Key]string{})
+
+	a := v2.NewAPI(mgr, &accessKey.PublicKey, config)
 	a.RegisterRoutes(mux)
 
 	code := m.Run()
