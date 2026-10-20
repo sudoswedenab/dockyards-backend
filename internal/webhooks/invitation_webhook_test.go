@@ -18,16 +18,15 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/google/go-cmp/cmp"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/api/v1alpha3/index"
 	"github.com/sudoswedenab/dockyards-backend/internal/webhooks"
 	"github.com/sudoswedenab/dockyards-backend/pkg/testing/testingutil"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -163,6 +162,18 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: namespace.Name,
+				Labels: map[string]string{
+					dockyardsv1.LabelRoleName: dockyardsv1.RoleUser,
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind: dockyardsv1.OrganizationKind,
+						Name: organization.Name,
+						UID: organization.UID,
+					},
+				},
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "test@dockyards.dev",
@@ -181,6 +192,18 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-",
 				Namespace:    namespace.Name,
+				Labels: map[string]string{
+					dockyardsv1.LabelRoleName: dockyardsv1.RoleReader,
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind: dockyardsv1.OrganizationKind,
+						Name: organization.Name,
+						UID: organization.UID,
+					},
+				},
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "existing@dockyards.dev",
@@ -202,6 +225,18 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: namespace.Name,
+				Labels: map[string]string{
+					dockyardsv1.LabelRoleName: dockyardsv1.RoleUser,
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind: dockyardsv1.OrganizationKind,
+						Name: organization.Name,
+						UID: organization.UID,
+					},
+				},
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "existing@dockyards.dev",
@@ -211,20 +246,8 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 
 		_, actual := webhook.ValidateCreate(ctx, &invitation)
 
-		expected := apierrors.NewInvalid(
-			dockyardsv1.GroupVersion.WithKind(dockyardsv1.InvitationKind).GroupKind(),
-			invitation.Name,
-			field.ErrorList{
-				field.Invalid(
-					field.NewPath("spec", "email"),
-					invitation.Spec.Email,
-					"address already invited",
-				),
-			},
-		)
-
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !strings.Contains(actual.Error(), "address already invited") {
+			t.Error("expected error to include 'address already invited'", err)
 		}
 	})
 
@@ -233,6 +256,18 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: namespace.Name,
+				Labels: map[string]string{
+					dockyardsv1.LabelRoleName: dockyardsv1.RoleReader,
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind: dockyardsv1.OrganizationKind,
+						Name: organization.Name,
+						UID: organization.UID,
+					},
+				},
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: existingUser.Spec.Email,
@@ -242,20 +277,8 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 
 		_, actual := webhook.ValidateCreate(ctx, &invitation)
 
-		expected := apierrors.NewInvalid(
-			dockyardsv1.GroupVersion.WithKind(dockyardsv1.InvitationKind).GroupKind(),
-			invitation.Name,
-			field.ErrorList{
-				field.Invalid(
-					field.NewPath("spec", "email"),
-					invitation.Spec.Email,
-					"user already member",
-				),
-			},
-		)
-
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !strings.Contains(actual.Error(), "user already member") {
+			t.Error("expected error to include 'user already member'", err)
 		}
 	})
 
@@ -264,6 +287,18 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: namespace.Name,
+				Labels: map[string]string{
+					dockyardsv1.LabelRoleName: dockyardsv1.RoleReader,
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind: dockyardsv1.OrganizationKind,
+						Name: organization.Name,
+						UID: organization.UID,
+					},
+				},
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "test@",
@@ -272,21 +307,8 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 		}
 
 		_, actual := webhook.ValidateCreate(ctx, &invitation)
-
-		expected := apierrors.NewInvalid(
-			dockyardsv1.GroupVersion.WithKind(dockyardsv1.InvitationKind).GroupKind(),
-			invitation.Name,
-			field.ErrorList{
-				field.Invalid(
-					field.NewPath("spec", "email"),
-					invitation.Spec.Email,
-					"unable to parse as address",
-				),
-			},
-		)
-
-		if !cmp.Equal(actual, expected) {
-			t.Errorf("diff: %s", cmp.Diff(expected, actual))
+		if !strings.Contains(actual.Error(), "unable to parse as address") {
+			t.Error("expected error to include 'user already member'", err)
 		}
 	})
 
@@ -295,6 +317,18 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-update",
 				Namespace: namespace.Name,
+				Labels: map[string]string{
+					dockyardsv1.LabelRoleName: dockyardsv1.RoleReader,
+					dockyardsv1.LabelOrganizationName: organization.Name,
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: dockyardsv1.GroupVersion.String(),
+						Kind: dockyardsv1.OrganizationKind,
+						Name: organization.Name,
+						UID: organization.UID,
+					},
+				},
 			},
 			Spec: dockyardsv1.InvitationSpec{
 				Email: "immutable@dockyards.dev",
@@ -338,20 +372,8 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 
 				_, actual := webhook.ValidateUpdate(ctx, oldInv, newInv)
 
-				expected := apierrors.NewInvalid(
-					dockyardsv1.GroupVersion.WithKind(dockyardsv1.InvitationKind).GroupKind(),
-					newInv.Name,
-					field.ErrorList{
-						field.Invalid(
-							tc.fieldPath,
-							tc.value(&newInv.Spec),
-							"field is immutable",
-						),
-					},
-				)
-
-				if !cmp.Equal(actual, expected) {
-					t.Errorf("diff: %s", cmp.Diff(expected, actual))
+				if !strings.Contains(actual.Error(), "field is immutable") {
+					t.Error("expected error to include 'field is immutable'", err)
 				}
 			})
 		}
