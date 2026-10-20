@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:,resources=secrets,verbs=create;update,path=/validate-dockyards-credential,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.credential.dockyards.io,serviceName=dockyards-backend
+// +kubebuilder:webhook:groups=core,versions=v1,resources=secrets,verbs=create;update,path=/validate-dockyards-credential,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.credential.dockyards.io,serviceName=dockyards-backend
 
 type DockyardsCredential struct {
 	Client client.Reader
