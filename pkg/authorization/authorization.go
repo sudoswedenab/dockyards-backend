@@ -405,7 +405,7 @@ func ReconcileClusterAuthorization(ctx context.Context, client client.Client) er
 					"nodepools",
 					"nodes",
 					"workloads",
-					"virtualmachineinstances",
+					dockyardsv1.ResourceVirtualMachineInstance.String(),
 				},
 			},
 		}
@@ -439,6 +439,17 @@ func ReconcileClusterAuthorization(ctx context.Context, client client.Client) er
 					"nodepools",
 					"nodes",
 					"workloads",
+				},
+			},
+			{
+				Verbs: []string{
+					UpdateVerb,
+				},
+				APIGroups: []string{
+					dockyardsv1.GroupVersion.Group,
+				},
+				Resources: []string{
+					dockyardsv1.ResourceVirtualMachineInstance.String(),
 				},
 			},
 		}
