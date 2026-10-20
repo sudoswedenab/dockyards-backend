@@ -150,7 +150,7 @@ func (webhook *DockyardsInvitation) validate(ctx context.Context, invitation *do
 	if err != nil {
 		errs = append(errs, field.Required(
 			field.NewPath("metadata", "ownerReferences"),
-			"invitation does not have a organization owner",
+			err.Error(),
 		))
 	}
 

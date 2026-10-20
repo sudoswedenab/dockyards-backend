@@ -41,6 +41,9 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "with-organization-owner",
 					Namespace: "testing",
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: "testing",
+					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: dockyardsv1.GroupVersion.String(),
@@ -66,7 +69,7 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 				field.ErrorList{
 					field.Required(
 						field.NewPath("metadata", "ownerReferences"),
-						"must have organization owner reference",
+						"organization owner reference not found",
 					),
 				},
 			),
@@ -76,6 +79,9 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 			dockyardsCluster: dockyardsv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-with-internal-ip-allocation",
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: "testing",
+					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: dockyardsv1.GroupVersion.String(),
@@ -95,6 +101,9 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 			dockyardsCluster: dockyardsv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "custom-pod-subnets",
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: "testing",
+					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: dockyardsv1.GroupVersion.String(),
@@ -117,6 +126,9 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 			dockyardsCluster: dockyardsv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "invalid-pod-subnets",
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: "testing",
+					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: dockyardsv1.GroupVersion.String(),
@@ -155,6 +167,9 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 			dockyardsCluster: dockyardsv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "custom-service-subnets",
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: "testing",
+					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: dockyardsv1.GroupVersion.String(),
@@ -177,6 +192,9 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 			dockyardsCluster: dockyardsv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "invalid-service-subnets",
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: "testing",
+					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: dockyardsv1.GroupVersion.String(),
@@ -215,6 +233,9 @@ func TestDockyardsClusterValidateCreate(t *testing.T) {
 			dockyardsCluster: dockyardsv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "overlapping-subnets",
+					Labels: map[string]string{
+						dockyardsv1.LabelOrganizationName: "testing",
+					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: dockyardsv1.GroupVersion.String(),
