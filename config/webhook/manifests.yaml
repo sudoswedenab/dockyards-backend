@@ -111,6 +111,9 @@ webhooks:
       path: /validate-dockyards-credential
   failurePolicy: Fail
   name: validation.credential.dockyards.io
+  namespaceSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: dockyards
   rules:
   - apiGroups:
     - ""

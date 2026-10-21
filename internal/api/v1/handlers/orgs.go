@@ -121,6 +121,9 @@ func (h *handler) CreateGlobalOrganization(ctx context.Context, request *types.O
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "dockyards-",
+			Labels: map[string]string{
+				"app.kubernetes.io/part-of": "dockyards",
+			},
 		},
 	}
 
