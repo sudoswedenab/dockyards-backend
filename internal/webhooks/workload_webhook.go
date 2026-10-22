@@ -28,6 +28,7 @@ import (
 )
 
 // +kubebuilder:webhook:groups=dockyards.io,resources=workloads,verbs=create;delete;update,path=/validate-dockyards-io-v1alpha3-workload,mutating=false,failurePolicy=fail,sideEffects=none,admissionReviewVersions=v1,name=validation.workload.dockyards.io,versions=v1alpha3,serviceName=dockyards-backend
+// +kubebuilder:webhookconfiguration:mutating=false,name=dockyards-backend
 
 // +kubebuilder:rbac:groups=dockyards.io,resources=releases,verbs=get;list;watch
 
