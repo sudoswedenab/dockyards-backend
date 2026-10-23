@@ -64,19 +64,36 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 
 	writer := make(chan jsonrpc2.Message, 1024)
 	defer close(writer)
+
+	ticker := time.NewTicker(25 * time.Second)
+	defer ticker.Stop()
+
 	go func() {
-		for message := range writer {
-			bytes, err := json.Marshal(message)
-			if err != nil {
-				logger.Error("could not marshal message", "err", err)
+		for {
+			select {
+			case <-ticker.C:
+				err := ws.WriteMessage(websocket.PingMessage, nil)
+				if err != nil {
+					logger.Error("could not ping", "err", err)
 
-				continue
-			}
-			err = ws.WriteMessage(websocket.TextMessage, bytes)
-			if err != nil {
-				logger.Error("could not write message", "err", err)
+					continue
+				}
+			case message, ok := <- writer:
+				if !ok {
+					return
+				}
+				bytes, err := json.Marshal(message)
+				if err != nil {
+					logger.Error("could not marshal message", "err", err)
 
-				continue
+					continue
+				}
+				err = ws.WriteMessage(websocket.TextMessage, bytes)
+				if err != nil {
+					logger.Error("could not write message", "err", err)
+
+					continue
+				}
 			}
 		}
 	}()
