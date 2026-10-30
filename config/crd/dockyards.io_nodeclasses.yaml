@@ -264,9 +264,33 @@ spec:
                   type: string
                 description: NodeSelector matches nodes by exact label key and value.
                 type: object
+              openstack:
+                description: OpenStack defines OpenStack provider-specific machine
+                  settings for this node class.
+                properties:
+                  flavor:
+                    description: Flavor defines the OpenStack flavor used for machines
+                      referencing this node class.
+                    properties:
+                      id:
+                        description: ID is the OpenStack flavor ID and takes precedence
+                          over Name when both are set.
+                        minLength: 1
+                        type: string
+                      name:
+                        description: Name is the OpenStack flavor name used as a fallback
+                          when ID is not set.
+                        minLength: 1
+                        type: string
+                    type: object
+                    x-kubernetes-validations:
+                    - message: at least one of id or name must be set
+                      rule: has(self.id) || has(self.name)
+                required:
+                - flavor
+                type: object
               provenience:
-                description: Provenience indicates who is responsible for this node
-                  class definition .
+                description: Provenience indicates who created this node class definition.
                 enum:
                 - Dockyards
                 - User
@@ -313,7 +337,53 @@ spec:
                   type: object
                 type: array
             type: object
+          status:
+            description: Status represents the observed node class state.
+            properties:
+              openstack:
+                description: OpenStack contains observed OpenStack provider-specific
+                  machine settings.
+                properties:
+                  flavor:
+                    description: Flavor describes the observed OpenStack flavor details.
+                    properties:
+                      diskGiB:
+                        description: DiskGiB is the observed root disk size in gibibytes.
+                        format: int32
+                        type: integer
+                      ephemeralGiB:
+                        description: EphemeralGiB is the observed ephemeral disk size
+                          in gibibytes.
+                        format: int32
+                        type: integer
+                      id:
+                        description: ID is the observed OpenStack flavor ID.
+                        type: string
+                      isPublic:
+                        description: IsPublic indicates whether the observed flavor
+                          is public in OpenStack.
+                        type: boolean
+                      name:
+                        description: Name is the observed OpenStack flavor name.
+                        type: string
+                      ramMiB:
+                        description: RAMMiB is the observed memory size in mebibytes.
+                        format: int32
+                        type: integer
+                      swapMiB:
+                        description: SwapMiB is the observed swap size in mebibytes.
+                        format: int32
+                        type: integer
+                      vcpus:
+                        description: VCPUs is the observed number of virtual CPUs
+                          in the flavor.
+                        format: int32
+                        type: integer
+                    type: object
+                type: object
+            type: object
         type: object
     served: true
     storage: true
-    subresources: {}
+    subresources:
+      status: {}
