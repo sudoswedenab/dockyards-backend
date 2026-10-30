@@ -26,6 +26,7 @@ import (
 	"github.com/sudoswedenab/dockyards-backend/api/apiutil"
 	"github.com/sudoswedenab/dockyards-backend/api/config"
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
+	"github.com/sudoswedenab/dockyards-backend/internal/api/v1/middleware"
 	"github.com/sudoswedenab/dockyards-backend/pkg/util/name"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -222,6 +223,7 @@ func (h *handler) nodePoolOptionsToNodePool(ctx context.Context, nodePoolOptions
 
 func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *dockyardsv1.Organization, request *types.ClusterOptions) (*types.Cluster, error) {
 	publicNamespace := h.Config.GetValueOrDefault(config.KeyPublicNamespace, "dockyards-public")
+	logger := middleware.LoggerFrom(ctx)
 
 	_, validName := name.IsValidName(request.Name)
 	if !validName {
@@ -336,27 +338,33 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 
 	var clusterTemplate *dockyardsv1.ClusterTemplate
 
-	if request.ClusterTemplateName != nil {
-		objectKey := client.ObjectKey{
-			Name:      *request.ClusterTemplateName,
-			Namespace: publicNamespace,
-		}
+	if request.NodePoolOptions == nil {
+		if request.ClusterTemplateName != nil {
+			objectKey := client.ObjectKey{
+				Name:      *request.ClusterTemplateName,
+				Namespace: publicNamespace,
+			}
 
-		var customTemplate dockyardsv1.ClusterTemplate
-		err := h.Get(ctx, objectKey, &customTemplate)
-		if err != nil {
-			return nil, err
-		}
+			var customTemplate dockyardsv1.ClusterTemplate
+			err := h.Get(ctx, objectKey, &customTemplate)
+			if err != nil {
+				return nil, err
+			}
 
-		clusterTemplate = &customTemplate
-	} else {
-		clusterTemplate, err = apiutil.GetDefaultClusterTemplate(ctx, h.Client)
-		if err != nil {
-			return nil, err
-		}
+			clusterTemplate = &customTemplate
+		} else {
+			clusterTemplate, err = apiutil.GetDefaultClusterTemplate(ctx, h.Client)
+			if err != nil {
+				return nil, err
+			}
 
-		if clusterTemplate == nil {
-			return nil, nil
+			if clusterTemplate == nil {
+				logger.Info("skipping node pool creation because no node pool options were provided and no default cluster template was found", "cluster", cluster.Name, "organization", organization.Name)
+
+				v1Cluster := h.toV1Cluster(&cluster, nil)
+
+				return v1Cluster, nil
+			}
 		}
 	}
 
