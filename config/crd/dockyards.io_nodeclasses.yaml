@@ -366,6 +366,12 @@ spec:
                       name:
                         description: Name is the observed OpenStack flavor name.
                         type: string
+                      properties:
+                        additionalProperties:
+                          type: string
+                        description: Properties are observed OpenStack flavor properties/extra
+                          specs.
+                        type: object
                       ramMiB:
                         description: RAMMiB is the observed memory size in mebibytes.
                         format: int32

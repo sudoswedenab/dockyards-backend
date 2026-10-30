@@ -58,6 +58,8 @@ type NodeClassOpenStackFlavorStatus struct {
 	SwapMiB int32 `json:"swapMiB,omitempty"`
 	// IsPublic indicates whether the observed flavor is public in OpenStack.
 	IsPublic bool `json:"isPublic,omitempty"`
+	// Properties are observed OpenStack flavor properties/extra specs.
+	Properties map[string]string `json:"properties,omitempty"`
 }
 
 // NodeClassOpenStackStatus defines observed OpenStack provider-specific machine settings.
