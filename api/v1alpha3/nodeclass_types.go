@@ -26,15 +26,20 @@ const (
 // NodeClassSpec defines reusable scheduling rules for selecting nodes.
 type NodeClassSpec struct {
 	// NodeSelector matches nodes by exact label key and value.
-	NodeSelector map[string]string    `json:"nodeSelector,omitempty"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// NodeAffinity defines additional node selection constraints.
 	NodeAffinity *corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
 	// Tolerations allow scheduling onto nodes with matching taints.
-	Tolerations  []corev1.Toleration  `json:"tolerations,omitempty"`
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// +kubebuilder:validation:Enum=Dockyards;User
+	// Provenience indicates who is responsible for this node class definition .
+	Provenience string `json:"provenience,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Provenience",type=string,JSONPath=".spec.provenience"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=".metadata.creationTimestamp"
 // NodeClass defines reusable node scheduling constraints that can be referenced by workloads.
 type NodeClass struct {

@@ -29,6 +29,9 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .spec.provenience
+      name: Provenience
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -261,6 +264,13 @@ spec:
                   type: string
                 description: NodeSelector matches nodes by exact label key and value.
                 type: object
+              provenience:
+                description: Provenience indicates who is responsible for this node
+                  class definition .
+                enum:
+                - Dockyards
+                - User
+                type: string
               tolerations:
                 description: Tolerations allow scheduling onto nodes with matching
                   taints.
