@@ -40,3 +40,4 @@ resources:
 - dockyards.io_dnszones.yaml
 - dockyards.io_dnszoneclaims.yaml
 - dockyards.io_members.yaml
+- dockyards.io_virtualmachineinstances.yaml
