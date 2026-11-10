@@ -31,6 +31,9 @@ linters:
     - unused
     - usestdlibvars
     - whitespace
+    - gosec # suggestion: Inspects source code for security problems.
+    - modernize # suggestion: A suite of analyzers that suggest simplifications to Go code, using modern language and library features.
+    - loggercheck # suggestion: Checks key value pairs for common logger libraries (kitlog,klog,logr,slog,zap).
   settings:
     govet:
       enable:
