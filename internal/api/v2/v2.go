@@ -40,11 +40,10 @@ import (
 
 type API struct {
 	client.Client
-	*http.ServeMux
-
-	upgrader websocket.Upgrader
-	cache cache.Cache
+	cache     cache.Cache
 	accessKey crypto.PublicKey
+	*http.ServeMux
+	upgrader websocket.Upgrader
 }
 
 func NewAPI(mgr manager.Manager, accessKey crypto.PublicKey, config *dyconfig.ConfigManager) *API {
@@ -58,9 +57,9 @@ func NewAPI(mgr manager.Manager, accessKey crypto.PublicKey, config *dyconfig.Co
 		accessKey: accessKey,
 		upgrader: websocket.Upgrader{
 			EnableCompression: true,
-			ReadBufferSize:  bufferSize,
-			WriteBufferSize: bufferSize,
-			WriteBufferPool: &sync.Pool{},
+			ReadBufferSize:    bufferSize,
+			WriteBufferSize:   bufferSize,
+			WriteBufferPool:   &sync.Pool{},
 			CheckOrigin: func(r *http.Request) bool {
 				origin := r.Header.Get("Origin")
 				if origin == "" {

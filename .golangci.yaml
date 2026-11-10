@@ -17,15 +17,24 @@ run:
   tests: false
 linters:
   enable:
+    - errcheck
     - goconst
+    - govet
     - importas
+    - ineffassign
     - nestif
     - nlreturn
     - reassign
     - revive
+    - sloglint
+    - staticcheck
+    - unused
     - usestdlibvars
     - whitespace
   settings:
+    govet:
+      enable:
+        - fieldalignment
     importas:
       alias:
         - pkg: k8s.io/api/core/v1

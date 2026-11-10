@@ -29,14 +29,13 @@ import (
 
 type handler struct {
 	client.Client
-
 	logger               *slog.Logger
-	systemNamespace      string
 	jwtAccessPrivateKey  *ecdsa.PrivateKey
 	jwtRefreshPrivateKey *ecdsa.PrivateKey
 	jwtAccessPublicKey   *ecdsa.PublicKey
 	jwtRefreshPublicKey  *ecdsa.PublicKey
-	Config 	             *config.ConfigManager
+	Config               *config.ConfigManager
+	systemNamespace      string
 }
 
 type HandlerOption func(*handler)
@@ -268,8 +267,9 @@ func RegisterRoutes(mux *http.ServeMux, handlerOptions ...HandlerOption) error {
 }
 
 type UnprotectedRouteFunc = func(w http.ResponseWriter, r *http.Request) error
+
 func unprotectedRoute(callback UnprotectedRouteFunc) http.HandlerFunc {
-	return func (w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		logger := middleware.LoggerFrom(ctx)
 

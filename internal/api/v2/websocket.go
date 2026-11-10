@@ -35,19 +35,20 @@ import (
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
 
 type Method = string
-const (
-	EventObjectCreate     Method = "object/create"
-	EventObjectUpdate     Method = "object/update"
-	EventObjectDelete     Method = "object/delete"
 
-	EventUserAuthenticate   Method = "user/authenticate"
-	EventResourceWatch      Method = "resource/watch"
-	EventResourceUnwatch    Method = "resource/unwatch"
+const (
+	EventObjectCreate Method = "object/create"
+	EventObjectUpdate Method = "object/update"
+	EventObjectDelete Method = "object/delete"
+
+	EventUserAuthenticate Method = "user/authenticate"
+	EventResourceWatch    Method = "resource/watch"
+	EventResourceUnwatch  Method = "resource/unwatch"
 )
 
 type Event struct {
+	Data   *unstructured.Unstructured
 	Method Method
-	Data  *unstructured.Unstructured
 }
 
 func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +79,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 
 					continue
 				}
-			case message, ok := <- writer:
+			case message, ok := <-writer:
 				if !ok {
 					return
 				}
@@ -149,7 +150,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 
 	type informerHandle struct {
 		informer cache.Informer
-		handle toolscache.ResourceEventHandlerRegistration
+		handle   toolscache.ResourceEventHandlerRegistration
 	}
 	watchingResource := make(map[schema.GroupVersionKind]informerHandle)
 	defer func() {
@@ -206,9 +207,9 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			groupVersionKind := schema.GroupVersionKind{
-				Group: gvk[0],
+				Group:   gvk[0],
 				Version: gvk[1],
-				Kind: gvk[2],
+				Kind:    gvk[2],
 			}
 			ih, ok := watchingResource[groupVersionKind]
 			if !ok {
@@ -230,9 +231,9 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 
 			groupVersionKind := schema.GroupVersionKind{
-				Group: gvk[0],
+				Group:   gvk[0],
 				Version: gvk[1],
-				Kind: gvk[2],
+				Kind:    gvk[2],
 			}
 			if _, ok := watchingResource[groupVersionKind]; ok {
 				continue
@@ -252,22 +253,22 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 				AddFunc: func(obj interface{}) {
 					eventStream <- Event{
 						Method: EventObjectCreate,
-						Data: obj.(*unstructured.Unstructured),
+						Data:   obj.(*unstructured.Unstructured),
 					}
 				},
 				UpdateFunc: func(_, newObj interface{}) {
 					eventStream <- Event{
 						Method: EventObjectUpdate,
-						Data: newObj.(*unstructured.Unstructured),
+						Data:   newObj.(*unstructured.Unstructured),
 					}
 				},
 				DeleteFunc: func(obj interface{}) {
 					eventStream <- Event{
 						Method: EventObjectDelete,
-						Data: obj.(*unstructured.Unstructured),
+						Data:   obj.(*unstructured.Unstructured),
 					}
 				},
-			}, 30 * time.Second)
+			}, 30*time.Second)
 			if err != nil {
 				logger.Error("could not add event handler to informer", "err", err)
 
@@ -276,7 +277,7 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 
 			watchingResource[groupVersionKind] = informerHandle{
 				informer: informer,
-				handle: handle,
+				handle:   handle,
 			}
 		default:
 			logger.Info("unknown method", "method", message.Method)

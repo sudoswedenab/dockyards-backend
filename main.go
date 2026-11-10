@@ -117,8 +117,8 @@ func setupWebhooks(mgr ctrl.Manager, allowedDomains []string) error {
 }
 
 type ReconcilerOptions struct {
-	DockyardsSystemNamespace string
 	Config                   *dyconfig.ConfigManager
+	DockyardsSystemNamespace string
 }
 
 func setupReconcilers(mgr ctrl.Manager, options ReconcilerOptions) error {
