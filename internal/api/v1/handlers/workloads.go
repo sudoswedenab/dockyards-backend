@@ -229,7 +229,7 @@ func (h *handler) GetClusterWorkload(ctx context.Context, cluster *dockyardsv1.C
 
 	response := types.Workload{
 		ID:        string(workload.UID),
-		Namespace: ptr.To(workload.Spec.TargetNamespace),
+		Namespace: new(workload.Spec.TargetNamespace),
 		Name:      strings.TrimPrefix(workload.Name, cluster.Name+"-"),
 	}
 

@@ -43,7 +43,7 @@ func (a *RequireAuth) Handler(next http.Handler) http.Handler {
 
 		bearerToken := strings.TrimPrefix(authorizationHeader, "Bearer ")
 
-		token, err := jwt.ParseWithClaims(bearerToken, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(bearerToken, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
 			_, ok := token.Method.(*jwt.SigningMethodECDSA)
 			if !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

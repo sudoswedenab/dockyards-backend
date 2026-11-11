@@ -250,19 +250,19 @@ func (a *API) WebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 
 			handle, err := informer.AddEventHandlerWithResyncPeriod(toolscache.ResourceEventHandlerFuncs{
-				AddFunc: func(obj interface{}) {
+				AddFunc: func(obj any) {
 					eventStream <- Event{
 						Method: EventObjectCreate,
 						Data:   obj.(*unstructured.Unstructured),
 					}
 				},
-				UpdateFunc: func(_, newObj interface{}) {
+				UpdateFunc: func(_, newObj any) {
 					eventStream <- Event{
 						Method: EventObjectUpdate,
 						Data:   newObj.(*unstructured.Unstructured),
 					}
 				},
-				DeleteFunc: func(obj interface{}) {
+				DeleteFunc: func(obj any) {
 					eventStream <- Event{
 						Method: EventObjectDelete,
 						Data:   obj.(*unstructured.Unstructured),

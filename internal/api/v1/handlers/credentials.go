@@ -16,6 +16,7 @@ package handlers
 
 import (
 	"context"
+	"maps"
 	"strings"
 
 	"github.com/sudoswedenab/dockyards-api/pkg/types"
@@ -91,9 +92,7 @@ func (h *handler) CreateOrganizationCredential(ctx context.Context, organization
 	if request.Data != nil {
 		secret.Data = make(map[string][]byte)
 
-		for key, value := range *request.Data {
-			secret.Data[key] = value
-		}
+		maps.Copy(secret.Data, *request.Data)
 	}
 
 	err := h.Create(ctx, &secret)
@@ -219,9 +218,7 @@ func (h *handler) UpdateOrganizationCredential(ctx context.Context, organization
 		secret.Data = make(map[string][]byte)
 	}
 
-	for key, value := range *request.Data {
-		secret.Data[key] = value
-	}
+	maps.Copy(secret.Data, *request.Data)
 
 	err = h.Patch(ctx, &secret, patch)
 	if err != nil {

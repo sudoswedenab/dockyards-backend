@@ -364,7 +364,7 @@ func ReconcileClusterAuthorization(ctx context.Context, client client.Client) er
 	}
 
 	_, err := controllerutil.CreateOrPatch(ctx, client, &clusterRole, func() error {
-		clusterRole.AggregationRule = ptr.To(rbacv1.AggregationRule{
+		clusterRole.AggregationRule = new(rbacv1.AggregationRule{
 			ClusterRoleSelectors: []metav1.LabelSelector{
 				{
 					MatchLabels: map[string]string{

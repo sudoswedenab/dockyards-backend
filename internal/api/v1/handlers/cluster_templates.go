@@ -54,7 +54,7 @@ func (h *handler) ListGlobalClusterTemplates(ctx context.Context) (*[]types.Clus
 			}
 
 			if nodePoolTemplate.Spec.Replicas != nil {
-				nodePoolOptions.Quantity = ptr.To(int(*nodePoolTemplate.Spec.Replicas))
+				nodePoolOptions.Quantity = new(int(*nodePoolTemplate.Spec.Replicas))
 			}
 
 			if nodePoolTemplate.Spec.ControlPlane {
@@ -63,17 +63,17 @@ func (h *handler) ListGlobalClusterTemplates(ctx context.Context) (*[]types.Clus
 
 			cpu := nodePoolTemplate.Spec.Resources.Cpu()
 			if cpu != nil {
-				nodePoolOptions.CPUCount = ptr.To(int(cpu.Value()))
+				nodePoolOptions.CPUCount = new(int(cpu.Value()))
 			}
 
 			memory := nodePoolTemplate.Spec.Resources.Memory()
 			if memory != nil {
-				nodePoolOptions.RAMSize = ptr.To(memory.String())
+				nodePoolOptions.RAMSize = new(memory.String())
 			}
 
 			storage := nodePoolTemplate.Spec.Resources.Storage()
 			if storage != nil {
-				nodePoolOptions.DiskSize = ptr.To(storage.String())
+				nodePoolOptions.DiskSize = new(storage.String())
 			}
 
 			*clusterTemplate.ClusterOptions.NodePoolOptions = append(*clusterTemplate.ClusterOptions.NodePoolOptions, nodePoolOptions)

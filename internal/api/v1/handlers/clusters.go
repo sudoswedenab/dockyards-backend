@@ -75,7 +75,7 @@ func (h *handler) toV1Cluster(cluster *dockyardsv1.Cluster, nodePoolList *dockya
 	}
 
 	if cluster.Status.APIEndpoint.IsValid() {
-		v1Cluster.APIEndpoint = ptr.To(cluster.Status.APIEndpoint.String())
+		v1Cluster.APIEndpoint = new(cluster.Status.APIEndpoint.String())
 	}
 
 	if len(cluster.Status.DNSZones) > 0 {
@@ -129,7 +129,7 @@ func (h *handler) nodePoolOptionsToNodePool(ctx context.Context, nodePoolOptions
 					Kind:               dockyardsv1.ClusterKind,
 					Name:               cluster.Name,
 					UID:                cluster.UID,
-					BlockOwnerDeletion: ptr.To(true),
+					BlockOwnerDeletion: new(true),
 				},
 			},
 			Labels: map[string]string{
@@ -139,7 +139,7 @@ func (h *handler) nodePoolOptionsToNodePool(ctx context.Context, nodePoolOptions
 			},
 		},
 		Spec: dockyardsv1.NodePoolSpec{
-			Replicas: ptr.To(int32(*nodePoolOptions.Quantity)),
+			Replicas: new(int32(*nodePoolOptions.Quantity)),
 		},
 	}
 
@@ -280,7 +280,7 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 					Kind:               dockyardsv1.OrganizationKind,
 					Name:               organization.Name,
 					UID:                organization.UID,
-					BlockOwnerDeletion: ptr.To(true),
+					BlockOwnerDeletion: new(true),
 				},
 			},
 		},
@@ -379,7 +379,7 @@ func (h *handler) CreateOrganizationCluster(ctx context.Context, organization *d
 					Kind:               dockyardsv1.ClusterKind,
 					Name:               cluster.Name,
 					UID:                cluster.UID,
-					BlockOwnerDeletion: ptr.To(true),
+					BlockOwnerDeletion: new(true),
 				},
 			}
 
@@ -996,7 +996,7 @@ func clone(value *string) *string {
 		return nil
 	}
 
-	return ptr.To(*value)
+	return new(*value)
 }
 
 func toUserValidationRules(value []apiserverv1.UserValidationRule) *[]types.UserValidationRule {
@@ -1022,7 +1022,7 @@ func toAnonymousAuthConfig(value *apiserverv1.AnonymousAuthConfig) *types.Anonym
 
 	return &types.AnonymousAuthConfig{
 		Conditions: toAnonymousAuthConditions(value.Conditions),
-		Enabled:    ptr.To(value.Enabled),
+		Enabled:    new(value.Enabled),
 	}
 }
 

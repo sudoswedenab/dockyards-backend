@@ -124,7 +124,7 @@ func (h *handler) ListOrganizationInvitations(ctx context.Context, organization 
 		}
 
 		if item.Spec.Duration != nil {
-			result[i].Duration = ptr.To(item.Spec.Duration.String())
+			result[i].Duration = new(item.Spec.Duration.String())
 			result[i].ExpiresAt = &item.GetExpiration().Time
 		}
 	}
@@ -276,7 +276,7 @@ func (h *handler) UpdateGlobalInvitation(ctx context.Context, organizationName s
 
 	member := dockyardsv1.Member{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      user.Name,
+			Name: user.Name,
 			Labels: map[string]string{
 				dockyardsv1.LabelOrganizationName: organizationName,
 				dockyardsv1.LabelRoleName:         string(invitation.Spec.Role),

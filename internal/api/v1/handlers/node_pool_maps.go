@@ -14,15 +14,15 @@
 
 package handlers
 
+import "maps"
+
 func cloneStringMap(input map[string]string) map[string]string {
 	if input == nil {
 		return nil
 	}
 
 	result := make(map[string]string, len(input))
-	for key, value := range input {
-		result[key] = value
-	}
+	maps.Copy(result, input)
 
 	return result
 }

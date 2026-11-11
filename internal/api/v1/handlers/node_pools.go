@@ -48,22 +48,22 @@ func (h *handler) toV1NodePool(nodePool *dockyardsv1.NodePool, nodeList *dockyar
 	resourceCPU := nodePool.Spec.Resources.Cpu()
 	if !resourceCPU.IsZero() {
 		value := resourceCPU.Value()
-		v1NodePool.CPUCount = ptr.To(int(value))
+		v1NodePool.CPUCount = new(int(value))
 	}
 
 	resourceStorage := nodePool.Spec.Resources.Storage()
 	if !resourceStorage.IsZero() {
-		v1NodePool.DiskSize = ptr.To(resourceStorage.String())
+		v1NodePool.DiskSize = new(resourceStorage.String())
 	}
 
 	resourceMemory := nodePool.Spec.Resources.Memory()
 	if !resourceMemory.IsZero() {
-		v1NodePool.RAMSize = ptr.To(resourceMemory.String())
+		v1NodePool.RAMSize = new(resourceMemory.String())
 	}
 
 	if nodePool.Spec.Replicas != nil {
 		replicas := *nodePool.Spec.Replicas
-		v1NodePool.Quantity = ptr.To(int(replicas))
+		v1NodePool.Quantity = new(int(replicas))
 	}
 
 	if nodeList != nil && len(nodeList.Items) > 0 {
@@ -200,7 +200,7 @@ func (h *handler) UpdateClusterNodePool(ctx context.Context, cluster *dockyardsv
 
 			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
-		nodePool.Spec.Replicas = ptr.To(int32(*replicas))
+		nodePool.Spec.Replicas = new(int32(*replicas))
 	}
 
 	if patchRequest.Name != nil {
@@ -295,7 +295,7 @@ func (h *handler) UpdateClusterNodePool(ctx context.Context, cluster *dockyardsv
 			return apierrors.NewInvalid(dockyardsv1.GroupVersion.WithKind(dockyardsv1.NodePoolKind).GroupKind(), "", nil)
 		}
 
-		nodePool.Spec.Replicas = ptr.To(int32(*patchRequest.Quantity))
+		nodePool.Spec.Replicas = new(int32(*patchRequest.Quantity))
 	}
 
 	err = h.Patch(ctx, &nodePool, patch)
@@ -348,7 +348,7 @@ func nodeClassReferenceOptionsToTypedObjectReference(nodeClassRef *types.NodeCla
 		APIGroup:  nodeClassRef.APIGroup,
 		Kind:      nodeClassRef.Kind,
 		Name:      nodeClassRef.Name,
-		Namespace: ptr.To(nodeClassRef.Namespace),
+		Namespace: new(nodeClassRef.Namespace),
 	}
 }
 
@@ -414,7 +414,7 @@ func (h *handler) CreateClusterNodePool(ctx context.Context, cluster *dockyardsv
 			},
 		},
 		Spec: dockyardsv1.NodePoolSpec{
-			Replicas:  ptr.To(int32(nodePoolQuantity)),
+			Replicas:  new(int32(nodePoolQuantity)),
 			Resources: resources,
 		},
 	}

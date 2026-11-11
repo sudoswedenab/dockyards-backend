@@ -42,10 +42,10 @@ import (
 )
 
 type TestEnvironment struct {
-	mgr           manager.Manager
-	environment   *envtest.Environment
-	c             client.Client
-	namespaceName string
+	mgr             manager.Manager
+	environment     *envtest.Environment
+	c               client.Client
+	namespaceName   string
 	publicNamespace string
 }
 
@@ -279,7 +279,7 @@ func NewTestEnvironment(ctx context.Context, crdDirectoryPaths []string) (*TestE
 			BindAddress: "0",
 		},
 		Controller: config.Controller{
-			SkipNameValidation: ptr.To(true),
+			SkipNameValidation: new(true),
 		},
 	}
 

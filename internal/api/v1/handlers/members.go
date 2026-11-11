@@ -51,7 +51,7 @@ func (h *handler) ListOrganizationMembers(ctx context.Context, organization *doc
 			CreatedAt: organization.CreationTimestamp.Time,
 			ID:        string(user.UID),
 			Name:      member.Name,
-			Role:      ptr.To(string(member.Spec.Role)),
+			Role:      new(string(member.Spec.Role)),
 		}
 	}
 

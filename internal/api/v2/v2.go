@@ -21,6 +21,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 
@@ -68,13 +69,7 @@ func NewAPI(mgr manager.Manager, accessKey crypto.PublicKey, config *dyconfig.Co
 				}
 
 				origins := config.GetStringSliceOrDefault(dyconfig.KeyAllowedOrigins, nil)
-				for _, o := range origins {
-					if origin == o {
-						return true
-					}
-				}
-
-				return false
+				return slices.Contains(origins, origin)
 			},
 		},
 	}
