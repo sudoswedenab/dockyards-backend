@@ -22,20 +22,20 @@ import (
 
 func TestBubbleBabble(t *testing.T) {
 	t.Run("well known inputs and outputs", func(t *testing.T) {
-		cases := []struct{
-			input string
+		cases := []struct {
+			input  string
 			output string
 		}{
 			{
-				input: "",
+				input:  "",
 				output: "xexax",
 			},
 			{
-				input: "1234567890",
+				input:  "1234567890",
 				output: "xesef-disof-gytuf-katof-movif-baxux",
 			},
 			{
-				input: "Pineapple",
+				input:  "Pineapple",
 				output: "xigak-nyryk-humil-bosek-sonax",
 			},
 		}

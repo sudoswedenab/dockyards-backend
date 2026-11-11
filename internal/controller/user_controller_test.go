@@ -59,7 +59,7 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 	c := testEnvironment.GetClient()
 
 	config := dyconfig.NewFakeConfigManager(map[dyconfig.Key]string{
-		dyconfig.KeyExternalURL: "http://test.com",
+		dyconfig.KeyExternalURL:     "http://test.com",
 		dyconfig.KeyPublicNamespace: "dockyards-public",
 	})
 	if err != nil {
@@ -68,7 +68,7 @@ func TestUserReconciler_Reconcile(t *testing.T) {
 
 	externalIDP := dockyardsv1.IdentityProvider{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "not-dockyards",
+			Name:      "not-dockyards",
 			Namespace: "dockyards-public",
 		},
 	}

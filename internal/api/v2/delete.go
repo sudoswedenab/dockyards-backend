@@ -34,8 +34,8 @@ func (a *API) DeleteNamespacedResource(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gvr := schema.GroupVersionResource{
-		Group: r.PathValue("group"),
-		Version: r.PathValue("version"),
+		Group:    r.PathValue("group"),
+		Version:  r.PathValue("version"),
 		Resource: r.PathValue("resource"),
 	}
 

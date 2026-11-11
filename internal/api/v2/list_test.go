@@ -243,7 +243,7 @@ func TestNamespacedResource_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		
+
 		var actual dockyardsv1.NodeList
 		err = json.Unmarshal(b, &actual)
 		if err != nil {

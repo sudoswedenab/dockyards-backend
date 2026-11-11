@@ -58,7 +58,7 @@ func (h *handler) ListCredentialTemplates(ctx context.Context) (*[]types.Credent
 		}
 
 		templates = append(templates, types.CredentialTemplate{
-			Name: template.Name,
+			Name:    template.Name,
 			Options: options,
 		})
 	}

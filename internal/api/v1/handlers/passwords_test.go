@@ -29,9 +29,9 @@ import (
 	dockyardsv1 "github.com/sudoswedenab/dockyards-backend/api/v1alpha3"
 	"github.com/sudoswedenab/dockyards-backend/pkg/authorization"
 	"golang.org/x/crypto/bcrypt"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	corev1 "k8s.io/api/core/v1"
 )
 
 func TestUserPassword_Update(t *testing.T) {
@@ -225,7 +225,7 @@ func TestUserPassword_Reset(t *testing.T) {
 				GenerateName: "dockyards-",
 			},
 			Spec: dockyardsv1.UserSpec{
-				Email: "user-with-provider@localhost.local",
+				Email:      "user-with-provider@localhost.local",
 				ProviderID: dockyardsv1.ProviderPrefixDockyards,
 			},
 		}
@@ -276,7 +276,7 @@ func TestUserPassword_Reset(t *testing.T) {
 				GenerateName: "dockyards-",
 			},
 			Spec: dockyardsv1.UserSpec{
-				Email: "password-reset@localhost.local",
+				Email:      "password-reset@localhost.local",
 				ProviderID: dockyardsv1.ProviderPrefixDockyards,
 			},
 		}
@@ -307,7 +307,7 @@ func TestUserPassword_Reset(t *testing.T) {
 				},
 			},
 			Spec: dockyardsv1.VerificationRequestSpec{
-				Code: "password-reset-request",
+				Code:     "password-reset-request",
 				Duration: &metav1.Duration{Duration: 10 * time.Second},
 				UserRef: corev1.TypedLocalObjectReference{
 					APIGroup: &dockyardsv1.GroupVersion.Group,
@@ -322,7 +322,7 @@ func TestUserPassword_Reset(t *testing.T) {
 		}
 
 		passwordResetOptions := types.ResetPasswordOptions{
-			ResetCode: "password-reset-request",
+			ResetCode:   "password-reset-request",
 			NewPassword: "Foobar2000!",
 		}
 

@@ -163,15 +163,15 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 				Name:      "test",
 				Namespace: namespace.Name,
 				Labels: map[string]string{
-					dockyardsv1.LabelRoleName: dockyardsv1.RoleUser,
+					dockyardsv1.LabelRoleName:         dockyardsv1.RoleUser,
 					dockyardsv1.LabelOrganizationName: organization.Name,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind: dockyardsv1.OrganizationKind,
-						Name: organization.Name,
-						UID: organization.UID,
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
 					},
 				},
 			},
@@ -193,15 +193,15 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 				GenerateName: "test-",
 				Namespace:    namespace.Name,
 				Labels: map[string]string{
-					dockyardsv1.LabelRoleName: dockyardsv1.RoleReader,
+					dockyardsv1.LabelRoleName:         dockyardsv1.RoleReader,
 					dockyardsv1.LabelOrganizationName: organization.Name,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind: dockyardsv1.OrganizationKind,
-						Name: organization.Name,
-						UID: organization.UID,
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
 					},
 				},
 			},
@@ -226,15 +226,15 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 				Name:      "test",
 				Namespace: namespace.Name,
 				Labels: map[string]string{
-					dockyardsv1.LabelRoleName: dockyardsv1.RoleUser,
+					dockyardsv1.LabelRoleName:         dockyardsv1.RoleUser,
 					dockyardsv1.LabelOrganizationName: organization.Name,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind: dockyardsv1.OrganizationKind,
-						Name: organization.Name,
-						UID: organization.UID,
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
 					},
 				},
 			},
@@ -257,15 +257,15 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 				Name:      "test",
 				Namespace: namespace.Name,
 				Labels: map[string]string{
-					dockyardsv1.LabelRoleName: dockyardsv1.RoleReader,
+					dockyardsv1.LabelRoleName:         dockyardsv1.RoleReader,
 					dockyardsv1.LabelOrganizationName: organization.Name,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind: dockyardsv1.OrganizationKind,
-						Name: organization.Name,
-						UID: organization.UID,
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
 					},
 				},
 			},
@@ -288,15 +288,15 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 				Name:      "test",
 				Namespace: namespace.Name,
 				Labels: map[string]string{
-					dockyardsv1.LabelRoleName: dockyardsv1.RoleReader,
+					dockyardsv1.LabelRoleName:         dockyardsv1.RoleReader,
 					dockyardsv1.LabelOrganizationName: organization.Name,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind: dockyardsv1.OrganizationKind,
-						Name: organization.Name,
-						UID: organization.UID,
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
 					},
 				},
 			},
@@ -318,15 +318,15 @@ func TestDockyardsInvitationWebhook_Create(t *testing.T) {
 				Name:      "test-update",
 				Namespace: namespace.Name,
 				Labels: map[string]string{
-					dockyardsv1.LabelRoleName: dockyardsv1.RoleReader,
+					dockyardsv1.LabelRoleName:         dockyardsv1.RoleReader,
 					dockyardsv1.LabelOrganizationName: organization.Name,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
 						APIVersion: dockyardsv1.GroupVersion.String(),
-						Kind: dockyardsv1.OrganizationKind,
-						Name: organization.Name,
-						UID: organization.UID,
+						Kind:       dockyardsv1.OrganizationKind,
+						Name:       organization.Name,
+						UID:        organization.UID,
 					},
 				},
 			},

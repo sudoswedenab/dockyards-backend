@@ -130,9 +130,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				Name:      workloadName,
 				Namespace: cluster.Namespace,
 				Labels: map[string]string{
-					dockyardsv1.LabelOrganizationName: organization.Name,
-					dockyardsv1.LabelClusterName: cluster.Name,
-					dockyardsv1.LabelWorkloadName: workloadName,
+					dockyardsv1.LabelOrganizationName:     organization.Name,
+					dockyardsv1.LabelClusterName:          cluster.Name,
+					dockyardsv1.LabelWorkloadName:         workloadName,
 					dockyardsv1.LabelWorkloadTemplateName: "test",
 				},
 				OwnerReferences: []metav1.OwnerReference{
@@ -214,9 +214,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				Name:      workloadName,
 				Namespace: cluster.Namespace,
 				Labels: map[string]string{
-					dockyardsv1.LabelOrganizationName: organization.Name,
-					dockyardsv1.LabelClusterName: cluster.Name,
-					dockyardsv1.LabelWorkloadName: workloadName,
+					dockyardsv1.LabelOrganizationName:     organization.Name,
+					dockyardsv1.LabelClusterName:          cluster.Name,
+					dockyardsv1.LabelWorkloadName:         workloadName,
 					dockyardsv1.LabelWorkloadTemplateName: "test",
 				},
 				OwnerReferences: []metav1.OwnerReference{
@@ -366,9 +366,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				Name:      workloadName,
 				Namespace: cluster.Namespace,
 				Labels: map[string]string{
-					dockyardsv1.LabelOrganizationName: organization.Name,
-					dockyardsv1.LabelClusterName: cluster.Name,
-					dockyardsv1.LabelWorkloadName: workloadName,
+					dockyardsv1.LabelOrganizationName:     organization.Name,
+					dockyardsv1.LabelClusterName:          cluster.Name,
+					dockyardsv1.LabelWorkloadName:         workloadName,
 					dockyardsv1.LabelWorkloadTemplateName: "test",
 				},
 				OwnerReferences: []metav1.OwnerReference{
@@ -452,9 +452,9 @@ func TestClusterWorkloads_Create(t *testing.T) {
 				Name:      workloadName,
 				Namespace: cluster.Namespace,
 				Labels: map[string]string{
-					dockyardsv1.LabelOrganizationName: organization.Name,
-					dockyardsv1.LabelClusterName: cluster.Name,
-					dockyardsv1.LabelWorkloadName: workloadName,
+					dockyardsv1.LabelOrganizationName:     organization.Name,
+					dockyardsv1.LabelClusterName:          cluster.Name,
+					dockyardsv1.LabelWorkloadName:         workloadName,
 					dockyardsv1.LabelWorkloadTemplateName: "test",
 				},
 				OwnerReferences: []metav1.OwnerReference{

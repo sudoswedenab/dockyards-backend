@@ -48,7 +48,7 @@ func TestGlobalTokens_Create(t *testing.T) {
 			GenerateName: "test-",
 		},
 		Spec: dockyardsv1.UserSpec{
-			Password: string(hash),
+			Password:   string(hash),
 			ProviderID: dockyardsv1.ProviderPrefixDockyards,
 		},
 		Status: dockyardsv1.UserStatus{

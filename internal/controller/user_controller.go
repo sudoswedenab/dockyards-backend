@@ -116,7 +116,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 			meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
 				Type:               dockyardsv1.UserAuthorizationReadyCondition,
-				Status: 			metav1.ConditionFalse,
+				Status:             metav1.ConditionFalse,
 				Reason:             dockyardsv1.UserAuthorizationInternalErrorReason,
 				Message:            err.Error(),
 				LastTransitionTime: metav1.Now(),
@@ -130,7 +130,7 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 		meta.SetStatusCondition(&user.Status.Conditions, metav1.Condition{
 			Type:               dockyardsv1.UserAuthorizationReadyCondition,
-			Status: 			metav1.ConditionTrue,
+			Status:             metav1.ConditionTrue,
 			Reason:             dockyardsv1.ReadyReason,
 			Message:            "",
 			LastTransitionTime: metav1.Now(),

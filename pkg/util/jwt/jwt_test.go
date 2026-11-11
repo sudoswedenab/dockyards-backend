@@ -54,7 +54,6 @@ func TestGetOrGenerateKeys(t *testing.T) {
 		}
 	}()
 
-
 	scheme := runtime.NewScheme()
 	_ = corev1.AddToScheme(scheme)
 

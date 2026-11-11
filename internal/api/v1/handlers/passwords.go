@@ -35,7 +35,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 func (h *handler) UpdateUserPassword(ctx context.Context, userName string, request *types.PasswordOptions) error {
 	subject, err := middleware.SubjectFrom(ctx)
 	if err != nil {

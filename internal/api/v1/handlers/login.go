@@ -29,7 +29,7 @@ import (
 
 func (h *handler) CreateGlobalTokens(ctx context.Context, request *types.LoginOptions) (*types.Tokens, error) {
 	matchingFields := client.MatchingFields{
-		index.EmailField: request.Email,
+		index.EmailField:      request.Email,
 		index.ProviderIDField: dockyardsv1.ProviderPrefixDockyards,
 	}
 

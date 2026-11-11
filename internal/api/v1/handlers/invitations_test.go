@@ -122,7 +122,7 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 				},
 				Labels: map[string]string{
 					dockyardsv1.LabelOrganizationName: organization.Name,
-					dockyardsv1.LabelRoleName: "User",
+					dockyardsv1.LabelRoleName:         "User",
 				},
 				UID: types.UID(response.ID),
 				//
@@ -294,7 +294,7 @@ func TestOrganizationInvitations_Create(t *testing.T) {
 				},
 				Labels: map[string]string{
 					dockyardsv1.LabelOrganizationName: organization.Name,
-					dockyardsv1.LabelRoleName: dockyardsv1.RoleReader,
+					dockyardsv1.LabelRoleName:         dockyardsv1.RoleReader,
 				},
 				UID: types.UID(response.ID),
 				//
@@ -717,7 +717,7 @@ func TestGlobalInvitations_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		
+
 		err = testingutil.RetryUntilFound(ctx, mgr.GetClient(), &invitation)
 		if err != nil {
 			t.Fatal(err)
