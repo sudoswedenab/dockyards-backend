@@ -6,3 +6,7 @@
 *.out
 /config/kustomization.yaml
 /site
+
+# Vendor
+/vendor
+/api/vendor
