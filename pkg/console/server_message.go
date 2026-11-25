@@ -21,11 +21,12 @@ import (
 )
 
 type ServerMessageKind uint8
+
 const (
-	ServerMessageKindInvalid        ServerMessageKind = 0
-	ServerMessageKindConnect        ServerMessageKind = '>'
-	ServerMessageKindDisconnect 	ServerMessageKind = '<'
-	ServerMessageKindInput          ServerMessageKind = '.'
+	ServerMessageKindInvalid    ServerMessageKind = 0
+	ServerMessageKindConnect    ServerMessageKind = '>'
+	ServerMessageKindDisconnect ServerMessageKind = '<'
+	ServerMessageKindInput      ServerMessageKind = '.'
 )
 
 // Sent to client when connection as a response to ClientConnect when it
@@ -48,9 +49,9 @@ type ServerInput struct {
 }
 
 type ServerMessage struct {
-	Connect      ServerConnect
-	Disconnect   ServerDisconnect
-	Input        ServerInput
+	Connect    ServerConnect
+	Disconnect ServerDisconnect
+	Input      ServerInput
 
 	Kind ServerMessageKind
 }
