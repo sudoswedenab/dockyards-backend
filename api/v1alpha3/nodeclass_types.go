@@ -70,6 +70,11 @@ type NodeClassOpenStackStatus struct {
 
 // NodeClassStatus defines the observed state of a node class.
 type NodeClassStatus struct {
+	// Resources contains observed per-node capacity supplied by the provider.
+	// An absent entry means the capacity is unknown, not zero. These values
+	// describe provider-defined capacity rather than user-requested sizing.
+	Resources corev1.ResourceList `json:"resources,omitempty"`
+
 	// OpenStack contains observed OpenStack provider-specific machine settings.
 	OpenStack *NodeClassOpenStackStatus `json:"openstack,omitempty"`
 }
