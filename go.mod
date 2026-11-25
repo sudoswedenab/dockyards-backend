@@ -30,6 +30,8 @@ require (
 
 replace github.com/sudoswedenab/dockyards-backend/api => ./api
 
+replace github.com/sudoswedenab/dockyards-backend/pkg/console => ./pkg/console
+
 require (
 	cuelabs.dev/go/oci/ociregistry v0.0.0-20241125120445-2c00c104c6e1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
