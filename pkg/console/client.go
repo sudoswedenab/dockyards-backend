@@ -121,12 +121,8 @@ func (c *client) ReadMessage() (*ServerMessage, error) {
 func (c *client) readMessage() (*ServerMessage, error) {
 	_, raw, err := c.conn.ReadMessage()
 	if err != nil {
-		if websocket.IsUnexpectedCloseError(err) {
+		if websocket.IsUnexpectedCloseError(err, websocket.CloseAbnormalClosure) {
 			return nil, err
-		}
-		closedErr, failedWSConn := errors.AsType[*websocket.CloseError](err)
-		if failedWSConn {
-			return nil, closedErr
 		}
 		return nil, nil
 	}
@@ -134,7 +130,6 @@ func (c *client) readMessage() (*ServerMessage, error) {
 	if raw == nil {
 		return nil, errors.New("connection closed")
 	}
-
 	message, err := ParseServerMessage(raw)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse message: %s", err)
