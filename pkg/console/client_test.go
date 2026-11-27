@@ -60,7 +60,7 @@ func TestWebsocketClient(t *testing.T) {
 	var messages = make(chan []byte, 1024)
 
 	go func(required require.Assertions) {
-		err := c.WriteMessagesChannel(ctx, messages)
+		err := c.WriteMessagesChannel(messages)
 		required.NoError(err, "WriteMessage")
 	}(*require.New(t))
 
@@ -73,11 +73,11 @@ func TestWebsocketClient(t *testing.T) {
 
 		formatMessage(messages, buffer, []byte("hello"))
 
-		p, err := c.ReadMessage(ctx)
+		p, err := c.ReadMessage()
 		required.NoError(err, "ReadMessage[%d]", i)
 
 		expected := fmt.Sprintf("%s[%d]", "hello", i)
-		required.Equal(expected, string(p))
+		required.Equal(expected, string(p.Input.Data))
 	}
 }
 

@@ -104,14 +104,8 @@ func (c *client) WriteMessage(messageType int, data []byte) error {
 	return c.conn.WriteMessage(messageType, data)
 }
 
-func (c *client) WriteMessagesChannel(ctx context.Context, messages chan []byte) error {
+func (c *client) WriteMessagesChannel(messages chan []byte) error {
 	for message := range messages {
-		select {
-		case <-ctx.Done():
-			fmt.Println("ctx done")
-			return ctx.Err()
-		default:
-		}
 		err := c.WriteMessage(websocket.BinaryMessage, message)
 		if err != nil {
 			return errors.Join(errors.New("could not write message:"), err)
@@ -120,17 +114,11 @@ func (c *client) WriteMessagesChannel(ctx context.Context, messages chan []byte)
 	return nil
 }
 
-func (c *client) ReadMessage(ctx context.Context) ([]byte, error) {
-	select {
-	case <-ctx.Done():
-		fmt.Println("ctx done")
-		return nil, ctx.Err()
-	default:
-	}
+func (c *client) ReadMessage() (*ServerMessage, error) {
 	return c.readMessage()
 }
 
-func (c *client) readMessage() ([]byte, error) {
+func (c *client) readMessage() (*ServerMessage, error) {
 	_, raw, err := c.conn.ReadMessage()
 	if err != nil {
 		if websocket.IsUnexpectedCloseError(err) {
@@ -152,19 +140,7 @@ func (c *client) readMessage() ([]byte, error) {
 		return nil, fmt.Errorf("could not parse message: %s", err)
 	}
 
-	var msg []byte
-	switch message.Kind {
-	case ServerMessageKindInvalid:
-	case ServerMessageKindConnect:
-		msg = []byte(`Connected to server (press enter to continue)`)
-	case ServerMessageKindDisconnect:
-		msg = []byte(`Disconnected from server`)
-	case ServerMessageKindInput:
-		msg = message.Input.Data
-	default:
-		return nil, fmt.Errorf("unhandled message kind: %v", message.Kind)
-	}
-	return msg, nil
+	return &message, nil
 }
 
 func (c *client) KeepAlive(ctx context.Context, timeout time.Duration) {
