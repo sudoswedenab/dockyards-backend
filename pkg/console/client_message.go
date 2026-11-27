@@ -21,12 +21,13 @@ import (
 )
 
 type ClientMessageKind uint8
+
 const (
-	ClientMessageKindInvalid        ClientMessageKind = 0
-	ClientMessageKindConnect        ClientMessageKind = '>'
-	ClientMessageKindDisconnect 	ClientMessageKind = '<'
-	ClientMessageKindInput          ClientMessageKind = '.'
-	ClientMessageKindResize         ClientMessageKind = '='
+	ClientMessageKindInvalid    ClientMessageKind = 0
+	ClientMessageKindConnect    ClientMessageKind = '>'
+	ClientMessageKindDisconnect ClientMessageKind = '<'
+	ClientMessageKindInput      ClientMessageKind = '.'
+	ClientMessageKindResize     ClientMessageKind = '='
 )
 
 // This is sent to the server when start using a resource.
@@ -62,16 +63,16 @@ type ClientResize struct {
 }
 
 type ClientMessage struct {
-	Connect      ClientConnect
-	Disconnect   ClientDisconnect
-	Input        ClientInput
-	Resize       ClientResize
+	Connect    ClientConnect
+	Disconnect ClientDisconnect
+	Input      ClientInput
+	Resize     ClientResize
 
 	Kind ClientMessageKind
 }
 
 func (m *ClientMessage) StreamID() uint16 {
-	switch (m.Kind) {
+	switch m.Kind {
 	case ClientMessageKindInvalid:
 		return 0
 	case ClientMessageKindConnect:
