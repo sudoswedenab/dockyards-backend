@@ -24,7 +24,13 @@ import (
 	"time"
 
 	// TODO: Checkout https://websocket.org/guides/languages/go/
+
 	"github.com/gorilla/websocket"
+)
+
+var (
+	DefaultConnectMessage    = []byte(`Connected to server (press enter to continue)`)
+	DefaultDisconnectMessage = []byte("\nDisconnected from server\n")
 )
 
 type ClientConfig struct {
